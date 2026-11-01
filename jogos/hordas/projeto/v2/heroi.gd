@@ -75,6 +75,7 @@ var vida_max := 100.0:
 var forma_lobo := false  # LightWolf: o mecha quebrou e o herói é o Lobo (v2/mecha.gd). Só a morte do Lobo é derrota
 var vida_mecha_max := 0.0  # a vida máxima do mecha enquanto é Lobo (vale só com forma_lobo)
 var lobo_pct := 0.31  # a fração da vida máxima do mecha que o Lobo tem (dados/v2_herois.json > lightwolf_lobo > vida_pct)
+var vida_base := 100.0  # a vida do herói no começo da partida (cfg.heroi.vida do herói escolhido): o card de status mostra o que passa disso
 var xp := 0.0
 var xp_proximo := 5.0
 var nivel := 1
@@ -220,6 +221,7 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	golpe_calor_t = 0.0
 	vel_base = float(cfg.heroi.get("vel", VEL))
 	vida_max = float(cfg.heroi.vida)
+	vida_base = vida_max
 	vida = vida_max
 	folego_max = float(cfg.folego.max)
 	folego = folego_max
@@ -451,6 +453,11 @@ func curar(v: float) -> void:
 	vida = minf(vida_max, vida + v)
 
 
+## O que a vida máxima tem a mais que a do começo (cartas, melhorias, Santuário). No Lobo conta a vida do MECHA (+20 da carta é +20, não a fração dele).
+func vida_bonus() -> float:
+	return (vida_mecha_max if forma_lobo else vida_max) - vida_base
+
+
 ## O mecha estourou: o herói passa a ser o Lobo, com `pct` da vida máxima do mecha e a vida cheia (v2/mecha.gd chama).
 func entrar_lobo(pct: float) -> void:
 	vida_mecha_max = vida_max
@@ -471,6 +478,8 @@ func sair_lobo() -> void:
 
 ## Troca de forma do LightWolf (v2/mecha.gd) SEM `iniciar_stats`: o Q, a E e o resto da partida não se zeram. Muda a chave (que escolhe o Q, a E e o
 ## secundário), a folha de sprites, o corpo, a velocidade e a defesa; a vida e o Q de cada forma são de quem chama. O `cfg` do combate já é o da forma.
+## A defesa é refeita CHEIA a cada troca (como a vida, que também volta cheia): hoje nenhuma das duas formas tem secundário (v2_secundario.json), então é
+## só a barra de defesa a zero no Lobo e no mecha; quando a matriz do LW-3 entrar, a barra do mecha nasce cheia na volta, junto com a vida.
 func trocar_forma(nova: String, folha: Dictionary) -> void:
 	cancelar_ruptura(false)
 	_baixar_escudo()

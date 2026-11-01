@@ -81,7 +81,8 @@ func montar_animado(pai: Node, t: Dictionary, p: Vector2, l: int, c: int, esp: b
 
 
 ## Troca a folha do ator animado sem recriar nós (as duas formas do LightWolf, v2/mecha.gd): textura, pé, silhueta e as duas sombras. O quadro atual
-## (linha e coluna) continua; quem anima o reescreve no quadro seguinte.
+## (linha e coluna) continua, preso aos limites da folha nova (uma folha com menos linhas ou colunas não deixa o recorte sair dela); quem anima o
+## reescreve no quadro seguinte.
 func trocar_tipo(t: Dictionary) -> void:
 	var media: bool = sh1 != null and sh1.texture == tex_b  # a sombra está no modo médio (silhueta borrada) ou no alto (nítida)?
 	tipo = t
@@ -92,6 +93,8 @@ func trocar_tipo(t: Dictionary) -> void:
 	tex_n = t.alb
 	tex_b = t.blur
 	larg_blob = t.w * 0.75
+	linha = clampi(linha, 0, maxi(int(t.alb.get_height()) / int(t.h) - 1, 0))
+	coluna = clampi(coluna, 0, maxi(int(t.alb.get_width()) / int(t.w) - 1, 0))
 	regiao = Rect2(coluna * t.w, linha * t.h, t.w, t.h)
 	sprite.region_rect = regiao
 	if sh1 != null:

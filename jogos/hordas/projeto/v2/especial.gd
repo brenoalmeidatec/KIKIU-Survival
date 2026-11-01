@@ -12,8 +12,10 @@ extends RefCounted
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ##  - CHAMAR (LightWolf em forma de Lobo, LW-2): a carga do Q é o CHAMADO (bloco `carga` próprio no dado). Cheia, o Lobo aperta Q: um aviso de 0,8 s sobre os pés e o
 ##    mecha cai, ferindo em volta, e o herói volta a Mecha (v2/mecha.gd cuida da troca). Enquanto o aviso corre ele é invulnerável.
-## Todo Q também LIMPA A TELA (ULT-A, `limpar_tela`, dados > comum.limpa e `limpa_em` de cada bloco): comuns morrem aos poucos numa frente de onda (a fila adiada
+## Todo Q também LIMPA A TELA, menos o CHAMAR do Lobo (ULT-A, `limpar_tela`, dados > comum.limpa e `limpa_em` de cada bloco): comuns morrem aos poucos numa frente de onda (a fila adiada
 ## é do combate: `combate.limpar_tela` e `combate.drenar_limpa`), elite perde parte da vida e chefe só uma fatia.
+## O CHAMAR não tem `limpa_em` DE PROPÓSITO: o Lobo o usa a cada ~12 s, e se cada chamado limpasse a tela a quebra viraria vantagem; a queda fere só em volta
+## (raio 60). A limpeza do LightWolf é a Autodestruição do Q do mecha (LW-5).
 ## Id desconhecido deixa a tecla Q sem efeito.
 ##
 ## O herói (v2/heroi.gd) cuida da entrada (`especial()`), do estado (Estado.ESPECIAL), da carga e dos campos que o HUD lê (esp_*); este módulo cuida do
