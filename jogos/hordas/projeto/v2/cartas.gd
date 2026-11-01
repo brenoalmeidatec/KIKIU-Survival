@@ -470,6 +470,9 @@ func aplicar(c: Dictionary) -> void:
 	var h = combate.mundo.heroi
 	var id := str(c.id)
 	var cat := str(c.get("cat", "stat"))
+	if not _def.has(id):  # a carta Cura ("Alma renovada": progresso._carta_cura, o baú): não é um bônus, não ocupa vaga nem entra em `estado`
+		_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
+		return
 	if not estado.has(id):
 		estado[id] = {"n": 0, "bonus": 0.0, "soma": 0.0, "usada": false}
 	var e: Dictionary = estado[id]

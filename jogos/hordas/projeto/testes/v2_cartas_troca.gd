@@ -331,7 +331,16 @@ func _testes() -> void:
 		if str(k.id) == "cura":
 			tem_cura = true
 	ok(c.progresso.cartas.size() == 3 and tem_cura and tp8.troca == 2, "mão sem upgrade possível: 2 TROCA + a cura (troca %d, cura %s)" % [tp8.troca, tem_cura])
-	c.progresso.descartar_rodada()
+	var i_cura := 0  # escolher a cura não é um bônus: não ocupa vaga, não entra na lista de troca e o resumo da build não quebra (regressão: estado["cura"])
+	for q in c.progresso.cartas.size():
+		if str(c.progresso.cartas[q].id) == "cura":
+			i_cura = q
+	c.progresso.escolher(i_cura)
+	ok(
+		c.jogo == "jogando" and cs.bonus_contados() == 12 and not cs.estado.has("cura") and not cs.bonus_trocaveis().has("cura"),
+		"a carta Cura não vira bônus nem ocupa vaga"
+	)
+	ok(cs.resumo().size() == 5, "o resumo da build segue sem a cura (%d linhas)" % cs.resumo().size())
 
 	# 9. pela janela: subir de nível no Difícil cheio, Enter na TROCA abre o painel
 	zerar("dificil")
