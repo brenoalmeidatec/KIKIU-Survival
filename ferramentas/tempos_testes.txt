@@ -179,3 +179,4 @@ v2_aparo 6
 v2_cartas_troca 15
 v2_cartas_icones 7
 v2_matriz 14
+v2_edicoes 15
