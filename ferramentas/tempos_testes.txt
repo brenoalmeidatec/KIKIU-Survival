@@ -182,8 +182,9 @@ v2_cartas_troca 15
 v2_cartas_icones 7
 v2_matriz 14
 v2_edicoes 15
+v2_mare_sangue 50
+v2_mare_heroi 50
 v2_cartas_apice 8
-v2_mare_sangue 80
 v2_mare_matriz 45
 v2_misseis 10
 v2_fumaca 10

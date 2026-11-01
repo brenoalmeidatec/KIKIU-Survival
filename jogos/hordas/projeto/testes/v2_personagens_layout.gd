@@ -3,7 +3,8 @@ extends "res://testes/isolamento_v2.gd"
 # - a lista (com VOLTAR) fica acima do rodapé de teclas e rola até o último botão;
 # - o foco de cada botão cabe na área visível da rolagem, inclusive o da primeira e o da última linha (a borda fica por dentro);
 # - a ficha fica dentro da pedra (5 px), sem sobreposição entre nome, retrato, info e detalhe; o aviso fica acima da ficha;
-# - o retrato é UM quadro da tira rosto.png, em escala inteira (rosto em 2x); o herói parado sai em 3x (96x132), centrado no eixo;
+# - PER-1b: o retrato é o CORPO inteiro (quadro parado da folha de sprites) de TODOS os heróis, na mesma escala inteira (3x), na mesma
+#   caixa (120x132), centrado no eixo e com os pés na mesma linha; nenhum rosto.png aparece na tela de escolha (nem o LightWolf);
 # - o pior caso de texto cabe: o info com o herói de cada nome e o detalhe com 4 melhorias no máximo e o nome de mapa mais longo.
 # Usa índice e saves TEMPORÁRIOS (user://teste_pers_layout_*).
 # Roda: godot --headless --audio-driver Dummy --path jogos/hordas/projeto res://testes/v2_personagens_layout.tscn  (imprime "falhas=0")
@@ -190,25 +191,13 @@ func _nomes() -> void:
 		var heroi := Personagens.heroi_do_nome(str(n.nome))
 		var info := "Almas: 99999\nHerói: %s (%s)" % [str(Herois.heroi(heroi).nome), Personagens.arma_inicial(heroi)]
 		_cabe_texto(info, t._info.size, 32, "info com o herói de %s" % n.nome)
-		# só o nome sem rosto.png usa o sprite parado: a folha própria do nome (Matthew) ou a do herói dele; cada nome com rosto mostra o próprio rosto
-		var pasta := str(n.get("pasta", ""))
-		var heroi_beta := false  # herói em teste (LightWolf, "beta": true) ainda sem rosto: o retrato é o sprite parado até a arte final (LW-7)
-		for hb in Herois.catalogo().get("herois", []):
-			heroi_beta = heroi_beta or (bool(hb.get("beta", false)) and str(hb.id) == str(n.get("heroi", "")))
-		if not heroi_beta:
-			ok(
-				pasta != "" and FileAccess.file_exists("res://assets/personagens/%s/rosto.png" % pasta),
-				"'%s' tem rosto.png na pasta dele (%s)" % [n.nome, pasta]
-			)
-		if pasta == "" or not ResourceLoader.exists("res://assets/personagens/%s/rosto.png" % pasta):
-			var folha := Personagens.folha_do_nome(str(n.nome))
-			var esperada := Personagens.sprite_do_nome(str(n.nome))
-			ok(
-				folha == (esperada if esperada != "" else str(Herois.heroi(heroi).sprite)),
-				"'%s' sem rosto usa a folha %s (do herói %s)" % [n.nome, folha, heroi]
-			)
+		# PER-1b: todo nome mostra o corpo, da folha própria (Matthew) ou da do herói dele; nunca o rosto.png
+		var folha := Personagens.folha_do_nome(str(n.nome))
+		var esperada := Personagens.sprite_do_nome(str(n.nome))
+		ok(folha == (esperada if esperada != "" else str(Herois.heroi(heroi).sprite)), "'%s' usa a folha %s (do herói %s)" % [n.nome, folha, heroi])
 	var barra := rolagem.get_v_scroll_bar()
 	print("rolagem: max=%.0f altura=%.0f barra_visivel=%s" % [barra.max_value, _rect(rolagem).size.y, barra.visible])
+	_todos_iguais(t)
 	t.queue_free()
 	await get_tree().process_frame
 
@@ -218,18 +207,44 @@ func _retrato_certo(t, nome: String) -> void:
 	ok(tex is AtlasTexture, "retrato de %s é um quadro (AtlasTexture), não a imagem inteira" % nome)
 	if not tex is AtlasTexture:
 		return
+	# nenhum rosto: o retrato vem da folha _albedo.png do herói, nunca de assets/personagens/<pasta>/rosto.png
+	var caminho: String = tex.atlas.resource_path
+	ok(
+		caminho.ends_with("_albedo.png") and caminho.begins_with(Personagens.PASTA_SPRITES),
+		"retrato de %s é a folha de sprites (%s), não o rosto" % [nome, caminho]
+	)
+	ok(not caminho.contains("rosto"), "retrato de %s não usa rosto.png (%s)" % [nome, caminho])
+	# mesmo enquadramento para todos: a mesma caixa, escala inteira igual e os pés na mesma linha
+	var esc: float = t._retrato.size.x / tex.get_width()
+	ok(
+		t._retrato.size == Vector2(t.RETRATO_L, t.RETRATO_ALT),
+		"retrato de %s na caixa padrão %sx%s (tem %s)" % [nome, t.RETRATO_L, t.RETRATO_ALT, t._retrato.size]
+	)
+	ok(is_equal_approx(esc, float(t.RETRATO_ESC)), "retrato de %s em %dx (tem %s)" % [nome, t.RETRATO_ESC, esc])
+	ok(is_equal_approx(t._retrato.size.y, tex.get_height() * esc), "retrato de %s sem distorção" % nome)
 	var reg: Rect2 = tex.region
-	ok(reg.position == Vector2.ZERO or tex.atlas.resource_path.ends_with("_albedo.png"), "retrato de %s é o primeiro quadro (ou o corpo do herói)" % nome)
-	ok(reg.size.x <= reg.size.y * 1.0 + 0.5 and reg.size.y > 0, "retrato de %s tem proporção de quadro (%s), não de tira" % [nome, reg.size])
-	var esc: float = t._retrato.size.x / reg.size.x
-	ok(is_equal_approx(esc, roundf(esc)) and esc >= 1.0, "retrato de %s em escala inteira (%s)" % [nome, esc])
-	ok(is_equal_approx(t._retrato.size.y, reg.size.y * esc), "retrato de %s sem distorção" % nome)
-	# o herói parado sai em 3x (96x132): em 2x (88 px) a tela ficou com metade do tamanho; o rosto segue em 2x
-	if tex.atlas.resource_path.ends_with("_albedo.png"):  # sem rosto: o quadro parado da folha (3x: 132 px; o Nick, recortado no corpo, 126)
-		ok(t._retrato.size.y >= 120.0, "herói de %s parado com pelo menos 120 px de altura (tem %s)" % [nome, t._retrato.size.y])
-	else:
-		ok(esc >= 2.0, "rosto de %s em pelo menos 2x (%s)" % [nome, esc])
+	ok(reg.size.x * esc <= t.RETRATO_L and reg.size.y * esc <= t.RETRATO_ALT, "corpo de %s cabe na caixa (%s)" % [nome, reg.size * esc])
+	ok(reg.size.y * esc >= 100.0, "corpo inteiro de %s: pelo menos 100 px de altura (tem %s)" % [nome, reg.size.y * esc])
+	ok(is_equal_approx(tex.margin.position.y + reg.size.y, tex.get_height()), "pés de %s apoiados na base da caixa" % nome)
 	ok(absf(t._retrato.position.x + t._retrato.size.x / 2.0 - 682.0) < 1.0, "retrato de %s centrado no eixo da ficha" % nome)
+	ok(is_equal_approx(t._retrato.position.y, 100.0 + 5.0 + 61.0), "retrato de %s na mesma altura da ficha" % nome)
+
+
+## Os retratos de todos os nomes têm o mesmo tamanho e a mesma escala, e a tela nunca carrega rosto.png (checado pelo caminho).
+func _todos_iguais(t) -> void:
+	var tamanhos := {}
+	var escalas := {}
+	var vistos := 0
+	for n in Personagens.nomes():
+		t._definir_retrato(true, Personagens.folha_do_nome(str(n.nome)))
+		ok(t._retrato.visible, "'%s' mostra o corpo" % n.nome)
+		tamanhos[t._retrato.size] = true
+		escalas[t._retrato.size.x / t._retrato.texture.get_width()] = true
+		ok(not str(t._retrato.texture.atlas.resource_path).contains("rosto"), "'%s' sem rosto.png" % n.nome)
+		vistos += 1
+	ok(vistos >= 9, "todos os nomes checados, LightWolf incluído (%d)" % vistos)
+	ok(tamanhos.size() == 1, "todos os retratos com o mesmo tamanho (%s)" % [tamanhos.keys()])
+	ok(escalas.size() == 1, "todos os retratos na mesma escala (%s)" % [escalas.keys()])
 
 
 func _lista() -> void:
