@@ -131,9 +131,10 @@ func _montar_cartao(pai: Control, i: int) -> void:
 	_marcas.append(marca)
 	_texto(cartao, str(d.nome).to_upper(), Rect2(18, 38, 240, 44), 37, cor, true)
 	_texto(cartao, str(d.desc), Rect2(18, 86, 240, 44), 16, Paleta.TEXTO_SECUNDARIO, false, false, true)
-	var bonus := roundi((float(d.almas_mult) - 1.0) * 100.0)
-	_texto(cartao, "+%d%%" % bonus, Rect2(18, 148, 110, 24), 16, cor, false, true)
-	_texto(cartao, "ALMAS E XP", Rect2(142, 148, 116, 24), 16, Paleta.TEXTO)
+	var bonus_almas := roundi((float(d.almas_mult) - 1.0) * 100.0)
+	var bonus_xp := roundi((float(d.xp_mult) - 1.0) * 100.0)
+	_texto(cartao, "ALMAS +%d%%" % bonus_almas, Rect2(18, 148, 116, 24), 16, cor)
+	_texto(cartao, "XP +%d%%" % bonus_xp, Rect2(142, 148, 116, 24), 16, Paleta.TEXTO)
 	var rec := _texto(cartao, "", Rect2(18, 170, 240, 22), 16, Paleta.TEXTO_SECUNDARIO)
 	rec.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_recordes.append(rec)
