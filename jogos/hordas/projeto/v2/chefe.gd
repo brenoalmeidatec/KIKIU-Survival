@@ -306,6 +306,11 @@ func _teia_disparou(centro: Vector2, at: Dictionary) -> void:
 		combate.fx.estouro(p + Vector2(0, -4), Color(0.6, 1.0, 0.5), 5)
 
 
+## O herói está preso na teia (lento)? v2/fx_status.gd lê isto para desenhar o relógio sobre ele.
+func heroi_lento() -> bool:
+	return _teia_t > 0.0
+
+
 ## A lentidão por desfazer deslocamento é provisória: ela vai morar em v2/heroi.gd num PR depois do #351 (travado pela #348) e esta função some.
 ## Enquanto o herói está lento pela teia, o que ele andou a pé no quadro (andando ou correndo, nunca na esquiva, no golpe ou na carga) é cortado para
 ## `_teia_mult` e fios verdes sobem dos pés dele (o aviso de que está preso). Fica aqui, no chefe, e não no herói: é um efeito só da Rainha.

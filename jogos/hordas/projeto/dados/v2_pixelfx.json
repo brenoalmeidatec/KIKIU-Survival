@@ -16,6 +16,44 @@
 			"limite": 8,
 			"intervalo": 0.15,
 			"decorativo": true
+		},
+		"burning": {
+			"arquivo": "status/burning.png",
+			"quadro": [24, 32],
+			"colunas": 6,
+			"quadros": 12,
+			"fps": 14,
+			"loop": true,
+			"pivo": [12, 30],
+			"camada": "glow",
+			"limite": 8,
+			"decorativo": true
+		},
+		"slowed": {
+			"arquivo": "status/slowed.png",
+			"quadro": [28, 27],
+			"colunas": 10,
+			"quadros": 72,
+			"fps": 30,
+			"passo": 2,
+			"loop": true,
+			"pivo": [14, 25],
+			"camada": "glow",
+			"limite": 8,
+			"decorativo": true
+		},
+		"stunned": {
+			"arquivo": "status/stunned.png",
+			"quadro": [52, 42],
+			"colunas": 8,
+			"quadros": 60,
+			"fps": 30,
+			"passo": 2,
+			"loop": true,
+			"pivo": [26, 40],
+			"camada": "glow",
+			"limite": 6,
+			"decorativo": true
 		}
 	}
 }
