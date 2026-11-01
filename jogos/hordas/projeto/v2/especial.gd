@@ -302,6 +302,7 @@ func cancelar(h) -> void:
 ## Limpar a tela (ULT-A): bloco comum.limpa dos dados. No instante `limpa_em` do Q, a peça do combate marca os comuns da tela (e da margem) e a frente
 ## de onda os mata aos poucos; elite e chefe levam só uma parte da vida. Um anel que cresce com a frente e UM número "LIMPOU xN" no herói; nenhuma luz de
 ## tela cheia (o clarão passa pelo helper Piscadas, do UI-2, quando ele existir). A Autodestruição do LightWolf (LW-5) chama esta mesma peça.
+## MARÉ (ULT-C): é também AQUI que o Q chama a Maré do herói (diretor.mare_chamar(h)): a tela está limpa e a Maré chega `atraso` s depois.
 func limpar_tela(h) -> int:
 	var c = combate
 	var L: Dictionary = comum.limpa
@@ -313,7 +314,20 @@ func limpar_tela(h) -> int:
 	if n > 0:
 		c.fx.numero(h.pos + Vector2(0, -52), "LIMPOU x%d" % n, COR_CRIT, true)
 	c.audio.tocar("ruptura_disparo", 0.9, -3.0, 0.0)
+	c.diretor.mare_chamar(h)
 	return n
+
+
+## A Maré do herói `chave` (ULT-C): o bloco `mare` do Q dele com o `comum.mare` de padrão por baixo. {} se o herói não tem Q.
+func mare_de(chave: String) -> Dictionary:
+	var id := id_de(chave)
+	if id == "":
+		return {}
+	var m: Dictionary = comum.mare.duplicate()
+	var b: Dictionary = blocos[id]
+	if b.has("mare"):
+		m.merge(b.mare, true)
+	return m
 
 
 func _encerrar(h) -> void:
@@ -498,7 +512,6 @@ func _bater(h) -> void:
 	c.audio.tocar("impacto", 0.45, 3.0, 0.0)
 	c.audio.tocar("ruptura_disparo", 0.7, 1.0, 0.0)
 	mundo.cam.tremer(float(b.tremor), 0.3)
-	combate.diretor.mare_chamar()  # na Vila, com o Nicão, a pancada chama a Maré (o aviso é o da própria Maré)
 	if _n > 0:
 		c.hit_stop(float(b.hit_stop))
 
@@ -698,7 +711,7 @@ func abate(m) -> void:
 	var a: Dictionary = _carga_de(mundo.heroi).abate
 	var s := float(a.chefe) if m.chefe else (float(a.elite) if m.elite else float(a.comum))
 	if m.mare:
-		s *= float(combate.cfg.diretor.mare.abate_carga)  # monstro da Maré de Sangue: o Q enche mais rápido
+		s *= float(mare_de(str(combate.heroi_id)).get("abate_carga", 1.0))  # monstro da Maré (ULT-C): o Q do herói da partida enche mais rápido
 	carregar(mundo.heroi, s, "abate")
 
 
