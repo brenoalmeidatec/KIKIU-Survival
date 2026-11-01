@@ -10,7 +10,7 @@ blender -b -t 6 -P gerar.py -- --anim=combo     # só o combo
 python ../hazaki/montar_folha.py . fabio        # fabio_final_{albedo,normal}.png + fabio_final.json (+ prévia x4)
 ```
 
-O `gerar.py` do Hazaki aceita `anim_<nome>.py` na pasta do perfil (substitui a do Hazaki de mesmo nome e acrescenta as novas); sem isso nada muda.
+O `gerar.py` do Hazaki aceita `anim_<nome>.py` na pasta do perfil: ela SUBSTITUI a do Hazaki com o mesmo nome (não acrescenta animação nova); sem isso nada muda.
 
 ## Limites
 - Corda é uma linha fixa (não curva no tiro); não há flecha no quadro (a flecha é o projétil do jogo).
