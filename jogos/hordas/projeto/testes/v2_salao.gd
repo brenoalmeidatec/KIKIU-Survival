@@ -254,13 +254,13 @@ func _testes() -> void:
 		)
 		remove_child(sc)
 		sc.queue_free()
-	# na escolha de personagem, quem não tem rosto.png mostra a folha do herói dele (ou a própria do personagem), não sempre a do Hazaki
+	# na escolha de personagem (PER-1b: todos de corpo inteiro) cada um mostra a folha do herói dele (ou a própria do personagem), não sempre a do Hazaki
 	var tela = Tela.instantiate()
 	add_child(tela)
 	for c in casos:
 		var id_t := Personagens.criar(str(c[0]), str(c[1]))
-		tela._definir_retrato("", true, Personagens.folha(id_t))  # pasta vazia = sem rosto.png
+		tela._definir_retrato(true, Personagens.folha(id_t))  # PER-1b: sempre o corpo da folha
 		var tex = tela._retrato.texture
-		ok(tex is AtlasTexture and tex.atlas.resource_path.ends_with(str(c[2])), "escolha de personagem: %s sem rosto mostra a folha %s" % [c[0], c[2]])
+		ok(tex is AtlasTexture and tex.atlas.resource_path.ends_with(str(c[2])), "escolha de personagem: %s mostra a folha %s" % [c[0], c[2]])
 	remove_child(tela)
 	tela.queue_free()
