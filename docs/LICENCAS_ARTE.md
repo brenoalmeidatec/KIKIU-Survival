@@ -218,3 +218,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - `jogos/hordas/fonte_arte/lightwolf_icones/A23_lw_cartas.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com o prompt em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fonte copiada sem alteração.
 - Derivados (mesma arte, nenhuma arte nova), gerados por `jogos/hordas/fonte_arte/lightwolf_icones/reduzir_cartas.py`: `jogos/hordas/projeto/assets/v2/icones_cartas/{sifao,ampla,cabo,aurora_lunar}.png` (32x32), `.../icones_cartas/16/` (16x16) e, para as três cartas de bônus, `jogos/hordas/projeto/assets/gerado/icone_{matriz_sifao,matriz_ampla,cabo_resgate}.png` (16x16, o ícone antigo de reserva). Mudanças: separação dos quatro desenhos pelas colunas com alfa, corte do halo de alfa baixo (alfa < 160 vira 0), recorte pela caixa do objeto, encaixe no quadrado (30 px e 15 px) com a proporção mantida, média de caixa com cor pré-multiplicada e alfa endurecido (>= 128 vira 255).
+
+## PER-4: folha Blender do Bert (KUSARIGAMA), Claude do Alisson (PC, worktree alisson/per4-beto), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/beto/`: folha de sprites gerada por script (Blender 4.5, `gerar.py` + `perfil.py`) sobre o rig e as animações do Hazaki, com a aparência e a foice do Bert. Arte PRÓPRIA, sem modelo, textura ou referência de terceiros: a geometria vem do estudo do Codex (arte própria dele no Blender, já registrada em LW/PER-3) e as peças novas são primitivas do script.
+- Gerados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/beto.json`, `beto_albedo.png` e `beto_normal.png` (cópia de `beto_final*`). Sem direitos de terceiros declarados. Nada de referência externa usada.
