@@ -22,6 +22,7 @@ extends RefCounted
 ## vale no quadro seguinte, porque a lista de candidatos deste quadro foi montada com a direção antiga.
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
+const MisseisVisual := preload("res://v2/misseis_visual.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
 const ALCANCE_EXTRA := 120.0  # a Chuva pode nascer e andar ainda neste quadro
@@ -29,6 +30,8 @@ const R_ADAGA := 4.0  # raio de acerto da adaga (cresce com a área do herói)
 const COMPR := 16.0  # a lâmina desenhada: 16x5 px, apontando para a direita
 const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px, do ponto do acerto ao peito do alvo)
 const PROJ_PADRAO := "adaga"
+const VISUAL_DIST := 60.0  # deslocamento da boca projetada converge para a trajetória lógica
+const VISUAL_DUR := 0.2
 
 var combate
 var mundo
@@ -59,6 +62,9 @@ var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina
 var _grupo := 0
 var _pausa_recarga := 0.0
 var a_cor := PackedColorArray()
+var a_visual_offset := PackedVector2Array()
+var a_visual_dist := PackedFloat32Array()
+var a_visual_t := PackedFloat32Array()
 var a_fonte: Array = []  # de onde a adaga veio (combate.fonte_dano no arremesso: principal, especial ou habilidade), para o dano por golpe da tela de fim
 var a_u0: Array = []  # os últimos monstros que cada adaga acertou (não repete)
 var a_u1: Array = []
@@ -68,6 +74,7 @@ var _proj_lista: Array = []  # [{nome, tex (código) ou anim (folha), compr, alt
 var _proj_nomes := {}  # nome -> índice em _proj_lista
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
+var misseis_visual := MisseisVisual.new()
 
 
 func montar(c, camada: Node, tex: Texture2D) -> void:
@@ -79,7 +86,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_registrar("adaga", _img_adaga(), COMPR, 5.0)
 	_registrar("bala", _img_bala(), 7.0, 3.0)
 	_registrar("plasma", _img_plasma(), 11.0, 7.0)
-	_registrar("missil", _img_missil(), 10.0, 4.0)
+	_registrar("missil", _img_missil(), 24.0, 9.0)
+	misseis_visual.montar()
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
 	a_vel.resize(MAX)
@@ -99,6 +107,9 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_grupo.resize(MAX)
 	a_pausa.resize(MAX)
 	a_cor.resize(MAX)
+	a_visual_offset.resize(MAX)
+	a_visual_dist.resize(MAX)
+	a_visual_t.resize(MAX)
 	a_fonte.resize(MAX)
 	a_u0.resize(MAX)
 	a_u1.resize(MAX)
@@ -115,6 +126,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 
 
 func limpar() -> void:
+	misseis_visual.limpar()
 	a_rest.fill(0.0)
 	a_grupo.fill(0)
 	a_pausa.fill(0)
@@ -122,6 +134,9 @@ func limpar() -> void:
 	a_proj.fill(0)
 	a_giro.fill(0.0)
 	a_expl.fill(0.0)
+	a_visual_offset.fill(Vector2.ZERO)
+	a_visual_dist.fill(0.0)
+	a_visual_t.fill(0.0)
 	_grupo = 0
 	_pausa_recarga = 0.0
 	for i in MAX:
@@ -180,6 +195,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 			R_ADAGA * sqrt(h.m_area)
 		)
 		a_proj[i] = proj
+		_boca_visual(i, h, origem, dir, passo)
 		a_ric[i] = ric
 		if float(passo.get("giro", 0.0)) > 0.0:
 			_mirar(i, h, passo, dir)
@@ -188,7 +204,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 		if cresce_com_nivel:  # só combate.golpear; Q e chuva nunca recebem grupo elegível
 			a_grupo[i] = _grupo
 			a_pausa[i] = 1
-	combate.fx.faiscas(origem + dir * 12.0, dir, 3, cor, 110.0)
+	combate.fx.faiscas(origem + dir * 12.0, dir, 3, cor, 110.0, not _visual_mecha(proj))
 
 
 func _livre() -> int:
@@ -224,6 +240,9 @@ func _nova(
 	a_grupo[i] = 0
 	a_pausa[i] = 0
 	a_cor[i] = cor
+	a_visual_offset[i] = Vector2.ZERO
+	a_visual_dist[i] = 0.0
+	a_visual_t[i] = 0.0
 	a_fonte[i] = combate.fonte_dano
 	a_u0[i] = null
 	a_u1[i] = null
@@ -236,9 +255,10 @@ func _nova(
 
 
 func atualizar(dt: float) -> void:
+	misseis_visual.atualizar(dt)
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	_relogio += dt
-	var ativo := false
+	var ativo := misseis_visual.ativas() > 0
 	for i in MAX:
 		if a_rest[i] > 0.0:
 			ativo = true
@@ -254,7 +274,10 @@ func atualizar(dt: float) -> void:
 	for i in MAX:
 		if a_rest[i] <= 0.0:
 			continue
+		var antes: Vector2 = a_pos[i]
 		_mover(i, dt)
+		a_visual_dist[i] += antes.distance_to(a_pos[i])
+		a_visual_t[i] = maxf(0.0, a_visual_t[i] - dt)
 	_desenha = true
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
@@ -409,7 +432,7 @@ func _ricochetear(i: int, m, perto: Vector2, t: float) -> bool:
 func _acabar(i: int) -> void:
 	a_rest[i] = 0.0
 	sumiram += 1
-	combate.fx.faiscas(a_pos[i], a_dir[i], 2, a_cor[i], 70.0)
+	combate.fx.faiscas(a_pos[i], a_dir[i], 2, a_cor[i], 70.0, not _visual_mecha(a_proj[i]))
 
 
 func _acertar(i: int, m, p: Vector2) -> void:
@@ -428,7 +451,7 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	_pausar_grupo(i)
 	if a_expl[i] > 0.0:
 		_explodir(i, m)
-	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0)
+	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0, not _visual_mecha(a_proj[i]))
 	combate.audio.tocar("critico" if crit else "impacto", randf_range(1.25, 1.5), -7.0, 0.05)
 	if crit and float(combate.armas.mods.explode) > 0.0:
 		var raio_e: float = float(combate.cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
@@ -441,14 +464,14 @@ func _acertar(i: int, m, p: Vector2) -> void:
 
 
 ## A explosão pequena do míssil `i` em volta do monstro acertado: dano em área pelo mesmo caminho das armas (elipse do chão), sem repetir o monstro `m` que ele já feriu.
-## Só desenha uma onda curta e algumas faíscas (a `armas.explodir` faz 7 efeitos por estouro, caro para 12 mísseis em um segundo).
+## A animação usa pool próprio sem novos nós/partículas por impacto; o dano mantém o mesmo caminho.
 func _explodir(i: int, m) -> void:
 	var cor: Color = a_cor[i]
 	var raio := float(a_expl[i])
 	combate.fonte_dano = str(a_fonte[i])
 	combate.armas._dano_area(m.pos, raio, a_expl_d[i], a_emp[i], a_atord[i], cor, "missil", 0.0, m)
-	combate.fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.8), raio, 0.16)
-	combate.fx.estouro(m.pos + Vector2(0, -6), Color(1.0, 0.85, 0.5), 3)
+	misseis_visual.emitir(m.pos, raio)
+	combate.fx.estouro(m.pos + Vector2(0, -6), Color(1.0, 0.85, 0.5), 3, false)  # preserva o consumo de RNG do visual anterior
 	combate.audio.tocar("impacto", randf_range(1.5, 1.8), -8.0, 0.05)
 
 
@@ -475,6 +498,8 @@ func _pausar_grupo(i: int) -> void:
 
 
 func _desenhar_corpo() -> void:
+	if misseis_visual.ativas() > 0:
+		misseis_visual.desenhar(no_corpo, float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3)
 	for i in MAX:
 		if a_rest[i] <= 0.0:
 			continue
@@ -482,6 +507,7 @@ func _desenhar_corpo() -> void:
 		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		var e: Dictionary = _proj_lista[a_proj[i]]
+		p = _pos_visual(i)  # a sombra acima permanece na trajetória lógica do chão
 		if e.has("anim"):
 			var f: Dictionary = e.anim
 			AnimGolpes.desenhar(no_corpo, f, AnimGolpes.quadro_em(f, _relogio), p, (a_dir[i] as Vector2).angle(), Vector2.ONE, Color(1, 1, 1, fade))
@@ -495,10 +521,16 @@ func _desenhar_brilho() -> void:
 	for i in MAX:
 		if a_rest[i] <= 0.0:
 			continue
-		var p: Vector2 = a_pos[i]
+		var p: Vector2 = _pos_visual(i)
 		var dir: Vector2 = a_dir[i]
 		var cor: Color = a_cor[i]
 		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
+		if _visual_mecha(a_proj[i]):
+			if str(_proj_lista[a_proj[i]].nome) == "missil":
+				no_brilho.draw_line((p - dir * 19.0).round(), (p - dir * 10.0).round(), Color(1.0, 0.55, 0.14, 0.65 * fade), 2.0)
+			else:
+				no_brilho.draw_line((p - dir * 7.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.65 * fade), 1.0)
+			continue
 		no_brilho.draw_line((p - dir * 16.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.4 * fade), 3.0)
 		no_brilho.draw_line((p - dir * 9.0).round(), (p + dir * 4.0).round(), Color(1, 1, 1, 0.8 * fade), 1.0)
 		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.3 * fade))
@@ -541,27 +573,59 @@ func _img_bala() -> Texture2D:
 	return ImageTexture.create_from_image(im)
 
 
-## O micro-míssil do LightWolf: 10x4 px apontando para a direita, corpo branco-azulado, ponta clara, aletas azuis e chama ciano na cauda (esquerda).
+## Micro-míssil 24x9: ogiva, corpo claro contornado, faixa ciano, aletas e motor quente separados.
 func _img_missil() -> Texture2D:
-	var im := Image.create(10, 4, false, Image.FORMAT_RGBA8)
-	var corpo := Color(0.93, 0.97, 1.0)
-	var sombra := Color(0.55, 0.78, 0.94)
-	var ponta := Color(0.75, 0.9, 1.0)
-	var aleta := Color(0.23, 0.44, 0.65)
-	var chama := Color(0.5, 0.95, 1.0)
-	for x in range(2, 9):
-		im.set_pixel(x, 1, corpo)
-		im.set_pixel(x, 2, sombra)
-	im.set_pixel(9, 1, ponta)
-	im.set_pixel(9, 2, ponta)
-	im.set_pixel(2, 0, aleta)
-	im.set_pixel(3, 0, aleta)
-	im.set_pixel(2, 3, aleta)
-	im.set_pixel(3, 3, aleta)
-	im.set_pixel(0, 1, chama)
-	im.set_pixel(1, 1, chama)
-	im.set_pixel(1, 2, chama)
+	var im := Image.create(24, 9, false, Image.FORMAT_RGBA8)
+	for x in range(5, 24):
+		var meia := 2 if x < 19 else (1 if x < 22 else 0)
+		for y in range(4 - meia, 5 + meia):
+			var cor := Color(0.18, 0.28, 0.38)
+			if abs(y - 4) < meia or meia == 0:
+				cor = Color(0.92, 0.96, 1.0) if y <= 4 else Color(0.5, 0.67, 0.79)
+			if x >= 17:
+				cor = Color(0.3, 0.75, 0.9) if y == 4 else Color(0.15, 0.4, 0.58)
+			im.set_pixel(x, y, cor)
+	for x in range(6, 11):
+		var fora := 3 if x < 9 else 2
+		im.set_pixel(x, 4 - fora, Color(0.23, 0.4, 0.56))
+		im.set_pixel(x, 4 + fora, Color(0.23, 0.4, 0.56))
+	for x in range(0, 5):
+		for y in range(3 if x < 2 else 2, 6 if x < 2 else 7):
+			im.set_pixel(x, y, Color(1.0, 0.85, 0.4) if y == 4 else Color(0.95, 0.35, 0.08))
 	return ImageTexture.create_from_image(im)
+
+
+func _visual_mecha(proj: int) -> bool:
+	var nome := str(_proj_lista[proj].nome)
+	return nome == "missil" or (nome == "bala" and combate.heroi_id == "lightwolf")
+
+
+## Coordenadas projetadas na folha, relativas aos pés do herói. Só desenho: nada altera a_pos/a_dir/alcance/colisão.
+func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
+	if not _visual_mecha(a_proj[i]):
+		return
+	var nome := str(_proj_lista[a_proj[i]].nome)
+	var chave := "pods" if nome == "missil" else "canhoes"
+	var tabela: Array = h.tipo.info.get("bocas_projeteis", {}).get(chave, [])
+	var mira: Vector2 = passo.get("cone_dir", dir)
+	var linha: int = h.linha_de(mira)
+	if tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
+		return
+	var lado := 0 if float(passo.get("lateral", -1.0)) < 0.0 else 1
+	if nome == "missil":
+		var perp := Vector2(-mira.y, mira.x)
+		lado = 0 if (origem - (h.pos + h.ORIGEM_GOLPE)).dot(perp) < 0.0 else 1
+	var xy: Array = tabela[linha][lado]
+	if xy.size() != 2:
+		return
+	a_visual_offset[i] = h.pos + Vector2(float(xy[0]), float(xy[1])) - a_pos[i]
+	a_visual_t[i] = VISUAL_DUR
+
+
+func _pos_visual(i: int) -> Vector2:
+	var k := clampf(minf(1.0 - a_visual_dist[i] / VISUAL_DIST, a_visual_t[i] / VISUAL_DUR), 0.0, 1.0)
+	k = k * k * (3.0 - 2.0 * k)
+	return a_pos[i] + a_visual_offset[i] * k
 
 
 ## O tiro de plasma da pistola do LightWolf: bola de 11x7 px, núcleo branco, anel ciano e uma cauda mais fraca para trás (esquerda).

@@ -24,6 +24,13 @@ FUNDO = (34, 34, 42)
 CONTORNO = (12, 18, 30, 255)
 NORMAL_NEUTRA = (128, 128, 255, 255)
 
+# Centros dos bocais projetados pela câmera do gerar.py; relativos aos pés (64,120).
+# Canhões em combo0; pods em parado0. Ordem DIRECOES, esquerda/direita do rig.
+BOCAS_PROJETEIS = {
+    'canhoes': [[[-20.9, -8.5], [20.9, -8.5]], [[-38.32, -50.37], [-38.32, -20.81]], [[38.32, -20.81], [38.32, -50.37]], [[20.9, -62.69], [-20.9, -62.69]], [[-41.87, -26.89], [-12.31, -5.99]], [[12.31, -5.99], [41.87, -26.89]], [[-12.31, -65.2], [-41.87, -44.3]], [[41.87, -44.3], [12.31, -65.2]]],
+    'pods': [[[-19.18, -48.98], [19.18, -48.98]], [[-4.13, -65.47], [-4.13, -38.34]], [[4.13, -38.34], [4.13, -65.47]], [[19.18, -54.82], [-19.18, -54.82]], [[-16.48, -59.43], [10.64, -40.25]], [[-10.64, -40.25], [16.48, -59.43]], [[10.64, -63.56], [-16.48, -44.38]], [[16.48, -44.38], [-10.64, -63.56]]],
+}
+
 # animação, quadros, segundos por quadro sugeridos
 ANIMACOES = [
     ("parado", 4, 0.28),
@@ -118,6 +125,10 @@ def main():
         "elevacao": 45.0,
         "ppu": 24.5,
         "pe_y": PE_Y,
+        "corpo_fixo_ao_atirar": True,
+        "bocas_projeteis": BOCAS_PROJETEIS,
+        "segurar_mira_s": 0.12,
+        "poses_habilidades": {"misseis": "parado"},
         "retrato": {"regiao": [27, 42, 74, 84]},  # provisório: conferir o mecha renderizado de frente no HUD
         "linhas": DIRECOES,
         "colunas": ["parado"] + ["andar%d" % i for i in range(6)],
@@ -137,6 +148,7 @@ def main():
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
     info["animacoes"]["combo"]["golpes"] = 2
+    info["animacoes"]["combo"]["sem_clarao"] = {"1": 2, "7": 8}
     info["animacoes"]["combo"]["quadros_por_golpe"] = 6
     info["animacoes"]["combo"]["golpes_tipo"] = ["batida", "pancada"]
     info["animacoes"]["combo"]["quadros_do_golpe"] = ["antecipacao", "antecipacao_funda", "golpe", "impacto", "segura", "volta"]

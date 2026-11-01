@@ -203,3 +203,8 @@ v2_habilidade_buffer 50
 
 # v2_sombras_blur: 0,056 s no notebook pela fila em 01/11/2026; arredondado para distribuir os shards.
 v2_sombras_blur 1
+
+# Chamadas pela fila no notebook em 01/11/2026, sem espera por vaga: projéteis 4,476 s e animação cerca de 4 s.
+# Incluem inicialização; arredondadas conservadoramente para equilibrar os shards, não são medição de FPS.
+v2_mecha_projeteis 5
+v2_mecha_animacao 5
