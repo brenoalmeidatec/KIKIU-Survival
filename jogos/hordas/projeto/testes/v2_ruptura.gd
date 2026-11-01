@@ -619,57 +619,57 @@ func _ready() -> void:
 	var c_comum: Dictionary = cs.montar_carta(def_dano, 0)
 	var c_lend: Dictionary = cs.montar_carta(def_dano, 3)
 	ok(
-		c_comum.cat == "rb" and c_comum.valor == 15.0 and c_lend.valor == 48.0,
-		"Punho de terra: 15 comum e 48 lendária (%.0f e %.0f)" % [c_comum.valor, c_lend.valor]
+		c_comum.cat == "rb" and c_comum.valor == 18.0 and perto(c_lend.valor, 57.6, 0.001),
+		"Punho de terra: 18 comum e 57,6 lendária (%.1f e %.1f)" % [c_comum.valor, c_lend.valor]
 	)
-	ok(not str(c_comum.desc).contains("{v}") and str(c_comum.desc).contains("15"), "a desc traz o número no lugar de {v}: %s" % c_comum.desc)
+	ok(not str(c_comum.desc).contains("{v}") and str(c_comum.desc).contains("18"), "a desc traz o número no lugar de {v}: %s" % c_comum.desc)
 	var m19 = monstro_a(50)
 	rp.disparar(h, 1.0, false)
 	ok(perto(float(rp.ultimo.dano), 22.0, 0.001), "sem cartas o dano base é 22")
 	cs.aplicar(c_comum)
-	ok(perto(rp.somas.dano, 15.0, 0.001) and perto(rp.dano_de(h, 1.0, false), 25.3, 0.01), "Punho de terra comum: +15% (25,3 contra 22)")
+	ok(perto(rp.somas.dano, 18.0, 0.001) and perto(rp.dano_de(h, 1.0, false), 25.96, 0.01), "Punho de terra comum: +18% (25,96 contra 22)")
 	m19.vida = m19.vida_max
 	rp.disparar(h, 1.0, false)
-	ok(m19.vida_max - m19.vida == 25.0, "e o dano medido no disparo subiu para 25 (%.0f)" % (m19.vida_max - m19.vida))
+	ok(m19.vida_max - m19.vida == 26.0, "e o dano medido no disparo subiu para 26 (%.0f)" % (m19.vida_max - m19.vida))
 	cs.aplicar(c_lend)
-	ok(perto(rp.somas.dano, 63.0, 0.001), "somando a lendária: +63%")
+	ok(perto(rp.somas.dano, 75.6, 0.001), "somando a lendária: +75,6%")
 	ok(cs.nivel_de("rb_dano") == 2 and cs.resumo().any(func(r): return r.id == "rb_dano"), "Punho de terra aparece no resumo da build")
 	# Pulso ligeiro
 	zerar()
 	var def_rec: Dictionary = cs.definicao("rb_recarga")
 	cs.aplicar(cs.montar_carta(def_rec, 0))
-	ok(perto(rp.recarga_de(false), 7.52, 0.001), "Pulso ligeiro comum: recarga 7,52 s (%.3f)" % rp.recarga_de(false))
-	for i in 3:
+	ok(perto(rp.recarga_de(false), 7.6, 0.001), "Pulso ligeiro comum: recarga 7,6 s (%.3f)" % rp.recarga_de(false))
+	for i in 4:
 		cs.aplicar(cs.montar_carta(def_rec, 3))
-	ok(rp.recarga_de(false) == 4.0 and rp.recarga_de(true) == 4.0, "com 4 cartas a recarga nunca passa do piso de 4,0 s (%.3f)" % rp.recarga_de(false))
-	ok(cs.nivel_de("rb_recarga") == 4 and not cs._disponivel(def_rec) and not cs.disponiveis().has(def_rec), "no máximo (4) a carta deixa de sair")
+	ok(rp.recarga_de(false) == 4.0 and rp.recarga_de(true) == 4.0, "com 5 cartas a recarga nunca passa do piso de 4,0 s (%.3f)" % rp.recarga_de(false))
+	ok(cs.nivel_de("rb_recarga") == 5 and not cs._disponivel(def_rec) and not cs.disponiveis().has(def_rec), "no máximo (5) a carta deixa de sair")
 	# Estrondo
 	zerar()
 	var def_est: Dictionary = cs.definicao("rb_estrondo")
 	ok(perto(rp.atordoa_de(1.0, false), 0.5, 0.0001), "sem cartas atordoa 0,5 s")
 	cs.aplicar(cs.montar_carta(def_est, 0))
-	ok(perto(rp.atordoa_de(1.0, false), 0.6, 0.0001), "Estrondo comum: +20%% (0,6 s; %.3f)" % rp.atordoa_de(1.0, false))
-	for i in 2:
+	ok(perto(rp.atordoa_de(1.0, false), 0.56, 0.0001), "Estrondo comum: +12%% (0,56 s; %.3f)" % rp.atordoa_de(1.0, false))
+	for i in 4:
 		cs.aplicar(cs.montar_carta(def_est, 3))
 	ok(rp.atordoa_de(1.0, false) == 1.0 and rp.atordoa_de(1.0, true) == 1.0, "o atordoamento nunca passa de 1,0 s (%.3f)" % rp.atordoa_de(1.0, true))
-	ok(cs.nivel_de("rb_estrondo") == 3 and not cs._disponivel(def_est), "Estrondo respeita o máximo (3)")
+	ok(cs.nivel_de("rb_estrondo") == 5 and not cs._disponivel(def_est), "Estrondo respeita o máximo (5)")
 	# Contragolpe
 	zerar()
 	var def_con: Dictionary = cs.definicao("rb_contra")
 	ok(perto(rp.bonus_contragolpe(), 0.3, 0.0001), "sem cartas o contragolpe é +30%")
 	cs.aplicar(cs.montar_carta(def_con, 0))
-	ok(perto(rp.bonus_contragolpe(), 0.38, 0.0001), "Contragolpe comum: +38%% (%.3f)" % rp.bonus_contragolpe())
+	ok(perto(rp.bonus_contragolpe(), 0.35, 0.0001), "Contragolpe comum: +35%% (%.3f)" % rp.bonus_contragolpe())
 	zerar()
-	for i in 3:
+	for i in 5:
 		cs.aplicar(cs.montar_carta(def_con, 3))
 	ok(rp.bonus_contragolpe() == 1.0, "o contragolpe nunca passa de +100%% (%.3f)" % rp.bonus_contragolpe())
-	ok(cs.nivel_de("rb_contra") == 3 and not cs._disponivel(def_con), "Contragolpe respeita o máximo (3)")
+	ok(cs.nivel_de("rb_contra") == 5 and not cs._disponivel(def_con), "Contragolpe respeita o máximo (5)")
 	# Eco do chão
 	zerar()
 	exato()
 	var def_eco: Dictionary = cs.definicao("rb_eco")
 	cs.aplicar(cs.montar_carta(def_eco, 0))
-	ok(perto(rp.somas.eco, 25.0, 0.001), "Eco do chão comum: 25%")
+	ok(perto(rp.somas.eco, 10.0, 0.001), "Eco do chão comum: 10%")
 	var e1 = monstro_a(60)  # dentro do primeiro pulso (raio 96) e do eco (raio 67)
 	var e2 = monstro_a(90)  # só no primeiro
 	var tp0: float = w.tempo_partida
@@ -685,17 +685,17 @@ func _ready() -> void:
 	var t_eco: float = w.tempo_partida - tp0
 	ok(rp.ecos == ecos0 + 1 and t_eco >= 0.28 and t_eco <= 0.36, "0,3 s depois do disparo sai o eco (%.3f s)" % t_eco)
 	ok(
-		e1.vida_max - e1.vida == 22.0 + 6.0 and e2.vida_max - e2.vida == 22.0,
-		"eco: raio de 70%% e dano de 25%% (6 de 22); o de longe não apanha (%.0f e %.0f)" % [e1.vida_max - e1.vida, e2.vida_max - e2.vida]
+		e1.vida_max - e1.vida == 22.0 + 2.0 and e2.vida_max - e2.vida == 22.0,
+		"eco: raio de 70%% e dano de 10%% (2 de 22); o de longe não apanha (%.0f e %.0f)" % [e1.vida_max - e1.vida, e2.vida_max - e2.vida]
 	)
 	ok(e1.atordoa_t == 0.0, "o eco não atordoa")
 	ok(perto(h.contragolpe_t, 1.5 - t_eco, 0.08), "o eco não abre outro contragolpe (%.2f)" % h.contragolpe_t)
 	passos(60)
 	ok(rp.ecos == ecos0 + 1, "sem eco do eco")
 	zerar()
-	cs.aplicar(cs.montar_carta(def_eco, 3))
-	cs.aplicar(cs.montar_carta(def_eco, 3))
-	ok(cs.nivel_de("rb_eco") == 2 and not cs._disponivel(def_eco), "Eco respeita o máximo (2)")
+	for i in 5:
+		cs.aplicar(cs.montar_carta(def_eco, 3))
+	ok(cs.nivel_de("rb_eco") == 5 and not cs._disponivel(def_eco), "Eco respeita o máximo (5)")
 	zerar()
 	cs.aplicar(cs.montar_carta(def_eco, 0))
 	monstro_a(40)

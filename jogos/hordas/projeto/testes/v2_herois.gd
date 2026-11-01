@@ -449,9 +449,9 @@ func _t_nicao() -> void:
 	# cartas do Nick
 	var cs = w.combate.cartas
 	cs.aplicar(cs.montar_carta(cs.definicao("muralha"), 0))
-	ok(float(w.combate.armas.mods.muralha) == 25.0, "carta Peso de muralha liga o modificador")
+	ok(float(w.combate.armas.mods.muralha) == 20.0, "carta Peso de muralha liga o modificador")
 	cs.aplicar(cs.montar_carta(cs.definicao("abalo"), 0))
-	ok(float(w.combate.armas.mods.abalo) == 45.0, "carta Abalo sísmico liga o modificador")
+	ok(float(w.combate.armas.mods.abalo) == 36.0, "carta Abalo sísmico liga o modificador")
 	zerar()  # limpa_partida zera os modificadores: refaz
 	cs.aplicar(cs.montar_carta(cs.definicao("abalo"), 0))
 	cs.aplicar(cs.montar_carta(cs.definicao("muralha"), 0))
@@ -669,7 +669,7 @@ func _t_lucas() -> void:
 	zerar()
 	var cs = w.combate.cartas
 	cs.aplicar(cs.montar_carta(cs.definicao("mira"), 0))
-	ok(float(w.combate.armas.mods.mira) == 15.0, "carta Mira longa liga o modificador")
+	ok(float(w.combate.armas.mods.mira) == 12.0, "carta Mira longa liga o modificador")
 	h.atacar()
 	ate(func(): return ad.lancadas >= 2, 60)
 	var rest_max := 0.0
@@ -677,7 +677,7 @@ func _t_lucas() -> void:
 		rest_max = maxf(rest_max, ad.a_rest[i])
 	ok(rest_max > 220.0, "com a Mira longa a adaga voa mais longe (%.0f px)" % rest_max)
 	zerar()
-	cs.aplicar(cs.montar_carta(cs.definicao("chuva"), 3))  # lendária: 15 x 3,2 = 48%
+	cs.aplicar(cs.montar_carta(cs.definicao("chuva"), 3))  # lendária: 12 x 3,2 = 38%
 	w.combate.armas.mods.chuva = 100.0
 	monstro_a(70, 0, "inimigo_cavaleiro_oco")
 	h.atacar()

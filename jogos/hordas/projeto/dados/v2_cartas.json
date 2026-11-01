@@ -9,13 +9,13 @@
 	"nivel_fim": 20,
 	"escolha": {"cartas": 3, "garantir_golpe_ate": 4, "peso_sinergia": 3.0, "espera_s": 1.0, "proxima_espera_s": 0.8, "limite_s": 8.0, "limite_urgente_s": 3.0, "roleta_s": 1.2, "auto_raridade_max": 1, "auto_queda": 1, "auto_golpes_alvo": 3},
 	"stats": [
-		{"id": "dano", "icone": "icone_katana", "nome": "Lâmina afiada", "desc": "+{v}% de dano", "stat": "dano", "valor": 15, "max": 8, "peso": 1.0},
-		{"id": "vel_ataque", "icone": "icone_overclock", "nome": "Punho ligeiro", "desc": "+{v}% de velocidade de ataque", "stat": "vel_ataque", "valor": 12, "max": 6, "peso": 1.0},
-		{"id": "area", "icone": "icone_ciclone", "nome": "Arco largo", "desc": "+{v}% de área do corte", "stat": "area", "valor": 12, "max": 6, "peso": 0.9},
-		{"id": "vel_mov", "icone": "icone_botas_guerra", "nome": "Pés de vento", "desc": "+{v}% de velocidade de movimento", "stat": "vel_mov", "valor": 8, "max": 6, "peso": 0.9},
-		{"id": "vida", "icone": "icone_vida", "nome": "Alma robusta", "desc": "+{v} de vida máxima e cura", "stat": "vida", "valor": 20, "max": 8, "peso": 1.0},
+		{"id": "dano", "icone": "icone_katana", "nome": "Lâmina afiada", "desc": "+{v}% de dano", "stat": "dano", "valor": 24, "max": 5, "peso": 1.0},
+		{"id": "vel_ataque", "icone": "icone_overclock", "nome": "Punho ligeiro", "desc": "+{v}% de velocidade de ataque", "stat": "vel_ataque", "valor": 15, "max": 5, "peso": 1.0},
+		{"id": "area", "icone": "icone_ciclone", "nome": "Arco largo", "desc": "+{v}% de área do corte", "stat": "area", "valor": 15, "max": 5, "peso": 0.9},
+		{"id": "vel_mov", "icone": "icone_botas_guerra", "nome": "Pés de vento", "desc": "+{v}% de velocidade de movimento", "stat": "vel_mov", "valor": 10, "max": 5, "peso": 0.9},
+		{"id": "vida", "icone": "icone_vida", "nome": "Alma robusta", "desc": "+{v} de vida máxima e cura", "stat": "vida", "valor": 32, "max": 5, "peso": 1.0},
 		{"id": "ima", "icone": "icone_pedra_ima", "nome": "Ímã de almas", "desc": "+{v}% de alcance para pegar almas", "stat": "ima", "valor": 35, "max": 5, "peso": 0.8},
-		{"id": "critico", "icone": "icone_olho_falcao", "nome": "Olho de falcão", "desc": "+{v}% de chance de crítico", "stat": "critico", "valor": 5, "max": 8, "peso": 1.0}
+		{"id": "critico", "icone": "icone_olho_falcao", "nome": "Olho de falcão", "desc": "+{v}% de chance de crítico", "stat": "critico", "valor": 8, "max": 5, "peso": 1.0}
 	],
 	"golpes": [
 		{
@@ -164,8 +164,8 @@
 			"curto": "Onda",
 			"desc": "Cada corte solta uma onda de {v}% do dano.",
 			"mod": "onda",
-			"valor": 40,
-			"max": 4,
+			"valor": 32,
+			"max": 5,
 			"peso": 1.1,
 			"herois": ["hazaki"],
 			"alcance": 150,
@@ -178,8 +178,8 @@
 			"curto": "Estocada",
 			"desc": "Estocada solta uma lança que atravessa: {v}% do dano.",
 			"mod": "fura",
-			"valor": 45,
-			"max": 4,
+			"valor": 36,
+			"max": 5,
 			"peso": 1.1,
 			"herois": ["hazaki"],
 			"alcance": 190,
@@ -192,8 +192,8 @@
 			"curto": "Explosão",
 			"desc": "O crítico explode em área, com {v}% do dano.",
 			"mod": "explode",
-			"valor": 50,
-			"max": 3,
+			"valor": 30,
+			"max": 5,
 			"peso": 1.0,
 			"raio": 38
 		},
@@ -204,8 +204,8 @@
 			"curto": "Fôlego",
 			"desc": "Cada abate devolve {v}% de uma carga de fôlego.",
 			"mod": "folego",
-			"valor": 12,
-			"max": 4,
+			"valor": 10,
+			"max": 5,
 			"peso": 1.0
 		},
 		{
@@ -214,8 +214,8 @@
 			"nome": "Abalo sísmico",
 			"desc": "A pancada no chão solta uma onda de choque com {v}% do dano.",
 			"mod": "abalo",
-			"valor": 45,
-			"max": 4,
+			"valor": 36,
+			"max": 5,
 			"peso": 1.2,
 			"herois": ["nicao"]
 		},
@@ -225,8 +225,8 @@
 			"nome": "Peso de muralha",
 			"desc": "Os golpes empurram e atordoam {v}% mais.",
 			"mod": "muralha",
-			"valor": 25,
-			"max": 4,
+			"valor": 20,
+			"max": 5,
 			"peso": 1.1,
 			"herois": ["nicao"]
 		},
@@ -236,8 +236,8 @@
 			"nome": "Chuva de adagas",
 			"desc": "Cada adaga que acerta tem {v}% de chance de soltar outra.",
 			"mod": "chuva",
-			"valor": 15,
-			"max": 4,
+			"valor": 12,
+			"max": 5,
 			"peso": 1.2,
 			"herois": ["lucas"]
 		},
@@ -247,8 +247,8 @@
 			"nome": "Mira longa",
 			"desc": "As adagas voam {v}% mais longe e mais rápido.",
 			"mod": "mira",
-			"valor": 15,
-			"max": 4,
+			"valor": 12,
+			"max": 5,
 			"peso": 1.1,
 			"herois": ["lucas"]
 		}

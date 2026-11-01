@@ -329,11 +329,11 @@ func _heroi() -> void:
 	perto(float(n_de("heroi.andar")[0]), 100.0 * 1.04, 0.01, "andar 100 + 4% do Santuário")
 	ok(lin("heroi.vida").bonus == "+20", "o bônus da vida aparece à parte (%s)" % lin("heroi.vida").bonus)
 	ok(lin("heroi.andar").bonus == "+4%", "o bônus de andar aparece à parte (%s)" % lin("heroi.andar").bonus)
-	# cartas de stat (raridade 1 = x1,5): vida +30, andar +12%, ímã +52,5%
+	# cartas de stat (raridade 1 = x1,5): vida +48, andar +15%, ímã +52,5%
 	pegar("vida", 1)
 	pegar("vel_mov", 1)
 	pegar("ima", 1)
-	perto(h.vida_max, 150.0, 0.001, "vida máxima: 100 + 20 do Santuário + 30 da carta")
+	perto(h.vida_max, 168.0, 0.001, "vida máxima: 100 + 20 do Santuário + 48 da carta")
 	var v := n_de("heroi.vida")
 	perto(float(v[1]), h.vida_max, 0.001, "o card mostra a vida máxima do herói")
 	# vida: levar dano
@@ -477,13 +477,13 @@ func _katana() -> void:
 	var c = w.combate
 	var cfg: Dictionary = c.cfg
 	var passos_cfg: Array = cfg.golpe.passos
-	pegar("dano", 1)  # +22,5%
-	pegar("vel_ataque", 1)  # +18%
-	pegar("area", 1)  # +18%
-	pegar("critico", 1)  # +7,5%
+	pegar("dano", 1)  # +36%
+	pegar("vel_ataque", 1)  # +22,5%
+	pegar("area", 1)  # +22,5%
+	pegar("critico", 1)  # +12%
 	var dano_esp: Array = []
 	for p in passos_cfg:
-		dano_esp.append(float(p.dano) * (1.0 + 0.12 + 0.225))
+		dano_esp.append(float(p.dano) * (1.0 + 0.12 + 0.36))
 	var ndano := n_de("katana.dano")
 	for i in 3:
 		perto(float(ndano[i]), float(dano_esp[i]), 0.001, "dano do passo %d do card = dado x (1 + Santuário + carta)" % i)
@@ -522,19 +522,19 @@ func _katana() -> void:
 	for i in mini(3, drops.size()):
 		perto(float(roundi(float(ndano[i]))), float(drops[i]), 0.001, "o acerto %d do combo tira o dano do card (arredondado)" % i)
 	# velocidade de ataque: a duração do primeiro passo medida em quadros é a dos dados / velocidade
-	perto(duracao_medida, float(passos_cfg[0].duracao) / (1.0 + 0.05 + 0.18), PASSO * 1.6, "o golpe dura a duração dos dados / (1 + treino + carta)")
-	perto(float(n_de("katana.vel")[0]), 1.23, 0.001, "a velocidade de ataque do card é 1 + 5% do Santuário + 18% da carta")
+	perto(duracao_medida, float(passos_cfg[0].duracao) / (1.0 + 0.05 + 0.225), PASSO * 1.6, "o golpe dura a duração dos dados / (1 + treino + carta)")
+	perto(float(n_de("katana.vel")[0]), 1.275, 0.001, "a velocidade de ataque do card é 1 + 5% do Santuário + 22,5% da carta")
 	# combo completo: o ciclo REAL (passos com a velocidade + hit-stop de cada acerto + a pausa do fim do combo, que não acelera), nos quadros
 	# de 60 Hz: segurando o clique num boneco, o herói leva isso (e não a soma das durações dos passos)
 	descartar(m)
 	var soma_passos := 0.0
 	for p in passos_cfg:
-		soma_passos += float(p.duracao) / 1.23
+		soma_passos += float(p.duracao) / 1.275
 	ok(
 		float(n_de("katana.combo")[0]) > soma_passos + 0.3,
 		"o combo do card passa muito da soma das durações (%.2f contra %.2f)" % [float(n_de("katana.combo")[0]), soma_passos]
 	)
-	_confere_ciclo("x1,23")
+	_confere_ciclo("x1,275")
 	cfg.golpe.critico.chance = crit_antes
 	# alcance de cada passo: o card mostra o alcance EFETIVO = o da área + o avanço (lunge) do golpe. Primeiro o alcance parado (um boneco logo
 	# dentro é atingido, logo fora não), depois o golpe inteiro com o avanço.
@@ -542,7 +542,9 @@ func _katana() -> void:
 	var origem: Vector2 = h.pos + h.ORIGEM_GOLPE
 	for i in 3:
 		var alcance := float(alc[i]) - float(passos_cfg[i].avanco)
-		perto(float(alc[i]), float(passos_cfg[i].alcance) * 1.18 + float(passos_cfg[i].avanco), 0.001, "alcance do passo %d do card = dado x área + avanço" % i)
+		perto(
+			float(alc[i]), float(passos_cfg[i].alcance) * 1.225 + float(passos_cfg[i].avanco), 0.001, "alcance do passo %d do card = dado x área + avanço" % i
+		)
 		var a = boneco(100.0)
 		var b = boneco(100.0)
 		var raio: float = a.raio
@@ -585,10 +587,10 @@ func _katana() -> void:
 	h.combo_t = 0.0
 	h.pausa_t = 0.0
 	cfg.golpe.critico.chance = crit_antes
-	perto(float(n_de("katana.area")[0]), 1.18, 0.001, "a área do card é a do herói")
+	perto(float(n_de("katana.area")[0]), 1.225, 0.001, "a área do card é a do herói")
 	# crítico: a chance do card é a que o jogo sorteia, e o multiplicador dobra o dano
 	var chance := float(n_de("katana.critico")[0])
-	perto(chance, 0.10 + 0.075, 0.0001, "crítico do card = 10% dos dados + 7,5% da carta")
+	perto(chance, 0.10 + 0.12, 0.0001, "crítico do card = 10% dos dados + 12% da carta")
 	var alvo = boneco(30.0)
 	seed(2026)
 	var tiros := 1500
@@ -622,7 +624,7 @@ func _combo_veloz() -> void:
 	cfg.golpe.variacao = 0.0
 	cfg.golpe.critico.chance = -5.0
 	for i in 3:
-		pegar("vel_ataque", 3)  # lendária: +38,4% cada
+		pegar("vel_ataque", 3)  # lendária: +48% cada
 	ok(h.m_vel_ataque > 2.0, "a velocidade de ataque passou de x2 (x%.2f)" % h.m_vel_ataque)
 	var soma := 0.0
 	for i in 3:
@@ -664,7 +666,7 @@ func _percentuais() -> void:
 	var cfg: Dictionary = c.cfg
 	var var_antes: float = cfg.golpe.variacao
 	for i in 8:
-		pegar("critico", 3)  # lendária: x3,2 de 5% = 16% por carta
+		pegar("critico", 3)  # lendária: x3,2 de 8% = 25,6% por carta
 	ok(c.chance_critico() > 1.3, "o jogo soma mais de 100%% de crítico com 8 cartas lendárias (%.3f)" % c.chance_critico())
 	var cr := n_de("katana.critico")
 	perto(float(cr[0]), 1.0, 0.0001, "o card limita a chance de crítico a 100%")
@@ -680,13 +682,13 @@ func _percentuais() -> void:
 	ok(c.acertos - ac0 == 120 and c.criticos - cr0 == 120, "com mais de 100%% todo acerto é crítico (%d de %d)" % [c.criticos - cr0, c.acertos - ac0])
 	descartar(m)
 	cfg.golpe.variacao = var_antes
-	# uma casa decimal quando precisa: crítico raro = 7,5% (10% + 7,5% = 17,5%); ímã raro = +52,5% (+15% do Santuário = +67,5%)
+	# uma casa decimal só quando precisa: crítico raro = 12% (10% + 12% = 22%, sem casa); ímã raro = +52,5% (+15% do Santuário = +67,5%)
 	zerar()
 	pegar("critico", 1)
 	pegar("ima", 1)
 	ok(
-		lin("katana.critico").valor.begins_with("17,5%") and lin("katana.critico").bonus == "+7,5%",
-		"o crítico mostra 17,5%%, não 18%% (%s %s)" % [lin("katana.critico").valor, lin("katana.critico").bonus]
+		lin("katana.critico").valor.begins_with("22%") and lin("katana.critico").bonus == "+12%",
+		"o crítico mostra 22%% sem casa decimal (%s %s)" % [lin("katana.critico").valor, lin("katana.critico").bonus]
 	)
 	ok(lin("heroi.ima").bonus == "+67,5%", "o ímã mostra +67,5%%, não +67%% nem +68%% (%s)" % lin("heroi.ima").bonus)
 	ok(
@@ -694,7 +696,7 @@ func _percentuais() -> void:
 		"os percentuais inteiros seguem sem casa decimal (%s, %s)" % [lin("heroi.andar").bonus, lin("katana.dano").bonus]
 	)
 	pegar("dano", 1)
-	ok(lin("katana.dano").bonus == "+34,5%", "o dano raro (22,5%% + 12%% do Santuário) mostra +34,5%% (%s)" % lin("katana.dano").bonus)
+	ok(lin("katana.dano").bonus == "+48%", "o dano raro (36%% + 12%% do Santuário) mostra +48%% (%s)" % lin("katana.dano").bonus)
 
 
 # ------------------------------------------------------------------ golpes automáticos
@@ -927,9 +929,9 @@ func _modificadores() -> void:
 	cfg.golpe.critico.chance = -5.0
 	# --- onda: a onda sai em TODO corte do combo, e o card mostra o dano de cada um (o 2º corte bate mais que o 1º)
 	zerar()
-	pegar("onda", 1)  # 40 x 1,5 = 60%
+	pegar("onda", 1)  # 32 x 1,5 = 48%
 	var onda := n_de("katana.onda")
-	perto(float(onda[0]), 60.0, 0.001, "a onda do card leva 60% do corte")
+	perto(float(onda[0]), 48.0, 0.001, "a onda do card leva 48% do corte")
 	ok(onda.size() == 3, "o card guarda o dano da onda dos dois cortes do combo (%d números)" % onda.size())
 	var m = boneco(30.0)
 	var i := -1
@@ -942,7 +944,7 @@ func _modificadores() -> void:
 			perto(float(onda[1 + k]), c.armas.w_dano[i], 0.001, "o dano da onda do corte %d no card é o da onda que o jogo soltou" % k)
 	ok(onda.size() == 3 and absf(float(onda[1]) - float(onda[2])) > 0.3, "os dois cortes soltam ondas de dano diferente, e o card sabe disso")
 	ok("/" in "".join(_textos(lin("katana.onda").trechos)), "o card mostra o dano da onda de cada corte (%s)" % "".join(_textos(lin("katana.onda").trechos)))
-	ok(lin("katana.onda").nivel_txt == "nv 1/4", "o modificador mostra o nível dele (%s)" % lin("katana.onda").nivel_txt)
+	ok(lin("katana.onda").nivel_txt == "nv 1/5", "o modificador mostra o nível dele (%s)" % lin("katana.onda").nivel_txt)
 	# --- o modificador segue o NOME do passo, não a posição: com o 2º passo rebatizado de estocada, o card acompanha o jogo
 	zerar()
 	pegar("onda", 1)
@@ -982,10 +984,10 @@ func _modificadores() -> void:
 	ok(not lin("katana.ventania").is_empty() and lin("katana.ventania").nivel_txt == "evoluída", "a Ventania aparece no card")
 	ok(
 		lin("katana.onda").nivel_txt == "evoluída" and lin("katana.fura").nivel_txt == "evoluída" and str(lin("katana.onda").dica) == "",
-		"as peças gastas na Ventania não mostram mais um 'nv 2/4' parado nem dica (%s, %s)" % [lin("katana.onda").nivel_txt, lin("katana.fura").nivel_txt]
+		"as peças gastas na Ventania não mostram mais um 'nv 2/5' parado nem dica (%s, %s)" % [lin("katana.onda").nivel_txt, lin("katana.fura").nivel_txt]
 	)
 	onda = n_de("katana.onda")
-	perto(float(onda[0]), 80.0 * 2.4, 0.001, "com a Ventania a onda do card vale 80% x 2,4")
+	perto(float(onda[0]), 64.0 * 2.4, 0.001, "com a Ventania a onda do card vale 64% x 2,4")
 	m = boneco(30.0)
 	for k in 2:
 		c.armas.w_dist.fill(0.0)
@@ -1009,7 +1011,7 @@ func _modificadores() -> void:
 	zerar()
 	pegar("explode")
 	var ex := n_de("katana.explode")
-	perto(float(ex[0]), 50.0, 0.001, "o crítico explosivo do card leva 50% do dano")
+	perto(float(ex[0]), 30.0, 0.001, "o crítico explosivo do card leva 30% do dano")
 	cfg.golpe.critico.chance = 5.0
 	var a = boneco(40.0)
 	var b = boneco(70.0)  # fora do alcance do corte (46 + 7), dentro da explosão (38) do alvo
@@ -1022,7 +1024,7 @@ func _modificadores() -> void:
 	zerar()
 	pegar("folego")
 	var fo := n_de("katana.folego")
-	perto(float(fo[0]), 12.0, 0.001, "o fôlego de caçador do card devolve 12% de uma carga")
+	perto(float(fo[0]), 10.0, 0.001, "o fôlego de caçador do card devolve 10% de uma carga")
 	h.folego = 1.0
 	h.cansado = false
 	var morrer = boneco(30.0)
