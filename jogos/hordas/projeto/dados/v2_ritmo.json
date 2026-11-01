@@ -1,7 +1,7 @@
 {
-	"_ajuda": "Ritmo #371. Curvas: fração adicional por nível acima do primeiro, limitada pelo teto. Coleta e densidade multiplicam os valores atuais, preservando cartas/dificuldade e teto técnico. Q: dano e raio capturados uma vez por disparo; não alteram carga nem duração. Cura por nível recebe 80% da base anterior; drops curam 8% da vida máxima. Chance de cura por abate = chance * (1 + baixa_vida * (1 - vida/vida_max)^2), com intervalo entre drops e limite no chão. Ímã atrai só almas visíveis ao ser coletado, sem gerar XP. Sorteios têm RNG próprio. Tempos em segundos de jogo ativo; pool fixo, sem crescimento durante combate. velocidade_partida: fator do relógio do mundo (monstros, herói, armas, ondas, XP) aplicado em combate.passo_tempo; menus, pausa, escolha de cartas e áudio não aceleram.",
+	"_ajuda": "Ritmo #371. Curvas: fração adicional por nível acima do primeiro, limitada pelo teto. Coleta e densidade multiplicam os valores atuais, preservando cartas/dificuldade e teto técnico. Q: dano e raio capturados uma vez por disparo; não alteram carga nem duração. Cura por nível recebe 80% da base anterior. Coração (cura, ECO-3): g = intensidade_cura(vida/vida_max), 0 acima de cura_baixa_vida.de e 1 em .ate ou menos, exponencial entre eles; chance, fracao (lida na coleta), intervalo e max_chao (arredondado) vão do valor base até o valor *_baixa conforme g. Curandeiro: chance * (1 + baixa_vida * (1 - vida/vida_max)^2), com intervalo entre drops e limite no chão. Ímã atrai só almas visíveis ao ser coletado, sem gerar XP. Sorteios têm RNG próprio. Tempos em segundos de jogo ativo; pool fixo, sem crescimento durante combate. velocidade_partida: fator do relógio do mundo (monstros, herói, armas, ondas, XP) aplicado em combate.passo_tempo; menus, pausa, escolha de cartas e áudio não aceleram.",
 	"velocidade_partida": 1.25,
-	"pool": 4,
+	"pool": 6,
 	"coleta_raio": 26,
 	"cura_nivel_mult": 0.8,
 	"curvas": {
@@ -26,12 +26,20 @@
 			"teto": 0.5
 		}
 	},
+	"cura_baixa_vida": {
+		"de": 0.5,
+		"ate": 0.1,
+		"expoente": 3.0
+	},
 	"cura": {
-		"chance": 0.008,
-		"baixa_vida": 3.0,
+		"chance": 0.01,
+		"chance_baixa": 0.1,
 		"fracao": 0.08,
+		"fracao_baixa": 0.2,
 		"intervalo": 8,
+		"intervalo_baixa": 1.5,
 		"max_chao": 2,
+		"max_chao_baixa": 4,
 		"duracao": 20
 	},
 	"ima": {
