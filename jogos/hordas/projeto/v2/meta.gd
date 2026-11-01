@@ -5,7 +5,7 @@ extends RefCounted
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
 ## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida; [recordes] tempo e combo máximos;
-## [progressao] versao e partidas (v2/progressao.gd lê as travas); [totais] abates somados de todas as partidas; [recordes_hmd]
+## [progressao] versao e partidas (v2/progressao.gd lê as travas); [compras] mapa_<id> = true (chave de mapa comprada com almas, ECO-5); [totais] abates somados de todas as partidas; [recordes_hmd]
 ## o melhor de cada herói x mapa x dificuldade (chave heroi_mapa_dificuldade = [tempo, abates, venceu], v2/escolha_dificuldade.gd mostra). A chave legado das versões antigas não vale mais: save antigo
 ## segue as mesmas travas, mantendo só o que conquistou.
 ## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
@@ -416,6 +416,23 @@ static func creditar(n: int) -> void:
 		return
 	cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + n)
 	erro_save = not _gravar(cf)
+
+
+## Compra a chave de um mapa (ECO-5): debita `preco` almas e grava [compras] mapa_<id>, numa só gravação. Uma vez por personagem;
+## não cumpre conquista nenhuma (o Olho do raro e a história seguem amarrados à vitória). Sem almas bastando, não mexe em nada. True só se comprou agora.
+static func comprar_chave(id: String, preco: int) -> bool:
+	erro_save = false
+	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
+	var almas := int(cf.get_value("moeda", "almas", 0))
+	if preco <= 0 or almas < preco or bool(cf.get_value("compras", "mapa_" + id, false)):
+		return false
+	cf.set_value("moeda", "almas", almas - preco)
+	cf.set_value("compras", "mapa_" + id, true)
+	erro_save = not _gravar(cf)
+	return not erro_save
 
 
 static func _cumprida(c: Dictionary, r: Dictionary, cf: ConfigFile = null) -> bool:

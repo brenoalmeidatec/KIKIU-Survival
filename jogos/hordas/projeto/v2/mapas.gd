@@ -8,10 +8,10 @@ const Meta := preload("res://v2/meta.gd")
 const Progressao := preload("res://v2/progressao.gd")  # travas dos portais (dados/v2_progressao.json)
 const PADRAO := "floresta"
 const LISTA := [
-	{"id": "floresta", "nome": "FLORESTA", "entrar": "ENTRAR NA FLORESTA", "dados": "v2_floresta"},
-	{"id": "laboratorio", "nome": "TORRE DO ALQUIMISTA", "entrar": "ENTRAR NA TORRE", "dados": "v2_laboratorio"},
-	{"id": "cidade", "nome": "VILA AMALDIÇOADA", "entrar": "ENTRAR NA VILA", "dados": "v2_cidade"},
-	{"id": "medio", "nome": "RUÍNAS DA FLORESTA", "entrar": "ENTRAR NAS RUÍNAS", "dados": "v2_medio"},
+	{"id": "floresta", "nome": "FLORESTA", "entrar": "ENTRAR NA FLORESTA", "dados": "v2_floresta", "chave": "chave da Floresta"},
+	{"id": "laboratorio", "nome": "TORRE DO ALQUIMISTA", "entrar": "ENTRAR NA TORRE", "dados": "v2_laboratorio", "chave": "chave da Torre"},
+	{"id": "cidade", "nome": "VILA AMALDIÇOADA", "entrar": "ENTRAR NA VILA", "dados": "v2_cidade", "chave": "chave da Vila"},
+	{"id": "medio", "nome": "RUÍNAS DA FLORESTA", "entrar": "ENTRAR NAS RUÍNAS", "dados": "v2_medio", "chave": "chave das Ruínas"},
 ]
 
 
