@@ -449,6 +449,58 @@ func _ready() -> void:
 	fx_passos(2)
 	ve = esc.visual_estado()
 	ok(ve.celula >= 8 and ve.celula <= 11, "o Nick no nível 6 mostra a camada 1, células 8 a 11 (%s)" % ve)
+	# DEF-4b: o nível 14 do Nick troca para a faixa G (célula de 64 px, frente com 48 px) e o nível 24 liga a casca espiritual (`_cam`), que no perfil Baixo nem existe
+	zerar()
+	esc.combate.heroi_id = "nicao"
+	h.chave = "nicao"
+	h.nivel = 13
+	erguer()
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(
+		str(ve.estilo) == "nicao" and esc._spr.texture.get_width() == 576 and not ve.casca and esc._cam == null,
+		"o Nick no nível 13 ainda usa a faixa M e não tem casca (%s)" % ve
+	)
+	h.escudo_forcado = false
+	fx_passos(30)
+	h.nivel = 14
+	erguer()
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(str(ve.estilo) == "nicao_g" and esc._spr.texture.get_width() == 768 and esc._cel == 64, "o Nick no nível 14 usa a faixa G de 64 px (%s)" % ve)
+	ok(ve.celula >= 8 and ve.celula <= 11, "a faixa G mostra a camada com aro de reforço, células 8 a 11 (%s)" % ve)
+	ok(not ve.casca and esc._cam == null, "a casca ainda não existe no nível 14")
+	h.escudo_forcado = false
+	fx_passos(30)
+	h.nivel = 24
+	w.args["particulas"] = "poucas"
+	erguer()
+	fx_passos(3)
+	ve = esc.visual_estado()
+	ok(str(ve.estilo) == "nicao_g" and not ve.casca and esc._cam == null, "perfil Baixo no nível 24: a faixa G aparece, mas a casca não existe (%s)" % ve)
+	h.escudo_forcado = false
+	fx_passos(30)
+	w.args.erase("particulas")
+	erguer()
+	fx_passos(3)
+	ve = esc.visual_estado()
+	ok(
+		ve.casca and esc._cam != null and esc._cam.get_index() == 0 and esc._cam.get_parent() == esc._raiz,
+		"no nível 24 a casca liga, atrás do escudo (%s)" % ve
+	)
+	ok(esc._cam.region_rect.size == Vector2(64, 64), "a casca usa células de 64 px (%s)" % esc._cam.region_rect)
+	h.nivel = 14
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(not ve.casca, "abaixo do nível 24 a casca some")
+	var tex_g := load("res://assets/v2/escudos/nicao_g.png") as Texture2D
+	ok(tex_g != null and tex_g.get_width() == 768 and tex_g.get_height() == 64, "o escudo G do Nick: 768x64 (12 células de 64)")
+	if tex_g != null:
+		var img_g := tex_g.get_image()
+		ok(img_g.get_region(Rect2i(0, 0, 64, 64)).get_used_rect().size.x >= 48, "a frente da faixa G tem pelo menos 48 px de largura")
+		ok(img_g.get_region(Rect2i(8 * 64, 0, 64, 64)).get_used_rect().size.x >= 48, "a frente da camada com reforço da faixa G tem pelo menos 48 px")
+	var tex_c := load("res://assets/v2/escudos/camadas.png") as Texture2D
+	ok(tex_c != null and tex_c.get_width() == 192 and tex_c.get_height() == 64, "a casca espiritual: camadas.png 192x64 (3 células de 64)")
 	zerar()
 	h.chave = chave_antes
 	h.nivel = nivel_antes

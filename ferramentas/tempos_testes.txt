@@ -177,6 +177,7 @@ v2_lightwolf 20.0
 v2_cartas_mao 15
 v2_recompensa_conquista 7
 v2_lightwolf_formas 45
+v2_lw_cartas 12
 v2_aparo 6
 v2_cartas_troca 15
 v2_cartas_icones 7
@@ -188,3 +189,5 @@ v2_cartas_apice 8
 v2_mare_matriz 45
 v2_misseis 10
 v2_fumaca 10
+
+v2_lightwolf_q 30

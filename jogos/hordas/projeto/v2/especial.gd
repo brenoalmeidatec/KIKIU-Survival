@@ -13,8 +13,12 @@ extends RefCounted
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ##  - CHAMAR (LightWolf em forma de Lobo, LW-2): a carga do Q é o CHAMADO (bloco `carga` próprio no dado). Cheia, o Lobo aperta Q: um aviso de 0,8 s sobre os pés e o
 ##    mecha cai, ferindo em volta, e o herói volta a Mecha (v2/mecha.gd cuida da troca). Enquanto o aviso corre ele é invulnerável.
+##  - AUTODESTRUIÇÃO (LightWolf em forma de mecha, LW-5): o piloto salta para trás da mira e vira Lobo NA HORA (v2/mecha.gd `autodestruir`: invulnerável, chamado em 45, Q gasto), o
+##    mecha fica no lugar e acende sem piscar por 1 s (o fusível) e EXPLODE: limpa a tela pela peça comum (`limpar_tela`, com a frente de onda saindo do mecha, não do Lobo) e chama a Maré
+##    do LightWolf (anel, atraso 4 s, sempre curta). Só o Lobo sobra: o mecha só volta pelo CHAMAR.
 ## Todo Q também LIMPA A TELA, menos o CHAMAR do Lobo (ULT-A, `limpar_tela`, dados > comum.limpa e `limpa_em` de cada bloco): comuns morrem aos poucos numa frente de onda (a fila adiada
 ## é do combate: `combate.limpar_tela` e `combate.drenar_limpa`), elite perde parte da vida e chefe só uma fatia.
+## (A Autodestruição TEM `limpa_em`: é a única vez que o mecha limpa a tela, e o custo é o mecha inteiro.)
 ## O CHAMAR não tem `limpa_em` DE PROPÓSITO: o Lobo o usa a cada ~12 s, e se cada chamado limpasse a tela a quebra viraria vantagem; a queda fere só em volta
 ## (raio 60). A limpeza do LightWolf é a Autodestruição do Q do mecha (LW-5).
 ## Id desconhecido deixa a tecla Q sem efeito.
@@ -38,6 +42,7 @@ const PONTOS_FISSURA := 6
 const RACH_DUR := 0.7  # s da rachadura do terremoto
 const RAIO_PTS := 14  # pontos do zigue-zague do raio da investida (gerado uma vez por disparo)
 const RAIO_DUR := 0.18  # s que o raio do Hazaki fica na tela
+const TIQUE_AUTO := 0.2  # s entre os tiques do fusível da Autodestruição (o tom sobe a cada um)
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_POEIRA := Color(0.58, 0.5, 0.42, 0.75)
@@ -58,6 +63,11 @@ var _graca := 0.0  # s depois do fim do Q em que ainda não carrega (as últimas
 var limpa_ligada := true  # a limpeza da tela (ULT-A) liga/desliga por instância (os testes antigos de dano por área desligam)
 var limpas := 0  # testes: quantas limpezas saíram
 var _limpa_pend := false  # a limpeza deste Q ainda não saiu (espera `limpa_em`)
+var explosoes := 0  # testes: quantas autodestruições do mecha explodiram
+var _g_tipo: Dictionary = {}  # autodestruição: a folha do mecha que ficou no lugar (o fantasma que acende), com o quadro e o espelhamento do instante do aperto
+var _g_regiao := Rect2()
+var _g_flip := false
+var _g_esc := Vector2.ONE
 
 var _id := ""  # o especial em andamento ("" = nenhum)
 var _c: Dictionary = {}  # o bloco dele
@@ -263,6 +273,9 @@ func iniciar(h) -> bool:
 			c.audio.tocar("ruptura_carga", 0.7, 0.0, 0.0)
 		"chuva":
 			c.audio.tocar("ruptura_tique", 1.6, -4.0, 0.0)
+		"autodestruicao":
+			c.audio.tocar("ruptura_carga", 1.5, -2.0, 0.0)
+			_iniciar_autodestruicao(h)
 		"chamar":
 			c.audio.tocar("ruptura_carga", 1.3, -2.0, 0.0)
 			var q: Dictionary = _c.queda  # o aviso: o anel fecha sobre onde o mecha vai cair
@@ -290,9 +303,11 @@ func quadro(h, dt: float, v: Vector2) -> Vector2:
 			desl = _q_chuva(h, dt, v)
 		"chamar":
 			_q_chamar(h)
+		"autodestruicao":
+			desl = _q_autodestruicao(h, dt)
 	if _limpa_pend and _t >= float(_c.limpa_em):
 		_limpa_pend = false
-		limpar_tela(h)
+		limpar_tela(h, _origem if _id == "autodestruicao" else null)
 	if _t >= float(_c.dur):
 		_encerrar(h)
 	return desl
@@ -316,14 +331,15 @@ func cancelar(h) -> void:
 ## de onda os mata aos poucos; elite e chefe levam só uma parte da vida. Um anel que cresce com a frente e UM número "LIMPOU xN" no herói; nenhuma luz de
 ## tela cheia (o clarão passa pelo helper Piscadas, do UI-2, quando ele existir). A Autodestruição do LightWolf (LW-5) chama esta mesma peça.
 ## MARÉ (ULT-C): é também AQUI que o Q chama a Maré do herói (diretor.mare_chamar(h)): a tela está limpa e a Maré chega `atraso` s depois.
-func limpar_tela(h) -> int:
+func limpar_tela(h, de: Variant = null) -> int:
 	var c = combate
 	var L: Dictionary = comum.limpa
-	var n: int = c.limpar_tela(h.pos, L)
+	var centro: Vector2 = h.pos if de == null else de  # de onde a frente de onda sai: do herói, ou do mecha que explodiu (a Autodestruição, LW-5)
+	var n: int = c.limpar_tela(centro, L)
 	limpas += 1
 	var cor: Color = h.esp_cor
 	var rmax := Vector2(float(mundo.cam.LARG), float(mundo.cam.ALT)).length() * 0.5 + float(L.margem)
-	_anel(h.pos, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
+	_anel(centro, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
 	if n > 0:
 		c.fx.numero(h.pos + Vector2(0, -52), "LIMPOU x%d" % n, COR_CRIT, true)
 	c.audio.tocar("ruptura_disparo", 0.9, -3.0, 0.0)
@@ -347,6 +363,7 @@ func _encerrar(h) -> void:
 	ultimo = {"id": _id, "n": _n, "mortes": _mortes}
 	_id = ""
 	_limpa_pend = false
+	_g_tipo = {}
 	_graca = float(comum.carga.graca)
 	h.esp_invul = false
 	h.esp_t = 0.0
@@ -379,6 +396,67 @@ func _q_chamar(h) -> void:
 	if _n > 0:
 		c.hit_stop(float(q.get("hit_stop", 0.05)))
 	c.mecha.chegar(h)
+
+
+# ------------------------------------------------------------------ a autodestruição (LightWolf em forma de mecha, LW-5)
+
+
+## O aperto do Q do mecha: guarda o mecha como está (a folha, o quadro e o espelhamento: é ele que fica no lugar e acende), o piloto salta e vira Lobo (v2/mecha.gd) e o
+## fusível começa. A troca de forma rearma o Q e solta o estado do herói; o fusível o prende de volta em Estado.ESPECIAL, invulnerável.
+func _iniciar_autodestruicao(h) -> void:
+	_g_tipo = h.tipo
+	_g_regiao = h.regiao
+	_g_flip = h.sprite.flip_h
+	_g_esc = h.sprite.scale
+	if combate.mecha == null or not combate.mecha.autodestruir(h):
+		_g_tipo = {}  # herói sem formas (só em teste): o fusível e a explosão saem do mesmo jeito, sem o fantasma do mecha
+	h.estado = h.Estado.ESPECIAL
+	h.esp_invul = true
+	h.esp_t = 0.0
+	h.esp_dur = float(_c.dur)
+	h.esp_anim_passo = int(_c.anim.passo)
+	h.esp_anim_ciclos = float(_c.anim.ciclos)
+
+
+## Um quadro da Autodestruição (tempo do mundo): o piloto salta para trás da mira nos primeiros `salto.t` s, os tiques sobem de tom e, no fim do fusível, o mecha explode.
+## A limpeza da tela sai logo depois, no mesmo quadro (`limpa_em`, em `quadro`), com a frente de onda saindo de onde o mecha ficou.
+func _q_autodestruicao(h, dt: float) -> Vector2:
+	var dur := maxf(float(_c.dur), 0.001)
+	if _fase == 0:
+		_tick_t += dt
+		if _tick_t >= TIQUE_AUTO:
+			_tick_t -= TIQUE_AUTO
+			combate.audio.tocar("ruptura_tique", 0.9 + 0.9 * clampf(_t / dur, 0.0, 1.0), -5.0, 0.0)
+	var desl := Vector2.ZERO
+	var salto: Dictionary = _c.salto
+	var st := maxf(float(salto.t), 0.001)
+	if _t - dt < st:
+		desl = -_dir * (float(salto.distancia) / st) * minf(dt, st - (_t - dt))
+	if _fase == 0 and _t >= dur:
+		_fase = 1
+		_explodir_mecha()
+	return desl
+
+
+## O estouro do mecha no lugar onde ele ficou: ondas, cascos azuis, luz local, um clarão (que respeita "Tremor e clarões"), tremor e uma pausa curta. Nenhum dano aqui: quem limpa a tela
+## é a peça comum (`limpar_tela`) e o raio dos dados é só visual.
+func _explodir_mecha() -> void:
+	var c = combate
+	var e: Dictionary = _c.explosao
+	var cor := _cor(_c.cor)
+	var raio := float(e.raio)
+	var centro := _origem + Vector2(0, -16)
+	explosoes += 1
+	c.fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), raio, 0.45)
+	c.fx.onda(centro, Color(1, 1, 1, 0.7), raio * 0.6, 0.3)
+	c.fx.estouro(centro, Color(0.55, 0.78, 1.0), 34)
+	c.fx.luz_rapida(centro, cor, 3.0, raio * 2.5, 0.5)
+	c.fx.clarao(Color(cor.r, cor.g, cor.b, float(e.clarao)), 0.25)
+	_anel(_origem, raio * 0.2, raio, 0.4, 5.0, cor.lerp(Color.WHITE, 0.5), 1.0)
+	c.audio.tocar("impacto", 0.4, 4.0, 0.0)
+	c.audio.tocar("ruptura_disparo", 0.6, 0.0, 0.0)
+	mundo.cam.tremer(float(e.tremor), 0.4)
+	c.hit_stop(float(e.hit_stop))
 
 
 # ------------------------------------------------------------------ a investida (Hazaki)
@@ -734,6 +812,8 @@ func carregar(h, pontos: float, fonte := "dano", por_nivel := true) -> void:
 	if c.jogo != "jogando" or c.pausado or ocupado() or h.estado == h.Estado.MORTO or h.estado == h.Estado.ESPECIAL:
 		return
 	var antes: float = h.esp_carga
+	if h.forma_lobo and c.cartas != null:  # LW-6: o Cabo de Resgate acelera a carga do chamado do Lobo (toda fonte: dano, abate, recebido e tempo)
+		pontos *= c.cartas.mult_cabo()
 	# o herói fica mais forte a cada nível (dano e abates por segundo sobem), então o mesmo golpe vale menos carga: o Q segue a cada ~1 minuto e pouco
 	if por_nivel:
 		pontos /= 1.0 + float(_carga_de(h).nivel_k) * float(maxi(h.nivel - 1, 0))
@@ -887,6 +967,8 @@ func _desenhar() -> void:
 			_desenhar_terremoto(h)
 		"chuva":
 			_desenhar_chuva(h)
+		"autodestruicao":
+			_desenhar_autodestruicao(h)
 
 
 ## A mira da investida (a faixa que vai ser cortada) enquanto o herói se prepara, e o rastro de luz atrás dele no avanço.
@@ -936,6 +1018,37 @@ func _desenhar_chuva(h) -> void:
 		no.draw_line(p, p + d * 9.0, Color(cor.r, cor.g, cor.b, 0.9), 2.0)
 		no.draw_line(p + d * 4.0, p + d * 12.0, Color(1, 1, 1, 0.8), 1.0)
 	no.draw_polyline(_elipse(h.pos, 30.0), Color(cor.r, cor.g, cor.b, 0.25), 1.5)
+
+
+## O mecha que ficou no lugar acende durante o fusível: o quadro dele em luz aditiva, um brilho em elipses e o anel que cresce até o raio da explosão. Tudo SOBE e nunca oscila (nada de
+## piscar). No perfil Baixo (partículas em "poucas" ou "nenhuma") fica só o mecha e o anel, sem o brilho.
+func _desenhar_autodestruicao(_h) -> void:
+	if _fase != 0:
+		return
+	var cor := _cor(_c.cor)
+	var k := clampf(_t / maxf(float(_c.dur), 0.001), 0.0, 1.0)
+	var e := k * k * (3.0 - 2.0 * k)
+	var corpo := _origem + Vector2(0, -14)
+	if not _leve():
+		for i in 3:
+			var r := lerpf(18.0, 44.0, e) * (1.0 + 0.6 * float(i))
+			no.draw_colored_polygon(_elipse(corpo, r), Color(cor.r, cor.g, cor.b, (0.04 + 0.09 * e) / float(i + 1)))
+	if not _g_tipo.is_empty():
+		var t: Dictionary = _g_tipo
+		var tom := cor.lerp(Color.WHITE, 0.2 + 0.6 * e)
+		var cresce := 1.0 + 0.1 * e
+		no.draw_set_transform(_origem, 0.0, Vector2(_g_esc.x * cresce * (-1.0 if _g_flip else 1.0), _g_esc.y * cresce))
+		no.draw_texture_rect_region(t.alb, Rect2(-float(t.w) * 0.5, -float(t.pe), float(t.w), float(t.h)), _g_regiao, Color(tom.r, tom.g, tom.b, 0.3 + 0.6 * e))
+		no.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var alvo := float(_c.explosao.raio)
+	no.draw_polyline(_elipse(_origem, lerpf(alvo * 0.15, alvo, e)), Color(cor.r, cor.g, cor.b, 0.15 + 0.35 * e), 1.5)
+
+
+## O perfil Baixo (partículas em "poucas" ou "nenhuma"): sem o brilho em elipses.
+func _leve() -> bool:
+	if mundo == null or not mundo.has_method("_nivel_particulas"):
+		return false
+	return float(mundo._nivel_particulas().get("efe_particulas", 1.0)) < 0.5
 
 
 func _cor(a: Array) -> Color:

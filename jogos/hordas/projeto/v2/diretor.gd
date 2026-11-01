@@ -356,19 +356,24 @@ func _mare_avisar() -> void:
 		print("[mare] aviso: descartados=%d roubados=%d" % [combate.audio.descartados, combate.audio.roubados])
 
 
-## O Q do herói `h` acabou de limpar a tela (ULT-C, no instante `limpa_em`): chama uma Maré daqui a `atraso` s (do bloco mare dele). Só onde a Maré
-## vale, sem outra pendente, respeitando o intervalo mínimo e sem chamar se a normal já está para chegar. Vem mais curta se a última foi há pouco.
-## Devolve se chamou. Sem `h`, usa o herói da partida.
-func mare_chamar(h = null) -> bool:
+## O Q do herói acabou de limpar a tela (ULT-C, no instante `limpa_em`): chama uma Maré daqui a `atraso` s (do bloco mare dele). Só onde a Maré
+## vale, sem outra pendente, respeitando o intervalo mínimo e sem chamar se a normal já está para chegar. Vem mais curta se a última foi há pouco,
+## ou sempre curta quando o bloco pede (`curta`, o LightWolf: o Lobo sai da explosão com 31% da vida). Devolve se chamou.
+## A Maré é a do herói DA PARTIDA (`combate.heroi_id`), como `_mare_ativa` e `_mare_pulso`: o LightWolf chama a dele também quando o Q é apertado na forma Lobo
+## (a chave do herói, que muda com a forma, não escolhe Maré nenhuma). O argumento `_h` só existe para quem chama com o herói na mão.
+func mare_chamar(_h = null) -> bool:
 	if not ligado or not _mare_ativa() or mare_chamada_t >= 0.0 or mare_t >= 0.0:
 		return false
-	var atraso := float(_mare_do(str(h.chave) if h != null else str(combate.heroi_id)).get("atraso", 3.0))
+	var mare := _mare_do(str(combate.heroi_id))
+	var atraso := float(mare.get("atraso", 3.0))
 	var t: float = relogio()
 	var desde := t - mare_ultima_t
 	if desde < _mare_cfg("intervalo_min") or falta_onda_real() <= atraso:  # tempo real dos dois lados (o Q chama em dt)
 		return false
 	mare_chamada_t = atraso
 	mare_chamada_fator = 1.0 if desde >= _mare_cfg("q_cheia_apos") else _mare_cfg("q_curta")
+	if bool(mare.get("curta", false)):
+		mare_chamada_fator = minf(mare_chamada_fator, _mare_cfg("q_curta"))
 	mare_chamadas += 1
 	return true
 
