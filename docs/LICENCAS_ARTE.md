@@ -204,3 +204,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## LW-4: ícone da E Mísseis ligado no HUD, Claude do Alisson (notebook), 01/11/2026
 
 - O ícone A19 (`assets/v2/habilidade_e/lightwolf.png`, derivado registrado na entrada do LW-3) passa a ser lido pelo slot E do HUD (`v2/hud_habilidades.gd`, `ICONES_E`). Nenhuma arte nova. O míssil em voo (10x4 px) é desenhado em código em `v2/adagas.gd` (`_img_missil`), sem arte de terceiros.
+
+## LW-6: ícones das cartas do LightWolf (Sifão, Matriz Ampla, Cabo de Resgate, Aurora Lunar), Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/lightwolf_icones/A23_lw_cartas.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com o prompt em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fonte copiada sem alteração.
+- Derivados (mesma arte, nenhuma arte nova), gerados por `jogos/hordas/fonte_arte/lightwolf_icones/reduzir_cartas.py`: `jogos/hordas/projeto/assets/v2/icones_cartas/{sifao,ampla,cabo,aurora_lunar}.png` (32x32), `.../icones_cartas/16/` (16x16) e, para as três cartas de bônus, `jogos/hordas/projeto/assets/gerado/icone_{matriz_sifao,matriz_ampla,cabo_resgate}.png` (16x16, o ícone antigo de reserva). Mudanças: separação dos quatro desenhos pelas colunas com alfa, corte do halo de alfa baixo (alfa < 160 vira 0), recorte pela caixa do objeto, encaixe no quadrado (30 px e 15 px) com a proporção mantida, média de caixa com cor pré-multiplicada e alfa endurecido (>= 128 vira 255).

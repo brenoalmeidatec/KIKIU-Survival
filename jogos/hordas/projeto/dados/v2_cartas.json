@@ -251,6 +251,42 @@
 			"max": 5,
 			"peso": 1.1,
 			"herois": ["lucas", "matheus", "fabio"]
+		},
+		{
+			"id": "sifao",
+			"icone": "icone_matriz_sifao",
+			"nome": "Sifão da Matriz",
+			"curto": "Sifão",
+			"desc": "A matriz cura {v}% do dano que absorve.",
+			"mod": "sifao",
+			"valor": 12,
+			"max": 5,
+			"peso": 1.0,
+			"herois": ["lightwolf"]
+		},
+		{
+			"id": "ampla",
+			"icone": "icone_matriz_ampla",
+			"nome": "Matriz Ampla",
+			"curto": "Ampla",
+			"desc": "A matriz abre {v} graus a mais de arco.",
+			"mod": "ampla",
+			"valor": 10,
+			"max": 5,
+			"peso": 1.0,
+			"herois": ["lightwolf"]
+		},
+		{
+			"id": "cabo",
+			"icone": "icone_cabo_resgate",
+			"nome": "Cabo de Resgate",
+			"curto": "Cabo",
+			"desc": "O chamado do mecha carrega {v}% mais rápido.",
+			"mod": "cabo",
+			"valor": 15,
+			"max": 5,
+			"peso": 1.0,
+			"herois": ["lightwolf"]
 		}
 	],
 	"evolucoes": [
@@ -323,6 +359,29 @@
 		{"id": "pagode_do_trovao", "nome": "Pagode do Trovão", "curto": "Pagode", "desc": "Junte Sentinela de Bambu e Raio em Cadeia, os dois no nível 3. Uma torre de duas camadas cujos virotes viram arcos elétricos e saltam entre os inimigos. Dura 45 s e some.", "pecas": [{"id": "sentinela_bambu", "nivel": 3}, {"id": "raio", "nivel": 3}], "consome": ["sentinela_bambu", "raio"], "tipo": "torre", "desenho": "codigo", "cor": [0.55, 0.8, 1.0], "raridade": "comum", "arma": {"dano": 14, "recarga": 30.0, "quantidade": 1, "duracao": 45.0, "tique": 0.5, "alcance": 260, "vel": 480, "perfura": 0, "cadeia": 2}},
 		{"id": "fogos_de_festival", "nome": "Fogos de Festival", "curto": "Fogos", "desc": "Junte Cabaça de Pólvora e Bola de Fogo, as duas no nível 3. Cada estilhaço estoura de novo numa chuva de fogos coloridos.", "pecas": [{"id": "cabaca_polvora", "nivel": 3}, {"id": "bola_fogo", "nivel": 3}], "consome": ["cabaca_polvora", "bola_fogo"], "tipo": "granada", "desenho": "codigo", "cor": [0.5, 0.95, 1.0], "raridade": "comum", "arma": {"dano": 26, "recarga": 3.0, "quantidade": 1, "raio": 58, "alcance": 230, "voo": 0.55, "pavio": 0.5, "estilhacos": 8, "frac_estilhaco": 0.5, "vel_estilhaco": 300, "fogos": 1, "raio_fogo": 22, "frac_fogo": 0.5}}
 	],
+	"evolucoes_matriz": [
+		{
+			"id": "aurora_lunar",
+			"nome": "Aurora Lunar",
+			"curto": "Aurora",
+			"rotulo": "EVOLUÇÃO",
+			"desc": "Junte Sifão da Matriz e Matriz Ampla, os dois no nível 3. A cura da matriz dobra e a cura que sobra vira defesa. As duas cartas continuam valendo.",
+			"pecas": [
+				{ "id": "sifao", "nivel": 3 },
+				{ "id": "ampla", "nivel": 3 }
+			],
+			"consome": [],
+			"cor": [0.75, 0.93, 1.0],
+			"cura_mult": 2.0,
+			"teto_mult": 2.0,
+			"excedente_barra": 0.5
+		}
+	],
+	"matriz_cartas": {
+		"sifao_teto_s": 8.0,
+		"arco_max": 300.0,
+		"numero_s": 0.6
+	},
 	"elites": {
 		"primeira": 45,
 		"cada": 50,

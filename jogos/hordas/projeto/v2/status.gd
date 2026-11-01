@@ -473,7 +473,7 @@ static func _sec_katana(m) -> Dictionary:
 	lin.append(_l("katana.critico", "Crítico x%s" % _v(mult, 1), "%s%%" % _p(chance * 100.0), [chance, mult], _mais_pct(h.m_critico * 100.0)))
 	var cs = c.cartas
 	var ar = c.armas
-	for md in ["onda", "fura", "explode", "folego", "abalo", "muralha", "chuva", "mira"]:  # os de cada herói só aparecem com a carta dele
+	for md in ["onda", "fura", "explode", "folego", "abalo", "muralha", "chuva", "mira", "sifao", "ampla", "cabo"]:  # os de cada herói só aparecem com a carta dele
 		var valor := float(ar.mods[md])
 		if valor <= 0.0:
 			continue
@@ -543,6 +543,26 @@ static func _sec_katana(m) -> Dictionary:
 				tr = [["+", 0], [_p(valor), 1], ["% de alcance e velocidade das adagas", 0]]
 				curto = [["+", 0], [_p(valor), 1], ["% alcance das adagas", 0]]
 				uma = [["+" + _p(valor) + "%", 1]]
+			"sifao":
+				# o LightWolf: a matriz devolve esse % do que absorve como vida, até o teto por segundo (a Aurora Lunar dobra os dois)
+				var dobra: float = float(cs.evolucao_matriz("aurora_lunar").get("cura_mult", 1.0)) if cs.aurora_ativa() else 1.0
+				var teto: float = c.matriz.teto_cura()
+				n = [valor * dobra, teto]
+				tr = [[_p(valor * dobra), 1], ["% do que a matriz absorve vira vida (até ", 0], [_v(teto), 1], [" por segundo)", 0]]
+				curto = [[_p(valor * dobra), 1], ["% do absorvido (até ", 0], [_v(teto), 1], ["/s)", 0]]
+				uma = [[_p(valor * dobra) + "%", 1]]
+			"ampla":
+				# o LightWolf: graus a mais no arco da matriz
+				var arco: float = c.matriz.arco_graus()
+				n = [valor, arco]
+				tr = [["+", 0], [_p(valor), 1], [" graus de arco (", 0], [_v(arco), 1], [" no total)", 0]]
+				curto = [["+", 0], [_p(valor), 1], [" graus de arco", 0]]
+				uma = [["+" + _p(valor), 1]]
+			"cabo":
+				# o LightWolf: o chamado do mecha enche mais rápido
+				tr = [["+", 0], [_p(valor), 1], ["% de carga do chamado do mecha", 0]]
+				curto = [["+", 0], [_p(valor), 1], ["% de carga do chamado", 0]]
+				uma = [["+" + _p(valor) + "%", 1]]
 		# a peça que já virou a Ventania não sobe mais de nível: diz "evoluída" em vez de um "nv 2/4" parado
 		var evoluida: bool = not cs.ativa(str(md))
 		var nivel_txt := "evoluída" if evoluida else "nv %d/%d" % [nivel, int(d.max)]
@@ -583,6 +603,26 @@ static func _sec_katana(m) -> Dictionary:
 				"",
 				[float(ev.mult_onda)],
 				"ventania"
+			)
+		)
+	if cs.evoluidas.has("aurora_lunar"):  # a evolução da matriz do LightWolf (LW-6): não consome as peças, então aparece à parte
+		var au: Dictionary = cs.evolucao_matriz("aurora_lunar")
+		var tr_a: Array = [["cura x", 0], [_v(float(au.cura_mult), 1), 1], [", o que passa da vida vira defesa", 0]]
+		lin.append(
+			_bloco(
+				"katana.aurora_lunar",
+				str(au.nome),
+				str(au.get("curto", au.nome)),
+				str(cs.definicao("sifao").get("icone", "")),
+				Color(au.cor[0], au.cor[1], au.cor[2]),
+				"evoluída" if cs.aurora_ativa() else "parada",
+				"evo" if cs.aurora_ativa() else "off",
+				tr_a,
+				tr_a,
+				[["x" + _v(float(au.cura_mult), 1), 1]],
+				"",
+				[float(au.cura_mult)],
+				"aurora_lunar"
 			)
 		)
 	return _sec("katana", "%s (CLIQUE)" % str(_cadastro(m).get("arma", "KATANA")), Paleta.SECAO_KATANA, lin)
