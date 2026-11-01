@@ -98,7 +98,7 @@ func relogio() -> float:
 
 
 ## Quantos segundos REAIS faltam para a próxima onda forte. `proxima_onda` está no relógio do diretor, então a conta divide por `tempo_mult`
-## (o status e a guarda da Maré chamada pelo Q medem em tempo real: `mare_chamada_t` e `q_atraso` andam em dt).
+## (o status e a guarda da Maré chamada pelo Q medem em tempo real: `mare_chamada_t` e o atraso do herói andam em dt).
 func falta_onda_real() -> float:
 	return maxf(0.0, proxima_onda - relogio()) / maxf(tempo_mult, 0.0001)
 
@@ -330,8 +330,15 @@ func onda_forte(fator := 1.0, conta := true) -> void:
 	combate.onda_forte(idx)
 
 
+## ULT-C: a Maré vale em todo mapa e para todo herói que tem Q (o bloco `mare` dele, em v2_especial.json). O mapa só a desliga com
+## `mare: false` no próprio v2_<mapa>.json (válvula de segurança). Sem Q, nada de Maré.
 func _mare_ativa() -> bool:
-	return str(mundo.id_mapa) == "cidade" and str(combate.heroi_id) == "nicao"
+	return bool(mundo.dados.get("mare", true)) and not _mare_do(str(combate.heroi_id)).is_empty()
+
+
+## O bloco de Maré do herói `chave` (formacao, atraso, cone_graus, abate_carga); {} se o herói não tem Q.
+func _mare_do(chave: String) -> Dictionary:
+	return combate.especial.mare_de(chave)
 
 
 func _mare_cfg(chave: String) -> float:
@@ -349,27 +356,31 @@ func _mare_avisar() -> void:
 		print("[mare] aviso: descartados=%d roubados=%d" % [combate.audio.descartados, combate.audio.roubados])
 
 
-## O Q (Terremoto) acabou de bater: chama uma Maré daqui a `q_atraso` s. Só onde a Maré vale, sem outra pendente, respeitando o intervalo mínimo
-## e sem chamar se a normal já está para chegar. Vem mais curta se a última foi há pouco. Devolve se chamou.
-func mare_chamar() -> bool:
+## O Q do herói `h` acabou de limpar a tela (ULT-C, no instante `limpa_em`): chama uma Maré daqui a `atraso` s (do bloco mare dele). Só onde a Maré
+## vale, sem outra pendente, respeitando o intervalo mínimo e sem chamar se a normal já está para chegar. Vem mais curta se a última foi há pouco.
+## Devolve se chamou. Sem `h`, usa o herói da partida.
+func mare_chamar(h = null) -> bool:
 	if not ligado or not _mare_ativa() or mare_chamada_t >= 0.0 or mare_t >= 0.0:
 		return false
+	var atraso := float(_mare_do(str(h.chave) if h != null else str(combate.heroi_id)).get("atraso", 3.0))
 	var t: float = relogio()
 	var desde := t - mare_ultima_t
-	if desde < _mare_cfg("intervalo_min") or falta_onda_real() <= _mare_cfg("q_atraso"):  # tempo real dos dois lados (o Q chama em dt)
+	if desde < _mare_cfg("intervalo_min") or falta_onda_real() <= atraso:  # tempo real dos dois lados (o Q chama em dt)
 		return false
-	mare_chamada_t = _mare_cfg("q_atraso")
+	mare_chamada_t = atraso
 	mare_chamada_fator = 1.0 if desde >= _mare_cfg("q_cheia_apos") else _mare_cfg("q_curta")
 	mare_chamadas += 1
 	return true
 
 
-## Prefere um lado por pulso; preserva corredor quando a geometria permite. Respeita teto e colisão.
+## Prefere um lado por pulso; preserva corredor quando a geometria permite. Respeita teto e colisão. A formação é a do herói (ULT-C):
+## pinça (dois lados, o Nicão), cone (o Hazaki, pela direção em que está virado) ou anel (volta inteira, o Luke).
 func _mare_pulso(n: int, lado: int) -> void:
+	var m := _mare_do(str(combate.heroi_id))
 	for i in n:
 		if mundo.monstros.size() >= teto():
 			break
-		var p = _ponto_mare(lado)
+		var p = _ponto_da_mare(m, lado)
 		if p == null:
 			continue
 		var tipo: Dictionary = mundo.elenco.pesado if mare_elites > 0 else sortear(mundo.tempo_partida)
@@ -377,6 +388,49 @@ func _mare_pulso(n: int, lado: int) -> void:
 			mundo.monstros.back().mare = true
 			if mare_elites > 0:
 				mare_elites -= 1
+
+
+## O ponto de nascimento da Maré conforme a formação do herói (bloco mare): cone, anel ou, por padrão, pinça (dois lados).
+func _ponto_da_mare(m: Dictionary, lado: int) -> Variant:
+	match str(m.get("formacao", "pinca")):
+		"cone":
+			# De costas para a parede (o herói encostado na borda do mapa, virado para fora) o leque não tem chão: a Maré vem em anel, não some.
+			var pc: Variant = _ponto_cone(float(m.get("cone_graus", 70.0)))
+			return pc if pc != null else ponto_fora_da_tela()
+		"anel":
+			return ponto_fora_da_tela()
+	return _ponto_mare(lado)
+
+
+## Formação em cone (ULT-C, Hazaki): a Maré nasce fora da tela no leque de `graus` centrado na direção em que o herói está virado agora.
+## Do centro da tela, um raio sorteado no leque cruza a borda da tela ampliada pela margem; o ponto precisa ser andável e livre.
+func _ponto_cone(graus: float) -> Variant:
+	var tela: Rect2 = mundo.cam.retangulo()
+	var olhar: Vector2 = mundo.heroi.dir_olhar
+	if olhar.length_squared() < 0.01:
+		olhar = Vector2.RIGHT
+	var meio := deg_to_rad(graus) * 0.5
+	for i in 30:
+		var margem := rng.randf_range(float(cfg.margem_min), float(cfg.margem_max))
+		var ang := olhar.angle() + rng.randf_range(-meio, meio)
+		var p := ponto_na_borda(tela.get_center(), Vector2.from_angle(ang), tela.grow(margem))
+		if mundo.limite_andavel.has_point(p) and not tela.has_point(p) and Colisao.livre(p, 7.0):
+			return p
+	return null
+
+
+## Onde o raio que sai de `origem` (dentro de `rect`) na direção `dir` cruza a borda de `rect`. Função pura, testável.
+static func ponto_na_borda(origem: Vector2, dir: Vector2, rect: Rect2) -> Vector2:
+	var t := INF
+	if dir.x > 0.0:
+		t = minf(t, (rect.end.x - origem.x) / dir.x)
+	elif dir.x < 0.0:
+		t = minf(t, (rect.position.x - origem.x) / dir.x)
+	if dir.y > 0.0:
+		t = minf(t, (rect.end.y - origem.y) / dir.y)
+	elif dir.y < 0.0:
+		t = minf(t, (rect.position.y - origem.y) / dir.y)
+	return origem + dir * t
 
 
 func _ponto_mare(lado: int) -> Variant:

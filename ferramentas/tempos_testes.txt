@@ -157,6 +157,8 @@ v2_santuario_foco 15
 v2_pool_cavaleiro 40.0
 v2_pool_cavaleiro_cidade 75.0
 v2_pool_cavaleiro_medio 75.0
+# v2_piscadas: medido pela fila em 01/11 (23 s com os dois perfis e as amostras de relógio de parede); sem a estimativa de 30 s
+v2_piscadas 25
 v2_limpa_tela 25
 v2_confirmar_e 12
 v2_compra_chave 13
@@ -180,4 +182,7 @@ v2_cartas_troca 15
 v2_cartas_icones 7
 v2_matriz 14
 v2_edicoes 15
+v2_cartas_apice 8
+v2_mare_sangue 80
+v2_mare_matriz 45
 v2_misseis 10
