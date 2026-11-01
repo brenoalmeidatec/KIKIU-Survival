@@ -7,7 +7,7 @@ extends RefCounted
 ## entrada são da pausa (pausa.gd), com a fonte da v2.
 ## O menu só mostra as opções que a v2 lê hoje (LIDAS_NA_V2), todas valendo na hora na partida. As outras do json seguem nos
 ## perfis (a v1 usa), mas sem linha aqui: opção que não faz nada na tela não aparece. Opção nova só entra na lista depois de ser lida.
-## Ids das linhas: "g:perfil", "g:dinamico", "g:detectar", "g:tela", "g:fps", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
+## Ids das linhas: "g:perfil", "g:dinamico", "g:detectar", "g:tela", "g:fps", "g:piscadas", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
 ## Perfil tem só Baixo, Médio e Alto (e Personalizado, quando uma opção é mexida à mão). O Ajuste dinâmico (qualidade_auto) é uma linha
 ## própria, logo abaixo do Perfil: com ele ligado a partida começa no Perfil escolhido, desce um degrau por vez se o fps travar e sobe de
 ## volta só até o Perfil escolhido (v2/qualidade_auto.gd; o Config guarda o escolhido em g_perfil_escolhido e a queda só na memória).
@@ -15,8 +15,8 @@ extends RefCounted
 ## Médio, Alto: cada um fixa todos os detalhes de uma vez) e as opções soltas da tela Avançado. A ajuda diz que quem manda é o Ajuste dinâmico
 ## e o Perfil que estava escolhido vira o teto da subida. Por isso com ele ligado não há Personalizado: o Config.recarregar abre um save
 ## Personalizado como Não e ligar o dinâmico estando em Personalizado aplica o perfil da máquina (senão ficaria sem Perfil e sem como sair).
-## Desligado, tudo volta a ser editável e mexer numa opção vira Personalizado. Detectar pela máquina, Tela cheia, Mostrar FPS e o Tamanho da
-## interface ficam sempre livres. Detectar escolhe o Perfil (a máquina, não o jogador) e deixa o Ajuste dinâmico como está (o padrão de
+## Desligado, tudo volta a ser editável e mexer numa opção vira Personalizado. Detectar pela máquina, Tela cheia, Mostrar FPS, Reduzir piscadas e o
+## Tamanho da interface ficam sempre livres. Detectar escolhe o Perfil (a máquina, não o jogador) e deixa o Ajuste dinâmico como está (o padrão de
 ## máquina nova é Sim).
 ## Tela cheia, o Ajuste dinâmico, o contador de fps e Reduzir piscadas são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 

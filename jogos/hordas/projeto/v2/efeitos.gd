@@ -239,7 +239,9 @@ var _fl_alvo: Array = []  # Ator que o flash segue (ou null: parado onde nasceu)
 var _fl_t := PackedFloat32Array()
 var _fl_dur := PackedFloat32Array()
 var _pisca_rel := 0.0  # relógio dos flashes de acerto (s de simulação): só serve ao intervalo mínimo da opção "Reduzir piscadas"
-var _pisca_alvo: Array = []  # os últimos alvos de flash de acerto (anel de 2 x MAX_FLASH, tamanho fixo) e quando cada um levou
+# Os últimos alvos de flash de acerto (anel de 4 x MAX_FLASH = 96, tamanho fixo) e quando cada um levou. Limite aceito: mais de 96 flashes de
+# acerto em 0,34 s sobrescrevem o mais velho, e esse monstro pode levar flash de novo.
+var _pisca_alvo: Array = []
 var _pisca_quando := PackedFloat32Array()
 var _pisca_i := 0
 var _fl_esc := PackedFloat32Array()  # tamanho do ator (elite e chefe são maiores)
@@ -500,8 +502,8 @@ func _montar_flashes() -> void:
 	_fl_t.resize(MAX_FLASH)
 	_fl_esc.resize(MAX_FLASH)
 	_fl_dur.resize(MAX_FLASH)
-	_pisca_alvo.resize(MAX_FLASH * 2)
-	_pisca_quando.resize(MAX_FLASH * 2)
+	_pisca_alvo.resize(MAX_FLASH * 4)
+	_pisca_quando.resize(MAX_FLASH * 4)
 	_pisca_quando.fill(-9.0)
 	_fl_modo.resize(MAX_FLASH)
 	_fl_t.fill(9.0)

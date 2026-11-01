@@ -969,8 +969,6 @@ func _ondas_mover(dt: float) -> void:
 
 # ------------------------------------------------------------------ luz
 
-const ENERGIA_FOGO_FIXA := 0.75  # energia da luz do fogo com "Reduzir piscadas" (o centro do tremeluzir)
-
 
 func _luzes(h, dt: float) -> void:
 	var fogo := false
@@ -991,7 +989,7 @@ func _luzes(h, dt: float) -> void:
 	if fogo:
 		luz_fogo.position = (h.pos + Vector2(0, -6)).round()
 		luz_fogo.texture_scale = fogo_r * 2.4 / 128.0
-		luz_fogo.energy = Piscadas.valor(0.75 + 0.2 * sin(_fase * 17.0) + 0.1 * sin(_fase * 31.0), ENERGIA_FOGO_FIXA)  # tremeluz a ~3-5 Hz; com a opção, parada
+		luz_fogo.energy = Piscadas.valor(0.75 + 0.2 * sin(_fase * 17.0) + 0.1 * sin(_fase * 31.0), Piscadas.ENERGIA_FOGO_FIXA)  # tremeluz a ~3-5 Hz; com a opção, parada
 	luz_lamina.enabled = lamina
 	if lamina:
 		luz_lamina.position = lamina_p.round()
@@ -1339,6 +1337,11 @@ func _desenhar_laminas(a: Dictionary) -> void:
 			no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+## Brilho do glifo da runa armada: pulsa ~1 Hz (0,7 a 1,0); com "Reduzir piscadas" fica parado. Público para o teste.
+func _pulso_runa(i: int) -> float:
+	return Piscadas.valor(0.7 + 0.3 * sin(_fase * 6.0 + float(i)), Piscadas.PULSO_RUNA_FIXO)
+
+
 func _desenhar_runa(i: int) -> void:
 	var a: Dictionary = r_arma[i]
 	var p: Vector2 = r_pos[i]
@@ -1348,7 +1351,7 @@ func _desenhar_runa(i: int) -> void:
 	var raio := float(a.st.explosao) * 0.42
 	var surge := clampf(idade / 0.3, 0.0, 1.0)
 	var fade := clampf(r_vida[i] / 0.8, 0.0, 1.0)
-	var pulso := 0.7 + 0.3 * sin(_fase * 6.0 + float(i))
+	var pulso := _pulso_runa(i)
 	var al := surge * fade * (pulso if armada else 0.5)
 	no_brilho.draw_texture_rect(
 		tex_brilho, Rect2(p - Vector2(raio, raio * ACHATA) * 1.5, Vector2(raio, raio * ACHATA) * 3.0), false, Color(cor.r, cor.g, cor.b, 0.22 * al)

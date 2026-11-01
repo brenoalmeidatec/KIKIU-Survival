@@ -14,6 +14,7 @@ const PASSO := 1.0 / 60.0
 const QUADROS := 180  # 3 s
 var falhas := 0
 var w
+var armas
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -95,10 +96,23 @@ func _ready() -> void:
 		if str(it.id) == "g:piscadas":
 			achou = str(it.rotulo) == "Reduzir piscadas" and str(it.valor) == "Não"
 	ok(achou, "Gráficos tem a linha Reduzir piscadas: Não")
+	var antes_g := {}
+	for o in Config.g_opcoes():
+		antes_g[str(o.chave)] = Config.g(str(o.chave))
 	aj.agir("piscadas", 1)
 	ok(Piscadas.ligado() and Config.g_perfil() == "medio", "a linha liga a opção e o perfil continua Médio (não vira Personalizado)")
+	ok(Config.g_perfil_escolhido() == "medio", "ligada: o perfil escolhido (o gravado) continua Médio")
 	aj.agir("piscadas", 1)
 	ok(not Piscadas.ligado() and Config.g_perfil() == "medio", "a linha desliga a opção e o perfil continua Médio")
+	var iguais := true
+	for k in antes_g:
+		if Config.g(k) != antes_g[k]:
+			iguais = false
+			print("  mudou: ", k)
+	ok(iguais, "ligar e desligar a linha não mexe em nenhuma das opções do perfil (nem uma muda de valor)")
+	# o inverso: mexer numa opção do perfil de verdade vira Personalizado (prova que a checagem acima pegaria o defeito)
+	Config.g_definir("sombras", "alta" if str(Config.g("sombras")) != "alta" else "media")
+	ok(Config.g_perfil() == "personalizado", "controle: mexer numa opção do perfil vira Personalizado")
 	Config.g_aplicar_perfil("alto")
 
 	# 3. o herói invencível: 3 s com a invencibilidade sempre cheia
@@ -149,7 +163,18 @@ func _ready() -> void:
 			ok(f <= Piscadas.MAX_TROCAS_S, "ligada: fôlego cansado troca %.1f vezes por segundo" % f)
 			ok(v <= Piscadas.MAX_TROCAS_S, "ligada: vida baixa troca %.1f vezes por segundo" % v)
 			ok(vg <= Piscadas.MAX_TROCAS_S, "ligada: a vinheta de vida baixa troca %.1f vezes por segundo" % vg)
+			# a vinheta é vermelha: nenhum vermelho pisca. Não basta ficar abaixo de 3 trocas; o alfa tem que ficar PARADO (depois de entrar)
+			var cauda := vinheta.slice(QUADROS / 3)
+			var vmin := float(cauda.min())
+			var vmax := float(cauda.max())
+			ok(vmax - vmin < 0.0001, "ligada: o alfa da vinheta de vida baixa fica parado (variou %.4f)" % (vmax - vmin))
+			ok(vmax > 0.3, "ligada: a vinheta de vida baixa continua acesa, só parada (alfa %.2f)" % vmax)
 		else:
+			var dc := vinheta.slice(QUADROS / 3)
+			ok(
+				float(dc.max()) - float(dc.min()) > 0.05,
+				"desligada: o alfa da vinheta pulsa (variou %.3f): o teste pega o defeito" % (float(dc.max()) - float(dc.min()))
+			)
 			ok(f > 3.0, "desligada: fôlego cansado pisca (%.1f por segundo): o teste pega o defeito" % f)
 			ok(v > 3.0, "desligada: vida baixa pisca (%.1f por segundo): o teste pega o defeito" % v)
 	h.cansado = false
@@ -237,6 +262,37 @@ func _ready() -> void:
 	fx.flash(mo, 0.1)
 	ok(fx.usados.flashes - antes == 2, "ligada: aos 0,350 s o mesmo monstro leva de novo")
 
+	# 7c. o anel de alvos: 60 outros acertos dentro de 0,34 s não apagam o primeiro (com o anel de 48 ele era sobrescrito e levava flash de novo)
+	opcao(true)
+	var primeiro := Node.new()
+	add_child(primeiro)
+	ok(fx._pode_flash_acerto(primeiro), "anel: o primeiro alvo passa")
+	var extras: Array = []
+	for q in 60:
+		var n := Node.new()
+		add_child(n)
+		extras.append(n)
+		fx._pode_flash_acerto(n)
+	ok(not fx._pode_flash_acerto(primeiro), "anel: depois de 60 outros acertos no mesmo instante o primeiro alvo ainda é barrado")
+	primeiro.free()
+	for n in extras:
+		n.free()
+
+	# 7d. o brilho da runa armada (~1 Hz): oscila desligada, parado ligado
+	armas = w.combate.armas
+	var pulsos_runa: Array = []
+	for ligada in [false, true]:
+		opcao(ligada)
+		pulsos_runa.clear()
+		for q in QUADROS:
+			armas._fase += PASSO
+			pulsos_runa.append(armas._pulso_runa(0))
+		var dr := float(pulsos_runa.max()) - float(pulsos_runa.min())
+		if ligada:
+			ok(dr < 0.0001 and is_equal_approx(float(pulsos_runa[0]), Piscadas.PULSO_RUNA_FIXO), "ligada: o brilho da runa fica parado (variou %.4f)" % dr)
+		else:
+			ok(dr > 0.2, "desligada: o brilho da runa pulsa (variou %.2f): o teste pega o defeito" % dr)
+
 	# 8. glitch do clima
 	var pai := Node.new()
 	add_child(pai)
@@ -254,7 +310,7 @@ func _ready() -> void:
 
 	# 9. a luz do fogo da aura (PointLight2D): energia tremeluz a 3 a 5 Hz desligada; fixa ligada
 	zerar()
-	var armas = w.combate.armas
+	armas = w.combate.armas
 	armas.ativas = {"aura_teste": {"tipo": "aura", "R": 60.0}}
 	var energia: Array = []
 	for ligada in [false, true]:

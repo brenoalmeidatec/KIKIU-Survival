@@ -405,7 +405,7 @@ func _brilho_partes(ci: CanvasItem, tex: Texture2D) -> void:
 		var k := v / q_max[i]
 		var c := q_cor[i]
 		var p := (q_pos[i] + Vector2(0, -q_z[i])).round()
-		var pisca := Piscadas.valor(0.7 + 0.3 * sin(v * 23.0 + float(i)), 0.85)
+		var pisca := Piscadas.valor(0.7 + 0.3 * sin(v * 23.0 + float(i)), Piscadas.BRASA_FIXA)
 		var a := minf(1.0, k * 2.0) * pisca
 		var t := q_tam[i]
 		ci.draw_texture_rect(tex, Rect2(p - Vector2(t, t) * 2.0, Vector2(t, t) * 4.0), false, Color(c.r, c.g, c.b, 0.55 * a))
@@ -1699,7 +1699,7 @@ func _brilho_queda(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color) -
 		var k := 1.0 - float(it.t) / maxf(float(it.a.st.aviso), 0.01)
 		var c := _queda_em(it, 0.0)
 		var cresce := clampf(k / QUEDA_CINTILA, 0.0, 1.0)
-		var pisca := Piscadas.valor(0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase)), 0.8)
+		var pisca := Piscadas.valor(0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase)), Piscadas.ALFA_FIXO)
 		var br := roundf(2.0 + 5.0 * cresce * pisca)
 		ci.draw_line(c - Vector2(br, 0), c + Vector2(br, 0), Color(1, 1, 1, 0.8 * cresce), 1.0)
 		ci.draw_line(c - Vector2(0, br), c + Vector2(0, br), Color(1, 1, 1, 0.8 * cresce), 1.0)

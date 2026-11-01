@@ -457,7 +457,7 @@ func _animar(dt: float) -> void:
 	_relogio.modulate = Color.WHITE.lerp(OURO, roundf(4.0 * _relogio_pisca / RELOGIO_PISCA_T) / 4.0)
 
 
-## Vida baixa (abaixo de 25%): a barra de vida pisca e a vinheta vermelha pulsa nas bordas. A vinheta entra e sai aos poucos.
+## Vida baixa (abaixo de 25%): a barra de vida pisca e a vinheta vermelha pulsa nas bordas (com "Reduzir piscadas" as duas ficam paradas). A vinheta entra e sai aos poucos.
 func _vida_baixa(dt: float, fracao: float) -> void:
 	var baixa := fracao < LIMIAR_VIDA_BAIXA
 	_pisca_vida = _pisca_vida + dt if baixa else 0.0
@@ -466,7 +466,7 @@ func _vida_baixa(dt: float, fracao: float) -> void:
 	_vida_barra.modulate = PISCA_VIDA if pisca else Color.WHITE
 	var alvo := 0.0
 	if baixa:
-		alvo = VINHETA_MAX * (0.75 + 0.25 * sin(_tempo_vinheta * 7.0))
+		alvo = Piscadas.valor(VINHETA_MAX * (0.75 + 0.25 * sin(_tempo_vinheta * 7.0)), VINHETA_MAX * Piscadas.VINHETA_FIXA_K)  # com a opção: vermelho parado
 	vinheta_alfa = move_toward(vinheta_alfa, alvo, dt * 3.0)
 	_vinheta.modulate = Color(VERMELHO_VINHETA.r, VERMELHO_VINHETA.g, VERMELHO_VINHETA.b, vinheta_alfa)
 	_vinheta.visible = vinheta_alfa > 0.0
