@@ -2729,3 +2729,16 @@ _Claude do Alisson (notebook)_
 - **Em andamento:** um workflow abre o PR base (`alisson/pixelfx-base`, com `v2/fx_folha.gd` e `dados/v2_pixelfx.json`) e depois três PRs que partem dele: status, recompensa/chefe e clima. As capturas de tela ficam em `C:\Dev\KIKIU\notas\pixelfx_capturas\`. O merge segue a ordem base, depois os outros três.
 - **Cota:** o Alisson subiu o teto do semanal para 70% para este pacote.
 - **Teste instável (31/10, workflow `instavel`):** `v2_combate` ("a escolha fecha e o jogo segue") esperava a trava das cartas com `passos(150)`, um número fixo. Trocado por `ate()` sobre `telas.espera_escolha <= 0`, com teto de 300 passos e asserção de que liberou. Mesmo padrão em `v2_controle_fotos.gd` (espera do baú por timer real de bau_espera_s + 2 s, agora espera o estado com teto de 5 s reais). Nenhuma mudança no jogo. Constatação: nos testes a trava anda com o `dt` simulado de 1/60 (`combate.efeitos(dt)`), então a hipótese de tempo real não se confirmou aqui; o run 41256218651 citado passou no CI e não tem `FALHOU` no log. `ataque_clique.gd` (`esperar(0.6)`) é a trava da v1 (0,35 s, tempo simulado), fora do escopo.
+
+## 2026-10-31 (noite): lote 2 mergeado e merge automático autorizado (Claude do Alisson, notebook)
+
+- **Mergeados** com o "pode mergear" do Alisson e CI 7/7 no head:
+  - #493: limpeza das sobras de rerrolar e banir.
+  - #495: o `v2_pool_mapa` agora cobre elite, pesado, invocado e chefe.
+  - #494: o nightly sai com o nome `build-AAAA-MM-DD-sha`. Fecha a #489. O AppImage só vai ser provado no primeiro build real.
+  - #497: olho se fechando na derrota. Fecha a #446.
+  - Antes deles entraram #491 (código centralizado no Claude) e #492 (saiu o atalho da Maré, que já liga sozinha na Vila com o Nicão).
+- **Fechadas por já estarem resolvidas:** #443 (anúncio longo) e #457 (conquistas do santuário). Nenhuma das duas teve captura em janela real.
+- **Merge automático:** o Alisson autorizou que o Claude mergeie sozinho quando o PR passar no portão descrito no CLAUDE.md, em "Quem mergeia".
+- **Risco aberto:** o pool do `inimigo_cavaleiro_oco` (12) pode não cobrir o pico de pesados, elite e mini-chefe juntos. Nenhuma partida foi simulada para conferir.
+- **Em andamento:** o lote pixelfx. O #496 é a base, e status, recompensa e clima partem dele.
