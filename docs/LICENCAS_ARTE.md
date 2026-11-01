@@ -225,3 +225,9 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 - Gerados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/beto.json`, `beto_albedo.png` e `beto_normal.png` (cópia de `beto_final*`). Sem direitos de terceiros declarados. Nada de referência externa usada.
 
 - **John (PER-4, 01/11, Claude do Alisson, notebook)**: folha própria `jogos/hordas/projeto/prototipos/cara_nova/sprites/joao{.json,_albedo.png,_normal.png}`, gerada por script no Blender 4.5 a partir de `jogos/hordas/fonte_arte/blender_herois/joao/` (perfil.py + gerar.py, sobre o rig e o modelo do Hazaki, que é o estudo do Codex já registrado acima). Sem arte de terceiros. Cores e cabelo tirados do retrato `assets/personagens/joao/rosto.png` (do próprio projeto). Naginata modelada no mesmo script.
+
+## PER-4: shuriken do Matthew na mão e combo de arremesso (folha `matheus`), Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/matheus/` (`perfil.py`, `anim_combo_arremesso.py`, quadros `parado`, `andar` e `combo`, e a folha `matheus_final_{albedo,normal}.png` + `matheus_final.json`): arte PRÓPRIA, gerada por script no Blender 4.5 (sem modelagem à mão, sem material de terceiros). Nenhuma fonte, ícone ou imagem externa.
+- Mudanças: shuriken de aço fosco na mão esquerda (estrela de 4 pontas, ~4 a 5 px) nos quadros parado, andar e combo; combo de katana trocado por 3 arremessos do perfil do Matthew (só este perfil; o do Hazaki não mudou). Animações dano, morte, escudo e rolamento não foram regeradas e saíram idênticas pixel a pixel.
+- Cópia no jogo: `jogos/hordas/projeto/prototipos/cara_nova/sprites/matheus_{albedo,normal}.png` e `matheus.json` (formato igual, 50 colunas x 8 linhas, 1600x352).

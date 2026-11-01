@@ -6,6 +6,8 @@ O modelo parte do mesmo estudo do Codex que o Hazaki usa (pernas, braços e kata
 aqui trocamos o que faz o Matheus ser o Matheus: cores, colete sem lenço e com gola alta, camisa escura aparecendo, tira de couro, braçadeiras,
 antebraço de pele, botas pretas e cabelo curto. A katana continua NA MÃO (as animações de golpe e escudo dependem dela); a bainha fica no quadril.
 """
+import math
+
 import bpy
 
 NOME = "matheus"
@@ -62,3 +64,23 @@ def ajustar(ns, heroi, osso_de, apagar):
     heroi.extend(novos)
     for o in novos:
         osso_de[o] = "torso"
+    # SHURIKEN na mão esquerda (a mão livre: a katana continua na direita, como no Hazaki). Estrela de 4 pontas em aço fosco, ~4 px no quadro,
+    # presa ao antebraço esquerdo para seguir o braço no andar e no combo. Só aparece em parado, andar e combo (ver LEIA-ME desta pasta).
+    cx, cy, cz = -0.92, -0.40, 1.55
+    estrela = [
+        box("Shuriken braço A", P(cx, cy, cz), (0.40, 0.03, 0.10), ns["steel"], 0.01, (0, math.radians(45), 0)),
+        box("Shuriken braço B", P(cx, cy, cz), (0.40, 0.03, 0.10), ns["steel"], 0.01, (0, math.radians(-45), 0)),
+        box("Shuriken miolo", P(cx, cy - 0.01, cz), (0.14, 0.05, 0.14), ns["steel"], 0.01, (0, math.radians(45), 0)),
+    ]
+    heroi.extend(estrela)
+    for o in estrela:
+        osso_de[o] = "antebraco_e"
+    # COMBO de arremesso (no lugar do combo de katana, só neste perfil): o gerar.py importa "anim_combo" pelo nome, então
+    # registramos o módulo desta pasta antes de renderizar. O anim_combo.py do Hazaki não muda.
+    import importlib.util
+    import sys
+    from pathlib import Path
+    _spec = importlib.util.spec_from_file_location("anim_combo", Path(__file__).resolve().parent / "anim_combo_arremesso.py")
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    sys.modules["anim_combo"] = _mod
