@@ -1070,13 +1070,15 @@ func _tempo_esgotado() -> void:
 		combate.anunciar("Escolhida automaticamente: %s" % nome if nome != "" else "Escolhida automaticamente", Paleta.OURO)
 
 
-## A carta marcada (sel) se ela não é TROCA; senão a primeira que não é (a mão sempre tem uma, progresso.abrir_escolha garante). Só para o tempo esgotado.
+## A carta marcada (sel) se ela serve ao automático (não é TROCA e não passa do nível 4: cartas.serve_ao_automatico); senão a primeira que serve (progresso.abrir_escolha
+## garante uma no Difícil: a cura). Só para o tempo esgotado.
 func _carta_sem_troca() -> int:
 	var cartas: Array = combate.progresso.cartas
-	if sel < cartas.size() and str(cartas[sel].get("tipo", "")) != "troca":
+	var cs = combate.cartas
+	if sel < cartas.size() and cs.serve_ao_automatico(cartas[sel]):
 		return sel
 	for i in cartas.size():
-		if str(cartas[i].get("tipo", "")) != "troca":
+		if cs.serve_ao_automatico(cartas[i]):
 			return i
 	return sel
 

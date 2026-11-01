@@ -4,7 +4,8 @@ extends "res://testes/isolamento_v2.gd"
 # (o baú e o atalho `sortear` não oferecem novidade); remover_bonus devolve m_dano, vida_max, o golpe, o modificador e a ruptura ao valor de antes; o bônus largado
 # NÃO volta em 300 sorteios; o automático nunca troca nem leva novidade; mão toda de TROCA ganha a cura; pela janela: Enter na carta TROCA abre o painel (12 linhas,
 # 2 colunas, setas e mouse), ESC volta às 3 cartas sem perder nada, a guarda dos primeiros 0,3 s, confirmar larga o bônus marcado e leva o novo, o limite de 8 s
-# segue correndo no painel e, zerado, roda o automático (que não troca); a linha "Bônus 12 / 12" do card de status.
+# segue correndo no painel e, zerado, roda o automático (que não troca) e sobe exatamente um upgrade; a linha "Bônus 12 / 12" do card de status; o baú com 11 bônus e sem
+# upgrade para sortear não estoura o limite; o tempo esgotado nunca leva um bônus ao nível 5.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_troca.tscn  (imprime "v2_cartas_troca falhas=0")
 # Fotos: godot --path jogos/hordas/projeto res://testes/v2_cartas_troca.tscn -- --fotos=PASTA  (a mão com a TROCA e o painel; grava e sai)
 const Mundo := preload("res://v2/mundo.tscn")
@@ -446,6 +447,9 @@ func _testes() -> void:
 	subir_nivel()
 	i_troca = indice_troca()
 	var trocaveis_antes: Array = cs.bonus_trocaveis()
+	var niveis_antes := 0
+	for id in trocaveis_antes:
+		niveis_antes += cs.nivel_de(id)
 	escolher_pela_janela(i_troca)
 	passos(25)
 	t.limite_t = 0.5
@@ -456,7 +460,11 @@ func _testes() -> void:
 	for id in trocaveis_antes:
 		if cs.nivel_de(id) == 0:
 			tinha_todos = false
-	ok(tinha_todos, "todos os bônus de antes continuam; o automático subiu um upgrade")
+	ok(tinha_todos, "todos os bônus de antes continuam")
+	var niveis_depois := 0
+	for id in trocaveis_antes:
+		niveis_depois += cs.nivel_de(id)
+	ok(niveis_depois == niveis_antes + 1, "o automático subiu exatamente um upgrade (%d » %d)" % [niveis_antes, niveis_depois])
 	ok(c.progresso.escolhidas == 1, "o automático fez a escolha")
 
 	# 16. ESC (Sim) com a mão de TROCA perde a rodada sem largar nada
@@ -486,6 +494,60 @@ func _testes() -> void:
 	subir_nivel()
 	ok(indice_troca() < 0 and c.jogo == "escolha", "no Fácil a escolha de nível não tem carta TROCA")
 	c.progresso.descartar_rodada()
+
+	# 19. o baú não estoura o limite: com 11 bônus e nenhum upgrade para sortear (todos no máximo), a mão do baú e o `sortear` trazem no máximo 1 novidade
+	# (a vaga que sobra), em vez de 3 (13 ou 14 bônus). Falharia sem o conserto: a mão calculava "cheio" uma vez só, antes de sortear.
+	zerar("dificil")
+	var onze: Array = STATS + ["ima", "critico", "vel_mov", "folego", "rb_dano", "rb_recarga", "rb_estrondo", "rb_contra", "rb_eco"]  # sem peça de fusão: a fusão consumiria vagas
+	onze = onze.slice(0, 11)
+	for id in onze:
+		dar(id, int(cs.definicao(id).max))
+	ok(
+		cs.bonus_contados() == 11 and not cs.cheio() and cs.vagas_livres() == 1,
+		"11 bônus no máximo: sobra 1 vaga (%d, %d)" % [cs.bonus_contados(), cs.vagas_livres()]
+	)
+	ok(cs.montar_mao(8, 1.0, 0, 3, false).size() > 0, "ainda há o que sortear (golpes e bônus novos)")
+	var estouros := 0
+	var maior_nov := 0
+	for i in 150:
+		var mb2: Array = cs.montar_mao(8, 1.0, 0, 3, false)
+		var mc2: Array = cs.sortear(3, 8)
+		for mao2 in [mb2, mc2]:
+			var novs2 := 0
+			for k in mao2:
+				if cs.nivel_de(str(k.id)) == 0:
+					novs2 += 1
+			maior_nov = maxi(maior_nov, novs2)
+			if novs2 > cs.vagas_livres():
+				estouros += 1
+	ok(estouros == 0, "baú e `sortear` nunca trazem mais novidades que vagas (%d estouros, até %d novidades)" % [estouros, maior_nov])
+	var mao_aplicada: Array = cs.sortear(3, 8)
+	for k in mao_aplicada:
+		cs.aplicar(k)
+	ok(cs.bonus_contados() <= 12, "aplicar a mão inteira do baú fica em 12 bônus (%d)" % cs.bonus_contados())
+
+	# 20. o tempo esgotado nunca leva um upgrade ao nível 5 (D26): 12 bônus no nível 4 → a mão é 2 upgrades 4>5 + TROCA, nenhuma serve ao automático e a cura entra
+	zerar("dificil")
+	var doze: Array = onze + ["rb_eco"]
+	doze = doze.slice(0, 12)
+	for id in doze:
+		dar(id, 4)
+	ok(cs.cheio() and cs.bonus_contados() == 12, "12 bônus no nível 4 (%d)" % cs.bonus_contados())
+	subir_nivel()
+	ok(c.jogo == "escolha", "abriu a escolha")
+	var tem_cura20 := false
+	for k in c.progresso.cartas:
+		if str(k.id) == "cura":
+			tem_cura20 = true
+	ok(tem_cura20, "nenhuma carta serve ao automático: a mão traz a cura")
+	t.limite_t = 0.5
+	passos(60)
+	var no_cinco := 0
+	for id in doze:
+		if cs.nivel_de(id) >= 5:
+			no_cinco += 1
+	ok(c.jogo == "jogando" and c.progresso.escolhidas == 1, "o tempo esgotou e a escolha foi feita")
+	ok(no_cinco == 0 and cs.bonus_contados() == 12, "o tempo esgotado não levou nenhum bônus ao nível 5 (%d no 5)" % no_cinco)
 
 
 func _fotos(pasta: String) -> void:

@@ -88,14 +88,14 @@ func ganhar_xp(v: float) -> void:
 
 
 ## Monta a mão (2 upgrades + 1 novidade, v2/cartas.gd montar_mao) e abre a escolha (pausa o mundo). Com as vagas cheias (limite do Difícil) a
-## novidade vem marcada TROCA; se TODA a mão for troca, a última vira a cura: o limite de tempo (automático, que nunca troca) sempre acha o que escolher.
+## novidade vem marcada TROCA; se nenhuma carta servir ao automático (só TROCA e upgrades que passariam do nível 4), a última vira a cura: o limite de tempo sempre acha o que escolher.
 func abrir_escolha() -> void:
 	var cs = combate.cartas
 	cartas = cs.montar_mao(combate.mundo.heroi.nivel, 1.0, 0, -1, true, true)
 	var qtd := int(cs.cfg.escolha.cartas)
 	if cartas.size() < qtd:  # sobrou pouca carta (tudo no máximo): uma cura ocupa o espaço, para não travar nem ficar sem mão
 		cartas.append(_carta_cura())
-	elif cartas.all(func(c: Dictionary) -> bool: return str(c.get("tipo", "")) == "troca"):
+	elif cs.limite_bonus() > 0 and not cartas.any(func(c: Dictionary) -> bool: return cs.serve_ao_automatico(c)):
 		cartas[qtd - 1] = _carta_cura()
 	combate.jogo = "escolha"
 	combate.pausado = true

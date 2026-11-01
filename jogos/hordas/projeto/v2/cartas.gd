@@ -249,7 +249,8 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true,
 		n = int(cfg.escolha.cartas)
 	var sinergia := _pesos_sinergia()
 	var recentes := _ids_vistos()
-	var sem_novidade := cheio() and not com_troca
+	var vagas := vagas_livres()  # quantas novidades ainda cabem (999 sem limite); sem `com_troca` a mão nunca passa disso
+	var sem_novidade := vagas <= 0 and not com_troca
 	var ups: Array = []
 	var pesos_up: Array = []
 	var novs: Array = []
@@ -277,7 +278,17 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true,
 		if d.is_empty():
 			break
 		escolhidas.append(d)
-	if nivel <= int(cfg.escolha.garantir_golpe_ate) and golpes_ativos() == 0 and not sem_novidade and not escolhidas.is_empty():
+		if nivel_de(str(d.id)) == 0:  # uma novidade ocupa uma vaga: acabaram, as outras viram upgrade (o baú aplica a mão inteira, ou várias pegas)
+			vagas -= 1
+			if vagas <= 0 and not com_troca:
+				novs.clear()
+				pesos_nov.clear()
+	if (
+		nivel <= int(cfg.escolha.garantir_golpe_ate)
+		and golpes_ativos() == 0
+		and not escolhidas.is_empty()
+		and (com_troca or vagas > 0 or nivel_de(str(escolhidas[-1].id)) == 0)
+	):
 		var tem := false
 		for d in escolhidas:
 			if _cat[d.id] == "golpe":
@@ -376,6 +387,11 @@ func escolha_automatica(mao: Array) -> Dictionary:
 	var escolhida: Dictionary = _def[str(mao[melhor].get("id", ""))]
 	var r := clampi(int(mao[melhor].get("rar", 0)) - int(e.auto_queda), 0, int(e.auto_raridade_max))
 	return montar_carta(escolhida, r)
+
+
+## A carta `c` serve ao tempo esgotado: não é TROCA (o automático nunca troca) e não leva o bônus além de auto_nivel_max (D26). A cura da mão serve.
+func serve_ao_automatico(c: Dictionary) -> bool:
+	return str(c.get("tipo", "")) != "troca" and int(c.get("nivel_novo", 0)) <= int(cfg.escolha.auto_nivel_max)
 
 
 ## Novidade no automático: só com menos de auto_golpes_alvo golpes ativos, nenhum golpe ativo abaixo de auto_novidade_nivel e vaga no limite de bônus
@@ -541,6 +557,12 @@ func bonus_trocaveis() -> Array:
 ## Quantas vagas de bônus estão ocupadas: os bônus de `bonus_trocaveis` e cada fusão feita (conta 1; as peças consumidas deixam de contar).
 func bonus_contados() -> int:
 	return bonus_trocaveis().size() + evoluidas.size()
+
+
+## Quantos bônus novos ainda cabem no limite (999 sem limite). Nunca negativo.
+func vagas_livres() -> int:
+	var lim := limite_bonus()
+	return 999 if lim <= 0 else maxi(lim - bonus_contados(), 0)
 
 
 ## As vagas estão cheias: há limite e o herói já chegou nele. Aí um bônus novo só entra largando outro (`remover_bonus`).
