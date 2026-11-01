@@ -1,7 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste automático dos heróis da v2 (v2/herois.gd, adagas.gd, personagens.gd, dados/v2_herois.json): Hazaki (padrão), Nick (marreta), Luke
-# (adagas) e, desde o PER-3 (#509), Matthew (shuriken com ricochete), John (naginata), Bert (kusarigama que puxa), Lukako (tessen que solta vento)
-# e Fabian (arco). Usa um save TEMPORÁRIO (user://teste_v2_herois.cfg): o save real não é tocado. Confere: o JSON (8 heróis, folhas de sprites que
+# Teste automático dos heróis da v2 (v2/herois.gd, adagas.gd, personagens.gd, dados/v2_herois.json): Hazaki (padrão), Nick (marreta) e Luke
+# (adagas). Os cinco do PER-3 (Matthew, John, Bert, Lukako e Fabian) têm o teste deles em v2_herois_novos; aqui o Matthew entra só pela folha própria. Usa um save TEMPORÁRIO (user://teste_v2_herois.cfg): o save real não é tocado. Confere: o JSON (3 heróis, folhas de sprites que
 # existem, o Hazaki repetindo os números do v2_combate.json); a escolha (sem chave = Hazaki, grava e relê, id inválido ignorado, o resto do
 # save intacto); cada herói criando a partida de verdade (vida, velocidade, tamanho, bônus, sprite); o Hazaki sem mudar; o Nick batendo em
 # arco e depois em volta, empurrando para fora; o Luke jogando adagas em leque na direção do mouse, que acertam monstro da horda, elite e
@@ -25,7 +24,7 @@ const PREFIXO_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_p"
 const ANTIGO_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_antigo.cfg"
 const PASSO := 1.0 / 60.0
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"
-const NOVOS := ["matheus", "joao", "beto", "lukako", "fabio"]  # os cinco do PER-3: cada um com a arma japonesa dele
+const NOVOS := ["matheus", "joao", "beto", "lukako", "fabio"]  # os cinco do PER-3 (fotos)
 
 var falhas := 0
 var w
@@ -126,7 +125,6 @@ func _testes() -> void:
 	await _t_matheus()
 	await _t_nicao()
 	await _t_lucas()
-	await _t_novos()
 	await _t_cartas()
 	await _t_card()
 	await _t_altar()
@@ -157,7 +155,6 @@ func _t_dados() -> void:
 		ids == ["hazaki", "nicao", "lucas", "matheus", "joao", "beto", "lukako", "fabio"],
 		"8 heróis na ordem hazaki, nicao, lucas, matheus, joao, beto, lukako, fabio (%s)" % str(ids)
 	)
-	_t_dados_novos()
 	ok(str(cat.get("_ajuda", "")) != "", "v2_herois.json tem _ajuda")
 	# o Hazaki repete v2_combate.json: nada muda para ele
 	var base := Dados.json("v2_combate")
@@ -186,63 +183,6 @@ func _t_dados() -> void:
 	)
 	var num := Herois.numeros("lucas", base)
 	ok(num.size() == 3 and num[0][0] == "VIDA" and num[0][1] == "70" and num[1][1] == "118", "números do cartão: vida e velocidade saem do cfg (%s)" % str(num))
-
-
-## PER-3: cada herói novo tem folha (a própria ou a do Hazaki), arma própria, combo que cabe na folha e DPS parecido com o do Hazaki.
-func _dps(id: String) -> float:
-	var dano := 0.0
-	var dur := 0.0
-	for p in Herois.heroi(id).cfg.golpe.passos:
-		dano += float(p.dano) * float(p.get("n", 1))
-		dur += float(p.duracao)
-	return dano / dur
-
-
-func _t_dados_novos() -> void:
-	var dps_hazaki := _dps("hazaki")
-	ok(absf(dps_hazaki - 51.0 / 0.88) < 0.5, "a conta do DPS bate com a do plano para o Hazaki (%.1f)" % dps_hazaki)
-	var armas := {}
-	for h in Herois.lista():
-		armas[str(h.arma)] = true
-	ok(armas.size() == 8, "oito heróis, oito armas diferentes (%s)" % str(armas.keys()))
-	var haz_folha: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "hazaki_samurai.json"))
-	for id in NOVOS:
-		var h := Herois.heroi(id)
-		ok(str(h.id) == id, "%s: o herói existe" % id)
-		var folha: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + str(h.sprite) + ".json"))
-		ok(str(h.sprite) == "hazaki_samurai" or str(h.sprite) == id, "%s: usa a folha própria ou, sem ela, a do Hazaki (%s)" % [id, h.sprite])
-		ok(folha.quadro == haz_folha.quadro and folha.animacoes.has("combo"), "%s: a folha tem o quadro e o combo do Hazaki" % id)
-		var ps: Array = h.cfg.golpe.passos
-		var golpes := int(folha.animacoes.combo.golpes)
-		ok(ps.size() >= 2 and ps.size() <= golpes, "%s: %d passos cabem nos %d golpes da folha" % [id, ps.size(), golpes])
-		var ranged := str(ps[0].get("tipo", "melee")) == "adagas"
-		for p in ps:
-			ok(str(p.get("tipo", "melee")) == str(ps[0].get("tipo", "melee")), "%s: todos os passos são do mesmo tipo (corpo a corpo ou projétil)" % id)
-		var razao := _dps(id) / dps_hazaki
-		ok(razao >= 0.8 and razao <= 1.2, "%s: DPS de %.0f é %.0f%% do Hazaki (80%% a 120%%)" % [id, _dps(id), razao * 100.0])
-		if id == "lukako":  # o vento soma uma onda por corte: com ela o DPS continua na faixa
-			var com_vento := _dps(id) * (1.0 + float(ps[0].vento)) / dps_hazaki
-			ok(com_vento <= 1.2, "%s: com a onda de vento o DPS fica em %.0f%% do Hazaki (até 120%%)" % [id, com_vento * 100.0])
-		ok(ranged == (id == "matheus" or id == "fabio"), "%s: projétil só para o Matthew e o Fabian" % id)
-		ok(float(h.cfg.heroi.vida) > 0.0 and float(h.cfg.heroi.vel) > 0.0, "%s: vida e velocidade definidas" % id)
-	var ps_m: Array = Herois.heroi("matheus").cfg.golpe.passos
-	ok(ps_m.size() == 3 and int(ps_m[0].ricochete) == 2 and str(ps_m[0].proj) == "shuriken", "Matthew: 3 lançamentos de shuriken que ricocheteiam 2 vezes")
-	var ps_b: Array = Herois.heroi("beto").cfg.golpe.passos
-	ok(
-		ps_b[0].get("puxa", false) and ps_b[2].get("puxa", false) and not ps_b[1].get("puxa", false) and float(ps_b[1].arco) >= 359.0,
-		"Bert: corrente que puxa, giro de 360 graus e corrente que puxa"
-	)
-	var ps_j: Array = Herois.heroi("joao").cfg.golpe.passos
-	var ps_h: Array = Herois.heroi("hazaki").cfg.golpe.passos
-	ok(
-		float(ps_j[0].alcance) >= float(ps_h[0].alcance) * 1.35 and float(ps_j[2].alcance) >= float(ps_h[2].alcance) * 1.35,
-		"John: alcance ~40% maior que o do Hazaki"
-	)
-	ok(float(Herois.heroi("lukako").cfg.golpe.passos[2].vento) > 0.0, "Lukako: o corte solta vento")
-	var ps_f: Array = Herois.heroi("fabio").cfg.golpe.passos
-	ok(int(ps_f[0].perfura) == 2 and str(ps_f[0].proj) == "flecha", "Fabian: a flecha atravessa até 3 monstros")
-	for nome in ["John", "Matthew", "Bert", "Lukako", "Fabian"]:  # o salão aponta cada nome para o herói dele
-		ok(Herois.existe(Personagens.heroi_do_nome(nome)) and Personagens.heroi_do_nome(nome) != "hazaki", "%s: o salão liga o nome a um herói próprio" % nome)
 
 
 func _t_escolha() -> void:
@@ -284,31 +224,6 @@ func _t_escolha() -> void:
 	# a escolha de herói do salão é a única: não há mais seleção separada no santuário
 	ok(not ResourceLoader.exists("res://v2/selecao_heroi.gd"), "uma só escolha de herói: a do salão (personagens)")
 	Meta.caminho_save = SAVE_TESTE
-	_apagar_save()
-	_t_migracao()
-
-
-## D04 (#509): o herói vale pelo NOME. Save antigo que gravou o Hazaki para um nome que hoje tem herói próprio passa a jogar com ele.
-func _t_migracao() -> void:
-	var id_m := Personagens.criar("Matheus", "hazaki")  # como estava no save antigo: nome de antes da troca, herói padrão
-	var id_j := Personagens.criar("João", "hazaki")
-	var id_b := Personagens.criar("Beto", "hazaki")
-	var id_k := Personagens.criar("Lukako", "hazaki")
-	var id_f := Personagens.criar("Fábio", "hazaki")
-	ok(Personagens.nome(id_m) == "Matthew" and Personagens.heroi(id_m) == "matheus", "save antigo do Matthew (hazaki) passa a jogar de matheus")
-	ok(Personagens.heroi(id_j) == "joao" and Personagens.heroi(id_b) == "beto", "e o do John vira joao e o do Bert vira beto")
-	ok(Personagens.heroi(id_k) == "lukako" and Personagens.heroi(id_f) == "fabio", "e o da Lukako vira lukako e o do Fabian vira fabio")
-	ok(Personagens.ativar(id_m) and Herois.escolhido() == "matheus", "ativar o save migrado faz a partida ser do herói novo")
-	ok(Personagens.resumo(id_k).heroi == "lukako", "o resumo do salão mostra o herói migrado")
-	var cf := ConfigFile.new()
-	cf.load(INDICE_TESTE)
-	ok(str(cf.get_value(id_m, "heroi", "")) == "hazaki", "a migração só lê: o índice no disco não foi reescrito")
-	_apagar_save()
-	var id_h := Personagens.criar("Breno", "hazaki")
-	var id_x := Personagens.criar("Matthew", "lucas")  # herói gravado que não é o padrão vale como está
-	ok(Personagens.heroi(id_h) == "hazaki", "o Brendan continua de Hazaki")
-	ok(Personagens.heroi(id_x) == "lucas", "herói gravado diferente do padrão não é trocado")
-	ok(Personagens.heroi("p99") == "hazaki", "slot que não existe cai no padrão")
 	_apagar_save()
 
 
@@ -786,186 +701,6 @@ func _t_lucas() -> void:
 	)
 
 
-# ------------------------------------------------------------------ os cinco do PER-3
-
-
-## Monstro parado no lugar (não anda, não apanha de empurrão) com muita vida: só para contar quem foi atingido.
-func _alvo_fixo(dx: float, dy := 0.0):
-	var m = monstro_a(dx, dy, "inimigo_cao_ossos")
-	m.vida = 1000000
-	m.vida_max = m.vida
-	m.peso = 1000000
-	m.atordoa_t = 9999
-	m.raio_vaga = 0
-	return m
-
-
-func _atingidos(lista: Array) -> int:
-	var n := 0
-	for m in lista:
-		n += 1 if m.vida < m.vida_max else 0
-	return n
-
-
-func _t_novos() -> void:
-	await _t_matheus_shuriken()
-	await _t_joao()
-	await _t_beto()
-	await _t_lukako()
-	await _t_fabio()
-
-
-func _partida_do(id: String, vida: float, vel: float, tamanho: float) -> void:
-	await novo(id)
-	var h = w.heroi
-	ok(w.combate.heroi_id == id and h.chave == id, "%s: heroi_id e chave da partida" % id)
-	ok(h.vida_max == vida and h.vel_base == vel and h.raio == tamanho, "%s: vida %d, %d px/s e raio %d" % [id, vida, vel, tamanho])
-	ok(h.tipo.w == 32 and h.tipo.h == 44, "%s: folha de 32x44 (o quadro do Hazaki)" % id)
-	w.reiniciar()
-	ok(h.vida_max == vida and h.vel_base == vel, "%s: jogar de novo mantém os números" % id)
-
-
-func _t_matheus_shuriken() -> void:
-	await _partida_do("matheus", 80.0, 108.0, 5.0)
-	var h = w.heroi
-	var ad = w.combate.adagas
-	# três monstros em triângulo, a menos de 110 px um do outro: uma estrela acerta os três (2 ricochetes)
-	zerar()
-	var alvos := [_alvo_fixo(70, 0), _alvo_fixo(110, 60), _alvo_fixo(50, 100)]
-	h.atacar()
-	ate(func(): return ad.lancadas >= 1, 60)
-	ate(func(): return ad.ativas() == 0, 200)
-	ok(_atingidos(alvos) == 3, "Matthew: uma estrela ricocheteia e acerta 3 monstros diferentes (%d)" % _atingidos(alvos))
-	ok(ad.lancadas == 1 and ad.sumiram == 1, "e foi uma estrela só (lançadas=%d)" % ad.lancadas)
-
-
-func _t_joao() -> void:
-	await _partida_do("joao", 95.0, 96.0, 6.0)
-	var h = w.heroi
-	zerar()
-	var longe = monstro_a(62, 0, "inimigo_cavaleiro_oco")  # a 62 px: o corte da katana (46) não chega, o da naginata (64) sim
-	h.atacar()
-	ate(func(): return h.golpe_acertou, 80)
-	passos(2)
-	ok(longe.vida < longe.vida_max, "John acerta quem está a 62 px com o primeiro corte (vida %d de %d)" % [longe.vida, longe.vida_max])
-	ok(h.golpe_cfg.nome == "corte", "o primeiro passo é um corte")
-	ok(ate(func(): return h.estado == Heroi.Estado.LIVRE, 80) >= 0, "o corte termina")
-	var g1: int = h.golpes
-	h.atacar()
-	ok(
-		ate(func(): return h.golpes > g1 and h.golpe_acertou, 80) >= 0 and h.golpe_cfg.nome == "corte" and h.golpe_cfg.lado == -1,
-		"2º passo: corte do outro lado"
-	)
-	ok(ate(func(): return h.estado == Heroi.Estado.LIVRE, 80) >= 0, "o 2º corte termina")
-	var g2: int = h.golpes
-	h.atacar()
-	ok(ate(func(): return h.golpes > g2 and h.golpe_acertou, 80) >= 0 and h.golpe_cfg.nome == "estocada", "3º passo: estocada longa")
-	# as cartas da katana valem para ele (onda no corte, lança na estocada)
-	zerar()
-	var cs = w.combate.cartas
-	cs.aplicar(cs.montar_carta(cs.definicao("onda"), 0))
-	cs.aplicar(cs.montar_carta(cs.definicao("fura"), 0))
-	var l0: int = w.combate.armas.lancadas
-	var g3: int = h.golpes
-	h.atacar()
-	ate(func(): return h.golpes > g3 and h.golpe_acertou, 80)
-	ok(w.combate.armas.lancadas == l0 + 1, "John: com a carta Corte ondulante, o corte solta uma onda (%d -> %d)" % [l0, w.combate.armas.lancadas])
-
-
-func _t_beto() -> void:
-	await _partida_do("beto", 110.0, 92.0, 7.0)
-	var h = w.heroi
-	zerar()
-	var frente = monstro_a(70, 0, "inimigo_cavaleiro_oco")
-	var atras = monstro_a(-30, 0, "inimigo_cavaleiro_oco")
-	var d0: float = frente.pos.x - h.pos.x
-	h.atacar()
-	ok(ate(func(): return h.golpe_acertou, 80) >= 0 and h.golpe_cfg.nome == "corrente", "1º passo: corrente")
-	passos(2)
-	ok(frente.vida < frente.vida_max and atras.vida == atras.vida_max, "a corrente acerta quem está na frente e não quem está atrás")
-	ok(frente.emp.x < 0.0, "a corrente PUXA: o empurrão aponta para o herói (emp.x=%.0f)" % frente.emp.x)
-	passos(25)
-	var d1: float = frente.pos.x - h.pos.x
-	ok(d1 < d0 - 8.0 and d1 > 0.0, "o monstro chegou mais perto e não passou do herói (%.0f -> %.0f px)" % [d0, d1])
-	ok(ate(func(): return h.estado == Heroi.Estado.LIVRE, 80) >= 0, "a corrente termina")
-	# o giro acerta em volta toda e empurra para fora (quem estava atrás vai para trás)
-	frente.atordoa_t = 0.0
-	atras.atordoa_t = 0.0
-	var g1: int = h.golpes
-	var v_atras: float = atras.vida
-	h.atacar()
-	ok(ate(func(): return h.golpes > g1 and h.golpe_acertou, 80) >= 0 and h.golpe_cfg.nome == "giro", "2º passo: giro")
-	passos(2)
-	ok(atras.vida < v_atras, "o giro acerta em volta, inclusive atrás")
-	ok(atras.emp.x < 0.0, "o giro empurra para fora (atrás vai para trás, emp.x=%.0f)" % atras.emp.x)
-	ok(ate(func(): return h.estado == Heroi.Estado.LIVRE, 80) >= 0, "o giro termina")
-	# o puxão não ultrapassa o herói: monstro colado leva um puxão curto
-	zerar()
-	var perto = monstro_a(22, 0, "inimigo_cavaleiro_oco")
-	h.atacar()
-	ate(func(): return h.golpe_acertou, 80)
-	passos(30)
-	ok(perto.pos.x > h.pos.x - 4.0, "um monstro a 22 px puxado não atravessa o herói (x relativo %.1f)" % (perto.pos.x - h.pos.x))
-	ok(ate(func(): return h.estado == Heroi.Estado.LIVRE, 80) >= 0, "e o golpe termina")
-
-
-func _t_lukako() -> void:
-	await _partida_do("lukako", 85.0, 112.0, 5.0)
-	var h = w.heroi
-	var ar = w.combate.armas
-	zerar()
-	var l0: int = ar.lancadas
-	h.atacar()
-	ok(ate(func(): return h.golpe_acertou, 80) >= 0, "Lukako golpeia")
-	ok(ar.lancadas == l0 + 1, "o corte solta uma onda de vento mesmo sem acertar ninguém (lançadas %d -> %d)" % [l0, ar.lancadas])
-	var dano_onda := 0.0
-	for i in ar.MAX_ONDAS:
-		if ar.w_dist[i] > 0.0:
-			dano_onda = maxf(dano_onda, ar.w_dano[i])
-	var passo0: Dictionary = Herois.heroi("lukako").cfg.golpe.passos[0]
-	ok(absf(dano_onda - float(passo0.dano) * float(passo0.vento)) < 0.01, "a onda leva 40%% do dano do corte (%.2f)" % dano_onda)
-	# com a carta Corte ondulante junto, ainda sai uma onda só por corte (a maior)
-	ate(func(): return h.estado == Heroi.Estado.LIVRE, 80)
-	zerar()
-	var cs = w.combate.cartas
-	cs.aplicar(cs.montar_carta(cs.definicao("onda"), 3))  # lendária: onda forte
-	var forte: float = ar.dano_da_onda(float(passo0.dano) * h.m_dano)
-	var l1: int = ar.lancadas
-	var g1: int = h.golpes
-	h.atacar()
-	ate(func(): return h.golpes > g1 and h.golpe_acertou, 80)
-	ok(ar.lancadas == l1 + 1, "com a carta, o corte solta uma onda só (lançadas %d -> %d)" % [l1, ar.lancadas])
-	dano_onda = 0.0
-	for i in ar.MAX_ONDAS:
-		if ar.w_dist[i] > 0.0:
-			dano_onda = maxf(dano_onda, ar.w_dano[i])
-	ok(absf(dano_onda - maxf(forte, float(passo0.dano) * float(passo0.vento))) < 0.01, "e vale a maior das duas (%.2f)" % dano_onda)
-
-
-func _t_fabio() -> void:
-	await _partida_do("fabio", 75.0, 98.0, 5.0)
-	var h = w.heroi
-	var ad = w.combate.adagas
-	zerar()
-	var fila := [_alvo_fixo(60, 0), _alvo_fixo(110, 0), _alvo_fixo(160, 0), _alvo_fixo(210, 0)]
-	h.atacar()
-	ate(func(): return ad.lancadas >= 1, 60)
-	ate(func(): return ad.ativas() == 0, 200)
-	ok(ad.lancadas == 1, "o primeiro tiro é uma flecha só (%d)" % ad.lancadas)
-	ok(_atingidos(fila) == 3 and fila[3].vida == fila[3].vida_max, "a flecha atravessa 3 monstros e para (%d atingidos, o 4º intacto)" % _atingidos(fila))
-	# o duplo: duas flechas em leque curto
-	ate(func(): return h.estado == Heroi.Estado.LIVRE, 80)
-	zerar()
-	var g0: int = h.golpes
-	h.atacar()
-	ate(func(): return h.golpes >= g0 + 1 and h.estado == Heroi.Estado.LIVRE, 80)
-	h.atacar()
-	ate(func(): return h.golpes >= g0 + 2 and h.estado == Heroi.Estado.LIVRE, 80)
-	var l0: int = ad.lancadas
-	h.atacar()
-	ok(ate(func(): return ad.lancadas >= l0 + 2, 80) >= 0, "o terceiro passo solta duas flechas (%d -> %d)" % [l0, ad.lancadas])
-
-
 # ------------------------------------------------------------------ cartas
 
 
@@ -974,11 +709,6 @@ func _t_cartas() -> void:
 		"hazaki": {"sim": ["onda", "fura", "explode", "folego", "dano", "area"], "nao": ["abalo", "muralha", "chuva", "mira"]},
 		"nicao": {"sim": ["abalo", "muralha", "explode", "folego", "dano", "area"], "nao": ["onda", "fura", "chuva", "mira"]},
 		"lucas": {"sim": ["chuva", "mira", "explode", "folego", "dano", "area"], "nao": ["onda", "fura", "abalo", "muralha"]},
-		"matheus": {"sim": ["chuva", "mira", "explode", "folego", "dano", "area"], "nao": ["onda", "fura", "abalo", "muralha"]},
-		"joao": {"sim": ["onda", "fura", "explode", "folego", "dano", "area"], "nao": ["abalo", "muralha", "chuva", "mira"]},
-		"beto": {"sim": ["explode", "folego", "dano", "area"], "nao": ["onda", "fura", "abalo", "muralha", "chuva", "mira"]},
-		"lukako": {"sim": ["onda", "explode", "folego", "dano", "area"], "nao": ["fura", "abalo", "muralha", "chuva", "mira"]},
-		"fabio": {"sim": ["chuva", "mira", "explode", "folego", "dano", "area"], "nao": ["onda", "fura", "abalo", "muralha"]},
 	}
 	for id in quer:
 		await novo(id)
@@ -1018,14 +748,7 @@ func _secao_card(secs: Array, id: String) -> Dictionary:
 func _t_card() -> void:
 	var arma := {"hazaki": "KATANA (CLIQUE)", "nicao": "KANABO (CLIQUE)", "lucas": "KUNAI (CLIQUE)"}
 	var mods := {"hazaki": ["onda", "fura"], "nicao": ["abalo", "muralha"], "lucas": ["chuva", "mira"]}
-	for id in NOVOS:
-		arma[id] = str(Herois.heroi(id).arma) + " (CLIQUE)"
-	mods["matheus"] = ["chuva", "mira"]
-	mods["joao"] = ["onda", "fura"]
-	mods["beto"] = []
-	mods["lukako"] = ["onda"]
-	mods["fabio"] = ["chuva", "mira"]
-	for id in ["hazaki", "nicao", "lucas"] + NOVOS:
+	for id in ["hazaki", "nicao", "lucas"]:
 		await novo(id)
 		zerar()
 		var h = w.heroi
@@ -1056,12 +779,10 @@ func _t_card() -> void:
 				not bl.is_empty() and absf(float(bl.n[0]) - float(w.combate.armas.mods[md])) < 0.001,
 				"%s: o card mostra o modificador %s com o número do jogo (%s)" % [id, md, str(bl.get("n", []))]
 			)
-		for outro in ["hazaki", "nicao", "lucas"] + NOVOS:
+		for outro in ["hazaki", "nicao", "lucas"]:
 			if outro == id:
 				continue
 			for md in mods[outro]:
-				if mods[id].has(md):  # modificador que os dois têm
-					continue
 				ok(Status.linha(secs, "katana." + md).is_empty(), "%s: o card não mostra o modificador %s, que é de outro herói" % [id, md])
 
 

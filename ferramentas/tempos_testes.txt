@@ -14,7 +14,7 @@ v2_salao_vivo 12.4
 v2_braseiro 11.9
 ataque_clique 11.5
 prorrogacao 10.9
-v2_herois 96.0
+v2_herois 50.0
 abertura 10.6
 v2_morte 10.3
 v2_arvores 9.4
@@ -167,3 +167,4 @@ v2_corvo_vila 25
 v2_espectro_ruinas 11
 v2_golem_vidro 5
 v2_homunculo_torre 11
+v2_herois_novos 52.0
