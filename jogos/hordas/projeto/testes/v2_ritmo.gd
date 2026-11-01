@@ -47,7 +47,7 @@ func _ready() -> void:
 	c.diretor.ligado = false
 	var h = w.heroi
 	var r = c.ritmo
-	ok(r.itens.size() == 4, "pool fixo")
+	ok(r.itens.size() == 6, "pool fixo de seis posicoes")
 	for chave in r.cfg.curvas:
 		ok(igual(r.multiplicador(chave, 1), 1.0), "%s sem bonus inicial" % chave)
 		ok(igual(r.multiplicador(chave, 500), 1.0 + float(r.cfg.curvas[chave].teto)), "%s teto" % chave)
@@ -62,7 +62,26 @@ func _ready() -> void:
 	h.nivel = 500
 	ok(igual(h.alcance_ima(), inicial * 1.75), "coleta compoe cartas uma vez")
 	ok(igual(c.progresso.cura_por_nivel(), h.vida_max * float(c.cfg.heroi.cura_nivel) * 0.8), "cura 80% anterior")
-	ok(igual(r.chance_cura(1), 0.008) and igual(r.chance_cura(0), 0.032), "cura aumenta com falta de vida")
+	ok(igual(r.chance_cura(1), 0.01) and igual(r.chance_cura(0), 0.1), "cura: chance 1% com vida cheia e 10% com vida zero")
+	# ECO-3 (pedido 12): g(v) é 0 de 100% a 50%, cresce sem cair e vale 1 em 10% ou menos.
+	ok(r.intensidade_cura(1.0) == 0.0 and r.intensidade_cura(0.5) == 0.0, "cura: g zero de 100% a 50%")
+	ok(igual(r.intensidade_cura(0.1), 1.0) and igual(r.intensidade_cura(0.02), 1.0), "cura: g um em 10% ou menos")
+	var g_anterior := -1.0
+	for i in range(0, 101):
+		var g: float = r.intensidade_cura(1.0 - i / 100.0)
+		ok(g >= g_anterior, "cura: g monotonico")
+		g_anterior = g
+	ok(igual(r.chance_cura(0.3), 0.0264) and igual(r.intervalo("cura", 0.3), 6.814) and igual(r.fracao_coracao(0.3), 0.1019), "cura: 30% segue a curva")
+	ok(igual(r.chance_cura(0.2), 0.05) and igual(r.intervalo("cura", 0.2), 5.11) and igual(r.fracao_coracao(0.2), 0.1334), "cura: 20% segue a curva")
+	ok(
+		igual(r.intervalo("cura", 0.1), 1.5) and igual(r.fracao_coracao(0.1), 0.2) and igual(r.intervalo("cura", 0.6), 8.0),
+		"cura: intervalo 8 s a 1,5 s; cura 8% a 20%"
+	)
+	ok(
+		r.teto_chao("cura", 1.0) == 2 and r.teto_chao("cura", 0.3) == 2 and r.teto_chao("cura", 0.2) == 3 and r.teto_chao("cura", 0.1) == 4,
+		"cura: teto no chao 2 + 2g arredondado"
+	)
+	ok(r.teto_chao("curandeiro", 0.1) == 1 and r.teto_chao("ima", 0.1) == 1, "aliado e ima mantem teto fixo")
 	h.nivel = 1
 	var taxa: float = c.diretor.taxa(0)
 	h.nivel = 500
@@ -114,6 +133,16 @@ func _ready() -> void:
 	r.limpar()
 	ok(r.soltar("cura", h.pos) and r.soltar("cura", h.pos) and r.soltar("ima", h.pos) and r.soltar("curandeiro", h.pos), "quatro slots cabem simultaneamente")
 	ok(not r.soltar("curandeiro", h.pos), "maximo um aliado")
+	# ECO-3: com 10% de vida cabem quatro corações no chão, e o pool de seis ainda deixa lugar para ímã e aliado.
+	r.limpar()
+	h.vida = h.vida_max * 0.1
+	ok(
+		r.soltar("cura", h.pos) and r.soltar("cura", h.pos) and r.soltar("cura", h.pos) and r.soltar("cura", h.pos) and not r.soltar("cura", h.pos),
+		"dez por cento: quatro curas no chao"
+	)
+	ok(r.soltar("ima", h.pos) and r.soltar("curandeiro", h.pos) and r.ativos("cura") == 4, "pool de seis cabe quatro curas, ima e aliado")
+	r.limpar()
+	h.vida = h.vida_max
 	r.limpar()
 	r.soltar("curandeiro", h.pos + Vector2(200, 0))
 	var hp_fora: float = h.vida
@@ -127,7 +156,9 @@ func _ready() -> void:
 	ok(h.vida == hp_fora and h.xp == xp_fora and c.dano_causado == dano_fora and r.ativos("curandeiro") == 0, "fora raio expira sem cura/dano/XP")
 	# Mortes pendentes fora do combate não reabrem pickups após encerrar.
 	var chance_anterior: float = r.cfg.cura.chance
+	var chance_baixa_anterior: float = r.cfg.cura.chance_baixa
 	r.cfg.cura.chance = 1.0
+	r.cfg.cura.chance_baixa = 1.0
 	r.limpar()
 	c.pausado = true
 	r.abate(h.pos)
@@ -144,6 +175,7 @@ func _ready() -> void:
 	c.vitoria()
 	ok(r.ativos("cura") == 0 and r.ativos("ima") == 0 and r.ativos("curandeiro") == 0, "vitoria mata horda sem repor pickups")
 	r.cfg.cura.chance = chance_anterior
+	r.cfg.cura.chance_baixa = chance_baixa_anterior
 	c.limpar_partida()
 	# Repetir o RNG privado produz os mesmos drops e intervalos, sem afetar global.
 	var seed_original = w.args.get("semente", null)

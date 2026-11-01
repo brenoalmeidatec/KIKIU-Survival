@@ -1,7 +1,7 @@
 # Ritmo por nível e recursos de recuperação (#371)
 
 `dados/v2_ritmo.json` contém todas as curvas e probabilidades. O módulo `ritmo.gd`
-usa pool fixo de quatro posições, criado na montagem: dois corações, um ímã e um
+usa pool fixo de seis posições, criado na montagem: até quatro corações, um ímã e um
 Guardião de Pedra curandeiro. As imagens são reutilizadas dos ícones de cartas e
 da folha direcional do aliado já registrado em `docs/LICENCAS_ARTE.md`; o guardião
 usa o quadro parado 2 da primeira linha, com pé e tamanho da ficha `Andante`.
@@ -27,9 +27,17 @@ mecânicos (Hazaki, Nick e Luke); Matthew reutiliza o arquétipo no #394, cuja
 cobertura visual continua separada.
 
 A cura por nível vale 80% da base anterior (12% → 9,6% da vida máxima).
-Coração cura 8% da vida máxima, tem chance base 0,8% por abate, intervalo mínimo
-8 s, até dois no chão e duração 20 s. Para fração de vida `v`, coração e curandeiro
-multiplicam a chance por `1 + 3*(1-v)^2`: menos vida aumenta a oferta.
+Coração (ECO-3, pedido 12) usa uma intensidade `g(v)`: 0 com 100% a 50% de vida,
+subindo exponencialmente (`(e^(3x) - 1)/(e^3 - 1)`, com `x = clamp((0,5 - v)/0,4, 0, 1)`)
+até 1 em 10% de vida ou menos. Cada valor do coração vai do base ao de 10% pela mesma `g`:
+chance por abate de 1% a 10%; intervalo de 8 s a 1,5 s; cura de 8% a 20% da vida máxima
+(lida na coleta, com a vida do momento); no chão, de 2 a 4 (arredondado; 20% dá 3, 30% dá 2).
+A duração segue em 20 s. A estimativa do plano (~3 abates por segundo) dá cerca de 4% da vida
+máxima por segundo a 10% de vida; é hipótese a medir pelo robô, não número medido. O intervalo e
+o teto no chão limitam a cura; o pool de seis posições cabe quatro corações, o ímã e o aliado,
+então nenhum nó nasce no meio da partida.
+O curandeiro mantém a fórmula antiga: chance base 0,1% multiplicada por `1 + 3*(1-v)^2`,
+ou seja, menos vida aumenta a oferta.
 O curandeiro tem chance base 0,1%, intervalo 90 s, até um por vez, duração 12 s,
 raio 64 px e cura contínua de 2%/s até 12% da vida máxima. Só a cura efetiva gasta
 esse orçamento; vida cheia não o consome. O ímã tem chance base 0,15%, intervalo
