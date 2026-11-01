@@ -35,7 +35,7 @@
 		"raio": 20,
 		"raio_por_nivel": {"por_nivel": 0.01, "teto": 0.3},
 		"arco_por_nivel": {"por_nivel": 1.0, "teto": 25.0},
-		"camadas": {"nicao": {"nivel": 6, "arco": 10.0}},
+		"camadas": {"nicao": {"nivel": 6, "arco": 10.0, "faixa_g": 14, "casca": 24}},
 		"mov": 0.6,
 		"barra": {
 			"max": 100,
@@ -54,7 +54,11 @@
 		"visual": {
 			"pasta": "res://assets/v2/escudos/",
 			"celula": 32,
-			"faixas": {"nicao": {"arquivo": "nicao_m", "celula": 48, "reforco": true}},
+			"faixas": {
+				"nicao": {"arquivo": "nicao_m", "celula": 48, "reforco": true},
+				"nicao_g": {"arquivo": "nicao_g", "celula": 64, "reforco": true}
+			},
+			"casca": {"arquivo": "camadas", "celula": 64},
 			"centro_y": -15,
 			"costas_dy": -6,
 			"distancia": 0.6,
@@ -66,6 +70,7 @@
 			"fragmentos": {
 				"hazaki": [[11.9, 9.8], [19.4, 8.4], [11.9, 21.9], [19.7, 20.5]],
 				"nicao": [[15.5, 15.9], [31.8, 15.2], [16.3, 31.4], [32.4, 31.9]],
+				"nicao_g": [[22.0, 21.3], [42.7, 21.3], [22.2, 41.7], [42.4, 41.7]],
 				"lucas": [[12.0, 12.0], [18.8, 11.3], [11.7, 19.5], [19.9, 18.9]],
 				"matheus": [[11.7, 10.0], [20.6, 9.5], [13.4, 20.3], [19.6, 20.8]]
 			}
