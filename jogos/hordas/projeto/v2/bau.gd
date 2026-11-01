@@ -62,7 +62,19 @@ func montar(c) -> void:
 		luz.shadow_enabled = false
 		mundo.sv.add_child(luz)
 		lista.append(
-			{"raiz": raiz, "corpo": corpo, "brilho": brilho, "luz": luz, "ativo": false, "pos": Vector2.ZERO, "t": 0.0, "bonus": 1.0, "forcar": 0, "fx": 0}
+			{
+				"raiz": raiz,
+				"corpo": corpo,
+				"brilho": brilho,
+				"luz": luz,
+				"ativo": false,
+				"pos": Vector2.ZERO,
+				"t": 0.0,
+				"bonus": 1.0,
+				"forcar": 0,
+				"piso": -1,
+				"fx": 0
+			}
 		)
 
 
@@ -134,7 +146,9 @@ func ativos() -> int:
 
 
 ## Um baú cai em `p`. `bonus` multiplica a chance de raridade alta (1 = o normal do baú), `forcar_n` fixa quantas melhorias dá (0 = sorteia).
-func soltar(p: Vector2, bonus := 1.0, forcar_n := 0) -> void:
+## `piso` = a menor raridade que este baú dá (índice de dados/v2_cartas.json > raridades); -1 = o piso do baú de elite (cfg piso_raridade).
+## O baú de conquista usa 2 (épico ou melhor). Cada soltar grava o próprio piso.
+func soltar(p: Vector2, bonus := 1.0, forcar_n := 0, piso := -1) -> void:
 	var q := p.clamp(mundo.limite_andavel.position, mundo.limite_andavel.end)
 	var b: Dictionary = {}
 	for x in lista:
@@ -149,6 +163,7 @@ func soltar(p: Vector2, bonus := 1.0, forcar_n := 0) -> void:
 	b.t = 0.0
 	b.bonus = bonus
 	b.forcar = forcar_n
+	b.piso = piso
 	b.raiz.position = q.round()
 	b.raiz.visible = true
 	b.corpo.visible = true
@@ -216,7 +231,7 @@ func abrir(b: Dictionary) -> void:
 		n = sortear_quantidade()
 	var h = mundo.heroi
 	var bonus := float(cfg.bonus_raridade) * float(b.bonus)
-	var piso := int(cfg.get("piso_raridade", 0))
+	var piso := int(b.piso) if int(b.piso) >= 0 else int(cfg.get("piso_raridade", 0))
 	var qtd := int(combate.cartas.cfg.escolha.cartas)
 	if not fixo and n < qtd:
 		var candidatas: Array = combate.cartas.montar_mao(h.nivel, bonus, piso, qtd)  # a mesma mão da escolha de nível: 2 upgrades + 1 novidade

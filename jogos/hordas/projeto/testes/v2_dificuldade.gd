@@ -530,7 +530,7 @@ func _creditos_e_conquistas() -> void:
 				var bonus := 1.16 if melhorada else 1.0
 				var esperado := roundi(1000.0 * mult * bonus)
 				ok(
-					int(resultado.ganhas) == esperado and Meta.saldo() == antes + esperado,
+					int(resultado.ganhas) == esperado and Meta.saldo() == antes + esperado + int(resultado.premios),  # o prêmio em almas da Floresta (UI-6) entra à parte
 					"%s almas x dificuldade/Pesadelo/melhoria (%s/%s)" % [IDS[i], pesadelo, melhorada]
 				)
 				ok(str(Meta.estado().ultima.dificuldade) == str(IDS[i]), "última dificuldade vem do resultado explícito")
