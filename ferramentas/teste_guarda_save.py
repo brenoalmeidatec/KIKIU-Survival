@@ -102,7 +102,7 @@ def partida(mapa, dif, desfecho, tempo=600.0, chefes=None, cartas=None, dano=100
     j = {"desfecho": "vitoria" if desfecho == "vitoria" else "morte", "tempo_jogo": tempo, "nivel": 10, "dano_sofrido": dano,
          "fracao_mapa": fracao, "dificuldade": dif, "chefes_tempo": chefes or [], "cartas": cartas or ["a", "b", "c"]}
     return {"heroi": "hazaki", "mapa": mapa, "semente": 1, "dificuldade": pedida if pedida is not None else dif, "desfecho": desfecho,
-            "motivo": "", "json": j}
+            "motivo": "", "json": j, "erros_script": 0, "log": "logs/teste.log", "comando": "teste", "trava_linha": "", "tempo_real_s": 0.0}
 
 
 class CalibracaoEco8(unittest.TestCase):
@@ -207,12 +207,32 @@ class CalibracaoEco8(unittest.TestCase):
         self.assertIn("tempo de vitória | 6.5 min | 5 min | +30% DESVIA", t)
         self.assertIn("chefão derrubado | 20 s | 35-60 s | -43% DESVIA", t)
 
-    def test_partida_invalida_por_escolha_repetida(self):
-        presa = partida("laboratorio", "dificil", "derrota", cartas=["a", "b"] + ["laminas"] * 533 + ["c"])
-        t = self.texto([presa])
-        self.assertIn("MEDIÇÃO INVÁLIDA", t)
-        self.assertIn("533 vezes seguidas", t)
-        self.assertEqual([n for _, n in pt.partidas_invalidas([presa, partida("floresta", "dificil", "vitoria")])], [533])
+    def test_partida_invalida_fora_das_medias(self):
+        # o caso da revisão: uma inválida de 900 s mais uma válida de 600 s davam 12,5 min de média; o certo é 10 min,
+        # e a inválida só aparece na lista à parte. Confere os números no relatório inteiro, não só a frase.
+        presa = partida("floresta", "dificil", "vitoria", tempo=900.0, cartas=["a"] + ["laminas"] * 533)
+        boa = partida("floresta", "dificil", "vitoria", tempo=600.0)
+        self.assertEqual([n for _, n in pt.partidas_invalidas([presa, boa])], [533])
+        self.assertEqual(pt.separar_invalidas([presa, boa])[0], [boa])
+        saida = Path(self._tmp.name) / "saida"
+        saida.mkdir()
+        cfg = {"janela": False, "versao": "teste", "godot": "teste", "paralelas": 1, "max": None, "timeout": 900.0, "extras": [],
+               "saida": saida, "tabela": self.tabela}
+        pt.escrever_relatorio(cfg, "teste", [presa, boa], 1.0, False)
+        md = (saida / "relatorio.md").read_text(encoding="utf-8")
+        self.assertNotIn("12:30", md)
+        self.assertIn("| floresta | dificil | 1 | 1 | 0 | 0 | 0 | 10:00 |", md)  # matriz: só a válida
+        self.assertIn("| hazaki | 1 | 1 | 0 | 0 | 0 | 0 | 10:00 |", md)  # por herói
+        self.assertIn("tempo de vitória | 10.0 min | 5 min | +100% DESVIA", md)  # desvio sobre a válida
+        self.assertIn("**Resultado (partidas válidas):** 1 partida:", md)
+        self.assertIn("**Medições inválidas (fora de todas as médias, listadas no fim):** 1 medição", md)
+        self.assertIn("mesma carta 533 vezes seguidas", md)
+        self.assertEqual(sum(1 for x in md.splitlines() if x.startswith("| hazaki | floresta | dificil | 1 |")), 1)  # Partidas: só a válida
+
+    def test_contagem_trava_conta_mesmo_em_invalida(self):
+        presa = partida("laboratorio", "dificil", "trava", cartas=["laminas"] * 533)
+        c = pt.contagem([presa, partida("floresta", "dificil", "vitoria")])
+        self.assertEqual((c["vitoria"], c["trava"], c["sem_json"]), (1, 1, 0))  # a trava é defeito; a inválida não entra em vitória
 
 
 if __name__ == "__main__":

@@ -578,7 +578,8 @@ def agregados(res, chave, rotulo, janela):
 
 def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
     janela = cfg["janela"]
-    conta = {d: sum(1 for r in res if r["desfecho"] == d) for d in ("vitoria", "derrota", "tempo", "trava", "sem_json")}
+    validas, invalidas = separar_invalidas(res)
+    conta = contagem(res)
     problemas = conta["trava"] + conta["sem_json"]
     g = cfg.get("guarda") or {"estado": "desligada", "mudancas": []}
     estado = "INTERROMPIDO" if interrompido else ("COM PROBLEMAS" if problemas else "OK")
@@ -600,9 +601,12 @@ def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
         f"- **Tempo real do lote:** {fmt_tempo(duracao)}",
         "- **Guarda do save real:** " + {"ok": "conferida, a raiz de `user://` não mudou", "alterado": "**ALTERADO** (veja a seção abaixo)",
                                          "pulada": "pulada: " + g.get("motivo", ""), "desligada": "desligada (`--sem-guarda-save`)"}[g["estado"]],
-        f"- **Resultado:** {plural(len(res), 'partida', 'partidas')}: {plural(conta['vitoria'], 'vitória', 'vitórias')}, "
-        f"{plural(conta['derrota'], 'derrota', 'derrotas')}, {conta['tempo']} no teto de tempo, "
-        f"**{plural(conta['trava'], 'trava', 'travas')}**, **{conta['sem_json']} sem JSON** (crash ou timeout)",
+        f"- **Resultado (partidas válidas):** {plural(len(validas), 'partida', 'partidas')}: "
+        f"{plural(conta['vitoria'], 'vitória', 'vitórias')}, {plural(conta['derrota'], 'derrota', 'derrotas')}, "
+        f"{conta['tempo']} no teto de tempo",
+        f"- **Defeitos (em todas as partidas):** **{plural(conta['trava'], 'trava', 'travas')}**, "
+        f"**{conta['sem_json']} sem JSON** (crash ou timeout)",
+        f"- **Medições inválidas (fora de todas as médias, listadas no fim):** {plural(len(invalidas), 'medição', 'medições')}",
         "",
     ]
     if g["estado"] == "alterado":
@@ -619,7 +623,7 @@ def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
         md += ["## FPS de render (modo janela)", "",
                "FPS = 1000 / quadro_ms. O alvo é o i5-3470 do Breno: 60 FPS (quadro_ms até 16,7) também no p95 e no p99.", ""]
         linhas = []
-        for r in res:
+        for r in validas:
             j = r["json"]
             q = (j or {}).get("quadro_ms") or {}
             linhas.append([f"{r['heroi']} / {r['mapa']} / {r['semente']}", fmt(fps_de(q.get("media"))), fmt(fps_de(q.get("p95"))),
@@ -633,9 +637,9 @@ def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
            "Tempo de jogo em min:s. `proc_ms` = tempo do `_process` do mundo por quadro (lógica do jogo e o robô, sem o render), em ms; "
            "p95 = 95% dos quadros gastaram até isso.", ""]
     linhas = []
-    for r in res:
+    for r in validas:
         j = r["json"] or {}
-        des = r["desfecho"] if r["desfecho"] not in PROBLEMAS else f"**{r['desfecho']}**"
+        des =r["desfecho"] if r["desfecho"] not in PROBLEMAS else f"**{r['desfecho']}**"
         vida = f"{fmt(j.get('vida_final'))}/{fmt(j.get('vida_max'))}" if j else "—"
         chefes = j.get("chefes")
         linhas.append([r["heroi"], r["mapa"], dif_de(r), r["semente"], des, fmt_tempo(j.get("tempo_jogo")) if j else "—", fmt(j.get("nivel")),
@@ -644,18 +648,27 @@ def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
                        fmt(pct(j, "proc_ms", "p99"), 2), tipo_trava(r)])
     md += tabela(["Herói", "Mapa", "Dificuldade", "Semente", "Desfecho", "Tempo de jogo", "Nível", "Abates", "Dano sofrido",
                   "Golpes tomados", "Vida final", "Baús", "Elites", "Chefes", "proc_ms p95", "proc_ms p99", "Trava"], linhas)
-    md += ["", "## Por herói", ""] + agregados(res, "heroi", "Herói", janela)
-    md += ["", "## Por mapa", ""] + agregados(res, "mapa", "Mapa", janela)
-    md += ["", "## Por dificuldade", ""] + agregados(res, "dificuldade", "Dificuldade", janela)
+    md += ["", "## Por herói", ""] + agregados(validas, "heroi", "Herói", janela)
+    md += ["", "## Por mapa", ""] + agregados(validas, "mapa", "Mapa", janela)
+    md += ["", "## Por dificuldade", ""] + agregados(validas, "dificuldade", "Dificuldade", janela)
     md += ["", "## Matriz mapa x dificuldade (ECO-8)", "",
            "Vitória = partida terminada no chefão do último nível. \"Antes de 60%\" = derrota com a barra do mapa abaixo de 60% (o gatilho "
            "do plano B, ECO-7). \"Chefe final\" = tempo entre o nascimento e a morte do último chefe, só nas vitórias.", ""]
-    md += matriz_mapa_dif(res)
+    md += matriz_mapa_dif(validas)
     md += ["", "## Chefes: tempo de cada um (ECO-8)", "",
            "Aparece = segundo de jogo em que o chefe nasce; Caiu = em que a vida chegou a 0 (\"não caiu\" se a partida acabou antes); "
            "Levou = Caiu menos Aparece, em segundos de jogo.", ""]
-    md += tabela_chefes(res)
-    md += ["", "## Desvios da tabela (ECO-8)", ""] + desvios_tabela(cfg, res)
+    md += tabela_chefes(validas)
+    md += ["", "## Desvios da tabela (ECO-8)", ""] + desvios_tabela(cfg, validas)
+    md += ["", "## Medições inválidas (fora de todas as médias)", ""]
+    if not invalidas:
+        md.append("Nenhuma.")
+    else:
+        md += [f"O robô repetiu a mesma escolha de carta {REPETICAO_INVALIDA} ou mais vezes seguidas: não concluiu a escolha. Estas partidas "
+               "não entram em nenhuma tabela, média, desvio, chefão ou gatilho do ECO-7; ficam aqui só para conferir.", ""]
+        for r, n in invalidas:
+            md.append(f"- {r['heroi']} / {r['mapa']} / {dif_de(r)} / semente {r['semente']}: {r['desfecho']}, tempo de jogo "
+                      f"{fmt_tempo((r['json'] or {}).get('tempo_jogo'))}, mesma carta {n} vezes seguidas (`{r['log']}`).")
 
     travas = [r for r in res if r["desfecho"] == "trava"]
     md += ["", "## Travas", ""]
@@ -740,6 +753,22 @@ def partidas_invalidas(res):
     return out
 
 
+def separar_invalidas(res):
+    """(validas, invalidas): as inválidas saem de TODAS as médias, matrizes, desvios e gatilhos; o relatório só as lista à parte."""
+    inv = partidas_invalidas(res)
+    ids = {id(r) for r, _ in inv}
+    return [r for r in res if id(r) not in ids], inv
+
+
+def contagem(res):
+    """Desfechos das partidas VÁLIDAS (vitória, derrota, tempo) e os defeitos (trava, sem JSON) de TODAS, inclusive das inválidas:
+    trava e sem JSON são bug do jogo ou do robô, não medição."""
+    validas, _ = separar_invalidas(res)
+    c = {d: sum(1 for r in validas if r["desfecho"] == d) for d in ("vitoria", "derrota", "tempo")}
+    c.update({d: sum(1 for r in res if r["desfecho"] == d) for d in PROBLEMAS})
+    return c
+
+
 def matriz_mapa_dif(res):
     grupos = {}
     for r in res:
@@ -790,19 +819,14 @@ def _desvio(medido, esperado, tol):
 
 
 def desvios_tabela(cfg, res):
-    """Compara as medições com docs/qa/economia_2026-11/tabela_esperada.json (ou --tabela) e lê os gatilhos do plano B (ECO-7)."""
+    """Compara as medições com docs/qa/economia_2026-11/tabela_esperada.json (ou --tabela) e lê os gatilhos do plano B (ECO-7).
+    `res` são só as partidas válidas (escrever_relatorio passa o resultado de separar_invalidas)."""
     try:
         t = json.loads(Path(cfg["tabela"]).read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         return [f"Sem tabela para comparar (`{cfg['tabela']}`: {e})."]
     tol = float(t.get("tolerancia", 0.2))
-    out = []
-    for r, n in partidas_invalidas(res):
-        out.append(f"- **MEDIÇÃO INVÁLIDA:** {r['heroi']} {r['mapa']} {dif_de(r)} semente {r['semente']} repetiu a mesma escolha de carta {n} vezes seguidas "
-                   f"(o robô não concluiu a escolha); não use esta partida para desvio, chefão ou gatilho do plano B.")
-    if out:
-        out.append("")
-    out += ["Tolerância: " + f"{tol:.0%}" + " (o que passar disso é DESVIA: ajustar o dado do mapa ou da dificuldade).", ""]
+    out = ["Tolerância: " + f"{tol:.0%}" + " (o que passar disso é DESVIA: ajustar o dado do mapa ou da dificuldade).", ""]
     linhas = []
     for mapa, dif in dict.fromkeys((r["mapa"], dif_de(r)) for r in res):
         rs = [r for r in res if r["mapa"] == mapa and dif_de(r) == dif]
@@ -952,7 +976,11 @@ def main(argv=None):
         mud = [(n, t, texto_mtime(mt, t_ini, time.time())) for n, t, mt in comparar_retratos(antes, retrato_user(pasta))]
         cfg["guarda"] = {"estado": "alterado" if mud else "ok", "mudancas": mud, "pasta": str(pasta)}
     problemas = escrever_relatorio(cfg, desc, res, time.monotonic() - t0, interrompido)
-    conta = {d: sum(1 for r in res if r["desfecho"] == d) for d in ("vitoria", "derrota", "tempo", "trava", "sem_json")}
+    conta = contagem(res)
+    _, invalidas = separar_invalidas(res)
+    if invalidas:
+        print(f"playtest_v2: {plural(len(invalidas), 'medição inválida', 'medições inválidas')} (escolha de carta repetida): fora das médias, "
+              "listadas no relatório.")
     print(f"Fim: {plural(conta['vitoria'], 'vitória', 'vitórias')}, {plural(conta['derrota'], 'derrota', 'derrotas')}, "
           f"{conta['tempo']} no teto, {plural(conta['trava'], 'trava', 'travas')}, "
           f"{conta['sem_json']} sem JSON, em {fmt_tempo(time.monotonic() - t0)}.")
