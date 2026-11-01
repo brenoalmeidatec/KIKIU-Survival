@@ -33,7 +33,9 @@ const PEDRA := 5  # espessura da moldura de pedra: o conteúdo da ficha fica den
 const NOME_Y := TOPO + PEDRA
 const NOME_ALT := 61
 const RETRATO_Y := NOME_Y + NOME_ALT
-const RETRATO_ALT := 132  # o herói parado (32x44) sai em 3x (96x132); o rosto (52x52) segue em 2x
+const RETRATO_ESC := 3  # escala inteira (pixel art nítida) do corpo, a mesma para todos os heróis
+const RETRATO_ALT := 132  # o herói parado (32x44) sai em 3x (96x132)
+const RETRATO_L := 120  # caixa do retrato: 40x44 px de folha em 3x; cabe o Hazaki (32) e o Nick/LightWolf (38 de largura)
 const INFO_Y := RETRATO_Y + RETRATO_ALT
 const INFO_ALT := 70
 const DETALHE_Y := INFO_Y + INFO_ALT
@@ -226,7 +228,7 @@ func _mostrar_personagem(id: String) -> void:
 		_excluir.focus_next = caminho
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
-	_definir_retrato(_pasta_do_nome(str(r.nome)), true, Personagens.folha(id))
+	_definir_retrato(true, Personagens.folha(id))
 	_info.text = "Almas: %d\nHerói: %s" % [int(r.almas), _heroi_e_arma(Personagens.heroi(id))]
 	var linhas := []
 	var efeitos := []
@@ -245,7 +247,7 @@ func _mostrar_personagem(id: String) -> void:
 func _mostrar_nome(n: Dictionary) -> void:
 	_sem_alvo()
 	_nome.text = str(n.nome)
-	_definir_retrato(str(n.pasta), true, Personagens.folha_do_nome(str(n.nome)))
+	_definir_retrato(true, Personagens.folha_do_nome(str(n.nome)))
 	_info.text = "Herói: %s" % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
 	_detalhe.text = "Santuário novo: sem almas e sem melhorias."
 
@@ -256,7 +258,7 @@ func _mostrar_texto(txt := "") -> void:
 	_nome.text = ""
 	_info.text = ""
 	_detalhe.text = txt
-	_definir_retrato("", false)
+	_definir_retrato(false)
 
 
 func _sem_alvo() -> void:
@@ -275,37 +277,40 @@ func _heroi_e_arma(heroi_id: String) -> String:
 	return "%s (%s)" % [str(Herois.heroi(heroi_id).nome), Personagens.arma_inicial(heroi_id)]
 
 
-func _pasta_do_nome(nome_txt: String) -> String:
-	for n in Dados.json("v2_salao").get("nomes", []):
-		if str(n.nome) == nome_txt:
-			return str(n.pasta)
-	return ""
-
-
-## O retrato: o rosto do personagem (assets/personagens/<pasta>/rosto.png) quando existe; senão o quadro parado do herói. O
-## rosto.png é uma TIRA de quadros quadrados (altura x altura, 27 quadros): o retrato é só o primeiro, nunca a tira inteira.
-## A escala é inteira (pixel art nítida) e a imagem fica centrada no eixo da ficha, dentro da caixa RETRATO_ALT.
-func _definir_retrato(pasta: String, visivel := true, folha_nome := "") -> void:
+## O retrato (PER-1b): o CORPO inteiro do personagem, o quadro parado de frente da folha dele (a própria, ou a do herói que ele joga).
+## A foto rosto.png não aparece mais aqui. Todos usam o mesmo enquadramento: a mesma escala inteira (RETRATO_ESC), a mesma caixa
+## (RETRATO_L x RETRATO_ALT), o corpo centrado no eixo da ficha e os pés na mesma linha. O quadro é recortado no corpo (a área
+## opaca) e ganha uma margem (AtlasTexture.margin) até o tamanho da caixa, então o TextureRect é igual para todos os heróis.
+func _definir_retrato(visivel := true, folha_nome := "") -> void:
 	var tex: Texture2D = null
-	var rosto := "res://assets/personagens/%s/rosto.png" % pasta
-	if pasta != "" and ResourceLoader.exists(rosto):
-		var tira := load(rosto) as Texture2D
-		if tira != null:
-			tex = _quadro_de(tira, Rect2(0, 0, tira.get_height(), tira.get_height()))
-	elif folha_nome != "":  # sem rosto: o quadro parado da folha do personagem (a dele, ou a do herói que ele joga)
+	if folha_nome != "":
 		var base := Personagens.PASTA_SPRITES + folha_nome
 		var folha := load(base + "_albedo.png") as Texture2D
 		var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 		if folha != null and info is Dictionary:
-			var r: Array = info.retrato.regiao if info.get("retrato") is Dictionary else [0, 0, info.quadro[0], info.quadro[1]]  # Nick: só o corpo
-			tex = _quadro_de(folha, Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3])))
+			tex = _corpo_parado(folha, Rect2(0, 0, float(info.quadro[0]), float(info.quadro[1])))
 	_retrato.visible = visivel and tex != null
 	_retrato.texture = tex
 	if tex == null:
 		return
-	var esc := maxi(1, int(floor(float(RETRATO_ALT) / tex.get_height())))
-	_retrato.size = tex.get_size() * esc
-	_retrato.position = Vector2(FICHA_EIXO - _retrato.size.x / 2.0, RETRATO_Y + (RETRATO_ALT - _retrato.size.y) / 2.0)
+	_retrato.size = Vector2(RETRATO_L, RETRATO_ALT)
+	_retrato.position = Vector2(FICHA_EIXO - RETRATO_L / 2.0, RETRATO_Y)
+
+
+## O quadro parado `quadro` da folha, recortado no corpo (área opaca) e centrado/apoiado nos pés dentro da caixa do retrato
+## (RETRATO_L / RETRATO_ESC x RETRATO_ALT / RETRATO_ESC px de folha).
+func _corpo_parado(folha: Texture2D, quadro: Rect2) -> AtlasTexture:
+	var corpo := quadro
+	var img := folha.get_image()
+	if img != null:
+		var usado := img.get_region(Rect2i(quadro)).get_used_rect()
+		if usado.size.x > 0 and usado.size.y > 0:
+			corpo = Rect2(quadro.position + Vector2(usado.position), Vector2(usado.size))
+	var caixa := Vector2(RETRATO_L, RETRATO_ALT) / RETRATO_ESC
+	var tex := _quadro_de(folha, corpo)
+	var sobra := (caixa - corpo.size).max(Vector2.ZERO)
+	tex.margin = Rect2(floorf(sobra.x / 2.0), sobra.y, sobra.x, sobra.y)  # centrado em x, apoiado embaixo (os pés na mesma linha)
+	return tex
 
 
 func _quadro_de(atlas: Texture2D, regiao: Rect2) -> AtlasTexture:
