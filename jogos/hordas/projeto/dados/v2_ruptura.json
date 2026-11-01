@@ -33,10 +33,10 @@
 	},
 	"herois": {},
 	"cartas": [
-		{"id": "rb_dano", "icone": "icone_martelo", "nome": "Punho de terra", "desc": "A habilidade E causa +{v}% de dano.", "chave": "dano", "valor": 15, "max": 6, "peso": 1.0},
-		{"id": "rb_recarga", "icone": "icone_ampulheta", "nome": "Pulso ligeiro", "desc": "Reduz a recarga da habilidade E em {v}%.", "chave": "recarga", "valor": 6, "max": 4, "peso": 1.0},
-		{"id": "rb_estrondo", "icone": "icone_terremoto", "nome": "Estrondo", "desc": "A habilidade E atordoa {v}% mais.", "chave": "atordoa", "valor": 20, "max": 3, "peso": 0.9},
-		{"id": "rb_contra", "icone": "icone_arte_marcial", "nome": "Contragolpe", "desc": "Depois da ruptura, a katana causa +{v}% de dano por um instante.", "chave": "contra", "valor": 8, "max": 3, "peso": 1.0, "herois": ["hazaki"]},
-		{"id": "rb_eco", "icone": "icone_sino", "nome": "Eco do chão", "desc": "Um segundo pulso, menor e sem atordoar, causa {v}% do dano da ruptura.", "chave": "eco", "valor": 25, "max": 2, "peso": 1.0, "herois": ["hazaki"]}
+		{"id": "rb_dano", "icone": "icone_martelo", "nome": "Punho de terra", "desc": "A habilidade E causa +{v}% de dano.", "chave": "dano", "valor": 18, "max": 5, "peso": 1.0},
+		{"id": "rb_recarga", "icone": "icone_ampulheta", "nome": "Pulso ligeiro", "desc": "Reduz a recarga da habilidade E em {v}%.", "chave": "recarga", "valor": 5, "max": 5, "peso": 1.0},
+		{"id": "rb_estrondo", "icone": "icone_terremoto", "nome": "Estrondo", "desc": "A habilidade E atordoa {v}% mais.", "chave": "atordoa", "valor": 12, "max": 5, "peso": 0.9},
+		{"id": "rb_contra", "icone": "icone_arte_marcial", "nome": "Contragolpe", "desc": "Depois da ruptura, a katana causa +{v}% de dano por um instante.", "chave": "contra", "valor": 5, "max": 5, "peso": 1.0, "herois": ["hazaki"]},
+		{"id": "rb_eco", "icone": "icone_sino", "nome": "Eco do chão", "desc": "Um segundo pulso, menor e sem atordoar, causa {v}% do dano da ruptura.", "chave": "eco", "valor": 10, "max": 5, "peso": 1.0, "herois": ["hazaki"]}
 	]
 }

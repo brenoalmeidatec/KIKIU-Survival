@@ -94,8 +94,8 @@
 			"id": "nicao",
 			"nome": "Nick",
 			"titulo": "O Guardião",
-			"arma": "MARRETA",
-			"desc": "Guardião de marreta. Batida larga e pancada no chão em área, lentas e com empurrão forte. Muita vida, anda devagar.",
+			"arma": "KANABO",
+			"desc": "Guardião de kanabo. Batida larga e pancada no chão em área, lentas e com empurrão forte. Muita vida, anda devagar.",
 			"sprite": "nicao",
 			"raio": 8,
 			"bonus": {
@@ -168,8 +168,8 @@
 			"id": "lucas",
 			"nome": "Luke",
 			"titulo": "O Caótico",
-			"arma": "ADAGAS",
-			"desc": "Adagueiro à distância. Joga adagas em leque na direção da mira; segure para repetir. Frágil, veloz e com sorte nas cartas.",
+			"arma": "KUNAI",
+			"desc": "Arremessador à distância. Joga kunais em leque na direção da mira; segure para repetir. Frágil, veloz e com sorte nas cartas.",
 			"sprite": "lucas",
 			"raio": 5,
 			"bonus": {

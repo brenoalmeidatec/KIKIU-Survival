@@ -158,3 +158,4 @@ v2_pool_cavaleiro 40.0
 v2_pool_cavaleiro_cidade 75.0
 v2_pool_cavaleiro_medio 75.0
 v2_piscadas 30.0
+v2_confirmar_e 12
