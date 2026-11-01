@@ -472,10 +472,31 @@ static func _conquistar(cf: ConfigFile, r: Dictionary) -> Array:
 		if _cumprida(c, r, cf):
 			cf.set_value("conquistas", c.id, true)
 			novas.append(c.id)
-			var premio: Dictionary = c.get("recompensa", {})
-			if str(premio.get("tipo", "")) == "almas":  # o prêmio em almas entra no saldo junto com a conquista (quem chama grava)
-				cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + int(premio.get("n", 0)))
+			_creditar_premio_almas(cf, c)  # o prêmio em almas entra no saldo junto com a conquista (quem chama grava)
 	return novas
+
+
+## Almas que a conquista paga quando cumprida: o campo "almas" e o "n" do prêmio de tipo almas (dados/v2_meta.json, _ajuda).
+static func almas_da_conquista(c: Dictionary) -> int:
+	var premio: Dictionary = c.get("recompensa", {})
+	var n := int(c.get("almas", 0))
+	if str(premio.get("tipo", "")) == "almas":
+		n += int(premio.get("n", 0))
+	return n
+
+
+## Soma no saldo de `cf` as almas que a conquista `c` paga. Quem chama grava. Chamada uma vez por conquista, ao marcá-la.
+static func _creditar_premio_almas(cf: ConfigFile, c: Dictionary) -> void:
+	var n := almas_da_conquista(c)
+	if n > 0:
+		cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + n)
+
+
+static func _conquista_por_id(id: String) -> Dictionary:
+	for c in conquistas():
+		if str(c.id) == id:
+			return c
+	return {}
 
 
 static func _conquista_do_mapa(id: String) -> String:
@@ -507,7 +528,7 @@ static func marcar_mapa_vencido(id: String, cf: ConfigFile = null) -> bool:
 	var conquista := _conquista_do_mapa(id)
 	if conquista == "" or mapa_vencido(id, cf):
 		return false
-	cf.set_value("conquistas", conquista, true)
+	cf.set_value("conquistas", conquista, true)  # as almas do mapa entram em registrar_partida (mapa_vencido_agora), uma vez
 	if gravar:
 		erro_save = not _gravar(cf)
 		return not erro_save
@@ -603,11 +624,12 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)  # antes das conquistas: "partidas" já conta esta
 	cf.set_value("totais", "abates", int(cf.get_value("totais", "abates", 0)) + int(r.get("abates", 0)))
 	var novas := _conquistar(cf, r)
-	var premios := int(cf.get_value("moeda", "almas", 0)) - (antes + ganhas)  # almas de prêmio das conquistas novas
 	var conquista_mapa := _conquista_do_mapa(str(r.get("mapa", "")))
 	if bool(r.get("venceu", false)) and bool(r.get("mapa_vencido_agora", false)) and conquista_mapa != "":
 		if mapa_vencido(str(r.mapa), cf) and not novas.has(conquista_mapa):
 			novas.append(conquista_mapa)
+			_creditar_premio_almas(cf, _conquista_por_id(conquista_mapa))  # marcada pelo combate (marcar_mapa_vencido não paga): o prêmio entra aqui, uma vez
+	var premios := int(cf.get_value("moeda", "almas", 0)) - (antes + ganhas)  # almas de prêmio das conquistas novas
 	cf.set_value("ultima", "tempo", float(r.get("tempo", 0.0)))
 	cf.set_value("ultima", "abates", int(r.get("abates", 0)))
 	cf.set_value("ultima", "maior_combo", int(r.get("maior_combo", 0)))
