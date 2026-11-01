@@ -231,7 +231,5 @@
    "aviso": "cai DE LADO, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido; a marreta cai ao lado, no chao a frente dele"
   }
  },
- "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'.",
- "provisorio": true,
- "origem": "nicao (recolor.py, LW-1; troca pela arte final do LW-7)"
+ "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."
 }
