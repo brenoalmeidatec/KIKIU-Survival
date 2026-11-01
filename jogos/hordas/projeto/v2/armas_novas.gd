@@ -171,6 +171,27 @@ func limpar() -> void:
 	_slot_num.clear()
 
 
+## Solta uma nuvem de um "golpe" que não é arma (a fumaça do Luke, v2/fumaca.gd) num slot livre do pool, em `p`. Devolve false se o pool estiver cheio. Não cria nó nem
+## dicionário: reaproveita o slot, que volta ao pool quando a vida da nuvem (`st.duracao`) acaba.
+func soltar_nuvem(a: Dictionary, p: Vector2) -> bool:
+	var it := _novo("nuvem", a, p, float(a.st.duracao))
+	if it.is_empty():
+		return false
+	it.r = float(a.st.raio)
+	it.t = 0.05  # o primeiro tique já vem logo
+	return true
+
+
+## Há uma nuvem viva do "golpe" `id` cobrindo o ponto `p` (na conta do chão, a mesma do tique)?
+func nuvem_cobre(id: String, p: Vector2) -> bool:
+	for it in itens:
+		if float(it.vida) <= 0.0 or str(it.k) != "nuvem" or str(it.a.get("id", "")) != id:
+			continue
+		if pai.na_elipse(p - (it.p as Vector2), float(it.r)):
+			return true
+	return false
+
+
 func remover(a: Dictionary) -> void:
 	for it in itens:
 		if is_same(it.a, a):
@@ -273,7 +294,7 @@ func quadro(h, dt: float, perto: Array) -> void:
 		it.vida = float(it.vida) - dt
 		it.fase = float(it.fase) + dt * 6.0
 		it.pulso = maxf(0.0, float(it.pulso) - dt * 4.0)
-		if it.a != null:
+		if it.a != null and not it.a.has("fumaca"):  # a fumaça do Luke não fere: não mexe na fonte do dano
 			pai.combate.fonte_dano = str(it.a.id)  # o dano por golpe da tela de fim (combate.ranking_dano)
 		match str(it.k):
 			"projetil":
@@ -577,6 +598,11 @@ func _tique_nuvem(it: Dictionary, dt: float) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	it.t = float(st.tique)
+	if st.has("so_lentidao"):  # a fumaça do Luke: só atrasa quem está dentro, sem dano, número, flash nem evento de golpe
+		for m in pai.mundo.monstros:
+			if m.vivo and not m.morrendo and pai.na_elipse(m.pos - it.p, float(it.r) + m.raio):
+				m.deixar_lento(float(st.lentidao))
+		return
 	var alvos := 0
 	var dano_total := 0.0
 	for m in pai.mundo.monstros:
@@ -2267,6 +2293,9 @@ func _desenhar_nuvem(ci: CanvasItem, it: Dictionary, st: Dictionary, cor: Color,
 		"brasas":
 			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.37, 0.4, 0.44), 7, 32.0, 1.35, 0.72)
 			_desenhar_brasa(ci, p, fase, fade, cor)
+		"bomba":  # a bomba de fumaça do Luke (v2/fumaca.gd): densa o bastante para ler no escuro, rala o bastante para ver os monstros dentro
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, cor, 9, 44.0, 1.5, 0.55, 0.72)
+			_desenhar_volume_nuvem(ci, tex, p + Vector2(0, -8), r * 0.7, fase + 1.7, fade, cor.lightened(0.18), 5, 26.0, 1.2, 0.42, 0.7)
 		_:
 			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, cor, 5, 24.0, 0.76, 0.28)
 
@@ -2297,6 +2326,8 @@ static func motivo_nuvem(id: String) -> String:
 			return "cristais"
 		"cinzas_vulcanicas":
 			return "brasas"
+		"fumaca_luke":
+			return "bomba"
 	return "fumaca"
 
 

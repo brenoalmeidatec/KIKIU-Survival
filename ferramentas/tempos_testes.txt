@@ -186,3 +186,4 @@ v2_cartas_apice 8
 v2_mare_sangue 80
 v2_mare_matriz 45
 v2_misseis 10
+v2_fumaca 10

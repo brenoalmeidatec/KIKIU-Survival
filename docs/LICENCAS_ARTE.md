@@ -201,3 +201,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## LW-4: ícone da E Mísseis ligado no HUD, Claude do Alisson (notebook), 01/11/2026
 
 - O ícone A19 (`assets/v2/habilidade_e/lightwolf.png`, derivado registrado na entrada do LW-3) passa a ser lido pelo slot E do HUD (`v2/hud_habilidades.gd`, `ICONES_E`). Nenhuma arte nova. O míssil em voo (10x4 px) é desenhado em código em `v2/adagas.gd` (`_img_missil`), sem arte de terceiros.
+
+## DEF-5: ícone provisório da fumaça do Luke, Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/projeto/assets/v2/secundario_s/lucas.png` (slot S do Luke, 32x32): arte PRÓPRIA, desenhada por código em `jogos/hordas/fonte_arte/secundario_s/gerar_fumaca_luke.py` (uma bomba de ferro com o pavio aceso e a fumaça). Nenhuma arte de terceiros. É provisória: vale até o Isac aprovar a arte A26 (ChatGPT), que a substitui.
