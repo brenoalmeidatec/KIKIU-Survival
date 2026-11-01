@@ -21,7 +21,7 @@ func ok(cond: bool, msg: String) -> void:
 func _ready() -> void:
 	var cartas: Dictionary = Dados.json("v2_cartas")
 	var ids: Array = []
-	for secao in ["stats", "golpes", "modificadores", "evolucoes"]:
+	for secao in ["stats", "golpes", "modificadores", "evolucoes", "evolucoes_matriz"]:  # evolucoes_matriz: a Aurora Lunar do LightWolf (LW-6)
 		for d in cartas[secao]:
 			ids.append(str(d.id))
 	ok(ids.size() >= 86, "v2_cartas.json tem %d cartas, esperava pelo menos 86" % ids.size())  # cresce quando entram cartas novas

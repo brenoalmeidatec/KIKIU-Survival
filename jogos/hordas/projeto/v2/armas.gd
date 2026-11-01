@@ -27,7 +27,9 @@ var combate
 var mundo
 var fx
 var ativas := {}  # id -> golpe secundário {id, tipo, cor, slot, nivel, bonus, st (números), t, t2, ang, pulso, pts, R, evo}
-var mods := {"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0, "abalo": 0.0, "muralha": 0.0, "chuva": 0.0, "mira": 0.0}  # valor acumulado (em %) de cada modificador da katana
+var mods := {
+	"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0, "abalo": 0.0, "muralha": 0.0, "chuva": 0.0, "mira": 0.0, "sifao": 0.0, "ampla": 0.0, "cabo": 0.0
+}  # valor acumulado (em %) de cada modificador da katana; sifao, ampla (graus) e cabo são as cartas da matriz do LightWolf (LW-6, v2/matriz.gd)
 var ventania := {}  # evolução da katana, ou {}
 var acertos := {}  # tipo -> quantos acertos (testes)
 var lancadas := 0  # ondas e lanças lançadas (testes)

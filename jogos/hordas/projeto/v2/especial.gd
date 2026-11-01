@@ -734,6 +734,8 @@ func carregar(h, pontos: float, fonte := "dano", por_nivel := true) -> void:
 	if c.jogo != "jogando" or c.pausado or ocupado() or h.estado == h.Estado.MORTO or h.estado == h.Estado.ESPECIAL:
 		return
 	var antes: float = h.esp_carga
+	if h.forma_lobo and c.cartas != null:  # LW-6: o Cabo de Resgate acelera a carga do chamado do Lobo (toda fonte: dano, abate, recebido e tempo)
+		pontos *= c.cartas.mult_cabo()
 	# o herói fica mais forte a cada nível (dano e abates por segundo sobem), então o mesmo golpe vale menos carga: o Q segue a cada ~1 minuto e pouco
 	if por_nivel:
 		pontos /= 1.0 + float(_carga_de(h).nivel_k) * float(maxi(h.nivel - 1, 0))
