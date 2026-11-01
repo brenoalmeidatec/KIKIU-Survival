@@ -39,6 +39,7 @@ const TAM_CAB := Paleta.TITULO_PEQUENO
 const TAM_NOME_PEQ := Paleta.TITULO_PEQUENO
 const ALT_LINHA := 18.0
 const Herois := preload("res://v2/herois.gd")  # o herói escolhido: nome, arma (dados/v2_herois.json)
+const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a linha "Recarga da defesa"
 const ALT_CAB := 18.0
 const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
@@ -421,6 +422,18 @@ static func _sec_heroi(m) -> Dictionary:
 	# o fôlego volta à taxa rápida só com o herói livre E parado; andando ou golpeando (o golpe tira o herói do estado livre) vale a lenta
 	lin.append(_l("heroi.recupera", "Recupera parado", "%s/s" % _v(rp, 1), [rp]))
 	lin.append(_l("heroi.recupera_andando", "Recupera em ação", "%s/s" % _v(ra, 1), [ra]))
+	if h.def_max > 0.0:  # a barra de defesa do escudo (própria, separada do fôlego); quem não tem escudo não vê estas linhas
+		var barra: Dictionary = c.escudo.cfg.barra
+		var regen: float = Dificuldade.fator(m, "defesa_regen_mult")
+		lin.append(_l("heroi.defesa", "Defesa do escudo", "%d (%s s erguido)" % [roundi(h.def_max), _v(h.def_max / float(barra.gasto_s))], [h.def_max]))
+		lin.append(
+			_l(
+				"heroi.defesa_recarga",
+				"Recarga da defesa",
+				"%s/s parado" % _v(float(barra.regen_parado) * regen, 1) if regen > 0.0 else "só com cura",
+				[float(barra.regen_parado) * regen]
+			)
+		)
 	lin.append(_l("heroi.ima", "Ímã de almas", "%d px" % roundi(h.alcance_ima()), [h.alcance_ima()], _mais_pct((h.m_ima - 1.0) * 100.0)))
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))

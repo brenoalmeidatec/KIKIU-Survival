@@ -5,7 +5,8 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 ## Resultado da partida com as almas da v2 (camada 12, por cima da tela de resultado de telas.gd, que não é tocada). Quando a
 ## partida acaba (o herói cai, ou o sinal partida_terminou do mundo, se existir), grava a partida em v2/meta.gd e mostra as almas
 ## ganhas subindo e o saldo somando; as conquistas cumpridas aparecem embaixo. "CONTINUAR" (clique, Enter, Espaço, E ou A) vai
-## para o salão do personagem (v2/salao.tscn). Durante a partida, as conquistas de tempo e de combo viram um aviso no alto. O mouse não
+## para o salão do personagem (v2/salao.tscn). Durante a partida, as conquistas cumpridas ao vivo (tempo, combo...) vão para a HUD
+## (sinal conquista_cumprida, ligado em montar; o topo mostra CUMPRIDA, hud_conquista.gd). O mouse não
 ## chega nos Controls de dentro do SubViewport, então o clique não passa por botão: é qualquer clique, lido aqui.
 ## Criada pelo mundo.gd (uma linha no _ready, fora do modo de teste); o mundo entrega a entrada a ela antes da tela de resultado.
 
@@ -16,7 +17,6 @@ const ALT := 540
 const SANTUARIO := "res://v2/salao.tscn"
 const TEMPO_ANIM := 1.4  # s para as almas subirem até o total
 const TEMPO_ACEITA := 0.8  # s antes de aceitar continuar (evita o clique de quem estava segurando o golpe)
-const TEMPO_AVISO := 2.6
 const MAX_NOVAS := 6  # conquistas que cabem embaixo das almas (três linhas de duas)
 const DANO_LINHAS := 5  # golpes no quadro "dano por golpe" (os maiores; o resto soma em "outros" só no total)
 const FRASE_Y := 110.0  # sob o título (y 52, Jersey 56) e acima do quadro "dano por golpe" (y 128)
@@ -38,7 +38,9 @@ var _premios := 0  # almas de prêmio das conquistas novas (Meta.registrar_parti
 var _save_ok := true
 var _tocou := false
 var _checa_t := 0.0
-var _aviso_t := 0.0
+
+## Uma ou mais conquistas cumpridas ao vivo (já gravadas no save): a HUD mostra CUMPRIDA no topo (hud.gd, conquistas_cumpridas).
+signal conquista_cumprida(ids: Array)
 
 var _fundo: ColorRect
 var _res: Control
@@ -51,7 +53,6 @@ var _almas_num: Label
 var _saldo: Label
 var _novas: Label
 var _botao: Control
-var _aviso: Label
 var _dano_tit: Label
 var _dano_nomes: Array[Label] = []
 var _dano_pct: Array[Label] = []
@@ -123,11 +124,9 @@ func montar(m) -> void:
 	txt.size = _botao.size
 	_botao.add_child(txt)
 	_res.add_child(_botao)
-	_aviso = _rotulo("", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
-	_aviso.position = Vector2(0, 96)
-	_aviso.size = Vector2(LARG, 40)
-	_aviso.visible = false
-	add_child(_aviso)
+	var hud = m.get("hud")  # o topo da HUD mostra as conquistas cumpridas ao vivo (UI-5); mundo de teste pode não ter HUD
+	if hud != null and hud.has_method("conquistas_cumpridas"):
+		conquista_cumprida.connect(hud.conquistas_cumpridas)
 	if mundo.has_signal("partida_terminou"):
 		mundo.connect("partida_terminou", _ao_terminar)
 
@@ -223,18 +222,13 @@ func _estilo_botao() -> StyleBoxFlat:
 func _process(dt: float) -> void:
 	if mundo == null or _saindo:
 		return
-	if _aviso_t > 0.0:
-		_aviso_t -= dt
-		_aviso.modulate.a = clampf(_aviso_t / 0.5, 0.0, 1.0)
-		if _aviso_t <= 0.0:
-			_aviso.visible = false
 	if aberto:
 		_animar(dt)
 		return
-	# conquistas de tempo e combo acontecem no meio da partida: checa duas vezes por segundo (é uma leitura pequena)
+	# conquistas de tempo e combo acontecem no meio da partida: checa uma vez por segundo (lê e grava o save; a HUD mostra a conquista pelo sinal)
 	_checa_t -= dt
 	if _checa_t <= 0.0 and not _terminou:
-		_checa_t = 0.5
+		_checa_t = 1.0
 		var novas: Array = Meta.checar_ao_vivo(mundo.tempo_partida, mundo.maior_combo, Meta.vivo_da_partida(mundo))
 		if not novas.is_empty():
 			_avisar(novas)
@@ -338,13 +332,7 @@ func _animar(dt: float) -> void:
 
 
 func _avisar(ids: Array) -> void:
-	var nomes: Array = []
-	for id in ids:
-		nomes.append(_nome_conquista(id))
-	_aviso.text = "CONQUISTA: " + ", ".join(PackedStringArray(nomes)).to_upper()
-	_aviso.visible = true
-	_aviso.modulate.a = 1.0
-	_aviso_t = TEMPO_AVISO
+	conquista_cumprida.emit(ids)
 	if mundo.combate != null:
 		mundo.combate.audio.tocar("nivel", 1.0, -2.0, 0.0)
 

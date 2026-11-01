@@ -14,6 +14,10 @@ const Mapas := preload("res://v2/mapas.gd")
 const Icones := preload("res://v2/icones_santuario.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Salao := preload("res://v2/salao.tscn")
+const Hud := preload("res://v2/hud.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const ConquistaHud := preload("res://v2/hud_conquista.gd")
+const CONDICOES_AO_VIVO := ["tempo", "combo", "abates", "nivel", "evolucoes"]  # as que a partida mede sozinha (Conquistas.CONDICOES_AO_VIVO)
 const Mundo := preload("res://v2/mundo.tscn")
 const SAVE_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_meta.cfg"
 const OPCOES_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_opcoes.cfg"
@@ -46,6 +50,9 @@ func _ready() -> void:
 	Personagens.caminho_indice = "user://testes_v2/v2_conquistas/teste_v2_conquistas_personagens.cfg"
 	Personagens.caminho_antigo = "user://testes_v2/v2_conquistas/teste_v2_conquistas_antigo.cfg"
 	_limpar()
+	_escolha()
+	_travada()
+	_topo()
 	_dados()
 	_progresso()
 	_pesadelo()
@@ -56,6 +63,93 @@ func _ready() -> void:
 	ok(md5_real == depois, "o save real da meta nao foi tocado")
 	print("v2_conquistas falhas=%d" % falhas)
 	get_tree().quit()
+
+
+## Mundo falso da partida para o HUD da conquista em andamento (só os campos que ela lê).
+class MundoFalsoConq:
+	extends RefCounted
+	var heroi = null
+	var tempo_partida := 0.0
+	var maior_combo := 0
+	var abates := 0
+	var monstros_vivos := 0
+
+
+## A escolha: a de maior fração entre as que a partida mede sozinha, sem as feitas, os segredos e as de outro herói. Sem nada sobrando, vazia.
+func _escolha() -> void:
+	var estado := Meta.estado()  # save de teste, limpo antes
+	var vivo := {"tempo": 0.0, "combo": 0, "abates": 0, "nivel": 1, "evolucoes": 0, "heroi": "nicao"}
+	var ls: Array = Conquistas.linhas(vivo, estado)
+	var e: Dictionary = Conquistas.escolher(ls, "nicao")
+	ok(not e.is_empty(), "com o save vazio sempre há uma conquista em andamento")
+	ok(not bool(e.get("feita", true)) and not bool(e.get("segredo", true)), "a escolhida não está feita nem é segredo")
+	ok(CONDICOES_AO_VIVO.has(str(e.get("condicao", ""))), "a escolhida é medida ao vivo (%s)" % str(e.get("condicao", "")))
+	var maior := true
+	for l in ls:
+		var cabe := not bool(l.feita) and not bool(l.segredo) and CONDICOES_AO_VIVO.has(str(l.condicao)) and (str(l.heroi) == "" or str(l.heroi) == "nicao")
+		if cabe and float(l.frac) > float(e.frac):
+			maior = false
+	ok(maior, "nenhuma candidata tem fração maior que a escolhida")
+	var de_outro: Dictionary = Conquistas.escolher(ls, "hazaki")
+	ok(str(de_outro.get("heroi", "")) in ["", "hazaki"], "com outro herói, a escolhida não é de herói nenhum outro")
+	for k in estado.conquistas.keys():
+		estado.conquistas[k] = true
+	ok(Conquistas.escolher(Conquistas.linhas(vivo, estado), "nicao").is_empty(), "com tudo cumprido não sobra conquista em andamento")
+
+
+## O HUD trava a conquista: a partida em andamento não troca de conquista; cumprida, mostra CUMPRIDA e só depois entra a próxima.
+func _travada() -> void:
+	var m := MundoFalsoConq.new()
+	var c := ConquistaHud.new()
+	add_child(c)
+	c.ligar(m)
+	c.avancar(0.0)
+	var id1: String = c._travada
+	ok(id1 != "", "a conquista em andamento é escolhida na primeira leitura")
+	m.maior_combo = 99
+	m.tempo_partida = 9999.0
+	c.avancar(0.3)
+	ok(c._travada == id1, "outra conquista ganhar fração no meio da partida não troca a travada (%s)" % id1)
+	var outro := ""
+	for cc in Meta.conquistas():
+		if str(cc.id) != id1:
+			outro = str(cc.id)
+			break
+	c.cumprir([outro])
+	c.avancar(1.0)
+	c.avancar(3.0)
+	ok(c._travada == id1, "cumprir outra conquista não tira a travada")
+	c.cumprir([id1])
+	ok(c.visible and str(c._nome.text).begins_with("CUMPRIDA"), "cumprida mostra o selo CUMPRIDA no topo")
+	ok(c._travada == "", "cumprida a travada sai, e a próxima só entra quando o selo sai")
+	c.avancar(1.0)
+	ok(c._travada == "", "o selo ainda está no topo com 1 s")
+	c.avancar(2.0)
+	ok(c._travada != "" and c._travada != id1, "depois do selo entra outra conquista (%s)" % c._travada)
+	ok(bool(c._estado.conquistas.get(id1, false)), "a cumprida fica marcada no estado da partida (sem reler o save)")
+	c.queue_free()
+
+
+## O retângulo da conquista no canvas: 6 a 274 x 6 a 46, sem cobrir nenhum bloco da HUD, nas três escalas fixas da interface.
+func _topo() -> void:
+	var m := MundoFalsoConq.new()
+	var blocos := ["Retrato", "MolduraBarras", "Golpes", "Tempo", "Abates", "Nivel", "Combo", "Chefe", "Anuncio", "Xp", "Ultimate", "Habilidades"]
+	for opcao in ["pequeno", "medio", "grande"]:
+		var janela := Vector2(1920, 1080)
+		var canvas: Vector2 = EscalaUi.canvas(janela, opcao)
+		var d: Vector2 = EscalaUi.deslocamento(canvas)
+		var hud = Hud.criar(m)
+		add_child(hud)
+		hud.set_process(false)
+		hud.ui_reencaixar(canvas, d)
+		var no: Control = hud.get_node("Raiz/Conquista")
+		var r := Rect2(no.position + d, no.size)
+		var rotulo := "%s (canvas %dx%d)" % [opcao, canvas.x, canvas.y]
+		ok(r == Rect2(6, 6, 268, 40), "%s: a conquista fica em 6,6 268x40 do canvas (%s)" % [rotulo, r])
+		for nome in blocos:
+			var b: Control = hud.get_node("Raiz/" + nome)
+			ok(not r.intersects(Rect2(b.position + d, b.size * b.scale)), "%s: a conquista não cobre %s" % [rotulo, nome])
+		hud.queue_free()
 
 
 func _limpar() -> void:

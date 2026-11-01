@@ -430,6 +430,7 @@ func _aplicar_stat(h, stat: String, v: float) -> void:
 			h.m_critico += v / 100.0
 		"cura":
 			h.curar(h.vida_max)
+			h.repor_defesa_de("carta_cura")  # a carta Cura enche a barra do escudo
 
 
 # ------------------------------------------------------------------ evolução
