@@ -1469,7 +1469,7 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				var raio := float(st.raio)
 				if float(it.t) > 0.0:
 					var k := 1.0 - float(it.t) / float(st.aviso)
-					var pisca := 0.5 + 0.5 * sin(float(it.fase) * 2.0)
+					var pisca := pisca_aviso(float(it.fase))
 					ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 					ci.draw_arc(Vector2.ZERO, raio * (1.0 - 0.4 * k), 0.0, TAU, 32, Color(cor.r, cor.g, cor.b, 0.5 + 0.4 * pisca), 2.0)
 					ci.draw_circle(Vector2.ZERO, raio * 0.35 * k, Color(cor.r, cor.g, cor.b, 0.25 * k))
@@ -1924,9 +1924,30 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), Color(0.92, 0.85, 0.62), 1.2)  # o pavio
 	if est == 2:
 		var f := clampf(float(it.age) / float(st.get("pavio", 0.5)), 0.0, 1.0)
-		if fposmod(float(it.age) * (6.0 + 18.0 * f), 1.0) < 0.5:
-			ci.draw_circle(Vector2(0, 0), 6.2, Color(1, 1, 1, 0.7))
+		var a_est := alfa_pavio_estourando(float(it.age), f)
+		if a_est > 0.0:
+			ci.draw_circle(Vector2(0, 0), 6.2, Color(1, 1, 1, a_est))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## "Reduzir piscadas": as três luzes da granada e do meteoro que oscilavam acima de 1,5 Hz (mais de 3 trocas por segundo). Funções à parte para o teste
+## amostrar a mesma conta que o desenho usa. `fase` é it.fase (6 rad/s). Cada uma devolve o valor variável; a opção devolve o centro da faixa.
+static func alfa_pavio(fase: float) -> float:  # a faísca do pavio: 0,7 + 0,3 sin(3 fase) = ~2,9 Hz
+	return Piscadas.valor(0.7 + 0.3 * sin(fase * 3.0), 0.7)
+
+
+static func pulso_mira(fase: float) -> float:  # a mira no chão da granada: 0,8 + 0,2 sin(2 fase) = ~1,9 Hz
+	return Piscadas.valor(0.8 + 0.2 * sin(fase * 2.0), 0.8)
+
+
+static func pisca_aviso(fase: float) -> float:  # o aviso do meteoro e do cometa: 0,5 + 0,5 sin(2 fase) = ~1,9 Hz
+	return Piscadas.valor(0.5 + 0.5 * sin(fase * 2.0), 0.5)  # 0,5 -> alfa do arco 0,5 + 0,4 x 0,5 = 0,7
+
+
+static func alfa_pavio_estourando(age: float, f: float) -> float:  # o disco branco dos últimos 0,5 s do pavio: liga e desliga de 6 a 24 Hz
+	if Piscadas.ligado():
+		return 0.35  # parado: o brilho médio do liga e desliga (0,7 na metade do tempo)
+	return 0.7 if fposmod(age * (6.0 + 18.0 * f), 1.0) < 0.5 else 0.0
 
 
 ## O brilho da cabaça (camada aditiva): a faísca do pavio, a mira onde ela vai cair, o círculo de aviso que cresce até o raio, o clarão da
@@ -1942,7 +1963,7 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 	if est == 0:  # a mira no chão: disco e anel no ponto de queda, com um anel que fecha sobre ele e quatro riscas; esquenta enquanto a cabaça desce
 		var k := clampf(age / float(st.get("voo", 0.55)), 0.0, 1.0)
 		var alvo: Vector2 = (it.dest as Vector2).round()
-		var pulso := 0.8 + 0.2 * sin(float(it.fase) * 2.0)
+		var pulso := pulso_mira(float(it.fase))
 		ci.draw_set_transform(alvo, 0.0, Vector2(1, ACHATA))
 		ci.draw_circle(Vector2.ZERO, raio * 0.6, Color(1.0, 0.4, 0.1, (0.1 + 0.12 * k) * pulso))
 		ci.draw_arc(Vector2.ZERO, raio * 0.6, 0.0, TAU, 32, Color(1.0, 0.55, 0.18, (0.4 + 0.45 * k) * pulso), 2.0)
@@ -1958,7 +1979,7 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 		ci.draw_texture_rect(tex, Rect2(p + Vector2(-tam, -tam * ACHATA), Vector2(tam, tam * ACHATA) * 2.0), false, Color(1.0, 0.5, 0.15, 0.42 - 0.18 * alta))
 	if est <= 2:
 		var ponta := _ponta_pavio(it).round()
-		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.8, 0.3, 0.7 + 0.3 * sin(float(it.fase) * 3.0)))
+		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.8, 0.3, alfa_pavio(float(it.fase))))
 		ci.draw_circle(ponta, 1.6, Color(1, 1, 0.9, 0.95))
 		var c := p + Vector2(0, -_altura_granada(it) - 6.0)
 		ci.draw_texture_rect(tex, Rect2(c - Vector2(11, 11), Vector2(22, 22)), false, Color(1.0, 0.55, 0.15, 0.16))  # o calor em volta da cabaça

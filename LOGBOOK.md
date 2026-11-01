@@ -2785,3 +2785,10 @@ _Claude do Alisson (notebook)_
 - **Pendente:** `v2/elites.gd` segue no tempo real (fora da lista do ECO-1). A conquista `sobreviva_5min` na Floresta pode ficar inalcançável (o mapa acaba em ~4,8 min); o ajuste é do Alisson (D19 registrada no PR).
 - **Próximo:** ECO-2 (fôlego) e ECO-5 (chave dos portais) seguem a onda 2.
 - **Conserto da revisão (rodada 1):** `proxima_onda` está no relógio do diretor, então o status e a guarda da Maré chamada pelo Q (`q_atraso`, em dt) passaram a usar `diretor.falta_onda_real()` (divide por `tempo_mult`); o aviso de 1,2 s da Maré também é em tempo real. Testes novos: status em 1,4, Maré da Vila em 1,25, dano e elenco no `v2_tempo_mult`, ciclo do mini-chefe na Torre em `v2_chefe`.
+
+## 2026-11-01: UI-2, 4ª rodada (varredura sistemática do "Reduzir piscadas", Claude do Alisson, #523)
+
+- **Decisão do integrador:** o critério é o da WCAG: com a opção ligada, no máximo 3 trocas de luminância em QUALQUER janela deslizante de 1 s e nenhum vermelho piscando. Um seno troca 2 vezes por ciclo: oscilação de alfa, modulate, energia ou cor acima de 1,5 Hz (ou flash repetido mais rápido que ~1 s) passa por `Piscadas`.
+- **Feito:** `FLASH_REPETE_S` de 0,7 para 1,0 s e o teste do flash passa a contar a pior janela de 1 s (`Piscadas.trocas_janela`), não a média; a marca do golpe forte (modo 3) entra no mesmo intervalo (flash e marca do mesmo golpe se fundem). Os três pontos da rodada 3 (pavio, mira e aviso do meteoro/cometa em `armas_novas.gd`) e o disco branco do pavio estourando (6 a 24 Hz, achado pela varredura) passam por `Piscadas`. Luzes e shaders: tremor das luzes (`luzes.gd`), `_flick` do salão, lanternas do título, `SHADER_EXPLOSAO` (uniform `calmo`) e `SHADER_AURA` (t e pulso zerados). A tabela do que foi coberto e do que ficou de fora está no corpo do PR.
+- **Prova:** os casos novos de `v2_piscadas` falham no código anterior (granada 6/4/4/20 trocas na pior janela, marca 4, flash a 0,7 s dá 4) e passam com o conserto.
+- **Não verificado:** nada foi medido na tela de verdade; são séries amostradas por fórmula e uniforms lidos no teste. Luzes, salão e título não têm teste próprio (um `if` cada).

@@ -110,6 +110,7 @@ uniform vec4 cor : source_color = vec4(1.0);
 uniform float px = 128.0;
 uniform float semente = 0.0;
 uniform float espinhos = 1.0;
+uniform float calmo = 0.0;  // 1 = "Reduzir piscadas": os anéis não giram (g1, g2 e a bolha cintilavam a 1,4 a 2,5 Hz por pixel)
 float h(float x) { return fract(sin(x * 127.1 + semente * 31.7) * 43758.5453); }
 void fragment() {
 	vec2 uv = (floor(UV * px) + 0.5) / px;
@@ -121,13 +122,13 @@ void fragment() {
 	float e1 = 1.0 - pow(1.0 - clamp(t / 0.4, 0.0, 1.0), 3.0);
 	float r1 = 0.12 + 0.72 * e1;
 	float w1 = 0.035 + 0.05 * (1.0 - e1);
-	float g1 = smoothstep(0.2, 0.85, 0.5 + 0.5 * sin(a * 3.0 + t * 16.0 + semente * 6.0));
+	float g1 = smoothstep(0.2, 0.85, 0.5 + 0.5 * sin(a * 3.0 + t * 16.0 * (1.0 - calmo) + semente * 6.0));
 	float anel1 = exp(-pow((r - r1) / w1, 2.0)) * (0.45 + 0.55 * g1);
 	float e2 = 1.0 - pow(1.0 - clamp((t - 0.05) / 0.5, 0.0, 1.0), 3.0);
 	float r2 = 0.08 + 0.88 * e2;
-	float g2 = smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(-a * 2.0 + t * 11.0 + semente * 3.0));
+	float g2 = smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(-a * 2.0 + t * 11.0 * (1.0 - calmo) + semente * 3.0));
 	float anel2 = exp(-pow((r - r2) / 0.03, 2.0)) * g2 * step(0.05, t);
-	float bolha = (1.0 - smoothstep(r1 - 0.3, r1, r)) * 0.16 * e1 * (0.7 + 0.3 * sin(a * 5.0 - t * 9.0));
+	float bolha = (1.0 - smoothstep(r1 - 0.3, r1, r)) * 0.16 * e1 * (0.7 + 0.3 * sin(a * 5.0 - t * 9.0 * (1.0 - calmo)));
 	float setor = floor((a + 3.14159) / 6.28318 * 14.0);
 	float meio = (setor + 0.5) / 14.0 * 6.28318 - 3.14159;
 	float da = abs(mod(a - meio + 3.14159, 6.28318) - 3.14159);
@@ -673,6 +674,7 @@ func explosao(p: Vector2, raio: float, cor: Color, espinhos := 1.0, dur := EXPLO
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("px", roundf(r * 2.0))
+	mat.set_shader_parameter("calmo", 1.0 if Piscadas.ligado() else 0.0)
 	mat.set_shader_parameter("semente", _rng.randf() * 10.0)
 	mat.set_shader_parameter("espinhos", espinhos)
 	_ex_t[i] = 0.0
@@ -711,10 +713,11 @@ func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: floa
 func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	if a == null or a.tipo.is_empty():
 		return
-	if modo == 0 and Piscadas.ligado():  # "Reduzir piscadas": tinta fixa, e o mesmo ator não leva outro flash de acerto logo em seguida
+	if (modo == 0 or modo == 3) and Piscadas.ligado():  # "Reduzir piscadas": o mesmo ator não leva outra silhueta (flash ou marca) logo em seguida
 		if not _pode_flash_acerto(a):
 			return
-		forca = Piscadas.FLASH_ALFA
+		if modo == 0:
+			forca = Piscadas.FLASH_ALFA  # a marca do golpe forte já é cheia: não tem alfa a fixar
 	if modo == 3:
 		var marcas := 0
 		for j in MAX_FLASH:
@@ -757,11 +760,16 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	usados.flashes += 1
 
 
-## Pode um flash de acerto novo em `a`? Não, se ele levou outro há menos de FLASH_REPETE_S. Registra este (anel de tamanho fixo, nada nasce).
+## Pode uma silhueta de acerto nova em `a` (flash de acerto ou marca do golpe forte)? Não, se ele levou outra há menos de FLASH_REPETE_S. Registra esta
+## (anel de tamanho fixo, nada nasce). O flash e a marca do MESMO golpe chegam no mesmo quadro e se fundem num liga e desliga só: o segundo passa sem registrar.
 func _pode_flash_acerto(a) -> bool:
 	for j in _pisca_alvo.size():
-		if _pisca_alvo[j] == a and _pisca_rel - _pisca_quando[j] < Piscadas.FLASH_REPETE_S:
-			return false
+		if _pisca_alvo[j] == a:
+			var desde: float = _pisca_rel - _pisca_quando[j]
+			if absf(desde) < 0.001:
+				return true
+			if desde < Piscadas.FLASH_REPETE_S:
+				return false
 	_pisca_alvo[_pisca_i] = a
 	_pisca_quando[_pisca_i] = _pisca_rel
 	_pisca_i = (_pisca_i + 1) % _pisca_alvo.size()
@@ -985,6 +993,7 @@ func atualizar(dt: float) -> void:
 			_ex[i].visible = false
 			continue
 		(_ex[i].material as ShaderMaterial).set_shader_parameter("prog", _ex_t[i] / _ex_dur[i])
+		(_ex[i].material as ShaderMaterial).set_shader_parameter("calmo", 1.0 if Piscadas.ligado() else 0.0)
 	for i in MAX_ECOS:
 		if _eco_t[i] >= _eco_dur[i]:
 			continue

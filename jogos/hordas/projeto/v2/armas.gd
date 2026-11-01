@@ -1160,8 +1160,8 @@ func _aura_visual(h) -> void:
 	_aura_sp.scale = Vector2(raio * 2.3 / 4.0, raio * 2.3 * ACHATA / 4.0)
 	var mat := _aura_sp.material as ShaderMaterial
 	mat.set_shader_parameter("cor", cor)
-	mat.set_shader_parameter("t", _fase)
-	mat.set_shader_parameter("pulso", pulso)
+	mat.set_shader_parameter("t", Piscadas.valor(_fase, 0.0))  # "Reduzir piscadas": a chama não gira (a ~1,1 e 1,75 Hz por pixel) nem pulsa
+	mat.set_shader_parameter("pulso", Piscadas.valor(pulso, 0.0))
 
 
 func _desenhar_corpo() -> void:

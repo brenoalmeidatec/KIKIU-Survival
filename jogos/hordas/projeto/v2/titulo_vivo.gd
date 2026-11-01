@@ -6,6 +6,7 @@ extends Control
 ## partículas de CPU. As posições são em pixels da arte (960x540); o nó `_efeitos` acompanha o zoom e a deriva do shader.
 
 const EscalaUi := preload("res://v2/escala_ui.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": as lanternas ficam com alfa parado
 const ARTE := preload("res://assets/titulo/fundo.png")
 const SHADER := preload("res://v2/titulo_fundo.gdshader")
 const TAM_ARTE := Vector2(960, 540)
@@ -242,7 +243,7 @@ func _folhas() -> CPUParticles2D:
 func _animar_lanternas() -> void:
 	for i in _lanternas.size():
 		var f := 0.42 + 0.1 * sin(_t * 7.3 + i * 1.7) + 0.06 * sin(_t * 13.1 + i * 4.1)
-		_lanternas[i].modulate.a = f
+		_lanternas[i].modulate.a = Piscadas.valor(f, 0.42)  # tremeluz até 2,1 Hz; com a opção, o centro
 
 
 ## Olhos que brilham na mata e piscam de vez em quando.

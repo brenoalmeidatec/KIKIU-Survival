@@ -3,6 +3,7 @@ extends "res://testes/isolamento_v2.gd"
 # o que mais liga e desliga: a invencibilidade do herói, o fôlego cansado, a vida baixa e o chão anunciado. Cada série é amostrada por 3 s (180 quadros)
 # e as trocas de luz são contadas. Desligada, o herói dá ~28 por segundo (prova que o teste pega o defeito); ligada, no máximo 3 por segundo.
 # Também confere a luz do fogo da aura (energia fixa), a cor da carga sobre a invencibilidade e o cache da opção no Config. Também confere: clarão de tela, glitch do clima, flash de acerto (tinta fixa e sem repetir em 0,7 s; conta TROCAS de luminância, não flashes) e o flash da morte, que fica.
+# Também: a granada (pavio, mira, disco do pavio estourando) e o aviso do meteoro/cometa em janela deslizante de 1 s, e os uniforms que congelam a explosão grande e a aura.
 # Também: o brilho da barra de XP ao subir de nível e o escudo avermelhado de defesa baixa (cor fixa), a vinheta de vida baixa (alfa parado desde a entrada). Roda nos perfis Alto e Baixo.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_piscadas.tscn  (imprime "v2_piscadas falhas=0")
 # Não prova que PINTA: a medição na tela, em janela de verdade, é feita à parte (ver o PR).
@@ -15,8 +16,10 @@ const HudHabilidades := preload("res://v2/hud_habilidades.gd")
 const HudGolpes := preload("res://v2/hud_golpes.gd")
 const HudNivel := preload("res://v2/hud_nivel.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
+const ArmasNovas := preload("res://v2/armas_novas.gd")
 const PASSO := 1.0 / 60.0
 const QUADROS := 180  # 3 s
+const JANELA := 60  # 1 s em quadros: a janela deslizante da WCAG (no máximo 3 trocas em qualquer 1 s)
 var falhas := 0
 var w
 var armas
@@ -100,7 +103,18 @@ func rodar(perfil: String) -> void:
 	)
 	ok(Piscadas.trocas([0.50, 0.51, 0.50, 0.51, 0.50]) == 4, "trocas(): uma oscilação pequena (0,01) também conta: nada passa por 'quase parado'")
 	ok(Piscadas.trocas([0.0, 0.0, 0.0, 0.0]) == 0 and Piscadas.trocas([0.2]) == 0, "trocas(): série constante ou de um ponto não troca")
-	ok(Piscadas.FLASH_REPETE_S >= 0.67, "o intervalo do flash de acerto é de pelo menos 0,67 s (cada flash liga e desliga: 2 trocas, no máximo 3 por segundo)")
+	ok(
+		Piscadas.FLASH_REPETE_S >= 1.0,
+		"o intervalo do flash de acerto é de pelo menos 1,0 s (cada flash liga e desliga: 2 trocas; dois flashes a 1,0 s cabem 3 trocas numa janela de 1 s)"
+	)
+	ok(
+		Piscadas.trocas_janela([0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], 2) == 2 and Piscadas.trocas_janela([0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], 2) == 2,
+		"trocas_janela(): o máximo em qualquer janela, não a média"
+	)
+	ok(
+		Piscadas.trocas_janela([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0], 4) == 4 and Piscadas.trocas_janela([0.3, 0.3, 0.3], 2) == 0,
+		"trocas_janela(): conta 4 numa janela de 4 e ignora série parada"
+	)
 	# o cache do Config acompanha a opção em definir(), temporario() e recarregar()
 	Config.definir(Piscadas.OPCAO, true)
 	ok(Config.reduzir_piscadas and Piscadas.ligado(), "o cache do Config liga com definir()")
@@ -241,7 +255,7 @@ func rodar(perfil: String) -> void:
 	fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
 	ok(fx._cl_t >= 9.0, "ligada: o clarão de tela não acende")
 
-	# 7. flash de acerto: tinta fixa, sem repetir no mesmo monstro em menos de 0,7 s; o da morte fica
+	# 7. flash de acerto: tinta fixa, sem repetir no mesmo monstro em menos de 1,0 s; o da morte fica
 	zerar()
 	var mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
 	var outro = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(-120, 0))
@@ -256,12 +270,12 @@ func rodar(perfil: String) -> void:
 	ok(fx.usados.flashes - antes == 1, "ligada: o primeiro flash de acerto passa")
 	passos(10)  # 0,17 s
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 1, "ligada: o mesmo monstro não leva outro flash em 0,7 s")
+	ok(fx.usados.flashes - antes == 1, "ligada: o mesmo monstro não leva outro flash em 1,0 s")
 	fx.flash(outro, 0.1)
 	ok(fx.usados.flashes - antes == 2, "ligada: outro monstro leva o flash normalmente")
-	passos(35)  # passou de 0,7 s desde o primeiro (0,75 s)
+	passos(52)  # passou de 1,0 s desde o primeiro (1,03 s)
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 3, "ligada: depois de 0,7 s o mesmo monstro leva de novo")
+	ok(fx.usados.flashes - antes == 3, "ligada: depois de 1,0 s o mesmo monstro leva de novo")
 	var fixo := false
 	for s in fx._fl:
 		if s.visible and s.material != null and is_equal_approx(float((s.material as ShaderMaterial).get_shader_parameter("k")), Piscadas.FLASH_ALFA):
@@ -273,7 +287,7 @@ func rodar(perfil: String) -> void:
 	ok(fx.usados.flashes - antes == 2, "ligada: o flash da morte fica (não é cortado)")
 
 	# 7b. TROCAS de luminância (não flashes): tentando um flash por quadro no mesmo monstro por 6 s, o disco de tinta liga e desliga; cada flash são 2 trocas
-	# (com 0,34 s: ~6 trocas por segundo, o defeito apontado na revisão)
+	# (com 0,34 s: ~6 trocas por segundo, o defeito da rodada 2; com 0,7 s a média dava 2,9 mas a janela de 1 s pegava 4, o da rodada 3)
 	zerar()
 	mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
 	opcao(true)
@@ -287,21 +301,59 @@ func rodar(perfil: String) -> void:
 				lum_f = maxf(lum_f, float((fx._fl[j].material as ShaderMaterial).get_shader_parameter("k")))
 		tinta.append(lum_f)
 	var trocas_flash := por_segundo(tinta)
+	var pior_flash := Piscadas.trocas_janela(tinta, JANELA)
 	ok(trocas_flash > 0.0, "ligada: o flash de acerto acende de vez em quando (%.1f trocas por segundo)" % trocas_flash)
 	ok(trocas_flash <= Piscadas.MAX_TROCAS_S, "ligada: o mesmo monstro apanhando sem parar troca a luminância %.1f vezes por segundo (máximo 3)" % trocas_flash)
-	# a borda: aos 0,683 s (41 quadros) ainda é barrado; aos 0,717 s (43) passa
+	ok(
+		pior_flash <= int(Piscadas.MAX_TROCAS_S),
+		"ligada: em QUALQUER janela de 1 s o flash de acerto troca %d vezes (máximo 3; a média não basta)" % pior_flash
+	)
+	# a borda: aos 0,983 s (59 quadros) ainda é barrado; aos 1,017 s (61) passa
 	zerar()
 	mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
 	antes = fx.usados.flashes
 	fx.flash(mo, 0.1)
-	passos(41)
+	passos(59)
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 1, "ligada: aos 0,683 s o mesmo monstro ainda não leva outro flash (a borda)")
+	ok(fx.usados.flashes - antes == 1, "ligada: aos 0,983 s o mesmo monstro ainda não leva outro flash (a borda)")
 	passos(2)
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 2, "ligada: aos 0,717 s o mesmo monstro leva de novo")
+	ok(fx.usados.flashes - antes == 2, "ligada: aos 1,017 s o mesmo monstro leva de novo")
 
-	# 7c. o anel de alvos: 60 outros acertos dentro de 0,7 s não apagam o primeiro (com o anel de 48 ele era sobrescrito e levava flash de novo)
+	# 7e. a marca sustentada do golpe forte (modo 3, 0,45 s cheia): golpes fortes a cada 0,5 s no mesmo monstro ligavam e desligavam a silhueta
+	# ~4 vezes por segundo. Ligada, a marca passa pelo mesmo intervalo do flash de acerto; o flash e a marca do MESMO golpe se fundem (um liga e desliga só).
+	zerar()
+	mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
+	opcao(true)
+	antes = fx.usados.flashes
+	var marcas_antes: int = fx.usados.marcas
+	fx.flash(mo, 0.1)
+	fx.flash(mo, 0.45, Color.WHITE, 3)
+	ok(fx.usados.flashes - antes == 2 and fx.usados.marcas - marcas_antes == 1, "ligada: o flash e a marca do mesmo golpe passam juntos")
+	passos(10)
+	fx.flash(mo, 0.45, Color.WHITE, 3)
+	ok(fx.usados.marcas - marcas_antes == 1, "ligada: outra marca no mesmo monstro em menos de 1,0 s é barrada")
+	zerar()
+	mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
+	var sil: Array = []
+	for q in 360:  # golpe forte a cada 0,5 s por 6 s
+		if q % 30 == 0:
+			fx.flash(mo, 0.1)
+			fx.flash(mo, 0.45, Color.WHITE, 3)
+		passos(1)
+		var acesa := 0.0
+		for j in fx._fl.size():
+			if fx._fl[j].visible and fx._fl_alvo[j] == mo:
+				acesa = 1.0
+		sil.append(acesa)
+	var pior_sil := Piscadas.trocas_janela(sil, JANELA)
+	ok(pior_sil > 0, "ligada: a marca do golpe forte acende de vez em quando")
+	ok(
+		pior_sil <= int(Piscadas.MAX_TROCAS_S),
+		"ligada: golpes fortes a cada 0,5 s ligam e desligam a silhueta %d vezes na pior janela de 1 s (máximo 3)" % pior_sil
+	)
+
+	# 7c. o anel de alvos: 60 outros acertos dentro de 1,0 s não apagam o primeiro (com o anel de 48 ele era sobrescrito e levava flash de novo)
 	opcao(true)
 	var primeiro := Node.new()
 	add_child(primeiro)
@@ -312,6 +364,7 @@ func rodar(perfil: String) -> void:
 		add_child(n)
 		extras.append(n)
 		fx._pode_flash_acerto(n)
+	passos(1)  # no mesmo quadro valeria a fusão do flash com a marca do mesmo golpe
 	ok(not fx._pode_flash_acerto(primeiro), "anel: depois de 60 outros acertos no mesmo instante o primeiro alvo ainda é barrado")
 	primeiro.free()
 	for n in extras:
@@ -485,6 +538,75 @@ func rodar(perfil: String) -> void:
 	hh.free()
 	hg.free()
 	hn.free()
+
+	# 14. a granada (pavio, mira no chão, disco branco do pavio estourando) e o aviso do meteoro/cometa: ~2,9, ~1,9, 6 a 24 e ~1,9 Hz.
+	# Janela deslizante de 1 s sobre 3 s de fase (it.fase anda 6 rad/s). Desligadas passam de 3 trocas; ligadas, o centro da faixa parado.
+	var fases: Array = []
+	for q in QUADROS:
+		fases.append(float(q) * PASSO * 6.0)
+	for ligada in [false, true]:
+		opcao(ligada)
+		var s_pavio: Array = []
+		var s_mira: Array = []
+		var s_aviso: Array = []
+		var s_estoura: Array = []
+		for q in QUADROS:
+			s_pavio.append(ArmasNovas.alfa_pavio(fases[q]))
+			s_mira.append(ArmasNovas.pulso_mira(fases[q]))
+			s_aviso.append(0.5 + 0.4 * ArmasNovas.pisca_aviso(fases[q]))  # o alfa do arco do aviso, como o desenho monta
+		for q in 30:  # os 0,5 s do pavio estourando, a 60 quadros por segundo
+			s_estoura.append(ArmasNovas.alfa_pavio_estourando(float(q) * PASSO, float(q) * PASSO / 0.5))
+		var w_pavio := Piscadas.trocas_janela(s_pavio, JANELA)
+		var w_mira := Piscadas.trocas_janela(s_mira, JANELA)
+		var w_aviso := Piscadas.trocas_janela(s_aviso, JANELA)
+		var w_estoura := Piscadas.trocas_janela(s_estoura, JANELA)
+		if ligada:
+			ok(w_pavio <= 3, "ligada: a faísca do pavio da granada troca %d vezes na pior janela de 1 s (máximo 3)" % w_pavio)
+			ok(w_mira <= 3, "ligada: a mira no chão da granada troca %d vezes na pior janela de 1 s (máximo 3)" % w_mira)
+			ok(w_aviso <= 3, "ligada: o aviso do meteoro/cometa troca %d vezes na pior janela de 1 s (máximo 3)" % w_aviso)
+			ok(w_estoura <= 3, "ligada: o disco branco do pavio estourando troca %d vezes na pior janela de 1 s (máximo 3)" % w_estoura)
+			ok(is_equal_approx(float(s_pavio[0]), 0.7) and is_equal_approx(float(s_pavio[77]), 0.7), "ligada: o pavio fica no centro da faixa (0,7)")
+			ok(is_equal_approx(float(s_mira[0]), 0.8) and is_equal_approx(float(s_mira[77]), 0.8), "ligada: a mira fica no centro da faixa (0,8)")
+			ok(is_equal_approx(float(s_aviso[0]), 0.7) and is_equal_approx(float(s_aviso[77]), 0.7), "ligada: o arco do aviso fica no centro da faixa (0,7)")
+		else:
+			ok(w_pavio > 3, "desligada: a faísca do pavio pisca (%d trocas na pior janela de 1 s): o teste pega o defeito" % w_pavio)
+			ok(w_mira > 3, "desligada: a mira no chão da granada pisca (%d trocas na pior janela de 1 s): o teste pega o defeito" % w_mira)
+			ok(w_aviso > 3, "desligada: o aviso do meteoro/cometa pisca (%d trocas na pior janela de 1 s): o teste pega o defeito" % w_aviso)
+			ok(w_estoura > 3, "desligada: o disco do pavio estourando pisca (%d trocas na pior janela de 1 s): o teste pega o defeito" % w_estoura)
+
+	# 15. os dois shaders que cintilam por pixel: a explosão grande (anéis girando a 1,4 a 2,5 Hz) e a aura de fogo (1,1 e 1,75 Hz). Ligada, o uniform congela:
+	# a explosão sobe `calmo` = 1 e a aura passa t = 0 e pulso = 0 (a chama não gira nem pulsa). Desligada, `calmo` = 0 e t anda com a fase.
+	zerar()
+	fx = w.combate.fx
+	armas = w.combate.armas
+	for ligada in [false, true]:
+		opcao(ligada)
+		armas.ativas = {"aura_teste": {"tipo": "aura", "R": 60.0, "cor": Color(1.0, 0.5, 0.15), "pulso": 0.6}}
+		armas._fase = 3.0
+		armas._aura_visual(w.heroi)
+		var mat_a := armas._aura_sp.material as ShaderMaterial
+		if ligada:
+			ok(
+				is_equal_approx(float(mat_a.get_shader_parameter("t")), 0.0) and is_equal_approx(float(mat_a.get_shader_parameter("pulso")), 0.0),
+				"ligada: a aura de fogo não gira nem pulsa (t e pulso zerados)"
+			)
+		else:
+			ok(
+				is_equal_approx(float(mat_a.get_shader_parameter("t")), 3.0) and float(mat_a.get_shader_parameter("pulso")) > 0.5,
+				"desligada: a aura de fogo gira e pulsa (t = fase)"
+			)
+		armas.ativas = {}  # a aura falsa não anda no passo do mundo (faltam campos): só o _aura_visual acima a usou
+		if Anim.suave:  # o perfil Baixo não tem explosão grande
+			fx.explosao(w.heroi.pos + Vector2(80, 0), 60.0, Color(1.0, 0.5, 0.2))
+			passos(2)
+			var vistas := 0
+			for sp in fx._ex:
+				if sp.visible:
+					vistas += 1
+					var calmo := float((sp.material as ShaderMaterial).get_shader_parameter("calmo"))
+					ok(is_equal_approx(calmo, 1.0 if ligada else 0.0), "%s: a explosão grande tem calmo=%.0f" % ["ligada" if ligada else "desligada", calmo])
+			ok(vistas > 0, "a explosão grande nasceu (%d)" % vistas)
+	armas._aura_sp.visible = false
 
 	pai.free()
 	w.free()
