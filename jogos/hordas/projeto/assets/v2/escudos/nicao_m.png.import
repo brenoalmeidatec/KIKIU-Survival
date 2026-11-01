@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwu2pyeb5fmv5"
-path="res://.godot/imported/nicao.png-a86c03d834ddd561a0ba2feadc3e760a.ctex"
+uid="uid://c0akrxkqhcl5m"
+path="res://.godot/imported/nicao_m.png-0e9609a3f3015a149ff2fbe9aab889c0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/escudos/nicao.png"
-dest_files=["res://.godot/imported/nicao.png-a86c03d834ddd561a0ba2feadc3e760a.ctex"]
+source_file="res://assets/v2/escudos/nicao_m.png"
+dest_files=["res://.godot/imported/nicao_m.png-0e9609a3f3015a149ff2fbe9aab889c0.ctex"]
 
 [params]
 

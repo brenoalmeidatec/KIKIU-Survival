@@ -24,6 +24,7 @@ var rar: Array = []
 var rng := RandomNumberGenerator.new()
 var estado := {}  # id -> {n: vezes que pegou, bonus: dano extra do golpe pela raridade, soma: valor acumulado (mod), usada: virou parte de evolução, apice: chegou ao 5/5}
 var evoluidas: Array = []  # ids das evoluções já feitas
+var _evos: Array = []  # as fusões (cfg.evolucoes) e as evoluções da matriz do LightWolf (cfg.evolucoes_matriz, LW-6: não consomem as peças)
 var evolucoes_feitas := 0
 var lendarias_feitas := 0  # só uma lendária por partida
 var vistas: Array = []  # as últimas rodadas de cartas (listas de ids oferecidos): a novidade não repete o que acabou de passar (escolha.vistas_rodadas)
@@ -45,6 +46,7 @@ func montar(c) -> void:
 	for d in cfg.modificadores:
 		_def[d.id] = d
 		_cat[d.id] = "mod"
+	_evos = (cfg.evolucoes as Array) + (cfg.get("evolucoes_matriz", []) as Array)
 	for d in Dados.json("v2_ruptura").get("cartas", []):  # a ruptura da tecla E (v2/ruptura.gd)
 		_def[d.id] = d
 		_cat[d.id] = "rb"
@@ -145,7 +147,7 @@ func disponiveis() -> Array:
 func _pesos_sinergia() -> Dictionary:
 	var r := {}
 	var peso := float(cfg.escolha.peso_sinergia)
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if not _evo_livre(ev):
 			continue
 		var tem := 0
@@ -177,13 +179,14 @@ func _sinergia_texto(id: String) -> String:
 		if str(p.id) != id:
 			outras.append(p)
 	var fusao := str(ev.get("curto", ev.nome))
+	var rotulo := str(ev.get("rotulo", "FUSÃO"))  # a Aurora Lunar (matriz do LightWolf) não funde nada: diz EVOLUÇÃO
 	var texto: String
 	if outras.size() == 1:
-		texto = "%s nv%d » FUSÃO %s" % [_curto(str(outras[0].id)), int(outras[0].nivel), fusao]
+		texto = "%s nv%d » %s %s" % [_curto(str(outras[0].id)), int(outras[0].nivel), rotulo, fusao]
 	else:
-		texto = "%s +%d » FUSÃO %s" % [_curto(str(outras[0].id)), outras.size() - 1, fusao]
+		texto = "%s +%d » %s %s" % [_curto(str(outras[0].id)), outras.size() - 1, rotulo, fusao]
 	if texto.length() > LINHA_RODAPE:  # sem a palavra FUSÃO quando não cabe: a fusão já aparece no nome
-		texto = texto.replace("FUSÃO ", "")
+		texto = texto.replace(rotulo + " ", "")
 	if texto.length() > LINHA_RODAPE:  # última saída: só a primeira palavra da peça e da fusão ("Guerreiro » Exército")
 		texto = "%s » %s" % [_curto(str(outras[0].id)).split(" ")[0], fusao.split(" ")[0]]
 	return texto
@@ -201,7 +204,7 @@ func fusao_de(id: String) -> String:
 
 ## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
 func _sinergia_ev(id: String) -> Dictionary:
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if not _evo_livre(ev):
 			continue
 		for p in ev.pecas:
@@ -216,7 +219,7 @@ func _sinergia_ev(id: String) -> Dictionary:
 ## nenhuma, ou a evolução dela já aconteceu.
 func evolucoes_com(id: String) -> Array:
 	var r: Array = []
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if evoluidas.has(ev.id):
 			continue
 		var usa := false
@@ -648,9 +651,13 @@ func bonus_trocaveis() -> Array:
 	return r
 
 
-## Quantas vagas de bônus estão ocupadas: os bônus de `bonus_trocaveis` e cada fusão feita (conta 1; as peças consumidas deixam de contar).
+## Quantas vagas de bônus estão ocupadas: os bônus de `bonus_trocaveis` e cada fusão feita (conta 1; as peças consumidas deixam de contar). A Aurora Lunar não conta.
 func bonus_contados() -> int:
-	return bonus_trocaveis().size() + evoluidas.size()
+	var sem_consumo := 0  # a evolução que não consome peça (Aurora Lunar) não ocupa vaga: as duas peças dela já ocupam
+	for ev in cfg.get("evolucoes_matriz", []):
+		if evoluidas.has(ev.id):
+			sem_consumo += 1
+	return bonus_trocaveis().size() + evoluidas.size() - sem_consumo
 
 
 ## Quantos bônus novos ainda cabem no limite (999 sem limite). Nunca negativo.
@@ -698,6 +705,27 @@ func remover_bonus(id: String) -> bool:
 	return true
 
 
+# ------------------------------------------------------------------ cartas da matriz do LightWolf (LW-6)
+
+
+## A evolução da matriz (dados/v2_cartas.json > evolucoes_matriz) com o id dado, ou {}.
+func evolucao_matriz(id: String) -> Dictionary:
+	for ev in cfg.get("evolucoes_matriz", []):
+		if str(ev.id) == id:
+			return ev
+	return {}
+
+
+## A Aurora Lunar está valendo: a evolução aconteceu e o Sifão ainda está com o herói (largado no Difícil, a cura some e ela não faz nada sozinha).
+func aurora_ativa() -> bool:
+	return evoluidas.has("aurora_lunar") and ativa("sifao")
+
+
+## Quanto o Cabo de Resgate multiplica a carga do chamado do mecha (1 sem a carta; 1,15 por nível, mais a raridade e o ÁPICE: a soma guardada em armas.mods).
+func mult_cabo() -> float:
+	return 1.0 + float(combate.armas.mods.get("cabo", 0.0)) / 100.0
+
+
 # ------------------------------------------------------------------ evolução
 
 
@@ -708,7 +736,7 @@ func _peca_ok(p: Dictionary) -> bool:
 ## Confere se alguma evolução ficou pronta (as duas peças no nível pedido) e faz acontecer. Devolve o nome da última feita, ou "".
 func _checar_evolucoes() -> String:
 	var feita := ""
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if evoluidas.has(ev.id):
 			continue
 		if not _evo_livre(ev):
@@ -752,7 +780,7 @@ func resumo() -> Array:
 		var e: Dictionary = estado[id]
 		if int(e.n) > 0 and not bool(e.usada) and _cat[id] != "stat":
 			r.append({"id": id, "nome": str(_def[id].nome), "nivel": int(e.n)})
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if evoluidas.has(ev.id):
 			r.append({"id": ev.id, "nome": str(ev.nome), "nivel": 0})
 	return r

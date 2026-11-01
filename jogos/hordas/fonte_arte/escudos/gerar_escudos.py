@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Escudos de verdade, um por personagem (PR "escudos reais", #467). Arte propria, desenhada por script (Python + PIL), sem imagem de terceiros.
 
-Cada escudo vira uma faixa 256x32 (8 celulas de 32x32) em projeto/assets/v2/escudos/<id>.png:
+Cada escudo vira uma faixa em projeto/assets/v2/escudos/<arquivo>.png:
   0 frente   1 lado (3/4, estreito)   2 costas (alca, tabuas, couro)   3 rachado   4..7 os quatro pedacos da quebra (mesma posicao da frente)
-O centro do escudo fica em (16,16) da celula. Luz de cima-esquerda, contorno de 1 px, 4 tons por material.
+Faixas de 32 px (hazaki, lucas, matheus): 256x32, 8 celulas. Faixa M do Nick (nicao_m.png, DEF-4a): celulas de 48 px, 12 celulas (576x48):
+  as 8 de cima e, a partir da 8, a camada 1 (nivel 6 do Nick): 8 frente, 9 lado, 10 costas, 11 rachado, com aro de reforco.
+O centro do escudo fica no centro da celula. Luz de cima-esquerda, contorno de 1 px, 4 tons por material.
+
+Faixa G do Nick (nicao_g.png, DEF-4b, nivel 14): celulas de 64 px, 12 celulas (768x64), a mesma ordem da faixa M; a frente fica com 48 x 48 px.
+Casca espiritual (camadas.png, DEF-4b, nivel 24): 3 celulas de 64 px (192x64): 0 frente (e rachado), 1 lado, 2 costas; um aro de luz translucido em volta do escudo G.
 
 Uso:  python gerar_escudos.py [saida_dir] [--previa arquivo.png]
       (padrao: ../../projeto/assets/v2/escudos). Imprime os centroides dos pedacos (vao para dados/v2_secundario.json > escudo > visual).
@@ -17,8 +22,20 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-C = 32  # celula
+C = 32  # celula em px (muda por faixa, em ESCUDOS, com usar())
+F = 1.0  # zoom: uma unidade de desenho (celula de 32) vira F px; a celula de 32 usa F = 1, entao o desenho e o mesmo de antes
 SS = 4  # supersampling das formas (so para curvas boas; o resultado e binario)
+
+
+def P(v):
+    """Coordenada de desenho (sobre a celula de 32, centro em 16) para px da celula atual (centro em C/2, escala F)."""
+    return C / 2.0 + (v - 16.0) * F
+
+
+def usar(celula, zoom):
+    """Escolhe a celula e o zoom das proximas faixas."""
+    global C, F
+    C, F = celula, zoom
 CELULAS = ["frente", "lado", "costas", "rachado", "frag0", "frag1", "frag2", "frag3"]
 
 
@@ -34,7 +51,7 @@ def forma(fn, sx=1.0):
     d = ImageDraw.Draw(im)
 
     def f(x, y):
-        return ((16 + (x - 16) * sx) * SS, y * SS)
+        return (P(16 + (x - 16) * sx) * SS, P(y) * SS)
 
     fn(d, f)
     return im.resize((C, C), Image.BOX).point(lambda v: 255 if v >= 128 else 0)
@@ -92,12 +109,13 @@ class Tela:
         self.im.paste(Image.new("RGBA", (C, C), cor), (0, 0), mascara)
 
     def pixel(self, x, y, cor, dentro=None):
+        x, y = round(P(x)), round(P(y))
         if 0 <= x < C and 0 <= y < C and (dentro is None or dentro.getpixel((x, y))):
             self.im.putpixel((x, y), cor)
 
     def linha(self, pts, cor, dentro=None):
         m = Image.new("L", (C, C), 0)
-        ImageDraw.Draw(m).line(pts, fill=255, width=1)
+        ImageDraw.Draw(m).line([(round(P(x)), round(P(y))) for x, y in pts], fill=255, width=1)
         self.pintar(m, cor, dentro)
 
     def contorno(self, base, cor):
@@ -187,7 +205,19 @@ NK_FERR = [hexa(c) for c in ("4a2410", "7e4420", "b06a2e", "d9954a")]
 NK_COURO = [hexa(c) for c in ("231509", "3f2813", "5e3d1d", "7e5530")]
 
 
-def nicao(vista):
+def _aro_reforco(t, corpo, sx, vista):
+    """Aro de reforco do escudo do Nick (camada 1): uma faixa de ferro mais clara entre os raios 9,4 e 11, com 16 rebites (de costas e de frente; de lado, nenhum)."""
+    aro = sub(corpo, forma(elipse(16, 16, 9.4, 9.4), sx))
+    t.pintar(aro, NK_FERRO[2], corpo)
+    t.pintar(borda_luz(aro, 1), NK_FERRO[3], corpo)
+    t.pintar(borda_sombra(aro, 1), NK_FERRO[0], corpo)
+    if vista != "lado":
+        for k in range(16):
+            a = math.tau * k / 16 + 0.2
+            t.pixel(16 + math.cos(a) * 10.2, 16 + math.sin(a) * 10.2, NK_FERRO[3], corpo)
+
+
+def nicao(vista, reforco=False):
     sx = 0.5 if vista == "lado" else 1.0
     base = uniao(elipse(16, 16, 11, 11))
     corpo = forma(base, sx)
@@ -202,6 +232,8 @@ def nicao(vista):
         t.pintar(forma(retangulo(13, 13, 19, 19), sx), NK_FERRO[0], corpo)
         t.pintar(forma(retangulo(14, 14, 18, 18), sx), NK_COURO[2], corpo)
         t.pintar(forma(retangulo(14, 14, 18, 14), sx), NK_COURO[3], corpo)
+        if reforco:
+            _aro_reforco(t, corpo, sx, vista)
         t.pixel(16, 16, NK_FERRO[3])
         t.contorno(corpo, OUT)
         return t.im
@@ -211,6 +243,8 @@ def nicao(vista):
     t.pintar(anel, NK_FERRO[0], corpo)  # faixa externa mais escura
     t.pintar(borda_luz(anel, 1), NK_FERRO[2], corpo)
     t.pintar(borda_luz(forma(elipse(16, 16, 8.4, 8.4), sx), 1), NK_FERRO[0], corpo)
+    if reforco:  # camada 1 (nivel 6 do Nick): aro de reforco mais largo, com mais rebites
+        _aro_reforco(t, corpo, sx, vista)
     # ferrugem em manchas
     for cx, cy, r in ((21, 21, 2.4), (11, 12, 1.6), (22, 11, 1.4)):
         mm = forma(elipse(cx, cy, r, r), sx)
@@ -228,8 +262,8 @@ def nicao(vista):
             a = math.tau * k / 8 + 0.39
             x = 16 + math.cos(a) * 9.6
             y = 16 + math.sin(a) * 9.6
-            t.pixel(round(x), round(y), NK_FERRO[3], corpo)
-            t.pixel(round(x) + 1, round(y) + 1, NK_FERRO[0], corpo)
+            t.pixel(x, y, NK_FERRO[3], corpo)
+            t.pixel(x + 1, y + 1, NK_FERRO[0], corpo)
     else:
         for y in (9, 13, 19, 23):
             t.pixel(16 + round(-8 * sx), y, NK_FERRO[3], corpo)
@@ -363,14 +397,14 @@ def rachar(frente, semente):
         x += rng.inteiro(-2, 2)
         pts.append((x, y))
     tr = Image.new("L", (C, C), 0)
-    ImageDraw.Draw(tr).line(pts, fill=255, width=1)
+    ImageDraw.Draw(tr).line([(round(P(px)), round(P(py))) for px, py in pts], fill=255, width=1)
     tr = e(tr, a.point(lambda v: 255 if v > 0 else 0))
     im.paste(Image.new("RGBA", (C, C), hexa("0a0608")), (0, 0), tr)
     # ramo lateral
     k = len(pts) // 2
     bx, by = pts[k]
     ramo = Image.new("L", (C, C), 0)
-    ImageDraw.Draw(ramo).line([(bx, by), (bx + 4, by + 2), (bx + 6, by + 1)], fill=255, width=1)
+    ImageDraw.Draw(ramo).line([(round(P(px)), round(P(py))) for px, py in [(bx, by), (bx + 4, by + 2), (bx + 6, by + 1)]], fill=255, width=1)
     ramo = e(ramo, a.point(lambda v: 255 if v > 0 else 0))
     im.paste(Image.new("RGBA", (C, C), hexa("0a0608")), (0, 0), ramo)
     # lado da trinca a direita fica um pixel mais claro (a quebra levanta)
@@ -421,17 +455,74 @@ def pedacos(frente, semente):
 
 
 # ---------------------------------------------------------------- montagem
-ESCUDOS = {"hazaki": hazaki, "nicao": nicao, "lucas": lucas, "matheus": matheus}
+# A faixa M do Nick: celula de 48 px, com o desenho ampliado (zoom) para o corpo de raio 11 (da celula de 32) ocupar 36 px
+# de diametro; com o contorno de 1 px, a frente fica com 38 x 38 px (pedido 9: escudo claramente maior que o de 24 x 24).
+NICAO_ZOOM = 36.0 / 22.0
+
+# A faixa G do Nick (nivel 14): o mesmo desenho, celula de 64 px, corpo de 46 px de diametro; com o contorno de 1 px, a frente fica com 48 x 48 px.
+NICAO_ZOOM_G = 46.0 / 22.0
+CASCA_CEL = 64  # celula da casca espiritual (camadas.png)
+
+# Uma entrada por personagem (a chave e o id do escudo no jogo). A ordem define a semente de cada faixa: nao mudar.
+# arquivo: o nome do PNG em projeto/assets/v2/escudos; celula: lado da celula em px; reforco: tem as 4 celulas da camada 1 (nivel 6 do Nick).
+ESCUDOS = {
+    "hazaki": {"fn": hazaki, "arquivo": "hazaki", "celula": 32, "zoom": 1.0, "reforco": False},
+    "nicao": {"fn": nicao, "arquivo": "nicao_m", "celula": 48, "zoom": NICAO_ZOOM, "reforco": True},
+    "lucas": {"fn": lucas, "arquivo": "lucas", "celula": 32, "zoom": 1.0, "reforco": False},
+    "matheus": {"fn": matheus, "arquivo": "matheus", "celula": 32, "zoom": 1.0, "reforco": False},
+    # DEF-4b: sempre por ultimo (a semente de cada faixa vem da posicao; as de cima nao mudam)
+    "nicao_g": {"fn": nicao, "arquivo": "nicao_g", "celula": 64, "zoom": NICAO_ZOOM_G, "reforco": True},
+}
 
 
-def faixa(fn, semente):
+def casca(vista):
+    """A casca espiritual (nivel 24 do Nick): um aro de luz azul-esverdeada, translucido, em volta do escudo G, com 3 faixas de brilho e 12 faiscas. Sem aleatoriedade."""
+    c = CASCA_CEL
+    im = Image.new("RGBA", (c, c), (0, 0, 0, 0))
+    sx = 0.5 if vista == "lado" else 1.0
+    cx = cy = c / 2.0
+    for y in range(c):
+        for x in range(c):
+            d = math.hypot((x + 0.5 - cx) / sx, y + 0.5 - cy)
+            if 25.0 <= d < 26.5:
+                a = 70  # a folga logo fora do escudo: um halo fraco
+            elif 26.5 <= d < 29.0:
+                a = 120 + int(60 * (d - 26.5) / 2.5)  # o miolo do aro, mais forte para fora
+            elif 29.0 <= d < 30.5:
+                a = 200  # o fio de luz da borda
+            else:
+                continue
+            ang = math.atan2(y + 0.5 - cy, (x + 0.5 - cx) / sx)
+            if int((ang + math.pi) / math.tau * 24) % 4 == 0 and d >= 26.5:
+                a = max(40, a - 70)  # 6 falhas no aro: parece chama e nao um anel liso
+            im.putpixel((x, y), (150, 255, 230, a) if d >= 29.0 else (90, 220, 210, a))
+    for k in range(12):  # as faiscas, fora do aro
+        ang = math.tau * k / 12 + 0.26
+        x, y = round(cx + math.cos(ang) * 30.5 * sx), round(cy + math.sin(ang) * 30.5)
+        if 0 <= x < c and 0 <= y < c:
+            im.putpixel((x, y), (235, 255, 250, 255))
+    return im
+
+
+def faixa_casca():
+    fx = Image.new("RGBA", (CASCA_CEL * 3, CASCA_CEL), (0, 0, 0, 0))
+    for i, vista in enumerate(("frente", "lado", "costas")):
+        fx.paste(casca(vista), (i * CASCA_CEL, 0))
+    return fx
+
+
+def faixa(fn, semente, reforco=False):
     frente = fn("frente")
     lado = fn("lado")
     costas = fn("costas")
     rach = rachar(frente, semente)
     frags, cent = pedacos(frente, semente + 7)
-    fx = Image.new("RGBA", (C * 8, C), (0, 0, 0, 0))
-    for i, im in enumerate([frente, lado, costas, rach] + frags):
+    quadros = [frente, lado, costas, rach] + frags
+    if reforco:  # camada 1: frente, lado, costas e rachado de novo, com o aro de reforco (celulas 8 a 11); os pedacos da quebra sao os da camada 0
+        fr = fn("frente", True)
+        quadros += [fr, fn("lado", True), fn("costas", True), rachar(fr, semente)]
+    fx = Image.new("RGBA", (C * len(quadros), C), (0, 0, 0, 0))
+    for i, im in enumerate(quadros):
         fx.paste(im, (i * C, 0))
     return fx, cent
 
@@ -448,18 +539,24 @@ def main():
     saida.mkdir(parents=True, exist_ok=True)
     centroides = {}
     todas = []
-    for i, (nome, fn) in enumerate(ESCUDOS.items()):
-        fx, cent = faixa(fn, 11 + i * 5)
-        fx.save(saida / f"{nome}.png")
-        centroides[nome] = cent
+    for i, (estilo, cfg) in enumerate(ESCUDOS.items()):
+        usar(cfg["celula"], cfg["zoom"])
+        fx, cent = faixa(cfg["fn"], 11 + i * 5, cfg["reforco"])
+        fx.save(saida / f"{cfg['arquivo']}.png")
+        centroides[estilo] = cent
         todas.append(fx)
+    faixa_casca().save(saida / "camadas.png")
     print(json.dumps(centroides))
     if previa is not None:
         esc = 5
-        im = Image.new("RGBA", (C * 8 * esc, C * 4 * esc), (38, 50, 52, 255))
-        for r, fx in enumerate(todas):
+        larg = max(fx.width for fx in todas) * esc
+        alt = sum(fx.height for fx in todas) * esc
+        im = Image.new("RGBA", (larg, alt), (38, 50, 52, 255))
+        y = 0
+        for fx in todas:
             g = fx.resize((fx.width * esc, fx.height * esc), Image.NEAREST)
-            im.paste(g, (0, r * C * esc), g)
+            im.paste(g, (0, y), g)
+            y += g.height
         im.save(previa)
 
 

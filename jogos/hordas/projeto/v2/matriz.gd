@@ -7,7 +7,12 @@ extends RefCounted
 ##    O que passa do que a barra tem VAZA para a vida. A barra é a mesma do escudo do Nick (campos `def` e `def_max` do herói, `defesa_regen_mult` da dificuldade, reposição pela
 ##    cura): o bloco `matriz > barra` de dados/v2_secundario.json só sobrepõe as chaves do `escudo > barra` (gasta 5 por segundo só por segurar, ~20 s; zerou = SOBRECARGA até voltar a 35%;
 ##    recarga de 6 por segundo depois de 2 s sem segurar). Quem gasta e quem recarrega é o herói (`_gastar_defesa`, `_recuperar_defesa`), o mesmo código do escudo.
-## As evoluções que curam pelo dano absorvido são cartas do LW-6; aqui só se conta o que foi absorvido (`absorvido`), que é o gancho delas.
+## As cartas do LW-6 (dados/v2_cartas.json, modificadores `sifao`, `ampla` e `cabo`; a evolução `aurora_lunar` em `evolucoes_matriz`) mexem aqui:
+##  - SIFÃO DA MATRIZ: parte do que a matriz absorve volta como vida (`armas.mods.sifao` em %, 12 por nível). O que cura por segundo tem TETO (`matriz_cartas.sifao_teto_s`, 8 PV/s):
+##    uma cesta que enche à razão do teto e esvazia com cada cura, então um golpe grande cura até uma cesta cheia (1 s de teto) e o resto se perde.
+##  - MATRIZ AMPLA: +10 graus de arco por nível (`armas.mods.ampla`, até `matriz_cartas.arco_max`): o arco vale para empurrar, absorver e desenhar (`arco_graus`).
+##  - AURORA LUNAR (Sifão 3 + Ampla 3, sem consumir as peças): a cura do sifão dobra (e o teto também) e a cura que passa da vida cheia vira defesa (`excedente_barra`, 50%).
+##  - CABO DE RESGATE não passa por aqui: multiplica a carga do chamado em `especial.carregar` (`cartas.mult_cabo`).
 ##
 ## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo` serve aos dois, velocidade, a barra); este módulo cuida da geometria (`cobre`), da absorção, do empurrão
 ## (`atualizar`, no tempo do mundo) e do visual (`efeitos`, no relógio de parede). O VISUAL é 100% em código (nenhuma folha): uma faixa azul clara em arco no chão, na casca,
@@ -20,6 +25,7 @@ const ACHATA := 0.62  # o chão visto de lado (a mesma do escudo, da ruptura e d
 const COR_BASE := Color(0.62, 0.86, 1.0)
 const COR_CIANO := Color(0.5, 0.95, 1.0)
 const COR_ALERTA := Color(1.0, 0.62, 0.3)
+const COR_CURA := Color(0.62, 1.0, 0.6)  # o número de cura do sifão (verde claro, o mesmo tom das faíscas de cura da arte)
 const ALERTA_ATE := 0.35  # fração da barra abaixo da qual a faixa começa a esquentar (laranja inteira em ALERTA_FIM)
 const ALERTA_FIM := 0.05
 const PTS := 20  # pontos do arco desenhado
@@ -33,6 +39,8 @@ var absorvido := 0.0  # a defesa gasta absorvendo golpes na partida (o gancho da
 var golpes := 0  # quantos golpes a matriz absorveu
 var claroes := 0  # quantos clarões de absorção apareceram (no máximo 2 por segundo; nenhum no perfil Baixo)
 var vazado := 0.0  # o dano que passou da barra e foi para a vida
+var curado := 0.0  # a vida que o sifão devolveu na partida (LW-6)
+var convertido := 0.0  # a defesa que a Aurora Lunar fez da cura que passava da vida cheia
 var empurrados := 0  # quantos monstros levaram empurrão no quadro de agora (testes e calibragem)
 var ultimo: Dictionary = {}  # o último golpe absorvido (testes): valor, absorvido, vazou, de
 var _relogio := 0.0
@@ -41,6 +49,9 @@ var _flash_t := 0.0  # s do clarão do último golpe absorvido
 var _flash_cd := 0.0  # s até poder mostrar outro clarão (o limite de piscadas)
 var _impacto := Vector2.ZERO  # o ponto do último golpe, no mundo
 var _desenhou := false
+var _cesta := 99.0  # a cesta do teto de cura do sifão, em PV (enche à razão do teto por segundo; 99 = cheia, o teto a corta)
+var _num_cd := 0.0  # s até poder mostrar outro número de cura
+var _num_acum := 0.0  # a cura ainda não mostrada
 
 
 func montar(c, camada: Node) -> void:
@@ -63,6 +74,11 @@ func limpar() -> void:
 	golpes = 0
 	claroes = 0
 	vazado = 0.0
+	curado = 0.0
+	convertido = 0.0
+	_cesta = 99.0
+	_num_cd = 0.0
+	_num_acum = 0.0
 	empurrados = 0
 	ultimo = {}
 	_sobe_t = 9.0
@@ -80,7 +96,20 @@ func ativa(h) -> bool:
 
 ## O dano que vem de `de` (posição no mundo) cai dentro do arco da matriz? A conta é a do escudo (no chão, y dividido pela achatada).
 func cobre(h, de: Vector2) -> bool:
-	return combate.escudo.cobre_arco(h, de, float(cfg.arco))
+	return combate.escudo.cobre_arco(h, de, arco_graus())
+
+
+## O arco da matriz agora: o do dado mais o que a Matriz Ampla abriu (10 graus por nível), até `matriz_cartas.arco_max`.
+func arco_graus() -> float:
+	var base := float(cfg.arco)
+	if combate == null or combate.armas == null:
+		return base
+	var teto := float(_cfg_cartas().get("arco_max", 300.0))
+	return minf(base + float(combate.armas.mods.get("ampla", 0.0)), maxf(teto, base))
+
+
+func _cfg_cartas() -> Dictionary:
+	return combate.cartas.cfg.get("matriz_cartas", {}) if combate != null and combate.cartas != null else {}
 
 
 ## A matriz absorve um golpe de `valor` que vem de `de`: tira da barra de defesa 1 para 1 e devolve o que VAZOU (o que a barra não tinha; 0 = absorveu tudo). Zerar a barra é a
@@ -94,9 +123,49 @@ func absorver(h, valor: float, de: Vector2) -> float:
 	golpes += 1
 	absorvido += gasto
 	vazado += vaza
-	ultimo = {"valor": valor, "absorvido": gasto, "vazou": vaza, "de": de}
+	var curou := _sifao(h, gasto)
+	ultimo = {"valor": valor, "absorvido": gasto, "vazou": vaza, "de": de, "curou": curou}
 	_clarao(h, de)
 	return vaza
+
+
+## O teto de cura do sifão agora, em PV por segundo (a Aurora Lunar o dobra junto com a cura).
+func teto_cura() -> float:
+	var t := float(_cfg_cartas().get("sifao_teto_s", 8.0))
+	if combate != null and combate.cartas != null and combate.cartas.aurora_ativa():
+		t *= float(combate.cartas.evolucao_matriz("aurora_lunar").get("teto_mult", 2.0))
+	return t
+
+
+## A cura do Sifão da Matriz para o golpe que a barra absorveu (`gasto`): `mods.sifao` % do absorvido (vezes a cura da Aurora Lunar), limitada pela cesta do teto. Cura a vida;
+## com a Aurora, o que passa da vida cheia vira defesa (`excedente_barra`); sem ela, a cura que não cabe não gasta a cesta. Devolve a vida curada.
+func _sifao(h, gasto: float) -> float:
+	var pct := float(combate.armas.mods.get("sifao", 0.0)) / 100.0
+	if pct <= 0.0 or gasto <= 0.0 or h.estado == h.Estado.MORTO:
+		return 0.0
+	var ev: Dictionary = combate.cartas.evolucao_matriz("aurora_lunar") if combate.cartas.aurora_ativa() else {}
+	var cesta := minf(_cesta, teto_cura())
+	var cura := minf(gasto * pct * float(ev.get("cura_mult", 1.0)), cesta)
+	if cura <= 0.0:
+		return 0.0
+	var falta := maxf(float(h.vida_max) - float(h.vida), 0.0)
+	var vida := minf(cura, falta)
+	var sobra := cura - vida
+	var gastou := vida
+	if vida > 0.0:
+		h.curar(vida)
+		curado += vida
+		_num_acum += vida
+	if sobra > 0.0 and not ev.is_empty():
+		var barra := sobra * float(ev.get("excedente_barra", 0.0))
+		if barra > 0.0 and h.def_max > 0.0 and not h.def_quebrado:
+			var antes: float = h.def
+			h._ganhar_defesa(barra)
+			convertido += float(h.def) - antes
+		gastou = cura
+	_cesta = cesta - gastou
+	_numero_cura(h)
+	return vida
 
 
 ## O clarão do golpe absorvido no ponto da barreira do lado de quem bateu. Intervalo mínimo entre dois (dados > visual > impacto_min): nunca mais que 2 por segundo.
@@ -116,6 +185,15 @@ func _clarao(h, de: Vector2) -> void:
 	mundo.cam.tremer(0.8, 0.08)
 	combate.fx.estouro(_impacto, COR_CIANO, 3)
 	combate.fx.luz_rapida(_impacto, COR_BASE, 1.3, 36.0, 0.16)
+
+
+## O número verde da cura do sifão sobre o herói: junta o que curou e mostra no máximo um a cada `matriz_cartas.numero_s` (nunca mais de 2 por segundo). Sem clarão nem luz.
+func _numero_cura(h) -> void:
+	if _num_acum < 1.0 or _num_cd > 0.0:
+		return
+	_num_cd = float(_cfg_cartas().get("numero_s", 0.6))
+	combate.fx.numero(h.pos + Vector2(0, -34), "+%d" % roundi(_num_acum), COR_CURA, false)
+	_num_acum = 0.0
 
 
 func ergueu(_h) -> void:
@@ -138,14 +216,15 @@ func abaixou(h) -> void:
 
 
 ## O empurrão, todo quadro do mundo enquanto erguida: quem está na casca e dentro do arco é empurrado para longe do herói. Não toca na vida nem no flash do monstro.
-func atualizar(_dt: float) -> void:
+func atualizar(dt: float) -> void:
+	_cesta = minf(_cesta + teto_cura() * dt, teto_cura())  # a cesta do teto de cura do sifão enche à razão do teto por segundo
 	empurrados = 0
 	var h = mundo.heroi
 	if not ativa(h):
 		return
 	var casca := float(cfg.casca)
 	var forca := float(cfg.empurrao)
-	var graus := float(cfg.arco)
+	var graus := arco_graus()
 	var hp: Vector2 = h.pos
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo:
@@ -171,6 +250,7 @@ func efeitos(dt: float) -> void:
 	_sobe_t = minf(_sobe_t + dt, 9.0)
 	_flash_t = maxf(_flash_t - dt, 0.0)
 	_flash_cd = maxf(_flash_cd - dt, 0.0)
+	_num_cd = maxf(_num_cd - dt, 0.0)
 	var h = mundo.heroi
 	var ligada := ativa(h)
 	if ligada or _desenhou:
@@ -213,7 +293,7 @@ func _desenhar() -> void:
 	var clarao := _flash_t / 0.18
 	var r := _raio()
 	var faixa := float(visual.get("faixa", 7.0))
-	var graus := float(cfg.arco)
+	var graus := arco_graus()
 	var fora: PackedVector2Array = esc.pontos_arco(h, graus, r)
 	var dentro: PackedVector2Array = esc.pontos_arco(h, graus, r - faixa)
 	var poligono := PackedVector2Array(fora)

@@ -84,7 +84,7 @@ static func sprite(id: String) -> String:
 	return sprite_do_nome(nome(id))
 
 
-## A folha que o personagem `id` desenha (retrato sem rosto, etc.): a própria (Matthew) ou, sem ela, a do herói dele (Hazaki, Nick, Luke).
+## A folha que o personagem `id` desenha (retrato de corpo da escolha, etc.): a própria (Matthew) ou, sem ela, a do herói dele (Hazaki, Nick, Luke).
 static func folha(id: String) -> String:
 	var s := sprite(id)
 	return s if s != "" else Herois.sprite(heroi(id))
