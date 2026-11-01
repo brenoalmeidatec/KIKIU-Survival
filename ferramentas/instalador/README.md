@@ -1,7 +1,7 @@
 # Instalador e smoke da Release (#379)
 
 O workflow `Release` continua exportando os ZIPs portáteis Windows, Linux e Web. O job Windows também gera
-`KIKIU-Setup-<config/version>.exe`, publicado como quarto asset nas duas Releases existentes. Nas branches, todos ficam
+`KIKIU-Setup-build-<AAAA-MM-DD>-<commit>.exe` (mesmo sufixo do tag da Release; `config/version` fica dentro do instalador), publicado como quarto asset nas duas Releases existentes. Nas branches, todos ficam
 somente nos artefatos do run; o job de publicação exige `refs/heads/main`.
 
 O instalador usa Inno Setup 6.3+, instala sem pedir administrador em `%LOCALAPPDATA%\Programs\KIKIU` e cria um atalho no

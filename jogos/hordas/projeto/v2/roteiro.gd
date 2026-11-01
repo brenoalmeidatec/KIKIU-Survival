@@ -5,6 +5,8 @@ extends RefCounted
 ##   --estresse=N          mantém N monstros vivos DENTRO da tela, caçando o herói (medir o desempenho com a horda)
 ##   --roteiro=combate     sequência de fotos do viewport: o corte acertando com número de dano, a estocada, a tela de nível e a de resultado.
 ##                         Usar com --fotos=PASTA --nome=prefixo (as fotos saem como prefixo_01_corte.png ...). Nunca captura a área de trabalho.
+##   --roteiro=derrota     (#446) o herói morre e o olho se fecha: fotos 1_cai (herói caindo, olho ainda aberto), 2_pisca ... 5_fecha (as pálpebras) e 6_derrota
+##                         (a tela de resultado por cima do preto). Com --perfil=baixo sai a versão simples. Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=correr      foto do herói correndo com a poeira e a câmera adiantada
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --build=golpes        idem com os 36 projéteis, anéis, meteoros e nuvens no nível 5 (as folhas animadas de docs/combate_v2)
@@ -72,6 +74,9 @@ func montar(m, a: Dictionary) -> void:
 	roteiro = str(a.get("roteiro", ""))
 	pasta = str(a.get("fotos", ""))
 	prefixo = str(a.get("nome", "v2"))
+	if roteiro == "derrota":  # a derrota de verdade grava a partida: que seja num save descartável, nunca o do jogador
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://playtest"))
+		mundo.Meta.caminho_save = "user://playtest/derrota_%d.cfg" % OS.get_process_id()
 	if a.has("imortal") or roteiro != "":
 		mundo.heroi.imortal = true
 	if estresse > 0 or (roteiro != "" and roteiro != "inicio"):
@@ -103,6 +108,8 @@ func atualizar(dt: float) -> void:
 				_combate()
 			"correr":
 				_correr()
+			"derrota":
+				_r_derrota()
 			"build":
 				_r_build()
 			"elite":
@@ -307,6 +314,38 @@ func _combate() -> void:
 		8:
 			mundo.get_tree().quit()
 			return
+
+
+## #446: mata o herói e fotografa o olho se fechando pelo relógio real da câmera lenta da morte (lento_t = o que falta), até a tela de resultado.
+func _r_derrota() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	match passo:
+		0:
+			c.limpar_partida()
+			h.entrada_forcada = Vector2.ZERO
+			h.imortal = false
+			h.vida = 1.0
+			mundo.abates = 41
+			mundo.tempo_partida = 143.0
+			var m = mundo.nascer_monstro("inimigo_lobo_sombrio", h.pos + Vector2(-40, 0), true)
+			m.vida = m.vida_max
+			passo = 1
+			t_passo = 0.0
+		1, 2, 3, 4, 5:  # a cada limiar do que falta da câmera lenta, uma foto (o olho completo pisca nos primeiros 0,4 s)
+			var limiar: float = [9.0, 1.1, 0.85, 0.55, 0.3][passo - 1]
+			if c.jogo == "morrendo" and (passo == 1 or c.lento_t <= limiar):
+				_foto(["1_cai", "2_pisca", "3_fecha", "4_fecha", "5_fecha"][passo - 1])
+				passo += 1
+				t_passo = 0.0
+			elif t_passo > 8.0:
+				passo = 8
+		6:
+			if c.jogo == "morte" and t_passo > 0.8:
+				_foto("6_derrota")
+				passo = 8
+		8:
+			mundo.get_tree().quit()
 
 
 func _correr() -> void:

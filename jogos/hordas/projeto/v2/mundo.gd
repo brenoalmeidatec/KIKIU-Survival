@@ -43,6 +43,7 @@ const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const Herois := preload("res://v2/herois.gd")  # heróis jogáveis (Hazaki, Nick, Luke)
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
+const OlhoDerrota := preload("res://v2/olho_derrota.gd")  # o olho que se fecha antes da tela de derrota (#446)
 const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
 const VigiaSegredos := preload("res://v2/vigia_segredos.gd")  # os segredos escondidos do mapa (dados/v2_segredos.json)
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
@@ -99,13 +100,15 @@ var monstros: Array = []  # os monstros VIVOS (quem morre volta para o pool e re
 var combate
 var elenco  # o elenco de inimigos deste mapa (v2/elenco.gd): quem faz nascer monstro de horda sorteia daqui
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
+var hud: CanvasLayer  # o HUD da partida (v2/hud.gd), no SubViewport da interface: o olho da derrota o apaga junto
+var olho: CanvasLayer  # as pálpebras da derrota (olho_derrota.gd), no SubViewport do mundo
 var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
 var status  # card "SUA BUILD" (status.gd): a tecla C liga no HUD e a pausa o mostra ao lado do menu
 var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as telas leem aqui)
 var trilha  # música de fundo (trilha.gd); null nas medições e nas fotos, que ficam mudas
 var _qualidade := QualidadeAuto.new()  # a contagem do fps travado (opção qualidade_auto)
 var _qualidade_ligada := false  # só no jogo de verdade: sem teste, sem argumentos e com janela
-var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
+var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
@@ -203,7 +206,8 @@ func _ready() -> void:
 		Engine.max_fps = 0
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
-	ui.add_child(preload("res://v2/hud.gd").criar(self))
+	hud = preload("res://v2/hud.gd").criar(self)
+	ui.add_child(hud)
 	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
 	ui.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
@@ -346,6 +350,8 @@ func _montar() -> void:
 	_vinheta()
 	clima = Clima.new()
 	clima.montar(sv, id_mapa, atm.tex_brilho)
+	olho = OlhoDerrota.new()
+	sv.add_child(olho)
 	_ler_graficos()
 	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build") or args.has("playtest"):
 		roteiro = Roteiro.new()

@@ -2720,3 +2720,24 @@ _Claude do Alisson (notebook)_
 - **Não verificado:** ninguém jogou nenhuma das cinco mudanças em movimento nem ouviu o som da Maré. Os escudos ainda não têm quadro rachado nas vistas de lado e de costas.
 - **Para o Codex:** os arquivos acima estão reservados na #467 até os PRs entrarem.
 - Atalhos do PC: "KIKIU (teste)" (Release) e "Maré de Sangue - Nicão" (main local, com o Godot do PC passado pelo atalho).
+
+## 2026-10-31 (noite): lote do PC mergeado, código centralizado no Claude, polimento com pixelfx (Claude do Alisson, notebook)
+
+- **Mergeados:** #483, #484, #487, #486, #488 e #485, todos com CI 7/7 no mesmo commit e revisão independente. O #485 precisou de merge da main: conflito no fim de `docs/LICENCAS_ARTE.md` (ficaram as duas entradas) e no `_ajuda` de `dados/v2_cartas.json` (texto da main sem rerrolar, com os nomes Nick e Luke).
+- **Decisão do Alisson (31/10):** o código da v2 fica centralizado no Claude do Alisson. O Codex fica em pausa até ele avisar. CLAUDE.md e AGENTS.md atualizados.
+- **Pixelfx** (`patch-gg/pixelfx`, MIT): o Isac aprovou a ideia pelo Telegram. O clone e as folhas exportadas ficam fora do repo, em `C:\Dev\KIKIU\notas\pixelfx` e `pixelfx_folhas`. Os efeitos de clima do pixelfx são grandes demais para usar como folha (até 4800x4320 px, 360 quadros), então o clima vai ser portado em código. Os efeitos de status pintam o corpo do boneco padrão, e essa parte não pode aparecer sobre os nossos monstros.
+- **Em andamento:** um workflow abre o PR base (`alisson/pixelfx-base`, com `v2/fx_folha.gd` e `dados/v2_pixelfx.json`) e depois três PRs que partem dele: status, recompensa/chefe e clima. As capturas de tela ficam em `C:\Dev\KIKIU\notas\pixelfx_capturas\`. O merge segue a ordem base, depois os outros três.
+- **Cota:** o Alisson subiu o teto do semanal para 70% para este pacote.
+
+## 2026-10-31 (noite): lote 2 mergeado e merge automático autorizado (Claude do Alisson, notebook)
+
+- **Mergeados** com o "pode mergear" do Alisson e CI 7/7 no head:
+  - #493: limpeza das sobras de rerrolar e banir.
+  - #495: o `v2_pool_mapa` agora cobre elite, pesado, invocado e chefe.
+  - #494: o nightly sai com o nome `build-AAAA-MM-DD-sha`. Fecha a #489. O AppImage só vai ser provado no primeiro build real.
+  - #497: olho se fechando na derrota. Fecha a #446.
+  - Antes deles entraram #491 (código centralizado no Claude) e #492 (saiu o atalho da Maré, que já liga sozinha na Vila com o Nicão).
+- **Fechadas por já estarem resolvidas:** #443 (anúncio longo) e #457 (conquistas do santuário). Nenhuma das duas teve captura em janela real.
+- **Merge automático:** o Alisson autorizou que o Claude mergeie sozinho quando o PR passar no portão descrito no CLAUDE.md, em "Quem mergeia".
+- **Risco aberto:** o pool do `inimigo_cavaleiro_oco` (12) pode não cobrir o pico de pesados, elite e mini-chefe juntos. Nenhuma partida foi simulada para conferir.
+- **Em andamento:** o lote pixelfx. O #496 é a base, e status, recompensa e clima partem dele.
