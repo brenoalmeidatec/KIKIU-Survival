@@ -104,6 +104,7 @@ func nascer(sprite := "", mod := "", onde: Variant = null):
 	if m == null:
 		return null
 	marcar(m, md)
+	combate.fx_folha.tocar("spawn-portal", m.pos, {"cor": m.cor_elite})  # o portal do pixelfx onde ela aparece (não segura o nascimento)
 	nascidas += 1
 	vivas.append(m)
 	var nome := "%s %s" % [info.nome, md.nome]
@@ -178,6 +179,7 @@ func _invocar(m) -> void:
 			lista.append(f)
 			combate.fx.onda(f.pos, Color(m.cor_elite.r, m.cor_elite.g, m.cor_elite.b, 0.8), 16.0, 0.25)
 			combate.fx.estouro(f.pos + Vector2(0, -6), m.cor_elite, 4)
+			combate.fx_folha.tocar("summon-rise", f.pos, {"cor": m.cor_elite})
 
 
 ## A elite morreu (o combate chama depois de esconder o monstro): solta o baú e, se for explosiva, o aviso da explosão.
@@ -190,6 +192,7 @@ func ao_morrer(m) -> void:
 				md = e
 		combate.avisos.com_estilo(combate.avisos.circulo(m.pos, float(md.raio), float(md.aviso), float(md.dano), cor), 2)  # o chão explode (docs/combate_v2)
 	combate.baus.soltar(m.pos)
+	combate.fx_folha.tocar("soul-rise", m.pos)  # a alma da elite sobe (o pixelfx; o estouro e as almas pequenas do efeitos.gd seguem)
 	vivas.erase(m)
 	_filhos.erase(m)
 	m.elite = false

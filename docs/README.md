@@ -17,6 +17,7 @@
 | 🎮 [`ANALISE_10_JOGOS_HORDAS.md`](ANALISE_10_JOGOS_HORDAS.md) | Mais 10 jogos parecidos e ideias pro K.I.K.I.U |
 | 🧩 [`ANALISE_DIMRAETH_ENGINE.md`](ANALISE_DIMRAETH_ENGINE.md) · [`DIMRAETH_ADAPTACAO.md`](DIMRAETH_ADAPTACAO.md) | Estudo do Dimraeth e o que foi adaptado |
 | 🆓 [`assets_gratis.md`](assets_gratis.md) · [`ideias_visual_gba.md`](ideias_visual_gba.md) | Pesquisas de assets e de visual |
+| ✨ [`PIXELFX.md`](PIXELFX.md) | Efeitos do pixelfx (MIT): tocador `v2/fx_folha.gd`, como regenerar as folhas e como registrar um efeito novo |
 | 🔊 [`LICENCAS_AUDIO.md`](LICENCAS_AUDIO.md) | Licenças das músicas |
 | 🎨 [`LICENCAS_ARTE.md`](LICENCAS_ARTE.md) | Arte, som e fontes de terceiros: o que pode (livre uso), o que não pode e o registro obrigatório |
 
