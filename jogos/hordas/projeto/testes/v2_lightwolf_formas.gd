@@ -7,6 +7,7 @@ extends "res://testes/isolamento_v2.gd"
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
+const Dificuldade := preload("res://v2/dificuldade.gd")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Status := preload("res://v2/status.gd")
@@ -86,6 +87,7 @@ func _testes() -> void:
 	await _t_quebra()
 	await _t_cartas_e_dano()
 	await _t_chamado()
+	await _t_defesa_na_volta()
 	await _t_chamado_por_tempo()
 	await _t_troca_de_folha()
 	await _t_derrota_e_recomeco()
@@ -124,7 +126,7 @@ func _t_dados() -> void:
 	)
 	ok(str(Dados.json("v2_habilidade").herois.lightwolf_lobo) == "nenhuma", "o Lobo não tem E")
 	var sec: Dictionary = Dados.json("v2_secundario").herois
-	ok(str(sec.get("lightwolf", "")) == "nenhum" and str(sec.get("lightwolf_lobo", "")) == "nenhum", "as duas formas ficam sem secundário até a matriz do LW-3")
+	ok(str(sec.get("lightwolf", "")) == "matriz" and str(sec.get("lightwolf_lobo", "")) == "nenhum", "o mecha tem a matriz (LW-3) e o Lobo fica sem secundário")
 	ok(not Dados.json("v2_especial").chamar.has("limpa_em"), "o CHAMAR não limpa a tela (sem limpa_em: de propósito)")
 
 
@@ -133,7 +135,7 @@ func _t_quebra() -> void:
 	var h = w.heroi
 	var c = w.combate
 	ok(h.chave == "lightwolf" and not h.forma_lobo and is_equal_approx(h.vida_max, 130.0), "começa mecha, 130 de vida")
-	ok(h.tipo.w == 64 and h.def_max == 0.0 and h.hab_nome != "", "mecha: folha 64x96 e E; sem secundário até o LW-3 (def_max %.0f)" % h.def_max)
+	ok(h.tipo.w == 64 and h.def_max == 100.0 and h.hab_nome != "", "mecha: folha 64x96, E e a barra de defesa da matriz (def_max %.0f)" % h.def_max)
 	var fol: float = h.folego
 	h.esp_carga = 77.0
 	h.hab_recarga = 3.5
@@ -228,7 +230,10 @@ func _t_chamado() -> void:
 	passos(25)
 	ok(not h.forma_lobo and h.chave == "lightwolf", "o aviso de 0,8 s acabou: o mecha caiu e o herói voltou a Mecha")
 	ok(is_equal_approx(h.vida_max, 130.0) and is_equal_approx(h.vida, 130.0), "mecha com a vida cheia (%.1f)" % h.vida)
-	ok(h.tipo.w == 64 and h.def_max == 0.0 and h.hab_nome != "" and h.esp_rotulo != "CHAMAR", "folha, E e Q do mecha de volta (sem secundário até o LW-3)")
+	ok(
+		h.tipo.w == 64 and h.def_max == 100.0 and h.def == 100.0 and h.hab_nome != "" and h.esp_rotulo != "CHAMAR",
+		"folha, E, Q e a barra da matriz do mecha de volta (estava cheia, segue cheia)"
+	)
 	ok(is_equal_approx(h.esp_carga, guardada) and guardada >= 61.0, "o Q do mecha volta como estava (%.1f de %.1f)" % [h.esp_carga, guardada])
 	ok(absf(h.hab_recarga - 4.0) < 0.05, "a E volta com a recarga que tinha na quebra, 4,0 (%.2f): nem zerada nem enchida pela troca" % h.hab_recarga)
 	ok(c.especial.limpas == 0, "o chamado não limpa a tela (%d limpezas)" % c.especial.limpas)
@@ -238,6 +243,49 @@ func _t_chamado() -> void:
 	h.invenc = 0.0
 	quebrar()
 	ok(h.forma_lobo and is_equal_approx(h.vida_max, 130.0 * 0.31) and c.mecha.quebras == 2, "quebra de novo depois do chamado")
+
+
+## A volta do Lobo NÃO enche a barra da matriz (só a cura repõe; no Difícil ela não recarrega sozinha): o mecha volta com a defesa e a sobrecarga de quando virou Lobo.
+func _t_defesa_na_volta() -> void:
+	await novo("lightwolf")
+	var h = w.heroi
+	w.meta_bonus["dificuldade"] = Dificuldade.regras("dificil")
+	h.def = 42.0
+	quebrar()
+	ok(h.forma_lobo and h.def_max == 0.0, "virou Lobo (sem barra)")
+	passos(300)  # 5 s de Lobo
+	h.invenc = 0.0
+	h.esp_carga = h.esp_carga_max
+	ok(h.especial(), "chama o mecha")
+	passos(70)
+	ok(not h.forma_lobo and h.def_max == 100.0, "o mecha voltou")
+	ok(h.def == 42.0, "Difícil: volta com os 42 que tinha, não com a barra cheia (%.1f)" % h.def)
+	passos(300)
+	ok(h.def == 42.0, "e no Difícil ela não recarrega sozinha depois da volta (%.1f)" % h.def)
+	h.repor_defesa_de("coracao")
+	ok(h.def > 42.0, "a cura repõe (%.1f)" % h.def)
+	# a sobrecarga também vai e volta com o mecha
+	zerar()
+	w.meta_bonus["dificuldade"] = Dificuldade.regras("dificil")
+	h.def = 0.0
+	h.def_quebrado = true
+	quebrar()
+	passos(300)
+	h.invenc = 0.0
+	h.esp_carga = h.esp_carga_max
+	h.especial()
+	passos(70)
+	ok(not h.forma_lobo and h.def == 0.0 and h.def_quebrado, "matriz em sobrecarga continua em sobrecarga na volta (%.1f %s)" % [h.def, h.def_quebrado])
+	h.repor_defesa_de("coracao")
+	ok(not h.def_quebrado and h.def > 0.0, "e qualquer reposição conserta (Difícil)")
+	# recomeçar a partida enche a barra e esquece a reserva
+	zerar()
+	h.def = 42.0
+	quebrar()
+	ok(h.def_reserva == 42.0, "a reserva guarda a barra do mecha (%.1f)" % h.def_reserva)
+	w.reiniciar()
+	passos(3)
+	ok(h.def == 100.0 and h.def_reserva < 0.0 and not h.forma_lobo, "partida nova: barra cheia, sem reserva (%.1f)" % h.def)
 
 
 func _t_chamado_por_tempo() -> void:
@@ -297,7 +345,7 @@ func _t_derrota_e_recomeco() -> void:
 	ok(not h.forma_lobo and h.chave == "lightwolf" and h.estado != Heroi.Estado.MORTO, "recomeçar volta à forma mecha, viva")
 	ok(is_equal_approx(h.vida_max, 130.0) and is_equal_approx(h.vida, 130.0) and h.tipo.w == 64, "vida 130 e folha do mecha")
 	ok(h.esp_rotulo != "CHAMAR" and h.esp_carga < 1.0 and c.mecha.quebras == 0, "Q do mecha zerado, contadores zerados")
-	ok(str(c.cfg.golpe.passos[0].proj) == "bala" and h.def_max == 0.0, "tiro do mecha e defesa sem secundário")
+	ok(str(c.cfg.golpe.passos[0].proj) == "bala" and h.def_max == 100.0, "tiro do mecha e barra da matriz de volta")
 	quebrar()
 	w.reiniciar()
 	passos(3)

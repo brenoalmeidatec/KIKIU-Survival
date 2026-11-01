@@ -31,6 +31,7 @@ const Escudo := preload("res://v2/escudo.gd")
 const Ritmo := preload("res://v2/ritmo.gd")
 const Especial := preload("res://v2/especial.gd")
 const Mecha := preload("res://v2/mecha.gd")
+const Matriz := preload("res://v2/matriz.gd")
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
@@ -67,6 +68,7 @@ var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
 var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
 var ritmo
+var matriz  # a matriz de defesa do LightWolf, o secundário do mecha (v2/matriz.gd; só age com ela erguida)
 var mecha  # as formas Mecha e Lobo do LightWolf (v2/mecha.gd; só age em eventos, sem custo para os outros heróis)
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Luke (pool, v2/adagas.gd)
@@ -198,6 +200,8 @@ func montar(m) -> void:
 	especial.montar(self, m.glow)
 	habilidade = Habilidade.new()
 	habilidade.montar(self)
+	matriz = Matriz.new()
+	matriz.montar(self, m.glow)
 	mecha = Mecha.new()
 	mecha.montar(self)
 	elites = Elites.new()
@@ -324,6 +328,7 @@ func atualizar(dt: float) -> void:
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
 		especial.atualizar(dt)
+		matriz.atualizar(dt)
 		mecha.atualizar(dt)
 		drenar_limpa(dt)
 		baus.atualizar(dt)
@@ -466,6 +471,7 @@ func efeitos(dt: float) -> void:
 	fx_folha.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
+	matriz.efeitos(dt)
 	especial.efeitos(dt)
 	telas.atualizar(dt)
 
@@ -1154,6 +1160,7 @@ func limpar_partida() -> void:
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
+	matriz.limpar()
 	especial.limpar()
 	habilidade.limpar()
 	baus.limpar()
@@ -1211,6 +1218,7 @@ func liberar() -> void:
 		avisos,
 		ruptura,
 		escudo,
+		matriz,
 		especial,
 		habilidade,
 		mecha,
@@ -1236,6 +1244,7 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	matriz = null
 	ritmo = null
 	especial = null
 	habilidade = null
