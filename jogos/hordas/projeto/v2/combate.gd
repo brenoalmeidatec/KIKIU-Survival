@@ -1213,6 +1213,7 @@ func liberar() -> void:
 		escudo,
 		especial,
 		habilidade,
+		mecha,
 		elites,
 		baus,
 		chefes
@@ -1238,6 +1239,7 @@ func liberar() -> void:
 	ritmo = null
 	especial = null
 	habilidade = null
+	mecha = null
 	elites = null
 	baus = null
 	chefes = null
