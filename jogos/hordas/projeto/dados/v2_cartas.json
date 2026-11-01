@@ -424,6 +424,42 @@
 			}
 		]
 	},
+	"maestria": {
+		"_ajuda": "A COTA de 5/5 por mapa (CAR-5, pedido 20). O nível 4 vale em todo mapa; o nível 5 (que vira o ÁPICE, veja \"apice\") só abre para max(piso, ceil(fracao x bônus que o herói tem)) bônus ao mesmo tempo. Contam os bônus ativos (golpe, stat, modificador e ruptura; a peça consumida por uma fusão lendária não conta, nem como bônus nem como ÁPICE). \"mapas\" tem uma linha por mapa de v2/mapas.gd (LISTA); o último mapa da LISTA é o que dá 50%: pelo menos metade dos bônus em 5/5 só lá. Mapa fora da lista usa \"padrao\". As lendárias (4 peças em 5/5) só são viáveis onde a cota chega a 4. Os percentuais são palpite a confirmar com o robô (ECO-8).",
+		"padrao": "floresta",
+		"mapas": {
+			"floresta": {"fracao": 0.0, "piso": 0},
+			"laboratorio": {"fracao": 0.2, "piso": 1},
+			"cidade": {"fracao": 0.35, "piso": 1},
+			"medio": {"fracao": 0.5, "piso": 2}
+		}
+	},
+	"apice": {
+		"_ajuda": "O ÁPICE (CAR-5, pedido 20): o bônus que chega ao 5/5 (dentro da cota de \"maestria\") vira a versão ÁPICE. Efeito numérico: stat, modificador e ruptura ficam com a soma aplicada x \"stat\" (o que passa da soma é aplicado de uma vez; largar o bônus no Difícil desfaz tudo pela soma guardada). Golpe: \"golpe.tipos\" tem uma linha por tipo (12), com \"mult\" (multiplica o número do golpe, se ele tem), \"soma\" (soma ao número) e \"texto\" (o que o cartão diz na linha Próximo). Corvos e runas ficam sem mais quantidade nem recarga menor, para não passar de MAX_CORVOS (16) e MAX_RUNAS (14) do armas.gd. Uma peça em ÁPICE não é consumida por fusão comum ou rara; as 4 lendárias consomem. Animação (degraus a e b; a cinemática de tela cheia é o CAR-6, da v3): \"anuncio\", \"hit_stop\" (s), \"camera_lenta\" (s) a \"escala_lenta\" (velocidade do mundo), onda (anéis) e a \"passada\" de dano: uma só, no máximo \"max\" monstros dentro da câmera mais \"margem\" px, tirando \"vida_pct\" da vida máxima (\"elite_pct\" na elite; o chefe e o mini-chefe não levam). No perfil Baixo ficam só o anúncio, os anéis e a passada (sem luz, partículas, tremor nem clarão).",
+		"stat": 1.5,
+		"golpe": {
+			"tipos": {
+				"orbita": {"mult": {"dano": 1.5}, "texto": "dano x1,5 e +1 lâmina", "soma": {"quantidade": 1}},
+				"aura": {"mult": {"dano": 1.5, "raio": 1.3}, "texto": "dano x1,5 e raio +30%"},
+				"corvos": {"mult": {"dano": 1.5}, "texto": "dano x1,5"},
+				"raio": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 raio e mais rápido", "soma": {"quantidade": 1}},
+				"runa": {"mult": {"dano": 1.5, "explosao": 1.3}, "texto": "dano x1,5 e explosão maior"},
+				"projetil": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 tiro e mais rápido", "soma": {"quantidade": 1}},
+				"nuvem": {"mult": {"dano": 1.5, "recarga": 0.85, "raio": 1.3}, "texto": "dano x1,5, nuvem maior e mais rápida"},
+				"anel": {"mult": {"dano": 1.5, "recarga": 0.85, "raio": 1.3}, "texto": "dano x1,5, anel maior e mais rápido"},
+				"meteoro": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 meteoro e mais rápido", "soma": {"quantidade": 1}},
+				"aliado": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 aliado e mais rápido", "soma": {"quantidade": 1}},
+				"torre": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 virote e mais rápida", "soma": {"quantidade": 1}},
+				"granada": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 cabaça e mais rápida", "soma": {"quantidade": 1}}
+			}
+		},
+		"anuncio": "ÁPICE: {nome}",
+		"cor": [1.0, 0.84, 0.3],
+		"hit_stop": 0.1,
+		"camera_lenta": 0.9,
+		"escala_lenta": 0.3,
+		"passada": {"max": 350, "margem": 0.0, "vida_pct": 0.5, "elite_pct": 0.1}
+	},
 	"anuncios": {
 		"minichefe": {"texto": "MINI-CHEFE: {nome}", "cor": [1.0, 0.4, 0.3]},
 		"chefe": {"texto": "CHEFE: {nome}", "cor": [1.0, 0.25, 0.6]},

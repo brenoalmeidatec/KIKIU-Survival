@@ -8,6 +8,7 @@ extends "res://testes/isolamento_v2.gd"
 #  - a evolução Fogos de Festival (cabaça 3 + bola de fogo 3): cada estilhaço estoura de novo (acertos "fogos").
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cabaca.tscn  (imprime "v2_cabaca falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Novas := preload("res://v2/armas_novas.gd")
 const PASSO := 1.0 / 60.0
@@ -204,6 +205,7 @@ func _ready() -> void:
 	armas.ativas[ID].t = 0.0
 	var q4 := ate(func(): return granadas().size() == 2, 120)
 	ok(q4 >= 0, "no nível 4 saem 2 cabaças (%d)" % granadas().size())
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o nível 5 só abre onde a cota de 5/5 deixa (o último mapa)
 	pegar(ID)
 	var st5: Dictionary = armas.ativas[ID].st
 	ok(float(st5.recarga) < float(st1.recarga) and float(st5.get("brasa_s", 0.0)) > 0.0, "nível 5: recarga menor e o chão fica em brasa")

@@ -137,6 +137,9 @@ var _lp_n := 0
 var _lp_relogio := 0.0
 var _lp_max := 24
 var _lp_part := 0.35
+var apices := 0  # quantos bônus chegaram ao ÁPICE na partida (testes)
+var apice_passada := 0  # quantos monstros a última passada de dano do ÁPICE atingiu (testes)
+var _apice_fila: Array = []  # ÁPICES ganhos que esperam o mundo voltar a andar (a escolha de cartas o pausa): {id, nome, cor}
 var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
@@ -308,6 +311,8 @@ func atualizar(dt: float) -> void:
 			mundo.combo = 0
 	_plim_t -= dt
 	if jogo == "jogando":
+		if not _apice_fila.is_empty():
+			_apice_executar()
 		var s0 := Time.get_ticks_usec()
 		_separar()
 		var s1 := Time.get_ticks_usec()
@@ -894,6 +899,8 @@ func nome_da_fonte(f: String) -> String:
 			return str(h.hab_nome) if h != null and str(h.hab_nome) != "" else "Habilidade"
 		"ruptura":
 			return "Ruptura"
+		"apice":
+			return "ÁPICE"
 		"outros":
 			return "Outros"
 	var d: Dictionary = cartas.definicao(f) if cartas != null else {}
@@ -1075,6 +1082,64 @@ func evolucao_feita(ev: Dictionary) -> void:
 	mundo.cam.tremer(3.0, 0.3)
 
 
+## Um bônus chegou ao ÁPICE, o 5/5 (cartas.aplicar chama; CAR-5, degrau a): o mundo para um instante e anda em câmera lenta. Os avisos, os anéis e a
+## passada de dano esperam o mundo voltar a andar (`_apice_executar`), porque a carta é escolhida com o jogo pausado. A cinemática de tela cheia é o CAR-6 (v3).
+func apice_ganho(id: String, nome: String, cor: Color) -> void:
+	var A: Dictionary = cartas.cfg.apice
+	apices += 1
+	_apice_fila.append({"id": id, "nome": nome, "cor": cor})
+	hit_stop(float(A.hit_stop))
+	camera_lenta("apice", float(A.camera_lenta), float(A.escala_lenta))
+
+
+## O perfil Baixo (partículas em "poucas" ou "nenhuma", efe_particulas abaixo de 0,5): o ÁPICE fica só com o anúncio, os anéis e a passada de dano.
+func _perfil_baixo() -> bool:
+	if mundo == null or not mundo.has_method("_nivel_particulas"):
+		return false
+	return float(mundo._nivel_particulas().get("efe_particulas", 1.0)) < 0.5
+
+
+## Os avisos e os anéis do ÁPICE e a passada de dano: uma vez por vez que o mundo volta a andar, mesmo com vários ÁPICES na fila (um baú).
+func _apice_executar() -> void:
+	var A: Dictionary = cartas.cfg.apice
+	var h = mundo.heroi
+	var cor: Color = _apice_fila.back().cor
+	var dourado := Color(A.cor[0], A.cor[1], A.cor[2])
+	for it in _apice_fila:
+		anunciar(str(A.anuncio).replace("{nome}", str(it.nome)), dourado)
+	_apice_fila.clear()
+	audio.tocar("evolucao", 1.2, 0.0, 0.0)
+	var centro: Vector2 = h.pos + Vector2(0, -12)
+	fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), 150.0, 0.7)
+	fx.onda(centro, Color(dourado.r, dourado.g, dourado.b, 0.8), 96.0, 0.45)
+	if not _perfil_baixo():
+		fx.luz_rapida(centro, dourado, 1.8, 220.0, 0.6)
+		fx.estouro(h.pos + Vector2(0, -16), dourado, 24)
+		mundo.cam.tremer(2.5, 0.25)
+	apice_passada = _passada_apice(A.passada)
+
+
+## A passada de dano do ÁPICE: UMA só, nos monstros dentro da câmera (no máximo `max`), `vida_pct` da vida máxima do comum e `elite_pct` da elite; o
+## chefe e o mini-chefe não levam. Sem número de dano na tela. Devolve quantos atingiu.
+func _passada_apice(P: Dictionary) -> int:
+	var rect: Rect2 = mundo.cam.retangulo(float(P.margem))
+	var maximo := int(P.max)
+	var n := 0
+	var antes := fonte_dano
+	fonte_dano = "apice"
+	for m in mundo.monstros:
+		if n >= maximo:
+			break
+		if not m.vivo or m.morrendo or m.chefe or not rect.has_point(m.pos):
+			continue
+		var pct := float(P.elite_pct) if m.elite else float(P.vida_pct)
+		ferir(m, pct * float(m.vida_max), Vector2.ZERO, 0.0, 0.0, COR_NUM, false)
+		n += 1
+	processar_mortes()
+	fonte_dano = antes
+	return n
+
+
 ## Venceu o chefe: os monstros que sobraram estouram, câmera lenta e a tela de VITÓRIA.
 func vitoria() -> void:
 	if jogo == "vencendo" or jogo == "vitoria" or jogo == "morrendo" or jogo == "morte":
@@ -1145,10 +1210,13 @@ func limpar_partida() -> void:
 		mundo.sombras.ativar(m, false)
 		mundo.devolver_monstro(m)
 	_fila.clear()
+	_apice_fila.clear()
 	for i in _lp_n:
 		_lp_m[i] = null
 	_lp_n = 0
 	_lp_relogio = 0.0
+	apices = 0
+	apice_passada = 0
 	limpa_mortes = 0
 	limpa_quadro = 0
 	limpa_pico = 0
