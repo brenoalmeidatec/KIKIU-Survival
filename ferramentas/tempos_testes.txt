@@ -183,6 +183,7 @@ v2_cartas_icones 7
 v2_matriz 14
 v2_edicoes 15
 v2_cartas_apice 8
-v2_mare_sangue 80
+# v2_mare_sangue: medido pela fila em 01/11 no PC do Alisson em 114 s (limite 120 s por cena); estourou o limite duas vezes no CI do #558
+v2_mare_sangue 115
 v2_mare_matriz 45
 v2_misseis 10
