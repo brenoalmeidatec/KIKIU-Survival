@@ -47,8 +47,45 @@ func multiplicador(chave: String, nivel: int) -> float:
 	return 1.0 + Progresso.bonus_por_nivel(nivel, cfg.curvas[chave])
 
 
+## ECO-3 (pedido 12): o coração ganha uma curva própria; o curandeiro mantém a fórmula antiga.
 func chance_cura(fracao: float, tipo := "cura") -> float:
+	if tipo == "cura":
+		return _curva_cura("chance", intensidade_cura(fracao))
 	return float(cfg[tipo].chance) * (1.0 + float(cfg[tipo].baixa_vida) * pow(1.0 - clampf(fracao, 0.0, 1.0), 2.0))
+
+
+## g(v): 0 com vida acima de `de`, 1 em `ate` ou menos, subindo exponencialmente entre os dois.
+func intensidade_cura(fracao: float) -> float:
+	var curva: Dictionary = cfg.cura_baixa_vida
+	var x := clampf((float(curva.de) - fracao) / (float(curva.de) - float(curva.ate)), 0.0, 1.0)
+	var expo := float(curva.expoente)
+	return (exp(expo * x) - 1.0) / (exp(expo) - 1.0)
+
+
+## Interpola o valor base (vida cheia) e o de `chave_baixa` (com 10% de vida ou menos) pela intensidade g.
+func _curva_cura(chave: String, g: float) -> float:
+	return lerpf(float(cfg.cura[chave]), float(cfg.cura[chave + "_baixa"]), g)
+
+
+func fracao_coracao(fracao: float) -> float:
+	return _curva_cura("fracao", intensidade_cura(fracao))
+
+
+func intervalo(tipo: String, fracao: float) -> float:
+	if tipo == "cura":
+		return _curva_cura("intervalo", intensidade_cura(fracao))
+	return float(cfg[tipo].intervalo)
+
+
+func teto_chao(tipo: String, fracao: float) -> int:
+	if tipo == "cura":
+		return roundi(_curva_cura("max_chao", intensidade_cura(fracao)))
+	return int(cfg[tipo].max_chao)
+
+
+func _fracao_heroi() -> float:
+	var h = combate.mundo.heroi
+	return h.vida / h.vida_max
 
 
 func limpar() -> void:
@@ -73,7 +110,7 @@ func ativos(tipo: String) -> int:
 
 
 func soltar(tipo: String, pos: Vector2) -> bool:
-	if ativos(tipo) >= int(cfg[tipo].max_chao):
+	if ativos(tipo) >= teto_chao(tipo, _fracao_heroi()):
 		return false
 	for it in itens:
 		if it.tipo == "":
@@ -102,12 +139,13 @@ func abate(pos: Vector2) -> void:
 	var h = combate.mundo.heroi
 	if not h.vivo():
 		return
+	var fracao: float = h.vida / h.vida_max
 	for tipo in ["cura", "ima", "curandeiro"]:
-		if float(espera[tipo]) > 0.0 or ativos(tipo) >= int(cfg[tipo].max_chao):
+		if float(espera[tipo]) > 0.0 or ativos(tipo) >= teto_chao(tipo, fracao):
 			continue
-		var chance := chance_cura(h.vida / h.vida_max, tipo) if tipo != "ima" else float(cfg.ima.chance) * multiplicador("ima", h.nivel)
+		var chance := chance_cura(fracao, tipo) if tipo != "ima" else float(cfg.ima.chance) * multiplicador("ima", h.nivel)
 		if rng.randf() < chance and soltar(tipo, pos):
-			espera[tipo] = float(cfg[tipo].intervalo)
+			espera[tipo] = intervalo(tipo, fracao)
 
 
 ## A transformação inversa do canvas fornece a tela real do mundo, inclusive corte/zoom e câmera deslocada.
@@ -150,7 +188,7 @@ func atualizar(dt: float) -> void:
 			almas_atraidas += combate.orbes.atrair_em_rect(tela())
 		else:
 			var antes: float = h.vida
-			h.curar(h.vida_max * float(cfg.cura.fracao))
+			h.curar(h.vida_max * fracao_coracao(h.vida / h.vida_max))
 			h.repor_defesa_de("coracao")  # a cura repõe a barra do escudo (valor nominal: vale com a vida cheia)
 			cura_efetiva += h.vida - antes
 		combate.audio.tocar("escolher", 1.2, -6.0, 0.0)
