@@ -7,6 +7,9 @@ Faixas de 32 px (hazaki, lucas, matheus): 256x32, 8 celulas. Faixa M do Nick (ni
   as 8 de cima e, a partir da 8, a camada 1 (nivel 6 do Nick): 8 frente, 9 lado, 10 costas, 11 rachado, com aro de reforco.
 O centro do escudo fica no centro da celula. Luz de cima-esquerda, contorno de 1 px, 4 tons por material.
 
+Faixa G do Nick (nicao_g.png, DEF-4b, nivel 14): celulas de 64 px, 12 celulas (768x64), a mesma ordem da faixa M; a frente fica com 48 x 48 px.
+Casca espiritual (camadas.png, DEF-4b, nivel 24): 3 celulas de 64 px (192x64): 0 frente (e rachado), 1 lado, 2 costas; um aro de luz translucido em volta do escudo G.
+
 Uso:  python gerar_escudos.py [saida_dir] [--previa arquivo.png]
       (padrao: ../../projeto/assets/v2/escudos). Imprime os centroides dos pedacos (vao para dados/v2_secundario.json > escudo > visual).
 Ids: hazaki (tate de laca vermelha com mon dourado), nicao (redondo de ferro rebitado e amassado), lucas (broquel de couro e bronze),
@@ -456,6 +459,10 @@ def pedacos(frente, semente):
 # de diametro; com o contorno de 1 px, a frente fica com 38 x 38 px (pedido 9: escudo claramente maior que o de 24 x 24).
 NICAO_ZOOM = 36.0 / 22.0
 
+# A faixa G do Nick (nivel 14): o mesmo desenho, celula de 64 px, corpo de 46 px de diametro; com o contorno de 1 px, a frente fica com 48 x 48 px.
+NICAO_ZOOM_G = 46.0 / 22.0
+CASCA_CEL = 64  # celula da casca espiritual (camadas.png)
+
 # Uma entrada por personagem (a chave e o id do escudo no jogo). A ordem define a semente de cada faixa: nao mudar.
 # arquivo: o nome do PNG em projeto/assets/v2/escudos; celula: lado da celula em px; reforco: tem as 4 celulas da camada 1 (nivel 6 do Nick).
 ESCUDOS = {
@@ -463,7 +470,45 @@ ESCUDOS = {
     "nicao": {"fn": nicao, "arquivo": "nicao_m", "celula": 48, "zoom": NICAO_ZOOM, "reforco": True},
     "lucas": {"fn": lucas, "arquivo": "lucas", "celula": 32, "zoom": 1.0, "reforco": False},
     "matheus": {"fn": matheus, "arquivo": "matheus", "celula": 32, "zoom": 1.0, "reforco": False},
+    # DEF-4b: sempre por ultimo (a semente de cada faixa vem da posicao; as de cima nao mudam)
+    "nicao_g": {"fn": nicao, "arquivo": "nicao_g", "celula": 64, "zoom": NICAO_ZOOM_G, "reforco": True},
 }
+
+
+def casca(vista):
+    """A casca espiritual (nivel 24 do Nick): um aro de luz azul-esverdeada, translucido, em volta do escudo G, com 3 faixas de brilho e 12 faiscas. Sem aleatoriedade."""
+    c = CASCA_CEL
+    im = Image.new("RGBA", (c, c), (0, 0, 0, 0))
+    sx = 0.5 if vista == "lado" else 1.0
+    cx = cy = c / 2.0
+    for y in range(c):
+        for x in range(c):
+            d = math.hypot((x + 0.5 - cx) / sx, y + 0.5 - cy)
+            if 25.0 <= d < 26.5:
+                a = 70  # a folga logo fora do escudo: um halo fraco
+            elif 26.5 <= d < 29.0:
+                a = 120 + int(60 * (d - 26.5) / 2.5)  # o miolo do aro, mais forte para fora
+            elif 29.0 <= d < 30.5:
+                a = 200  # o fio de luz da borda
+            else:
+                continue
+            ang = math.atan2(y + 0.5 - cy, (x + 0.5 - cx) / sx)
+            if int((ang + math.pi) / math.tau * 24) % 4 == 0 and d >= 26.5:
+                a = max(40, a - 70)  # 6 falhas no aro: parece chama e nao um anel liso
+            im.putpixel((x, y), (150, 255, 230, a) if d >= 29.0 else (90, 220, 210, a))
+    for k in range(12):  # as faiscas, fora do aro
+        ang = math.tau * k / 12 + 0.26
+        x, y = round(cx + math.cos(ang) * 30.5 * sx), round(cy + math.sin(ang) * 30.5)
+        if 0 <= x < c and 0 <= y < c:
+            im.putpixel((x, y), (235, 255, 250, 255))
+    return im
+
+
+def faixa_casca():
+    fx = Image.new("RGBA", (CASCA_CEL * 3, CASCA_CEL), (0, 0, 0, 0))
+    for i, vista in enumerate(("frente", "lado", "costas")):
+        fx.paste(casca(vista), (i * CASCA_CEL, 0))
+    return fx
 
 
 def faixa(fn, semente, reforco=False):
@@ -500,6 +545,7 @@ def main():
         fx.save(saida / f"{cfg['arquivo']}.png")
         centroides[estilo] = cent
         todas.append(fx)
+    faixa_casca().save(saida / "camadas.png")
     print(json.dumps(centroides))
     if previa is not None:
         esc = 5
