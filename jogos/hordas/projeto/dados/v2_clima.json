@@ -1,0 +1,21 @@
+{
+	"_ajuda": "Clima por mapa (v2/clima.gd, portado do pixelfx MIT: weather/fireflies, falling-leaves, fog, rain e scifi/glitch). Um bloco por id de mapa em 'mapas'; sem bloco vale 'padrao' (nada). Desenhado em espaco de tela na camada 1 (acima do mundo, abaixo do brilho dos projeteis), com quantidade fixa; o perfil Baixo desliga tudo e o Medio usa metade. Efeitos: vagalumes {n (0..24), cor, alfa}; folhas {n (0..16), cores [hex...], alfa, vel}; nevoa {cor, alfa, vel (px/s)}; chuva {n (0..140), cor, alfa, vel}; glitch {intervalo [min,max] s entre rajadas, dur s, alfa, linhas}. O alfa passa por um teto por efeito (nevoa 0.3, chuva 0.45, glitch 0.4, folhas 0.8) para nunca tapar inimigo. n = 0 ou bloco ausente desliga o efeito. Glitch segue a opcao Tremor e clarOes (0% nao liga). A floresta e os outros mapas ja tem particulas de v2/atmosfera.gd; reduza o n daqui se ficar carregado.",
+	"padrao": {},
+	"mapas": {
+		"floresta": {
+			"vagalumes": {"n": 12, "cor": "#d6ff5a", "alfa": 0.9},
+			"folhas": {"n": 8, "cores": ["#c8621e", "#f0982e", "#b8302a"], "alfa": 0.6, "vel": 1.0}
+		},
+		"cidade": {
+			"nevoa": {"cor": "#aebccb", "alfa": 0.24, "vel": 12},
+			"chuva": {"n": 110, "cor": "#c4d4f0", "alfa": 0.42, "vel": 1.0}
+		},
+		"laboratorio": {
+			"glitch": {"intervalo": [9, 18], "dur": 0.3, "alfa": 0.32, "linhas": 0.16}
+		},
+		"medio": {
+			"nevoa": {"cor": "#9fc0c8", "alfa": 0.22, "vel": 9},
+			"vagalumes": {"n": 8, "cor": "#9fd0ff", "alfa": 0.9}
+		}
+	}
+}

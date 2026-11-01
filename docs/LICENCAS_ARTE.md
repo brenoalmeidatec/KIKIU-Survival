@@ -158,3 +158,28 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Nota: onde `morte.wav` e `dano_heroi.wav` tocam hoje (31/10/2026, Claude do Alisson (PC))
 
 Rerrolar e banir saíram da escolha de cartas, então as duas entradas acima citam usos que não existem mais. Hoje: `morte.wav` toca na morte de monstro (`v2/combate.gd`, `matar`) e no "sumir" do golem (`v2/audio.gd`); `dano_heroi.wav` toca quando o herói apanha (`v2/combate.gd`, `heroi_apanhou`) e quando o Automático não acha carta para completar a escolha (`v2/telas.gd`, `_automatico`). O arquivo e a licença não mudaram.
+
+## pixelfx: base do tocador de folhas, Claude do Alisson (notebook), 31/10/2026
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/collect-burst.png` (e o `.import`): folha 784x648, 42 quadros de 112x108 (o registro usa os 34 primeiros), do efeito `pickups/collect-burst` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (uso comercial, redistribuição e modificação permitidos, com o aviso de copyright e a licença junto). Exportada sem o boneco com `node tools/render.mjs pickups/collect-burst --sheet --no-actor` no clone do pixelfx; sem retoque no PNG. No jogo é recolorida por modulate (azul-ciano da alma) em `dados/v2_pixelfx.json`. Toca ao pegar um orbe de XP (`v2/fx_folha.gd`). Como regenerar e registrar outro efeito: `docs/PIXELFX.md`.
+
+## pixelfx: status sobre monstros e herói (chama, relógio, estrelas), Claude do Alisson (notebook), 31/10/2026
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/status/slowed.png` (e o `.import`): folha 280x216, 72 quadros de 28x27, do efeito `status/slowed` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez. Modificado: só o relógio (o boneco padrão que a folha original traz foi cortado fora) e reduzido à metade com média de caixa, por `jogos/hordas/fonte_arte/pixelfx_status/preparar_status.py`. Lentidão (`lento_t`) de monstros e a teia da Rainha Tecelã no herói (`v2/fx_status.gd`).
+- `jogos/hordas/projeto/assets/v2/pixelfx/status/stunned.png` (e o `.import`): folha 416x336, 60 quadros de 52x42, do efeito `status/stunned` do **pixelfx**, licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez. Modificado: só as estrelas e pássaros de cima, recortados da folha original (sem o boneco), no tamanho original, pelo mesmo script. Atordoamento longo (`atordoa_t`) de monstros.
+- `jogos/hordas/projeto/assets/v2/pixelfx/status/burning.png` (e o `.import`): folha 144x64, 12 quadros de 24x32. **Arte própria, sem origem externa**: o `status/burning` do pixelfx é o boneco inteiro em chamas e não serve sobre os nossos monstros, então a chama é desenhada por código (paleta própria) no mesmo `preparar_status.py`. Fogo (`queima_t`) de monstros.
+
+## pixelfx: recompensa e chegadas, Claude do Alisson (notebook), 31/10/2026
+
+Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (uso comercial, redistribuição e modificação permitidos, com o aviso de copyright e a licença junto). Todas exportadas sem o boneco com `node tools/render.mjs <efeito> --sheet --no-actor` no clone do pixelfx. Cada uma tem o `.import` versionado junto, e o registro de uso está em `dados/v2_pixelfx.json`.
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/chest-open.png`: efeito `pickups/chest-open`. **Recortada**: só as linhas 3 a 10 da folha original (80 quadros de 176x112, do 21º ao 100º; os 20 primeiros eram o baú parado e o fim só brilho). Toca quando a escolha do baú fecha.
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/loot-beam.png`: efeito `pickups/loot-beam`, sem retoque; recolorida em dourado por modulate. Feixe preso ao baú enquanto ele espera.
+- `jogos/hordas/projeto/assets/v2/pixelfx/ui/level-up.png`: efeito `ui/level-up`, sem retoque no PNG; o registro usa só os 18 primeiros quadros (a coluna de luz), sem o texto em inglês "LEVEL UP!". Toca nos pés do herói ao subir de nível.
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/spawn-portal.png`: efeito `spawn/spawn-portal`, sem retoque; recolorida pela cor da elite ou do chefe. Toca onde a elite e o chefe chegam.
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/summon-rise.png`: efeito `spawn/summon-rise`, sem retoque; o registro usa só os 44 primeiros quadros (o círculo e as faíscas, antes do demônio que a folha desenha). Toca nos filhotes da elite Invocadora.
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/soul-rise.png`: efeito `spawn/soul-rise`, sem retoque; o registro usa só os 64 primeiros quadros. Toca quando a elite ou o chefe morre.
+
+## pixelfx: clima por mapa, Claude do Alisson (notebook), 31/10/2026
+
+- 2026-10-31, clima por mapa (`jogos/hordas/projeto/v2/clima.gd`, dados em `dados/v2_clima.json`): sem PNG novo. A lógica de vagalumes (ritmo de acender e apagar), folhas (pêndulo com queda acelerada no fundo do arco e giro), névoa (ruído de valor em bancos com pontilhado), chuva (gotas inclinadas em duas profundidades com respingo) e glitch (rajadas com faixas deslocadas em vermelho e ciano) foi portada para GDScript a partir dos efeitos `weather/fireflies`, `weather/falling-leaves`, `weather/fog`, `weather/rain` e `scifi/glitch` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (os arquivos de origem citam as versões do Sprite Fusion, MIT, Copyright (c) 2026 Hugo Duprez). Reescrita em código e desenhada em espaço de tela, sem usar as folhas exportadas; a textura de névoa é gerada em código na montagem.
