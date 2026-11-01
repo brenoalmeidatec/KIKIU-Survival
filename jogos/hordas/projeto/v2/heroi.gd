@@ -194,6 +194,7 @@ var hab_icone := ""  # o id do ícone (assets/v2/icones_cartas)
 var hab_cor := Color.WHITE  # o brilho do slot e dos efeitos
 var hab_recarga := 0.0  # s até poder usar a E de novo (por tempo; o tempo do mundo corre)
 var hab_recarga_max := 1.0  # a recarga cheia, para o HUD desenhar a fração
+var hab_pedido_t := 0.0  # janela do aperto antecipado da E não-Ruptura, no tempo do mundo
 var hab_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
 var hab_t := 0.0  # s desde o disparo (0 fora da E)
 var hab_dur := 1.0  # a duração da E em andamento
@@ -333,6 +334,7 @@ func resetar(p: Vector2) -> void:
 	hab_t = 0.0
 	hab_invul = false
 	hab_recarga = 0.0
+	hab_pedido_t = 0.0
 	hab_nega_t = 0.0
 	_rup_tique = 0
 	_rup_punch = 0.0
@@ -396,18 +398,27 @@ func habilidade() -> bool:
 		or c.jogo != "jogando"
 		or c.pausado
 		or _pausa_aberta()
+		or _hab_menu_aberto()
 		or estado == Estado.MORTO
 		or estado == Estado.HABILIDADE
 		or estado == Estado.ESPECIAL
 	):
+		cancelar_habilidade_pedida()
 		return false
 	if hab_nome == "" or hab_id == "ruptura":
+		cancelar_habilidade_pedida()
 		return false  # este herói não tem E (ou a dele é a ruptura)
 	if hab_recarga > 0.0:
+		var janela := float(c.habilidade.comum.buffer_s)
+		if hab_recarga <= janela:
+			hab_pedido_t = janela
+			return false
+		cancelar_habilidade_pedida()
 		hab_nega_t = float(c.habilidade.comum.nega_t)
 		hab_negados += 1
 		c.habilidade.negou(self)
 		return false
+	cancelar_habilidade_pedida()
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
@@ -439,6 +450,7 @@ func especial() -> bool:
 		esp_negados += 1
 		c.especial.negou(self)
 		return false
+	cancelar_habilidade_pedida()
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
@@ -524,6 +536,7 @@ func sair_lobo() -> void:
 ## A barra de defesa NÃO se reabastece com a troca (só a cura repõe, combinado 2; no Difícil ela não recarrega sozinha): o Lobo não tem matriz, então a barra do mecha fica
 ## guardada (`def_reserva`, com a sobrecarga) enquanto durar o Lobo e volta como estava, ao contrário da vida, que volta cheia. Partida nova (`iniciar_stats`) enche e esquece a reserva.
 func trocar_forma(nova: String, folha: Dictionary) -> void:
+	cancelar_habilidade_pedida()
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
@@ -636,6 +649,7 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	mundo.combate.heroi_apanhou(valor)
 	_dano_t = 0.0
 	if vida <= 0.0:
+		cancelar_habilidade_pedida()
 		var mecha = mundo.combate.mecha
 		if mecha != null and mecha.quebrou(self):  # LW-2: a vida do mecha zerou: ele estoura e o herói vira Lobo (só a morte do Lobo cai no código abaixo)
 			return true
@@ -653,6 +667,7 @@ func atualizar(dt: float) -> void:
 	var real := entrada_forcada == null
 	var v: Vector2 = entrada_forcada if not real else Input.get_vector("esquerda", "direita", "cima", "baixo")
 	if estado == Estado.MORTO:
+		cancelar_habilidade_pedida()
 		_visual_morto(dt)
 		return
 	if real and InputMap.has_action("mira_esquerda"):
@@ -673,7 +688,7 @@ func atualizar(dt: float) -> void:
 	pausa_t = maxf(0.0, pausa_t - dt)
 	if rup_recarga > 0.0 or rup_pedido_t > 0.0 or rup_nega_t > 0.0 or contragolpe_t > 0.0:
 		_rup_relogios(dt)
-	if hab_recarga > 0.0 or hab_nega_t > 0.0:
+	if hab_recarga > 0.0 or hab_nega_t > 0.0 or hab_pedido_t > 0.0:
 		_hab_relogios(dt)
 	if esp_nega_t > 0.0:
 		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
@@ -696,6 +711,9 @@ func atualizar(dt: float) -> void:
 		if d.length() > 4.0:
 			dir_olhar = d.normalized()
 	mira_mundo = c + dir_olhar * 120.0 if fonte != Fonte.MOUSE else mundo.mouse_mundo()
+	if hab_pedido_t > 0.0 and hab_recarga <= 0.0:
+		cancelar_habilidade_pedida()
+		habilidade()  # consome uma vez no quadro em que a recarga zera, com a mira atual
 	var desl := Vector2.ZERO
 	match estado:
 		Estado.LIVRE:
@@ -1221,6 +1239,16 @@ func _pausa_aberta() -> bool:
 	return mundo.pausa != null and mundo.pausa.aberto
 
 
+## Não deixar que um comando das cartas ou do baú vire habilidade ao retomar a partida.
+func _hab_menu_aberto() -> bool:
+	var telas = mundo.combate.telas
+	return telas != null and (telas.escolha_aberta or telas.bau_aberto)
+
+
+func cancelar_habilidade_pedida() -> void:
+	hab_pedido_t = 0.0
+
+
 ## O botão da ruptura está segurado? Polling, como o atacar. Em modo forçado (testes e fotos) vale `ruptura_forcada`.
 func _segurando_ruptura() -> bool:
 	if entrada_forcada != null:
@@ -1241,11 +1269,23 @@ func _rup_relogios(dt: float) -> void:
 
 ## Relógios da E (a que não é a ruptura), no tempo do mundo (hit-stop e pausa congelam). Quando a recarga zera, avisa uma vez.
 func _hab_relogios(dt: float) -> void:
+	if (
+		estado == Estado.HABILIDADE
+		or estado == Estado.ESPECIAL
+		or estado == Estado.MORTO
+		or mundo.combate.jogo != "jogando"
+		or mundo.combate.pausado
+		or _pausa_aberta()
+		or _hab_menu_aberto()
+	):
+		cancelar_habilidade_pedida()
 	hab_nega_t = maxf(0.0, hab_nega_t - dt)
 	if hab_recarga > 0.0 and estado != Estado.HABILIDADE:  # a recarga só corre depois da E (durante ela fica cheia)
 		hab_recarga = maxf(0.0, hab_recarga - dt)
 		if hab_recarga <= 0.0:
 			mundo.combate.habilidade.pronta(self)
+	if hab_pedido_t > 0.0 and hab_recarga > 0.0:
+		hab_pedido_t = maxf(0.0, hab_pedido_t - dt)
 
 
 func _iniciar_carga() -> void:

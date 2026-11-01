@@ -197,3 +197,6 @@ v2_lightwolf_q 30
 
 # v2_apice_tela: 14,919 s medidos pela fila no notebook em 01/11/2026, sem contar a espera por vaga; arredondado para distribuir os shards.
 v2_apice_tela 15
+
+# v2_habilidade_buffer: 47,895 s no notebook pela fila em 01/11/2026, sem contar espera por vaga.
+v2_habilidade_buffer 50

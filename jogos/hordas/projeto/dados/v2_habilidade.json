@@ -3,6 +3,8 @@
 	"padrao": "ruptura",
 	"herois": {"hazaki": "ruptura", "nicao": "investida_escudo", "lucas": "salto_adagas", "lightwolf": "misseis", "lightwolf_lobo": "nenhuma"},
 	"comum": {
+		"_ajuda": "buffer_s: janela em segundos para guardar um aperto da E não-Ruptura perto do fim da recarga; o pedido sai uma vez quando a recarga zera e é descartado ao pausar, abrir cartas ou baú, morrer, reiniciar ou trocar de forma.",
+		"buffer_s": 0.10,
 		"nega_t": 0.25,
 		"area_k": 0.6,
 		"piso": 4.0,

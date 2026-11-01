@@ -247,6 +247,8 @@ static func _textura_ajuda() -> Texture2D:
 func pausar() -> bool:
 	if mundo == null or aberto or not _pode_pausar():
 		return false
+	if mundo.heroi != null and mundo.heroi.has_method("cancelar_habilidade_pedida"):
+		mundo.heroi.cancelar_habilidade_pedida()
 	_arvore_antes = get_tree().paused
 	_apertos.clear()
 	aberto = true
