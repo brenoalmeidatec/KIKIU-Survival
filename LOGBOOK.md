@@ -2821,3 +2821,5 @@ _Claude do Alisson (notebook)_
 - Conserto: `oversampling=1.0` nos três `.import`. Reproduzido forçando oversampling global 1,5 no painel de Ajustes: antes picotado, depois limpo.
 - Teste: `testes/v2_fontes` exige oversampling 1 nas três; visto falhar (3 falhas) no import antigo e passar no novo.
 - Pendente: o Alisson conferir no notebook (F11 ida e volta).
+
+**Subtítulo do título (01/11, Claude do Alisson, notebook):** a tela de título mostra o acrônimo por extenso, "Knights In Kaos, Infinite Upgrades", em dourado na Jersey 10 (19 px), logo abaixo da linha dourada do logo (`v2/menu_principal.gd`, `SUBTITULO`; o #134 dizia que o acrônimo vira subtítulo). Foto real em janela 960x540 vista. v2_fontes e v2_codigo_secreto com falhas=0. Esperando o Alisson aprovar o visual.
