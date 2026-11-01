@@ -1,9 +1,9 @@
 {
   "padrao": "facil",
   "opcoes": [
-    {"id": "facil", "nome": "Fácil", "desc": "Aprenda o ritmo. Golpes livres de fôlego.", "almas_mult": 1.0, "xp_mult": 1.0, "vel_mult": 1.0, "densidade_mult": 1.0, "onda_tempo_mult": 1.0, "elite_tempo_mult": 1.0, "chefe_tempo_mult": 1.0, "golpe_custo": 0.0, "golpe_calor": 0.0, "folego_cheio": false, "defesa_regen_mult": 1.5},
-    {"id": "medio", "nome": "Médio", "desc": "Mais inimigos e mais rápidos. Golpes gastam fôlego.", "almas_mult": 1.5, "xp_mult": 1.25, "vel_mult": 1.1, "densidade_mult": 1.25, "onda_tempo_mult": 0.9, "elite_tempo_mult": 0.9, "chefe_tempo_mult": 0.95, "golpe_custo": 0.22, "golpe_calor": 1.5, "folego_cheio": true, "defesa_regen_mult": 1.0},
-    {"id": "dificil", "nome": "Difícil", "desc": "Hordas intensas. O escudo não se recarrega sozinho: só com cura.", "almas_mult": 2.25, "xp_mult": 1.6, "vel_mult": 1.2, "densidade_mult": 1.5, "onda_tempo_mult": 0.8, "elite_tempo_mult": 0.8, "chefe_tempo_mult": 0.9, "golpe_custo": 0.3, "golpe_calor": 2.0, "folego_cheio": true, "defesa_regen_mult": 0.0}
+    {"id": "facil", "nome": "Fácil", "desc": "Aprenda o ritmo. Golpes livres de fôlego.", "almas_mult": 1.0, "xp_mult": 1.0, "vel_mult": 1.0, "densidade_mult": 1.0, "onda_tempo_mult": 1.0, "elite_tempo_mult": 1.0, "chefe_tempo_mult": 1.0, "golpe_custo": 0.0, "golpe_calor": 0.0, "folego_cheio": false, "defesa_regen_mult": 1.5, "limite_bonus": 0},
+    {"id": "medio", "nome": "Médio", "desc": "Mais inimigos e mais rápidos. Golpes gastam fôlego.", "almas_mult": 1.5, "xp_mult": 1.25, "vel_mult": 1.1, "densidade_mult": 1.25, "onda_tempo_mult": 0.9, "elite_tempo_mult": 0.9, "chefe_tempo_mult": 0.95, "golpe_custo": 0.22, "golpe_calor": 1.5, "folego_cheio": true, "defesa_regen_mult": 1.0, "limite_bonus": 0},
+    {"id": "dificil", "nome": "Difícil", "desc": "Hordas intensas. O escudo só recarrega com cura. Máximo de 12 bônus, com troca.", "almas_mult": 2.25, "xp_mult": 1.6, "vel_mult": 1.2, "densidade_mult": 1.5, "onda_tempo_mult": 0.8, "elite_tempo_mult": 0.8, "chefe_tempo_mult": 0.9, "golpe_custo": 0.3, "golpe_calor": 2.0, "folego_cheio": true, "defesa_regen_mult": 0.0, "limite_bonus": 12}
   ],
   "conquistas": [
     {"id": "vence_dificuldade_facil", "nome": "Primeiros passos", "desc": "Vencer um mapa no Fácil", "condicao": "venceu", "dificuldade": "facil", "icone": "portal_floresta", "recompensa": {"tipo": "nenhuma", "id": "", "nome": ""}},

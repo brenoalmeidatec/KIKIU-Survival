@@ -27,3 +27,8 @@ static func da_partida(mundo) -> Dictionary:
 
 static func fator(mundo, chave: String) -> float:
 	return float(da_partida(mundo).get(chave, 1.0))
+
+
+## Quantos bônus distintos o herói pode ter ao mesmo tempo (`limite_bonus` do v2_dificuldade.json). 0 = sem limite (Fácil e Médio); no Difícil, cheio, o jogo pede para trocar um bônus.
+static func limite_bonus(mundo) -> int:
+	return maxi(int(da_partida(mundo).get("limite_bonus", 0)), 0)

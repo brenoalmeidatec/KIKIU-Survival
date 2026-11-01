@@ -54,6 +54,12 @@ const ROLETA_ESCURO := Color(0.7, 0.7, 0.78, 1.0)  # as cartas que passam girand
 const ROLETA_TIQUE := 0.07  # s entre os tiques do giro
 const CONF := Rect2(250, 180, 460, 190)  # o quadro "Pausar agora?"
 const CONF_BTN := Vector2(170, 30)
+const TROCA := Rect2(66, 70, 828, 400)  # o painel da TROCA (limite de bônus do Difícil, CAR-4): mais largo que as 3 cartas (76 a 884), para cobri-las; a lista fica em 2 colunas
+const TROCA_L := 340.0  # largura de cada linha do painel
+const TROCA_MARGEM := 64.0  # do lado do painel até a lista (2 colunas de 340 px e 20 px entre elas)
+const TROCA_A := 42.0  # altura de cada linha (encolhe se a lista for maior que 12)
+const TROCA_TOPO := 100.0  # onde a primeira linha começa, a partir do topo do painel
+const TROCA_GUARDA := 0.3  # s REAIS depois de abrir o painel em que clique e tecla não confirmam (o clique duplo na carta TROCA não larga um bônus sem querer)
 
 var combate
 var mundo
@@ -74,12 +80,22 @@ var roleta_t := 0.0  # s REAIS desde que os rolos começaram a girar
 var roleta_total := 0.0  # a roleta desta rodada (dados: escolha.roleta_s)
 var conf_aberta := false  # "Pausar agora? Você perde estas cartas": o tempo das cartas fica parado
 var conf_sel := 1  # 0 = Sim, 1 = Não (o padrão)
+var troca_aberta := false  # o painel "Cheio: escolha quem sai": a lista dos bônus que o herói pode largar (o limite de tempo segue correndo)
+var troca_sel := 0  # a linha marcada do painel
+var troca_carta := -1  # qual carta da mão é a TROCA que abriu o painel
+var troca_ids: Array = []  # os ids da lista, na ordem das linhas (primeira coluna de cima para baixo, depois a segunda)
 var mouse_fn := Callable()  # testes: posição do mouse na tela (960x540); sem ela, o mouse de verdade (mundo.ap)
 var _espera_total := 0.0  # a trava que está correndo (base da barra de cada carta)
 var _limite_total := 0.0  # o limite desta rodada de cartas (dados: escolha.limite_s; 0 = sem limite)
 var _limite_barra: ColorRect
 var _limite_fundo: ColorRect
 var _conf: Control
+var _troca: Control
+var _troca_linhas: Array[Panel] = []  # as linhas do painel: criadas quando faltam e reaproveitadas
+var _troca_sub: Label
+var _troca_barra: ColorRect
+var _troca_fundo: ColorRect
+var _troca_guarda := 0.0
 var _conf_btns: Array[Panel] = []
 var _conf_estilos: Array[StyleBoxFlat] = []
 var _rolos: Array[Control] = []  # um rolo por carta (janela recortada com duas faces que descem)
@@ -252,6 +268,7 @@ func _montar_escolha() -> void:
 	_escolha.add_child(_build)
 	_montar_rolos()
 	_montar_conf()
+	_montar_troca()
 
 
 ## O quadro "Pausar agora? Você perde estas cartas" (Sim / Não): por cima das cartas, desenhado e testado por retângulo como o resto da tela.
@@ -298,6 +315,144 @@ func _montar_conf() -> void:
 	dica.position = Vector2(CONF.position.x, CONF.position.y + 154)
 	dica.size = Vector2(CONF.size.x, 20)
 	_conf.add_child(dica)
+
+
+## O painel da TROCA (limite de bônus do Difícil): por cima das cartas, só aparece com `abrir_troca`. As linhas são criadas quando faltam (`_linha_troca`).
+func _montar_troca() -> void:
+	_troca = Control.new()
+	_troca.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_troca.visible = false
+	_escolha.add_child(_troca)
+	var veu := ColorRect.new()
+	veu.color = Paleta.alfa(Paleta.PRETO, 0.7)
+	EscalaUi.cobrir(veu)
+	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_troca.add_child(veu)
+	var painel := Panel.new()
+	painel.position = TROCA.position
+	painel.size = TROCA.size
+	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fundo := _estilo(false, Paleta.OURO)
+	fundo.bg_color.a = 1.0  # opaco: as cartas de baixo não aparecem nas bordas do painel
+	painel.add_theme_stylebox_override("panel", fundo)
+	_troca.add_child(painel)
+	var tit := _rotulo("CHEIO: ESCOLHA QUEM SAI", TAM_TITULO, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	tit.position = Vector2(TROCA.position.x, TROCA.position.y + 8)
+	tit.size = Vector2(TROCA.size.x, 60)
+	_troca.add_child(tit)
+	_troca_sub = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
+	_troca_sub.position = Vector2(TROCA.position.x + 8, TROCA.position.y + 70)
+	_troca_sub.size = Vector2(TROCA.size.x - 16, 20)
+	_troca.add_child(_troca_sub)
+	_troca_fundo = ColorRect.new()  # a barra do limite, a mesma das cartas (que ficam cobertas pelo painel)
+	_troca_fundo.position = Vector2(TROCA.position.x + TROCA_MARGEM, TROCA.position.y + 92)
+	_troca_fundo.size = Vector2(TROCA.size.x - 2.0 * TROCA_MARGEM, 3)
+	_troca_fundo.color = Paleta.alfa(Paleta.PRETO, 0.6)
+	_troca_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_troca.add_child(_troca_fundo)
+	_troca_barra = ColorRect.new()
+	_troca_barra.size = _troca_fundo.size
+	_troca_barra.color = Paleta.OURO
+	_troca_barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_troca_fundo.add_child(_troca_barra)
+	var dica := Glifos.dica(_gerador_troca, HORIZONTAL_ALIGNMENT_CENTER, Paleta.TEXTO_APAGADO)
+	dica.position = Vector2(TROCA.position.x, TROCA.position.y + TROCA.size.y - 30)
+	dica.size = Vector2(TROCA.size.x, 20)
+	_troca.add_child(dica)
+
+
+## Uma linha do painel: ícone, nome e "nv N/M" (a moldura se refaz em `_marcar_troca`).
+func _linha_troca() -> Panel:
+	var p := Panel.new()
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_theme_stylebox_override("panel", _estilo(false, Paleta.BORDA))
+	var icone := TextureRect.new()
+	icone.name = "icone"
+	icone.size = Vector2(ICONE, ICONE)
+	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(icone)
+	_campo(p, "nome", TAM_NOME, true, Paleta.FOCO, HORIZONTAL_ALIGNMENT_LEFT, 48, 0, TROCA_L - 48 - 84, 20)
+	_campo(p, "nivel", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_RIGHT, TROCA_L - 84, 0, 76, 20)
+	_troca.add_child(p)
+	return p
+
+
+## Abre o painel da TROCA para a carta `i` da mão (progresso.escolher chama): lista os bônus que o herói pode largar. Confirmar uma linha chama
+## progresso.trocar; voltar (ESC, B) fecha o painel e as 3 cartas continuam como estavam.
+func abrir_troca(i: int) -> void:
+	if not escolha_aberta:
+		return
+	troca_carta = i
+	troca_ids = combate.cartas.bonus_trocaveis()
+	var n := troca_ids.size()
+	while _troca_linhas.size() < n:
+		_troca_linhas.append(_linha_troca())
+	var linhas := _linhas_por_coluna()
+	var alt := minf(TROCA_A, (TROCA.size.y - TROCA_TOPO - 40.0) / float(maxi(linhas, 1)))
+	for k in _troca_linhas.size():
+		var p := _troca_linhas[k]
+		p.visible = k < n
+		if k >= n:
+			continue
+		var id := str(troca_ids[k])
+		var d: Dictionary = combate.cartas.definicao(id)
+		var coluna := floori(float(k) / float(linhas))
+		p.position = Vector2(TROCA.position.x + TROCA_MARGEM + float(coluna) * (TROCA_L + 20.0), TROCA.position.y + TROCA_TOPO + float(k % linhas) * alt)
+		p.size = Vector2(TROCA_L, alt - 4.0)
+		var icone := p.get_node("icone") as TextureRect
+		icone.position = Vector2(8, (p.size.y - ICONE) * 0.5)
+		icone.texture = Dados.icone_carta(id, str(d.get("icone", "")))
+		(p.get_node("nome") as Label).text = str(d.get("nome", id))
+		(p.get_node("nome") as Label).position.y = (p.size.y - 20.0) * 0.5
+		var nivel: int = combate.cartas.nivel_de(id)
+		var nl := p.get_node("nivel") as Label
+		nl.text = "nv %d/%d" % [nivel, int(d.get("max", nivel))]
+		nl.position.y = (p.size.y - 20.0) * 0.5
+		nl.add_theme_color_override("font_color", Paleta.OURO if nivel >= int(d.get("max", 99)) else Paleta.TEXTO)
+	troca_sel = 0
+	_troca_guarda = TROCA_GUARDA
+	troca_aberta = true
+	_troca.visible = true
+	_marcar_troca()
+	_quadro_troca()
+	combate.audio.tocar("carta", 0.9, -4.0, 0.0)
+
+
+## Quantas linhas tem cada coluna (a lista enche a primeira coluna e depois a segunda).
+func _linhas_por_coluna() -> int:
+	return maxi(ceili(float(troca_ids.size()) / 2.0), 1)
+
+
+func _fechar_troca() -> void:
+	troca_aberta = false
+	troca_carta = -1
+	if _troca != null:
+		_troca.visible = false
+
+
+func _marcar_troca() -> void:
+	for k in troca_ids.size():
+		_troca_linhas[k].add_theme_stylebox_override("panel", _estilo(k == troca_sel, Paleta.BORDA))
+
+
+## O texto de cima do painel e a barra do limite (as cartas, onde a barra normal fica, estão cobertas).
+func _quadro_troca() -> void:
+	var entra := ""
+	if troca_carta >= 0 and troca_carta < combate.progresso.cartas.size():
+		entra = str(combate.progresso.cartas[troca_carta].get("nome", ""))
+	var txt := "Entra: %s  ·  largue um bônus para pegá-lo" % entra
+	var ativo := _limite_total > 0.0
+	_troca_fundo.visible = ativo
+	var urgente := float(combate.cartas.cfg.escolha.get("limite_urgente_s", 3.0))
+	if ativo:
+		_troca_barra.size.x = _troca_fundo.size.x * clampf(limite_t / _limite_total, 0.0, 1.0)
+		_troca_barra.color = Paleta.PERIGO if limite_t <= urgente else Paleta.OURO
+		txt = "Entra: %s  ·  automático em %d s" % [entra, ceili(limite_t)]
+	_troca_sub.text = txt
+	_troca_sub.add_theme_color_override("font_color", Paleta.PERIGO if ativo and limite_t <= urgente else Paleta.TEXTO_SECUNDARIO)
 
 
 ## Um campo de texto do cartão (ou de qualquer tela de cartas): nó com nome, posição e tamanho dados.
@@ -371,8 +526,8 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
 	var selo := p.get_node("selo") as Label  # texto em código até a arte A04 (selos de 48x16) chegar
 	var tipo := str(c.get("tipo", ""))
-	selo.text = "UPGRADE" if tipo == "up" else ("NOVO" if tipo == "nov" else "")
-	selo.add_theme_color_override("font_color", Paleta.BONUS if tipo == "up" else Paleta.OURO)
+	selo.text = "UPGRADE" if tipo == "up" else ("NOVO" if tipo == "nov" else ("TROCA" if tipo == "troca" else ""))
+	selo.add_theme_color_override("font_color", Paleta.BONUS if tipo == "up" else (Paleta.PERIGO if tipo == "troca" else Paleta.OURO))
 	var evo := p.get_node("evolui") as Label
 	evo.text = str(c.get("evolui", ""))
 	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o magenta da fusão
@@ -402,6 +557,10 @@ func _gerador_continuar() -> Array:
 
 func _gerador_conf() -> Array:
 	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Não"]]
+
+
+func _gerador_troca() -> Array:
+	return [["navegar", "Escolher"], ["confirmar", "Largar este"], ["voltar", "Voltar às cartas"]]
 
 
 func _gerador_jogar_de_novo() -> Array:
@@ -626,6 +785,7 @@ func esconder() -> void:
 	limite_t = 0.0
 	_limite_total = 0.0
 	_fechar_conf()
+	_fechar_troca()
 	_quadro_limite()
 	for p in _cartas:
 		p.modulate = Paleta.BRANCO
@@ -843,6 +1003,8 @@ func _painel_build_aberto() -> bool:
 ## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
 func _atualizar_escolha(dt: float) -> void:
 	var parado := _pausa_aberta() or conf_aberta or _painel_build_aberto()  # a pausa, o "Pausar agora?" e o painel da build (C) param a trava e o limite
+	if troca_aberta:  # o painel da troca NÃO para o limite (CAR-4): só a guarda dos primeiros 0,3 s corre à parte
+		_troca_guarda = maxf(0.0, _troca_guarda - dt)
 	if roleta_ativa:  # a trava corre junto com os rolos; o limite fica parado até todos pararem (_roleta_fim)
 		if not parado:
 			espera_escolha = maxf(0.0, espera_escolha - dt)
@@ -871,6 +1033,8 @@ func _atualizar_escolha(dt: float) -> void:
 		if not parado:
 			limite_t = maxf(0.0, limite_t - dt)
 		_quadro_limite()
+		if troca_aberta:
+			_quadro_troca()
 		if limite_t <= 0.0:
 			_tempo_esgotado()
 
@@ -897,12 +1061,24 @@ func _quadro_limite() -> void:
 ## (não devia acontecer), fica a carta marcada. O aviso sai pelo anúncio do HUD.
 func _tempo_esgotado() -> void:
 	limite_t = 0.0
+	_fechar_troca()  # o automático nunca troca: com o painel aberto, ele fecha e o sistema escolhe entre as cartas
 	var antes: int = combate.progresso.escolhidas
 	if not combate.progresso.automatico():
-		combate.progresso.escolher(sel)
+		combate.progresso.escolher(_carta_sem_troca())
 	if combate.progresso.escolhidas > antes:
 		var nome: String = combate.progresso.ultima_nome
 		combate.anunciar("Escolhida automaticamente: %s" % nome if nome != "" else "Escolhida automaticamente", Paleta.OURO)
+
+
+## A carta marcada (sel) se ela não é TROCA; senão a primeira que não é (a mão sempre tem uma, progresso.abrir_escolha garante). Só para o tempo esgotado.
+func _carta_sem_troca() -> int:
+	var cartas: Array = combate.progresso.cartas
+	if sel < cartas.size() and str(cartas[sel].get("tipo", "")) != "troca":
+		return sel
+	for i in cartas.size():
+		if str(cartas[i].get("tipo", "")) != "troca":
+			return i
+	return sel
 
 
 ## Intercepta o ESC e o Start que abririam a pausa (pausa.gd chama aqui antes de pausar). Na escolha de cartas eles NÃO pausam: abrem a
@@ -910,6 +1086,9 @@ func _tempo_esgotado() -> void:
 func intercepta_pausa() -> bool:
 	if not escolha_aberta:
 		return false
+	if troca_aberta:  # ESC no painel da troca volta às 3 cartas, sem perder nada
+		_fechar_troca()
+		return true
 	if conf_aberta:
 		_fechar_conf()
 	else:
@@ -1005,6 +1184,90 @@ func _entrada_conf(e: InputEvent) -> bool:
 		_marcar_conf()
 	elif e.is_action_pressed("ui_accept"):
 		_conf_agir()
+	return true
+
+
+func _troca_sob_mouse() -> int:
+	var m := _mouse()
+	for k in troca_ids.size():
+		if Rect2(_troca_linhas[k].position, _troca_linhas[k].size).has_point(m):
+			return k
+	return -1
+
+
+## Move a marca do painel: `dx` troca de coluna, `dy` anda dentro da coluna (dá a volta). A lista enche a primeira coluna e depois a segunda.
+func _troca_mover(dx: int, dy: int) -> void:
+	var n := troca_ids.size()
+	if n <= 0:
+		return
+	var linhas := _linhas_por_coluna()
+	var coluna := floori(float(troca_sel) / float(linhas))
+	var linha := troca_sel % linhas
+	if dx != 0:
+		coluna = 1 - coluna
+		linha = mini(linha, n - 1 - coluna * linhas)
+		if linha < 0:  # a segunda coluna ficou vazia (lista de 1 item)
+			return
+	if dy != 0:
+		var altura := mini(linhas, n - coluna * linhas)
+		linha = posmod(linha + dy, altura)
+	troca_sel = coluna * linhas + linha
+	_marcar_troca()
+	combate.audio.tocar("carta", 1.2, -6.0, 0.03)
+
+
+## Confirma a linha `k`: larga aquele bônus e leva o bônus novo (progresso.trocar). Nos primeiros 0,3 s do painel não vale.
+func _troca_confirmar(k: int) -> void:
+	if _troca_guarda > 0.0 or k < 0 or k >= troca_ids.size():
+		return
+	if not combate.progresso.trocar(troca_carta, str(troca_ids[k])):
+		_fechar_troca()
+
+
+## Entrada com o painel da TROCA aberto: ele come tudo (as cartas ficam quietas). Setas e W/A/S/D andam, confirmar (Enter, Espaço, E, A do controle) larga
+## o bônus marcado, o clique larga o da linha, B volta. O ESC não passa por aqui: é da pausa (pausa.gd), que chama intercepta_pausa e fecha o painel.
+func _entrada_troca(e: InputEvent) -> bool:
+	if e is InputEventMouseMotion:
+		var i := _troca_sob_mouse()
+		if i >= 0 and i != troca_sel:
+			troca_sel = i
+			_marcar_troca()
+			combate.audio.tocar("carta", 1.2, -6.0, 0.03)
+		return true
+	if e is InputEventMouseButton:
+		if not e.pressed:
+			return false
+		if e.button_index == MOUSE_BUTTON_LEFT:
+			_troca_confirmar(_troca_sob_mouse())
+		return true
+	if e is InputEventKey:
+		if not e.pressed or e.keycode == KEY_ESCAPE:
+			return false
+		if e.echo:
+			return true
+		if e.is_action_pressed("ui_accept"):
+			_troca_confirmar(troca_sel)
+			return true
+		match e.keycode:
+			KEY_UP, KEY_W:
+				_troca_mover(0, -1)
+			KEY_DOWN, KEY_S:
+				_troca_mover(0, 1)
+			KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
+				_troca_mover(1, 0)
+		return true
+	if e is InputEventJoypadMotion:
+		return false
+	if e.is_action_pressed("ui_cancel"):
+		_fechar_troca()
+	elif e.is_action_pressed("ui_up"):
+		_troca_mover(0, -1)
+	elif e.is_action_pressed("ui_down"):
+		_troca_mover(0, 1)
+	elif e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right"):
+		_troca_mover(1, 0)
+	elif e.is_action_pressed("ui_accept"):
+		_troca_confirmar(troca_sel)
 	return true
 
 
@@ -1309,7 +1572,9 @@ func entrada(e: InputEvent) -> bool:
 		ligar_depuracao(not depuracao)
 		return true
 	if escolha_aberta:
-		return _entrada_conf(e) if conf_aberta else _entrada_escolha(e)
+		if conf_aberta:
+			return _entrada_conf(e)
+		return _entrada_troca(e) if troca_aberta else _entrada_escolha(e)
 	if bau_aberto:
 		return _entrada_bau(e)
 	if resultado_aberto:
