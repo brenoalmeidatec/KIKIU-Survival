@@ -118,6 +118,7 @@ func _tamanhos() -> void:
 	for t in [Telas.TAM_TITULO, Telas.TAM_NOME, Telas.TAM_CONTAGEM, Status.TAM_CAB, Status.TAM_NOME_PEQ, ResultadoMeta.TAM_TITULO, MenuPrincipal.TAM_BOTAO]:
 		ok(t in [19, 37, 56], "tamanho %d da Jersey 10 na grade (19, 37, 56)" % t)
 	ok(MenuPrincipal.TAM_LOGO == 2 * 56, "o logo usa a exceção documentada de 2 x 56")
+	ok(MenuPrincipal.TAM_SUBTITULO in [19, 37, 56], "o subtítulo do logo na grade da Jersey 10")
 	for t in [Status.TAM_NUM, Status.TAM_GRANDE]:
 		ok(t > 0 and t % 8 == 0, "números na grade de 8 px")
 
