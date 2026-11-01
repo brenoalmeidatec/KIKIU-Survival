@@ -194,3 +194,6 @@ v2_misseis 10
 v2_fumaca 10
 
 v2_lightwolf_q 30
+
+# v2_apice_tela: 14,919 s medidos pela fila no notebook em 01/11/2026, sem contar a espera por vaga; arredondado para distribuir os shards.
+v2_apice_tela 15
