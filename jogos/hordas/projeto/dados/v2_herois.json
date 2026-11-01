@@ -719,6 +719,30 @@
 			"vida_pct": 0.31,
 			"invencivel": 1.5,
 			"quebra": {"raio": 70, "empurrao": 260, "tremor": 3.0},
+			"espectral": {
+				"_ajuda": "O LOBO ESPECTRAL (lore do Isac, #511: quando o golem de aço quebra, a verdadeira forma do LightWolf é revelada num clarão; a forma espectral é frágil). Só visual, feito em código por cima da folha lightwolf_lobo (v2/lobo_espectral.gd); nenhum número de jogo (vida, dano, velocidade) mora aqui. alfa: opacidade do corpo do Lobo, de 0 a 1 (0,75 = meio translúcido; abaixo de 0,6 ele some no chão escuro). cor_corpo: [r, g, b] que tinge o corpo (1,1,1 = sem tinta). cor_brilho: [r, g, b] do brilho aditivo e do contorno. brilho: força do brilho por dentro do corpo, de 0 a 1. contorno: força do contorno claro em volta da silhueta (é ele que mantém o Lobo legível contra os inimigos), de 0 a 1,5. pulso_hz e pulso_amp: o brilho pulsa devagar (0,7 pulso por segundo) e amp é quanto ele oscila (0,3 = de 70% a 130%). cintila: força da cintilação de fantasma, faixas claras que sobem pelo corpo, de 0 a 1; cintila_vel: quanto elas sobem por segundo. nevoa: fiapos de névoa que saem do Lobo (por_s: quantos por segundo; vida em s; tam em px; alfa; sobe: aceleração vertical, negativo sobe; raio: espalhamento em px). O perfil Baixo usa só alfa e cor_corpo (sem shader e sem névoa). Com Reduzir piscadas ligado o brilho fica parado e a cintilação some.",
+				"alfa": 0.75,
+				"cor_corpo": [0.82, 0.95, 1.0],
+				"cor_brilho": [0.45, 0.88, 1.0],
+				"brilho": 0.5,
+				"contorno": 1.0,
+				"pulso_hz": 0.7,
+				"pulso_amp": 0.3,
+				"cintila": 0.45,
+				"cintila_vel": 0.9,
+				"nevoa": {"por_s": 9.0, "vida": 0.8, "tam": 5.0, "alfa": 0.5, "sobe": -26.0, "raio": 7.0},
+				"clarao": {
+					"_ajuda": "O CLARÃO da troca de forma (v2/lobo_espectral.gd): o mecha quebra e o Lobo aparece (e, mais fraco, o mecha cai de volta). heroi_dur: s do clarão branco-ciano no herói (0,3 a 0,5); heroi_forca: força dele, de 0 a 1; heroi_cor: [r, g, b]. tela_alfa: força do flash suave de tela cheia (0,1 a 0,4); tela_dur: s que ele leva para sumir; tela_cor: [r, g, b]. volta_tela_alfa e volta_dur: o mesmo para a volta do Lobo para o mecha. O flash de tela obedece a opção Tremor e clarões (ela escala o alfa; em 0% não acende) e Reduzir piscadas (não acende); desligados, sobra só o brilho no herói.",
+					"heroi_dur": 0.4,
+					"heroi_forca": 1.0,
+					"heroi_cor": [0.88, 1.0, 1.0],
+					"tela_alfa": 0.3,
+					"tela_dur": 0.45,
+					"tela_cor": [0.82, 0.97, 1.0],
+					"volta_tela_alfa": 0.16,
+					"volta_dur": 0.35
+				}
+			},
 			"bonus": {"dano": 1.0, "vel_ataque": 1.0, "area": 1.0, "sorte": 0.0},
 			"cfg": {
 				"heroi": {"vida": 40, "vel": 130, "mov_golpe": 0.8, "recuo_dano": 150},
