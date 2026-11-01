@@ -147,6 +147,8 @@ var def := 0.0
 var def_max := 0.0
 var def_atraso_t := 0.0  # s até a defesa começar a recarregar (depois de baixar o escudo ou de levar golpe)
 var def_quebrado := false  # a defesa zerou: o escudo caiu e só volta a erguer depois de recarregar o retorno (no Difícil, de uma reposição)
+var def_reserva := -1.0  # a defesa que o mecha tinha quando virou Lobo (negativa = nada guardado): volta com ele, não enche (LW-3)
+var def_reserva_quebrado := false  # e se a matriz estava em sobrecarga
 # aparo (secundário de quem não é do escudo, v2/escudo.gd): fase 0 = fora, 1 = janela aberta (golpes viram bloqueio perfeito), 2 = recuperação do erro
 var aparo_fase := 0
 var aparo_t := 0.0  # s na fase de agora
@@ -254,6 +256,7 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	correndo = false
 	escudo_ativo = false
 	escudo_t = 0.0
+	def_reserva = -1.0
 	_iniciar_defesa()
 	var esp = mundo.combate.especial
 	if esp != null:
@@ -514,18 +517,25 @@ func sair_lobo() -> void:
 
 ## Troca de forma do LightWolf (v2/mecha.gd) SEM `iniciar_stats`: o Q, a E e o resto da partida não se zeram. Muda a chave (que escolhe o Q, a E e o
 ## secundário), a folha de sprites, o corpo, a velocidade e a defesa; a vida e o Q de cada forma são de quem chama. O `cfg` do combate já é o da forma.
-## A defesa é refeita CHEIA a cada troca (como a vida, que também volta cheia): hoje nenhuma das duas formas tem secundário (v2_secundario.json), então é
-## só a barra de defesa a zero no Lobo e no mecha; quando a matriz do LW-3 entrar, a barra do mecha nasce cheia na volta, junto com a vida.
+## A barra de defesa NÃO se reabastece com a troca (só a cura repõe, combinado 2; no Difícil ela não recarrega sozinha): o Lobo não tem matriz, então a barra do mecha fica
+## guardada (`def_reserva`, com a sobrecarga) enquanto durar o Lobo e volta como estava, ao contrário da vida, que volta cheia. Partida nova (`iniciar_stats`) enche e esquece a reserva.
 func trocar_forma(nova: String, folha: Dictionary) -> void:
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
+	if def_max > 0.0:  # a forma que sai tem barra (o mecha): guarda como estava, a de quem entra é decidida abaixo
+		def_reserva = def
+		def_reserva_quebrado = def_quebrado
 	chave = nova
 	raio = float(Herois.heroi(nova).get("raio", raio))
 	trocar_tipo(folha)
 	_off_base = sprite.offset
 	vel_base = float(mundo.combate.cfg.heroi.get("vel", VEL))
 	_iniciar_defesa()
+	if def_max > 0.0 and def_reserva >= 0.0:  # voltou ao mecha: a barra e a sobrecarga de quando virou Lobo, não a barra cheia
+		def = minf(def_max, def_reserva)
+		def_quebrado = def_reserva_quebrado and def < def_max
+		def_reserva = -1.0
 	var esp = mundo.combate.especial
 	if esp != null:
 		esp.armar(self)

@@ -454,7 +454,7 @@ func efeitos(dt: float) -> void:
 	_desce_t = minf(_desce_t + dt, 9.0)
 	_quebra_t = minf(_quebra_t + dt, 99.0)
 	var h = mundo.heroi
-	var ativo: bool = h != null and h.escudo_ativo
+	var ativo: bool = h != null and h.escudo_ativo and ativo_para(str(h.chave))  # a matriz do LightWolf também liga escudo_ativo e não tem sprite de escudo
 	_atualizar_sprite(h, ativo)
 	_atualizar_pedacos(dt)
 	var brilho := _flash_t > 0.0 or _perf_t > 0.0  # só as faíscas do acerto ficam na camada glow
@@ -597,7 +597,7 @@ func _brilho(h) -> Color:
 		var c := COR_OURO.lerp(Color.WHITE, 0.5)
 		return Color(c.r, c.g, c.b, sin(_glint_t / 0.24 * PI) * 0.6)
 	var janela := float((cfg.perfeito as Dictionary).janela)
-	if h.escudo_ativo and h.escudo_t <= janela:
+	if h.escudo_ativo and ativo_para(str(h.chave)) and h.escudo_t <= janela:
 		return Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, 0.35 * (1.0 - h.escudo_t / maxf(janela, 0.001)))
 	return Color(1, 1, 1, 0)
 

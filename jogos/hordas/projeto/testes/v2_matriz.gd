@@ -292,9 +292,71 @@ func _ready() -> void:
 				dmin = minf(dmin, Vector2(rel.x, rel.y / ACHATA).length())
 	print("horda: dist min %.1f px, vida %.1f -> %.1f, absorvido %.1f, barra %.1f" % [dmin, vida_h, h.vida, mat.absorvido - abs_h, h.def])
 	ok(dmin > 25.0, "a horda de 8 cães à frente não chega ao corpo (distância mínima %.1f px)" % dmin)
+	ok(
+		h.def >= 75.0 and mat.absorvido - abs_h <= 5.0,
+		"e a barra só gasta o segurar: 4 s x 5 = 20, de 100 para ~80 (%.1f, absorvido %.1f)" % [h.def, mat.absorvido - abs_h]
+	)
 	ok(h.vida == vida_h, "e não tira vida do herói em 4 s")
 	for cao in horda:
 		cao.vivo = false
+
+	# 11. perfil Baixo (partículas "poucas"): só a faixa parada e o som, sem clarão na faixa, luz rápida nem tremor de tela (item 7 do plano)
+	zerar()
+	w.args["particulas"] = "poucas"
+	h.escudo_forcado = true
+	passos(5)
+	ok(mat._leve() and mat._pulso() == 1.0, "o perfil Baixo está ligado e o brilho não pulsa")
+	w.cam.tremor_amp = 0.0
+	var luzes0: int = w.combate.fx._li
+	ok(h.levar_dano(14.0, ponto(0.0), null), "Baixo: o golpe é absorvido")
+	passos(2)
+	ok(mat._flash_t == 0.0 and mat.claroes == 0, "Baixo: sem clarão de absorção na faixa (%s)" % mat._flash_t)
+	ok(w.cam.tremor_amp == 0.0, "Baixo: absorver não treme a tela (%s)" % w.cam.tremor_amp)
+	ok(w.combate.fx._li == luzes0, "Baixo: absorver não acende luz rápida")
+	h.def_quebrado = true
+	mat.abaixou(h)
+	ok(w.cam.tremor_amp == 0.0 and w.combate.fx._li == luzes0, "Baixo: a sobrecarga também não treme nem acende luz")
+	# o mesmo golpe no perfil normal liga o clarão, a luz e o tremor (o teste acima falharia se o perfil não fosse lido)
+	w.args.erase("particulas")
+	zerar()
+	h.escudo_forcado = true
+	passos(5)
+	w.cam.tremor_amp = 0.0
+	luzes0 = w.combate.fx._li
+	ok(not mat._leve(), "perfil normal: não é o Baixo")
+	h.levar_dano(14.0, ponto(0.0), null)
+	ok(mat._flash_t > 0.0 and mat.claroes == 1 and w.combate.fx._li == (luzes0 + 1) % 3, "perfil normal: o golpe absorvido dá clarão e uma luz rápida")
+	ok(w.cam.tremor_amp > 0.0, "perfil normal: e um tremor curto (%s)" % w.cam.tremor_amp)
+
+	# 12. no máximo 2 clarões por segundo (impacto_min 0,5 s) mesmo com golpes a cada 0,1 s, e o pulso nunca passa de 2 Hz mesmo que o dado peça mais
+	zerar()
+	h.escudo_forcado = true
+	passos(5)
+	passos(40)  # deixa o clarão do teste anterior acabar
+	var relogio0: float = mat._relogio
+	for i in 20:  # golpes a cada 0,1 s
+		h.levar_dano(1.0, ponto(0.0), null)
+		passos(6)
+	var n_claroes: int = mat.claroes
+	var dur: float = mat._relogio - relogio0  # o relógio de parede do visual (o mundo de teste também roda `efeitos` em `avancar`, então corre mais que os passos)
+	ok(
+		n_claroes >= 2 and float(n_claroes) <= dur / 0.5 + 1.0,
+		"20 golpes em %.1f s de relógio dão no máximo 1 clarão a cada 0,5 s (%d, e mais de 1)" % [dur, n_claroes]
+	)
+	ok(mat.golpes >= 20, "e todos foram absorvidos (%d)" % mat.golpes)
+	var hz0 = mat.visual.get("pulso_hz")
+	mat.visual["pulso_hz"] = 9.0
+	ok(mat._hz() == 2.0, "um dado de 9 Hz é limitado a 2 Hz (%s)" % mat._hz())
+	var troca := 0  # quantas vezes o brilho cruza o meio da faixa em 1 s de relógio de parede: 2 por ciclo, então 4 (até 5 contando a borda)
+	var ant: float = mat._pulso() - 0.84
+	for i in 600:
+		mat._relogio += 1.0 / 600.0
+		var cur: float = mat._pulso() - 0.84
+		if (cur >= 0.0) != (ant >= 0.0):
+			troca += 1
+		ant = cur
+	ok(troca <= 5, "o brilho cruza o meio no máximo 4 vezes (5 com a borda) em 1 s, ou seja 2 Hz (%d)" % troca)
+	mat.visual["pulso_hz"] = hz0
 
 	Herois.forcado = ""
 	print("v2_matriz falhas=%d" % falhas)

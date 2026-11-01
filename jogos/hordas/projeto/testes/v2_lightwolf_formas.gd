@@ -7,6 +7,7 @@ extends "res://testes/isolamento_v2.gd"
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
+const Dificuldade := preload("res://v2/dificuldade.gd")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Status := preload("res://v2/status.gd")
@@ -86,6 +87,7 @@ func _testes() -> void:
 	await _t_quebra()
 	await _t_cartas_e_dano()
 	await _t_chamado()
+	await _t_defesa_na_volta()
 	await _t_chamado_por_tempo()
 	await _t_troca_de_folha()
 	await _t_derrota_e_recomeco()
@@ -230,7 +232,7 @@ func _t_chamado() -> void:
 	ok(is_equal_approx(h.vida_max, 130.0) and is_equal_approx(h.vida, 130.0), "mecha com a vida cheia (%.1f)" % h.vida)
 	ok(
 		h.tipo.w == 64 and h.def_max == 100.0 and h.def == 100.0 and h.hab_nome != "" and h.esp_rotulo != "CHAMAR",
-		"folha, E, Q e a barra da matriz do mecha de volta, cheia"
+		"folha, E, Q e a barra da matriz do mecha de volta (estava cheia, segue cheia)"
 	)
 	ok(is_equal_approx(h.esp_carga, guardada) and guardada >= 61.0, "o Q do mecha volta como estava (%.1f de %.1f)" % [h.esp_carga, guardada])
 	ok(absf(h.hab_recarga - 4.0) < 0.05, "a E volta com a recarga que tinha na quebra, 4,0 (%.2f): nem zerada nem enchida pela troca" % h.hab_recarga)
@@ -241,6 +243,49 @@ func _t_chamado() -> void:
 	h.invenc = 0.0
 	quebrar()
 	ok(h.forma_lobo and is_equal_approx(h.vida_max, 130.0 * 0.31) and c.mecha.quebras == 2, "quebra de novo depois do chamado")
+
+
+## A volta do Lobo NÃO enche a barra da matriz (só a cura repõe; no Difícil ela não recarrega sozinha): o mecha volta com a defesa e a sobrecarga de quando virou Lobo.
+func _t_defesa_na_volta() -> void:
+	await novo("lightwolf")
+	var h = w.heroi
+	w.meta_bonus["dificuldade"] = Dificuldade.regras("dificil")
+	h.def = 42.0
+	quebrar()
+	ok(h.forma_lobo and h.def_max == 0.0, "virou Lobo (sem barra)")
+	passos(300)  # 5 s de Lobo
+	h.invenc = 0.0
+	h.esp_carga = h.esp_carga_max
+	ok(h.especial(), "chama o mecha")
+	passos(70)
+	ok(not h.forma_lobo and h.def_max == 100.0, "o mecha voltou")
+	ok(h.def == 42.0, "Difícil: volta com os 42 que tinha, não com a barra cheia (%.1f)" % h.def)
+	passos(300)
+	ok(h.def == 42.0, "e no Difícil ela não recarrega sozinha depois da volta (%.1f)" % h.def)
+	h.repor_defesa_de("coracao")
+	ok(h.def > 42.0, "a cura repõe (%.1f)" % h.def)
+	# a sobrecarga também vai e volta com o mecha
+	zerar()
+	w.meta_bonus["dificuldade"] = Dificuldade.regras("dificil")
+	h.def = 0.0
+	h.def_quebrado = true
+	quebrar()
+	passos(300)
+	h.invenc = 0.0
+	h.esp_carga = h.esp_carga_max
+	h.especial()
+	passos(70)
+	ok(not h.forma_lobo and h.def == 0.0 and h.def_quebrado, "matriz em sobrecarga continua em sobrecarga na volta (%.1f %s)" % [h.def, h.def_quebrado])
+	h.repor_defesa_de("coracao")
+	ok(not h.def_quebrado and h.def > 0.0, "e qualquer reposição conserta (Difícil)")
+	# recomeçar a partida enche a barra e esquece a reserva
+	zerar()
+	h.def = 42.0
+	quebrar()
+	ok(h.def_reserva == 42.0, "a reserva guarda a barra do mecha (%.1f)" % h.def_reserva)
+	w.reiniciar()
+	passos(3)
+	ok(h.def == 100.0 and h.def_reserva < 0.0 and not h.forma_lobo, "partida nova: barra cheia, sem reserva (%.1f)" % h.def)
 
 
 func _t_chamado_por_tempo() -> void:
