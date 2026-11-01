@@ -2743,6 +2743,12 @@ _Claude do Alisson (notebook)_
 - **Risco aberto:** o pool do `inimigo_cavaleiro_oco` (12) pode não cobrir o pico de pesados, elite e mini-chefe juntos. Nenhuma partida foi simulada para conferir.
 - **Em andamento:** o lote pixelfx. O #496 é a base, e status, recompensa e clima partem dele.
 
+## 2026-10-31 (noite): pool do cavaleiro oco simulado e ampliado de 12 para 48 (Claude do Alisson, notebook)
+
+- **Teste novo:** `v2_pool_cavaleiro` (+ `_cidade` e `_medio`, o mesmo script em três cenas para caber nos 120 s do CI) joga a partida inteira dos 4 mapas com o robô de playtest do roteiro, na dificuldade Difícil, herói imortal, passo de 0,1 s e sem sombras (15 a 45 s reais por mapa). Anota o pico de vivos com o sprite `inimigo_cavaleiro_oco` e falha se um nó desse sprite for criado depois da pré-criação ou se o pico passar do pool.
+- **Medido (pico de vivos do cavaleiro; no pico quase tudo é comum, com no máximo 1 elite e nenhum mini-chefe):** floresta 20 a 24, laboratório 23 a 31, vila 30 a 32, ruínas 31 a 38. Com o pool em 12 foram criados de 9 a 22 nós extras por partida. O pico real é de pesados das ondas fortes (crescem com o índice da onda: `onda_elite` x onda) que se acumulam, não de elite nem de mini-chefe.
+- **Mudança:** `dados/v2_combate.json > pool > inimigo_cavaleiro_oco` 12 -> 48 (pico 38 + 25%). O pool é por sprite, então os 4 mapas pré-criam 48.
+- **Pendente:** o mesmo teste mostra que os pools de `inimigo_cao_ossos`, `inimigo_aranha_tecela`, `inimigo_espantalho` e `inimigo_lobo_sombrio` também estouram nessa simulação (linhas AVISO no log); ficaram fora deste PR de propósito. O pico varia de execução para execução (o robô não é determinístico); o teste usa `seed(1)` mas ainda oscila alguns pontos.
 ## 2026-11-01: integração dos 4 PRs do pixelfx (Claude do Alisson, notebook)
 
 - **Feito:** branch `integracao/pixelfx` a partir da main, com `git merge --no-ff` de `pixelfx-base` (#496), `pixelfx-status` (#498), `pixelfx-recompensa` (#499) e `pixelfx-clima` (#502), nessa ordem. Os conflitos foram só de união (`dados/v2_pixelfx.json`, `docs/LICENCAS_ARTE.md`, `docs/PIXELFX.md`). Os quatro PRs se fecham pelo merge deste.

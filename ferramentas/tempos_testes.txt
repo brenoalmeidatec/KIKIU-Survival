@@ -154,3 +154,6 @@ v2_som_invocacoes 15
 v2_transicoes 15
 v2_vitoria_final 15
 v2_santuario_foco 15
+v2_pool_cavaleiro 40.0
+v2_pool_cavaleiro_cidade 75.0
+v2_pool_cavaleiro_medio 75.0
