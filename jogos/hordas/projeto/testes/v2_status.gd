@@ -523,18 +523,18 @@ func _katana() -> void:
 		perto(float(roundi(float(ndano[i]))), float(drops[i]), 0.001, "o acerto %d do combo tira o dano do card (arredondado)" % i)
 	# velocidade de ataque: a duração do primeiro passo medida em quadros é a dos dados / velocidade
 	perto(duracao_medida, float(passos_cfg[0].duracao) / (1.0 + 0.05 + 0.225), PASSO * 1.6, "o golpe dura a duração dos dados / (1 + treino + carta)")
-	perto(float(n_de("katana.vel")[0]), 1.23, 0.001, "a velocidade de ataque do card é 1 + 5% do Santuário + 18% da carta")
+	perto(float(n_de("katana.vel")[0]), 1.275, 0.001, "a velocidade de ataque do card é 1 + 5% do Santuário + 22,5% da carta")
 	# combo completo: o ciclo REAL (passos com a velocidade + hit-stop de cada acerto + a pausa do fim do combo, que não acelera), nos quadros
 	# de 60 Hz: segurando o clique num boneco, o herói leva isso (e não a soma das durações dos passos)
 	descartar(m)
 	var soma_passos := 0.0
 	for p in passos_cfg:
-		soma_passos += float(p.duracao) / 1.23
+		soma_passos += float(p.duracao) / 1.275
 	ok(
 		float(n_de("katana.combo")[0]) > soma_passos + 0.3,
 		"o combo do card passa muito da soma das durações (%.2f contra %.2f)" % [float(n_de("katana.combo")[0]), soma_passos]
 	)
-	_confere_ciclo("x1,23")
+	_confere_ciclo("x1,275")
 	cfg.golpe.critico.chance = crit_antes
 	# alcance de cada passo: o card mostra o alcance EFETIVO = o da área + o avanço (lunge) do golpe. Primeiro o alcance parado (um boneco logo
 	# dentro é atingido, logo fora não), depois o golpe inteiro com o avanço.
