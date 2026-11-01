@@ -5,6 +5,9 @@
 #ifndef AppVersion
   #error AppVersion deve vir do config/version de project.godot
 #endif
+#ifndef BuildTag
+  #error BuildTag deve vir do compilar.ps1 (data e commit da build)
+#endif
 #ifndef GameDir
   #error GameDir deve apontar para a exportacao Windows
 #endif
@@ -26,7 +29,7 @@ WizardStyle=modern
 SetupIconFile={#IconPath}
 UninstallDisplayIcon={app}\KIKIU.exe
 OutputDir={#OutputDir}
-OutputBaseFilename=KIKIU-Setup-{#AppVersion}
+OutputBaseFilename=KIKIU-Setup-{#BuildTag}
 Compression=lzma2
 SolidCompression=yes
 CloseApplications=yes

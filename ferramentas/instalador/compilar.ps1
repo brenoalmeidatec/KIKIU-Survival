@@ -38,6 +38,10 @@ $componentes = @($versao.Split('.') | ForEach-Object {
 })
 while ($componentes.Count -lt 4) { $componentes += 0 }
 $versaoWindows = $componentes -join '.'
+# Mesmo sufixo do tag da Release (build-AAAA-MM-DD-commit), para o nome dizer de qual build veio.
+$sha = (& git -C $PSScriptRoot rev-parse --short HEAD)
+if ($LASTEXITCODE -ne 0 -or -not $sha) { $sha = 'local' }
+$sufixo = "build-$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd'))-$sha"
 
 if ($ISCC) {
     $ISCC = (Resolve-Path -LiteralPath $ISCC).Path
@@ -73,10 +77,10 @@ Write-Host "Compilador: $ISCC"
 
 New-Item -ItemType Directory -Force -Path $Saida | Out-Null
 $Saida = (Resolve-Path -LiteralPath $Saida).Path
-$instalador = Join-Path $Saida "KIKIU-Setup-$versao.exe"
+$instalador = Join-Path $Saida "KIKIU-Setup-$sufixo.exe"
 if (Test-Path -LiteralPath $instalador) { Remove-Item -LiteralPath $instalador }
 $icone = Join-Path $Projeto 'assets\icone\kikiu.ico'
-& $ISCC /Qp "/DAppVersion=$versao" "/DVersionInfoVersion=$versaoWindows" "/DGameDir=$Exportado" "/DOutputDir=$Saida" "/DIconPath=$icone" (Join-Path $PSScriptRoot 'kikiu.iss')
+& $ISCC /Qp "/DAppVersion=$versao" "/DVersionInfoVersion=$versaoWindows" "/DBuildTag=$sufixo" "/DGameDir=$Exportado" "/DOutputDir=$Saida" "/DIconPath=$icone" (Join-Path $PSScriptRoot 'kikiu.iss')
 if ($LASTEXITCODE -ne 0) { throw "ISCC falhou: codigo $LASTEXITCODE." }
 $arquivo = Get-Item -LiteralPath $instalador
 if ($arquivo.Length -eq 0 -or $arquivo.VersionInfo.ProductVersion.Trim() -ne $versao -or $arquivo.VersionInfo.FileVersion.Trim() -ne $versaoWindows) {
