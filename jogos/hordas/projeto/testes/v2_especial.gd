@@ -10,6 +10,7 @@ extends "res://testes/isolamento_v2.gd"
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_especial.tscn  (imprime "v2_especial falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
+const Especial := preload("res://v2/especial.gd")
 const Herois := preload("res://v2/herois.gd")
 const HudHabilidades := preload("res://v2/hud_habilidades.gd")
 const PASSO := 1.0 / 60.0
@@ -65,6 +66,7 @@ func zerar() -> void:
 	passos(3)
 	h.esp_carga = h.esp_carga_max
 	h.esp_nega_t = 0.0
+	w.cam.cravar(h.pos + Heroi.CENTRO_CORPO)  # a câmera cobre o herói (o alcance do raio vai até a borda dela)
 
 
 ## Um monstro parado (atordoado por muito tempo) e com muita vida, a (dx, dy) do herói.
@@ -96,6 +98,7 @@ func _ready() -> void:
 	_lucas()
 	await novo("hazaki")
 	_revisao_hazaki()
+	_raio_hazaki()
 	for id in ["hazaki", "nicao", "lucas"]:
 		await novo(id)
 		_fim_de_partida(id)
@@ -296,7 +299,7 @@ func _hazaki() -> void:
 	var h = w.heroi
 	zerar()
 	var frente = monstro_a(120)  # no meio da faixa
-	var fim = monstro_a(235, 30)  # perto de onde o herói para
+	var fim = monstro_a(320, 70)  # onde o herói para (320 px), fora da faixa do raio (meia-largura 34) e dentro do corte em cruz (raio 100)
 	var atras = monstro_a(-70)
 	var lado = monstro_a(120, 90)  # fora da faixa e longe de onde ele para
 	var p0: Vector2 = h.pos
@@ -316,24 +319,26 @@ func _revisao_hazaki() -> void:
 	for dt in [1.0 / 20.0, 1.0 / 45.0, 1.0 / 30.0, 1.0 / 60.0]:
 		zerar()
 		var p0: Vector2 = h.pos
-		var borda = monstro_a(330)  # na linha da mira, a ~90 px de onde ele para (raio do corte final: 100) e além do alcance da faixa no último passo
+		var borda = monstro_a(340, 70)  # a ~73 px de onde ele para (raio do corte final: 100) e fora da faixa do raio (meia-largura 34)
 		ok(h.especial(), "revisão: dispara (dt %s)" % dt)
 		for i in int(ceil(1.0 / dt)):
 			w.avancar(dt)
-		ok((h.pos - p0).x > 235.0, "revisão: parou na distância cheia (dt %s, %s px)" % [dt, (h.pos - p0).x])
+		ok((h.pos - p0).x > 300.0, "revisão: parou na distância cheia (dt %s, %s px)" % [dt, (h.pos - p0).x])
 		ok(perdeu(borda) > 30.0, "revisão: o corte final pega quem está na borda do raio em volta da parada (dt %s, perdeu %s)" % [dt, perdeu(borda)])
 	# dois Q seguidos contra vários alvos: os dois mostram números
 	zerar()
 	var inicio: Vector2 = h.pos
 	for i in 14:
-		monstro_a(250.0 + cos(i) * 60.0, sin(i) * 60.0)
+		monstro_a(250.0 + cos(i) * 60.0, sin(i) * 30.0)  # todos na faixa do raio (meia-largura 34 + raio do monstro)
 	ok(h.especial(), "revisão: primeiro Q")
 	passos(60)
 	ok(esp._numeros >= int(esp.comum.numeros_max), "revisão: o primeiro Q gastou o limite de números (%s)" % esp._numeros)
 	passos(40)
 	h.definir_pos(inicio)  # volta ao começo: o fim da faixa andável está perto de onde o primeiro Q parou
+	w.cam.cravar(h.pos + Heroi.CENTRO_CORPO)
 	h.esp_carga = h.esp_carga_max
 	w.mouse_forcado = h.centro() + Vector2(100, 0)
+	passos(3)  # o mouse vira o corpo fora do especial: o herói olha para a mira antes do segundo Q
 	for i in 3:
 		monstro_a(50.0 + i * 40.0)
 	ok(h.especial(), "revisão: segundo Q")
@@ -343,6 +348,74 @@ func _revisao_hazaki() -> void:
 	esp._numeros = 5
 	esp.limpar()
 	ok(esp._numeros == 0, "revisão: limpar zera os números")
+
+
+## ULT-B: o raio do Hazaki vai para onde ele está virado, nas 8 direções e com as 3 fontes (mouse, teclado e analógico). Fere quem está à frente,
+## não quem está atrás, sai num único quadro (o herói ainda não andou mais que um quadro), e o avanço, o zigue-zague e a direção do sprite seguem a mesma linha.
+func _raio_hazaki() -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	for fonte in ["mouse", "teclado", "analogico"]:
+		for i in 8:
+			var d := Vector2.from_angle(float(i) * TAU / 8.0)
+			var nome := "%s %d" % [fonte, i]
+			zerar()
+			_virar(h, fonte, d)
+			var frente = monstro_a(d.x * 150.0, d.y * 150.0)
+			var atras = monstro_a(-d.x * 150.0, -d.y * 150.0)
+			var p0: Vector2 = h.pos
+			ok(h.especial(), "raio %s: dispara" % nome)
+			var quadros := 0
+			while esp._fase == 0 and quadros < 120:  # a mira: avança até o quadro em que o raio sai
+				passos(1)
+				quadros += 1
+			ok(esp._fase == 1 and esp._raio_t >= 0.0, "raio %s: o raio saiu" % nome)
+			ok(perdeu(frente) > 30.0, "raio %s: fere quem está à frente já no quadro do raio (%s)" % [nome, perdeu(frente)])
+			ok((h.pos - p0).dot(d) < 60.0, "raio %s: no quadro do raio o herói ainda não andou (%s px)" % [nome, (h.pos - p0).dot(d)])
+			ok(h.dir_olhar.normalized().dot(d) > 0.999, "raio %s: o sprite olha para a linha do raio (durante o especial)" % nome)
+			passos(60)
+			ok(perdeu(atras) == 0.0, "raio %s: quem está atrás não é ferido (%s)" % [nome, perdeu(atras)])
+			ok((h.pos - p0).dot(d) > 250.0, "raio %s: o herói atravessa na direção do raio (%s px)" % [nome, (h.pos - p0).dot(d)])
+			ok(esp._dir.dot(d) > 0.999, "raio %s: a direção travada do raio é a do herói" % nome)
+			ok(esp._zig.size() == Especial.RAIO_PTS, "raio %s: o zigue-zague tem %d pontos" % [nome, Especial.RAIO_PTS])
+			var fim_zig: Vector2 = esp._zig[esp._zig.size() - 1] - esp._zig[0]
+			ok(fim_zig.normalized().dot(d) > 0.999, "raio %s: o zigue-zague vai na direção do raio" % nome)
+			ok(absf(fim_zig.length() - esp._alcance) < 0.01, "raio %s: o zigue-zague chega à borda (%s px)" % [nome, fim_zig.length()])
+	# o alcance é até a borda da tela: câmera de 960x540 com 40 px de margem, centrada na origem = 520 na horizontal, 310 na vertical e ~605 nos cantos
+	var tela := Rect2(-520.0, -310.0, 1040.0, 620.0)
+	ok(absf(Especial.alcance_ate_borda(Vector2.ZERO, Vector2.RIGHT, tela) - 520.0) < 0.01, "alcance: borda direita")
+	ok(absf(Especial.alcance_ate_borda(Vector2.ZERO, Vector2.LEFT, tela) - 520.0) < 0.01, "alcance: borda esquerda")
+	ok(absf(Especial.alcance_ate_borda(Vector2.ZERO, Vector2.UP, tela) - 310.0) < 0.01, "alcance: borda de cima")
+	ok(absf(Especial.alcance_ate_borda(Vector2.ZERO, Vector2.DOWN, tela) - 310.0) < 0.01, "alcance: borda de baixo")
+	for sx in [-1.0, 1.0]:
+		for sy in [-1.0, 1.0]:
+			var canto := Vector2(sx * 520.0, sy * 310.0)
+			var a := Especial.alcance_ate_borda(Vector2.ZERO, canto.normalized(), tela)
+			ok(absf(a - canto.length()) < 0.01, "alcance: canto (%s, %s) = %s px (deu %s)" % [sx, sy, canto.length(), a])
+	ok(absf(Especial.alcance_ate_borda(Vector2(100.0, 50.0), Vector2.RIGHT, tela) - 420.0) < 0.01, "alcance: sai de onde o herói está, não do centro")
+	ok(
+		absf(Especial.alcance_ate_borda(Vector2.ZERO, Vector2(1, 1).normalized(), tela) - 310.0 * sqrt(2.0)) < 0.01,
+		"alcance: diagonal sai pela borda mais perto"
+	)
+
+
+## Põe o herói virado para `d` pela fonte dada (mouse: a mira; teclado: andando nessa direção; analógico: o stick), e o deixa parado no fim.
+func _virar(h, fonte: String, d: Vector2) -> void:
+	match fonte:
+		"mouse":
+			h.fonte = Heroi.Fonte.MOUSE
+			w.mouse_forcado = h.centro() + d * 100.0
+			passos(3)
+		"teclado":
+			h.fonte = Heroi.Fonte.ANDA
+			h.entrada_forcada = d
+			passos(12)
+			h.entrada_forcada = Vector2.ZERO
+			passos(2)
+		"analogico":
+			h.fonte = Heroi.Fonte.STICK
+			h.dir_olhar = d
+			passos(2)
 
 
 ## Acabar a partida (vitória; no Hazaki também a derrota) com o Q ativo desfaz estado, invulnerabilidade e onda.
