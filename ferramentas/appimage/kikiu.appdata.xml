@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Metainfo do AppImage (AppStream). Sem ele o appimagetool avisa que falta usr/share/metainfo/kikiu.appdata.xml. -->
+<component type="desktop-application">
+  <id>io.github.brenoalmeidatec.kikiu</id>
+  <launchable type="desktop-id">kikiu.desktop</launchable>
+  <name>K.I.K.I.U</name>
+  <summary>Sobreviva às hordas em ação 2.5D</summary>
+  <developer id="io.github.brenoalmeidatec">
+    <name>brenoalmeidatec</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <description>
+    <p>K.I.K.I.U é um jogo de sobrevivência contra hordas em ação 2.5D: escolha um herói, junte armas e cartas de bônus e sobreviva até o duelo final.</p>
+  </description>
+  <icon type="stock">kikiu</icon>
+  <url type="homepage">https://github.com/brenoalmeidatec/KIKIU-Survival</url>
+  <categories>
+    <category>Game</category>
+    <category>ActionGame</category>
+  </categories>
+</component>
