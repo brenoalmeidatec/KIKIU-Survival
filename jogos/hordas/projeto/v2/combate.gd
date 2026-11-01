@@ -9,6 +9,7 @@ extends RefCounted
 ## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar. A ruptura (tecla E)
 ## (v2/ruptura.gd) é um módulo daqui (`ruptura`): o contragolpe dela entra em golpe_comecou e golpear.
 
+# experimento de CI (ULT-A)
 const Efeitos := preload("res://v2/efeitos.gd")
 const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
 const FxFolha := preload("res://v2/fx_folha.gd")  # folhas do pixelfx (docs/PIXELFX.md)
