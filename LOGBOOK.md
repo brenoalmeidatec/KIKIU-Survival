@@ -2847,3 +2847,5 @@ _Claude do Alisson (notebook)_
 - **Testes (Godot pela fila, headless):** `v2_herois` falhas=0, `v2_personagens_layout` falhas=0; os de sprite (`v2_armas_sprites`, `v2_herois_novos`) no fim desta entrada.
 - **Pendente:** revisão visual do leque aberto com janela de verdade (o Isac decide se a forma serve); varetas do leque se o tamanho deixar; o vento do golpe é efeito do jogo (PER-3), não desta folha.
 - **Prévias fora do repo:** `C:\Dev\KIKIU\notas\o9_previas\per4-lukako\`.
+
+**PER-4 Fabian (01/11, Claude do Alisson, notebook):** folha Blender própria do Fabian com o arco (YUMI) em `fonte_arte/blender_herois/fabio/`, ligada por `"sprite": "fabio"` em `dados/v2_salao.json`. O `hazaki/gerar.py` passou a aceitar `anim_<nome>.py` na pasta do perfil (o combo de tiro do arco); sem isso nada muda para os outros. Testes v2_herois, v2_personagens_layout e v2_herois_novos com falhas=0. Pendente: o Alisson aprovar o visual; não visto dentro do jogo com janela. O agente do workflow caiu antes do commit; o integrador fechou.

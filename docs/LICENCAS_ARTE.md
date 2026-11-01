@@ -237,3 +237,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 - `jogos/hordas/fonte_arte/blender_herois/lukako/` (`perfil.py`, `gerar.py`, `medir.py`, `LEIA-ME.md`): modelo, rig e animações gerados por script (Blender 4.5, `blender -b`) sobre o framework do Hazaki e o estudo do Codex, já registrados acima. O perfil é próprio (paleta, cabelo, roupa e o leque TESSEN, no lugar da katana). Sem arte, fonte ou ícone de terceiros.
 - Derivados no jogo, gerados pelo `hazaki/montar_folha.py`, sem mudança à mão: `jogos/hordas/projeto/prototipos/cara_nova/sprites/lukako.json`, `lukako_albedo.png` e `lukako_normal.png` (grade 50x8 de quadros 32x44).
 - Sem licença de terceiros a declarar, e sem crédito obrigatório nos Créditos por isso.
+
+## PER-4: folha Blender do Fabian (YUMI), Claude do Alisson (notebook, worktree alisson/per4-fabio), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/fabio/`: folha de sprites gerada por script (Blender 4.5, `gerar.py` + `perfil.py` + `anim_combo.py`) sobre o rig e as animações do Hazaki, com a aparência e o arco do Fabian. Arte PRÓPRIA, sem modelo, textura ou referência de terceiros: as peças novas são primitivas do script.
+- Gerados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/fabio.json`, `fabio_albedo.png` e `fabio_normal.png` (cópia de `fabio_final*`). Sem direitos de terceiros declarados.

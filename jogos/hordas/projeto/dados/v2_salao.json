@@ -14,7 +14,7 @@
 		{"nome": "Matthew", "nome_antigo": "Matheus", "pasta": "matheus", "heroi": "matheus", "sprite": "matheus"},
 		{"nome": "Bert", "nome_antigo": "Beto", "pasta": "beto", "heroi": "beto", "sprite": "beto"},
 		{"nome": "Lukako", "pasta": "lukako", "heroi": "lukako", "sprite": "lukako"},
-		{"nome": "Fabian", "nome_antigo": "Fábio", "pasta": "fabio", "heroi": "fabio"},
+		{"nome": "Fabian", "nome_antigo": "Fábio", "pasta": "fabio", "heroi": "fabio", "sprite": "fabio"},
 		{"nome": "LightWolf", "pasta": "lightwolf", "heroi": "lightwolf"}
 	],
 	"arma_inicial": "Katana",

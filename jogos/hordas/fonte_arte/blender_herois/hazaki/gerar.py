@@ -496,6 +496,22 @@ LOC0 = Vector(arm["loc0"])
 print("calibragem: caixa y %d..%d x %d..%d (largura %d px); desloca %d px" % (ys.min(), ys.max(), xs.min(), xs.max(), xs.max() - xs.min() + 1, dy))
 
 
+# ANIM DO PERFIL (opcional): um perfil pode trazer anim_<nome>.py na própria pasta; ela substitui a do Hazaki com o mesmo nome
+# (ex.: ../fabio/anim_combo.py, os tiros do arco). Só substitui: um anim_*.py da pasta do perfil sem par no Hazaki (ex.:
+# ../matheus/anim_combo_arremesso.py, que o perfil do Matthew carrega sozinho) não vira animação nova. Sem anim na pasta, nada muda.
+PASTA_PERFIL = Path(_PERFIL).resolve().parent if perfil else None
+
+
+def carregar_anim(nome):
+    arq = PASTA_PERFIL / ("anim_" + nome + ".py") if PASTA_PERFIL else None
+    if arq is not None and arq.exists():
+        spec = importlib.util.spec_from_file_location("anim_" + nome, arq)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    return importlib.import_module("anim_" + nome)
+
+
 def animacoes():
     achadas = sorted(p.stem[len("anim_"):] for p in AQUI.glob("anim_*.py"))
     if SO_ANIM:
@@ -533,7 +549,7 @@ def pintar_poligonos(cor, normal, mascara, poligonos):
 
 
 def renderizar_animacao(nome):
-    mod = importlib.import_module("anim_" + nome)
+    mod = carregar_anim(nome)
     n = mod.N_QUADROS
     pasta = SAIDA / nome
     pasta.mkdir(parents=True, exist_ok=True)
