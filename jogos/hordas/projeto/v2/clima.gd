@@ -13,6 +13,7 @@ extends RefCounted
 ## cada um desenha tudo numa chamada por quadro. Perfil: o mundo manda `definir_fator` (Baixo 0 = desligado e invisível; Médio 0,5 = metade da
 ## quantidade; Alto 1).
 
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": sem glitch
 const LARG := 960.0
 const ALT := 540.0
 const MAX_VAGA := 24
@@ -210,6 +211,8 @@ static func _suave(a: float, b: float, x: float) -> float:
 
 
 func _clarao() -> float:
+	if not Piscadas.clarao_permitido():
+		return 0.0  # "Reduzir piscadas": o glitch some por inteiro (não nasce rajada nem a barra), não é amortecido
 	var f = Config.g("tremor_clarao")
 	return 1.0 if f == null else clampf(float(f) / 100.0, 0.0, 1.0)
 

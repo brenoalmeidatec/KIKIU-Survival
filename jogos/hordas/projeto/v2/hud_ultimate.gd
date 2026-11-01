@@ -8,6 +8,7 @@ extends Control
 
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o pulso do anel e do halo fica parado
 const EstiloPremium := preload("res://v2/estilo_premium.gd")
 const DIAMETRO := 64.0  # o nó inteiro: o círculo (60) e, embaixo, a tecla Q por cima da borda
 const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó é escalado (`scale`): 96 px na tela, o desenho segue no espaço de 64
@@ -57,7 +58,7 @@ func _draw() -> void:
 	var pronta: bool = tem and (_slots.q_pronta or _slots.q_ativa)
 	var f := clampf(float(_slots.q_carga_pct) / 100.0, 0.0, 1.0) if tem else 0.0
 	var cor_heroi: Color = _slots.q_cor if tem else Paleta.HABILIDADE_DESATIVADA
-	var pulso := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) / 1000.0 * TAU * 2.0)
+	var pulso := Piscadas.pulso(float(Time.get_ticks_msec()) / 1000.0, 2.0)
 	var cor: Color = cor_heroi
 	if tem and _slots.q_negada:
 		cor = Paleta.PERIGO

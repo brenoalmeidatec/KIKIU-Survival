@@ -7,7 +7,7 @@ extends RefCounted
 ## entrada são da pausa (pausa.gd), com a fonte da v2.
 ## O menu só mostra as opções que a v2 lê hoje (LIDAS_NA_V2), todas valendo na hora na partida. As outras do json seguem nos
 ## perfis (a v1 usa), mas sem linha aqui: opção que não faz nada na tela não aparece. Opção nova só entra na lista depois de ser lida.
-## Ids das linhas: "g:perfil", "g:dinamico", "g:detectar", "g:tela", "g:fps", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
+## Ids das linhas: "g:perfil", "g:dinamico", "g:detectar", "g:tela", "g:fps", "g:piscadas", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
 ## Perfil tem só Baixo, Médio e Alto (e Personalizado, quando uma opção é mexida à mão). O Ajuste dinâmico (qualidade_auto) é uma linha
 ## própria, logo abaixo do Perfil: com ele ligado a partida começa no Perfil escolhido, desce um degrau por vez se o fps travar e sobe de
 ## volta só até o Perfil escolhido (v2/qualidade_auto.gd; o Config guarda o escolhido em g_perfil_escolhido e a queda só na memória).
@@ -15,10 +15,10 @@ extends RefCounted
 ## Médio, Alto: cada um fixa todos os detalhes de uma vez) e as opções soltas da tela Avançado. A ajuda diz que quem manda é o Ajuste dinâmico
 ## e o Perfil que estava escolhido vira o teto da subida. Por isso com ele ligado não há Personalizado: o Config.recarregar abre um save
 ## Personalizado como Não e ligar o dinâmico estando em Personalizado aplica o perfil da máquina (senão ficaria sem Perfil e sem como sair).
-## Desligado, tudo volta a ser editável e mexer numa opção vira Personalizado. Detectar pela máquina, Tela cheia, Mostrar FPS e o Tamanho da
-## interface ficam sempre livres. Detectar escolhe o Perfil (a máquina, não o jogador) e deixa o Ajuste dinâmico como está (o padrão de
+## Desligado, tudo volta a ser editável e mexer numa opção vira Personalizado. Detectar pela máquina, Tela cheia, Mostrar FPS, Reduzir piscadas e o
+## Tamanho da interface ficam sempre livres. Detectar escolhe o Perfil (a máquina, não o jogador) e deixa o Ajuste dinâmico como está (o padrão de
 ## máquina nova é Sim).
-## Tela cheia, o Ajuste dinâmico e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
+## Tela cheia, o Ajuste dinâmico, o contador de fps e Reduzir piscadas são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 
 const CursorKikiu := preload("res://v2/cursor_kikiu.gd")
 const PERFIS := ["baixo", "medio", "alto"]
@@ -33,6 +33,7 @@ const AJUDA_PERFIL_BLOQUEADO := "Travado: o Ajuste dinâmico escolhe a qualidade
 const AJUDA_AVANCADO := "Opção por opção, separadas pelo que pesa na CPU (a conta do jogo) e na GPU (o desenho na tela)."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
+const AJUDA_PISCADAS := "Tira o que liga e desliga rápido: invencibilidade, clarões, glitch, vida e fôlego baixos, avisos e flashes de acerto. No máximo 3 trocas de luz por segundo."
 const AJUDA_UI := "Tamanho de menus, cartas e HUD. Automático ajusta à janela num tamanho confortável, sem cortar nada; Pequeno, Médio e Grande são fixos."
 const AJUDA_TELA := "Ocupa a tela inteira. F11 também liga e desliga, em qualquer tela da v2."
 const AJUDA_CURSOR_FORMA := "Desenho do cursor dentro da partida: a mira (retícula) ou a seta. Nos menus o cursor é sempre a seta."
@@ -57,6 +58,7 @@ func itens() -> Array:
 				_it("g:detectar", "Detectar pela máquina", "", AJUDA_DETECTAR),
 				_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
 				_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
+				_it("g:piscadas", "Reduzir piscadas", _sim_nao("reduzir_piscadas"), AJUDA_PISCADAS),
 				_it("g:ui", "Tamanho da interface", Config.rotulo("tamanho_ui"), AJUDA_UI),
 				_it(
 					"g:cursor_forma", "Cursor na partida", CursorKikiu.ROTULOS_FORMA.get(CursorKikiu._opcao("cursor_forma", "mira"), "Mira"), AJUDA_CURSOR_FORMA
@@ -108,6 +110,8 @@ func agir(id: String, passo: int) -> void:
 		_alternar("tela_cheia")  # a F11 (pausa.gd) chama esta mesma linha
 	elif id == "fps":
 		_alternar("mostrar_fps")
+	elif id == "piscadas":
+		_alternar("reduzir_piscadas")  # fora do perfil: não vira Personalizado
 	elif id == "ui":
 		Config.girar("tamanho_ui", passo)  # a apresentação e as telas refazem o layout na hora (Config.tamanho_ui_mudou)
 	elif id == "cursor_forma":
