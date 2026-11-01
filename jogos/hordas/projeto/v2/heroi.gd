@@ -14,7 +14,8 @@ extends "res://v2/ator.gd"
 ##  - VIDA: ao apanhar fica invencível um instante, piscando, e leva um empurrão.
 ##  - ESCUDO (ação "escudo", botão direito do mouse ou gatilho esquerdo; é o SECUNDÁRIO deste herói, definido em dados/v2_secundario.json; v2/escudo.gd):
 ##    segurar ergue um escudo na frente (arco de ~120 graus na direção da mira) que bloqueia o dano vindo da frente (levar_dano). Anda a 60%, não
-##    corre nem golpeia e gasta o fôlego da corrida; o bloqueio nos primeiros ~0,15 s é PERFEITO (empurra e atordoa quem bateu, sem gasto).
+##    corre nem golpeia e gasta a BARRA DE DEFESA própria (def, def_max; não o fôlego: o escudo não deixa cansado); defesa zerada = escudo quebrado. A defesa
+##    recarrega devagar (defesa_regen_mult da dificuldade; no Difícil só a cura repõe, repor_defesa); o bloqueio nos primeiros ~0,15 s é PERFEITO (empurra e atordoa, sem gasto).
 ##  - RUPTURA (ação "ruptura", tecla E ou LB do controle; números em dados/v2_ruptura.json, disparo em v2/ruptura.gd): o APERTO
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
@@ -34,6 +35,7 @@ extends "res://v2/ator.gd"
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 const Foguinho := preload("res://v2/foguinho.gd")
+const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a defesa do escudo recarrega sozinha?
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
@@ -124,6 +126,11 @@ var escudo_ativo := false  # o escudo está erguido (lido pelo desenho e pelo le
 var escudo_t := 0.0  # s desde que ergueu (tempo do mundo): a janela do bloqueio perfeito
 var escudo_bloqueios := 0  # testes
 var escudo_perfeitos := 0  # testes
+# barra de defesa do escudo (dados/v2_secundario.json > escudo > barra): própria, separada do fôlego. def_max 0 = o herói não tem barra (sem escudo).
+var def := 0.0
+var def_max := 0.0
+var def_atraso_t := 0.0  # s até a defesa começar a recarregar (depois de baixar o escudo ou de levar golpe)
+var def_quebrado := false  # a defesa zerou: o escudo caiu e só volta a erguer depois de recarregar o retorno (no Difícil, de uma reposição)
 # especial (tecla Q, v2/especial.gd)
 var esp_nome := ""  # o nome do especial do herói ("" = não tem): o HUD só acende o slot Q com ele
 var esp_rotulo := ""  # o texto curto do slot
@@ -211,6 +218,7 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	correndo = false
 	escudo_ativo = false
 	escudo_t = 0.0
+	_iniciar_defesa()
 	var esp = mundo.combate.especial
 	if esp != null:
 		esp.armar(self)  # o nome, a cor e a carga (0) do especial deste herói
@@ -237,6 +245,9 @@ func resetar(p: Vector2) -> void:
 	escudo_t = 0.0
 	escudo_bloqueios = 0
 	escudo_perfeitos = 0
+	def = def_max
+	def_atraso_t = 0.0
+	def_quebrado = false
 	emp = Vector2.ZERO
 	invenc = 0.0
 	combo_t = 0.0
@@ -487,6 +498,8 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	if bloqueavel and escudo_ativo and esc != null and esc.cobre(self, de):
 		esc.bloquear(self, valor, de, quem)
 		return true
+	if def_max > 0.0:  # apanhar (mesmo pelas costas) adia a recarga da defesa
+		def_atraso_t = maxf(def_atraso_t, _def_cfg().atraso_recarga)
 	vida = maxf(0.0, vida - valor)
 	invenc = float(mundo.combate.cfg.heroi.invencivel)
 	var d := pos - de
@@ -534,7 +547,9 @@ func atualizar(dt: float) -> void:
 		_hab_relogios(dt)
 	if esp_nega_t > 0.0:
 		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
-	_recuperar(dt, v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA))
+	var parado := v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA)
+	_recuperar(dt, parado)
+	_recuperar_defesa(dt, parado)
 	var segurando := false
 	if real:
 		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
@@ -631,10 +646,10 @@ func _quer_escudo() -> bool:
 		apertado = escudo_forcado != null and bool(escudo_forcado)
 	else:
 		apertado = InputMap.has_action("escudo") and Input.is_action_pressed("escudo")
-	if not apertado or cansado:
+	if not apertado or def_quebrado:
 		return false
-	# erguer pede um mínimo de fôlego; já erguido segue até zerar (o _gastar deixa cansado e o escudo cai)
-	return escudo_ativo or folego >= float(c.escudo.cfg.folego_min)
+	# erguer pede um mínimo de defesa; já erguido segue até zerar (a defesa zerada quebra o escudo)
+	return escudo_ativo or def >= float(_def_cfg().minimo)
 
 
 ## Um quadro com o escudo erguido: anda devagar (mira manda para onde olha), gasta fôlego e não corre nem golpeia.
@@ -649,10 +664,10 @@ func _escudo(dt: float, v: Vector2) -> Vector2:
 	else:
 		escudo_t += dt
 	pedido_t = 0.0  # um clique de golpe guardado não vaza para depois
-	_gastar(float(esc.cfg.gasto) * dt)
-	if cansado:  # o último fôlego acabou agora: o escudo cai na hora
+	_gastar_defesa(float(_def_cfg().gasto_s) * dt)
+	if def_quebrado:  # a defesa acabou agora: o escudo cai na hora (quebra), o herói só anda mais devagar, sem ficar cansado
 		_baixar_escudo()
-		return v * vel_andar() * float(mundo.combate.cfg.folego.lento_cansado) * dt
+		return v * vel_andar() * float(esc.cfg.mov) * dt
 	if v == Vector2.ZERO:
 		return Vector2.ZERO
 	return v * vel_andar() * float(esc.cfg.mov) * dt
@@ -663,9 +678,76 @@ func _baixar_escudo() -> void:
 		return
 	escudo_ativo = false
 	escudo_t = 0.0
+	if def_max > 0.0:
+		def_atraso_t = maxf(def_atraso_t, _def_cfg().atraso_recarga)
 	var esc = mundo.combate.escudo
 	if esc != null:
 		esc.abaixou(self)
+
+
+## O bloco de números da barra de defesa (dados/v2_secundario.json > escudo > barra). O LightWolf (matriz) usa o mesmo bloco.
+func _def_cfg() -> Dictionary:
+	return mundo.combate.escudo.cfg.barra
+
+
+## Começo da partida: quem tem escudo (dados > herois) ganha a barra cheia; quem não tem fica com def_max 0 (sem barra na HUD).
+func _iniciar_defesa() -> void:
+	var esc = mundo.combate.escudo
+	def_max = float(esc.cfg.barra.max) if esc != null and esc.ativo_para(str(chave)) else 0.0
+	def = def_max
+	def_atraso_t = 0.0
+	def_quebrado = false
+
+
+## Gasta defesa (segurar o escudo, golpe barrado). Zerou: o escudo QUEBRA (def_quebrado); o fôlego e o cansaço não entram nisso.
+func _gastar_defesa(x: float) -> void:
+	if def_max <= 0.0 or x <= 0.0:
+		return
+	def = maxf(0.0, def - x)
+	def_atraso_t = float(_def_cfg().atraso_recarga)
+	if def <= 0.001 and not def_quebrado:
+		def = 0.0
+		def_quebrado = true
+
+
+## Devolve defesa de bônus (o bloqueio perfeito): sem chamar de "reposição", que é a da cura e tira o escudo do estado de quebra.
+func _ganhar_defesa(x: float) -> void:
+	if def_max > 0.0 and not def_quebrado:
+		def = minf(def_max, def + x)
+
+
+## A cura repõe a defesa: `fracao` da barra, por chamada explícita no ponto onde a cura acontece (coração, carta Cura, nível, curandeiro), nunca dentro
+## de curar() (que a carta Vida também chama). Vale o valor nominal, mesmo com a vida cheia. Quebrado: volta a erguer ao passar do retorno; no Difícil
+## (sem recarga sozinha) qualquer reposição conserta o escudo, senão ele ficaria inutilizável por um pedaço de cura.
+func repor_defesa(fracao: float) -> void:
+	if def_max <= 0.0 or fracao <= 0.0:
+		return
+	def = minf(def_max, def + def_max * fracao)
+	if def_quebrado and (def >= float(_def_cfg().retorno) * def_max or Dificuldade.fator(mundo, "defesa_regen_mult") <= 0.0):
+		def_quebrado = false
+
+
+## repor_defesa com a fração do dado (escudo > barra > reposicao > origem), vezes `k` (o tempo, no curandeiro).
+func repor_defesa_de(origem: String, k := 1.0) -> void:
+	if def_max > 0.0:
+		repor_defesa(float((_def_cfg().reposicao as Dictionary).get(origem, 0.0)) * k)
+
+
+## Recarga da defesa: espera o atraso (que não corre erguido: gasto e golpe o reabrem), depois sobe por segundo, mais devagar andando, vezes
+## defesa_regen_mult da dificuldade (1,5 / 1,0 / 0,0: no Difícil só a cura repõe). Sai do estado quebrado ao passar do retorno.
+func _recuperar_defesa(dt: float, parado: bool) -> void:
+	if def_max <= 0.0 or escudo_ativo:
+		return
+	if def_atraso_t > 0.0:
+		def_atraso_t -= dt
+		return
+	var mult := Dificuldade.fator(mundo, "defesa_regen_mult")
+	if mult <= 0.0 or def >= def_max:
+		return
+	var c: Dictionary = _def_cfg()
+	def = minf(def_max, def + float(c.regen_parado if parado else c.regen_andando) * mult * dt)
+	if def_quebrado and def >= float(c.retorno) * def_max:
+		def_quebrado = false
 
 
 func _quer_correr() -> bool:

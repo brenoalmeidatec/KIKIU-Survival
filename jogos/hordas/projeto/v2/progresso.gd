@@ -78,6 +78,7 @@ func ganhar_xp(v: float) -> void:
 		h.nivel += 1
 		h.xp_proximo = xp_para(h.nivel)
 		h.curar(cura_por_nivel())
+		h.repor_defesa_de("nivel")  # subir de nível repõe parte da barra do escudo (nas três dificuldades)
 		_folego_do_nivel(h)
 		pendentes += 1
 		combate.nivel_subiu(h.nivel)

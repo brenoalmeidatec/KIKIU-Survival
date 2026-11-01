@@ -1,8 +1,9 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste automático do ESCUDO, o tiro secundário do botão direito (v2/escudo.gd, heroi.gd, combate.gd, entrada.gd, dados/v2_secundario.json):
 # dados e entrada (botão direito e LT = escudo, E e LB = ruptura, Q = ultimate, o especial), bloqueio da frente (sim) e das costas e lados (não),
-# bloqueio perfeito (empurra e atordoa quem bateu, sem gasto), bloqueio comum (gasta um pouco de fôlego), fôlego que gasta por segundo,
-# velocidade de ~60%, sem correr nem golpear, cansaço que derruba o escudo, ruptura (E) que troca o escudo, contato de verdade com um monstro,
+# bloqueio perfeito (empurra e atordoa quem bateu, sem gasto), bloqueio comum (gasta defesa), defesa que gasta por segundo (a barra própria: o fôlego
+# não entra; ver v2_escudo_barra.gd),
+# velocidade de ~60%, sem correr nem golpear, defesa zerada que quebra o escudo, ruptura (E) que troca o escudo, contato de verdade com um monstro,
 # o secundário por herói (dados > herois) e soltar que volta ao fôlego normal. O mundo anda em passos fixos de 1/60 s.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_escudo.tscn  (imprime "v2_escudo falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -50,6 +51,9 @@ func zerar() -> void:
 	h.vida = h.vida_max
 	h.folego = h.folego_max
 	h.cansado = false
+	h.def = h.def_max
+	h.def_atraso_t = 0.0
+	h.def_quebrado = false
 	h.invenc = 0.0
 	h.fonte = Heroi.Fonte.MOUSE
 	w.mouse_forcado = h.centro() + Vector2(100, 0)
@@ -168,23 +172,24 @@ func _ready() -> void:
 	erguer()
 	ok(h.escudo_t <= float(e.perfeito.janela), "recém erguido: dentro da janela perfeita (%s s)" % h.escudo_t)
 	var m_p = monstro_a(14)
-	var fol0: float = h.folego
+	h.def = h.def_max * 0.5
+	var fol0: float = h.def
 	h.levar_dano(10.0, m_p.pos, m_p)
 	ok(esc.ultimo.get("perfeito", false) == true and h.escudo_perfeitos == 1, "perfeito: marcado como perfeito")
 	ok(m_p.atordoa_t >= float(e.perfeito.atordoa) * 0.99, "perfeito: o monstro fica atordoado (%s s)" % m_p.atordoa_t)
 	ok(m_p.emp.x > 100.0, "perfeito: o monstro é empurrado para longe (emp.x %s)" % m_p.emp.x)
-	ok(h.folego >= fol0 - 0.001, "perfeito: não gasta fôlego")
+	ok(h.def >= fol0 - 0.001, "perfeito: não gasta defesa (devolve um pouco: %s para %s)" % [fol0, h.def])
 	ok(h.vida == h.vida_max, "perfeito: nenhum dano")
 	# comum: depois da janela. Gasta um pouco de fôlego e empurra de leve, sem atordoar
 	zerar()
 	erguer(30)  # 0,5 s depois
 	ok(h.escudo_t > float(e.perfeito.janela), "depois de 0,5 s a janela perfeita acabou")
 	var m_n = monstro_a(14)
-	var fol1: float = h.folego
+	var fol1: float = h.def
 	h.levar_dano(10.0, m_n.pos, m_n)
 	ok(esc.ultimo.get("perfeito", true) == false and h.escudo_perfeitos == 0, "comum: não é perfeito")
 	ok(m_n.atordoa_t == 0.0 and m_n.emp.x > 0.0, "comum: empurra de leve e não atordoa")
-	ok(h.folego < fol1 - float(e.gasto_golpe) * 0.9, "comum: cada golpe barrado gasta fôlego (%s para %s)" % [fol1, h.folego])
+	ok(perto(fol1 - h.def, esc.custo_golpe(10.0), 0.01), "comum: cada golpe barrado gasta defesa (%s para %s)" % [fol1, h.def])
 	# chefe não é atordoado (como em qualquer golpe)
 	zerar()
 	erguer()
@@ -194,19 +199,21 @@ func _ready() -> void:
 	h.levar_dano(10.0, m_b.pos, m_b)
 	ok(m_b.atordoa_t == 0.0, "o monstro que não toma atordoamento (chefe) continua sem")
 
-	# 6. o fôlego gasta por segundo
+	# 6. a defesa gasta por segundo (e o fôlego fica quieto)
 	zerar()
 	erguer()
-	var f0: float = h.folego
+	var f0: float = h.def
+	var fol_antes: float = h.folego
 	passos(60)
-	var gasto: float = f0 - h.folego
-	ok(perto(gasto, float(e.gasto), 0.2), "segurar 1 s gasta ~%s de fôlego (gastou %s)" % [e.gasto, gasto])
-	# e soltar volta ao fôlego normal: depois do atraso o fôlego sobe
+	var gasto: float = f0 - h.def
+	ok(perto(gasto, float(e.barra.gasto_s), 0.5), "segurar 1 s gasta ~%s de defesa (gastou %s)" % [e.barra.gasto_s, gasto])
+	ok(h.folego >= fol_antes - 0.001 and not h.cansado, "segurar o escudo não gasta fôlego")
+	# e soltar volta a recarregar: depois do atraso a defesa sobe
 	h.escudo_forcado = false
 	passos(2)
-	var f1: float = h.folego
-	passos(150)
-	ok(h.folego > f1 + 0.3, "soltar: o fôlego volta a subir (%s para %s)" % [f1, h.folego])
+	var f1: float = h.def
+	passos(330)
+	ok(h.def > f1 + 3.0, "soltar: a defesa volta a subir (%s para %s)" % [f1, h.def])
 	ok(not h.escudo_ativo, "soltar: escudo baixo")
 
 	# 7. velocidade de ~60%: anda com o escudo e sem ele, mesma distância de tempo
@@ -235,14 +242,14 @@ func _ready() -> void:
 	ok(h.estado == Heroi.Estado.LIVRE and h.escudo_ativo, "com o escudo erguido o clique de golpe não golpeia")
 	h.ataque_forcado = null
 
-	# 9. fôlego zerado derruba o escudo e deixa cansado
+	# 9. defesa zerada quebra o escudo, sem deixar o herói cansado
 	zerar()
-	h.folego = 0.5
+	h.def = 2.0
 	erguer()
 	passos(60)
-	ok(h.cansado and not h.escudo_ativo, "o fôlego acabou: cansado e o escudo caiu")
+	ok(h.def_quebrado and not h.escudo_ativo and not h.cansado, "a defesa acabou: o escudo quebrou e caiu, sem cansar o herói")
 	passos(10)
-	ok(not h.escudo_ativo, "cansado, segurar o botão não ergue o escudo")
+	ok(not h.escudo_ativo, "quebrado, segurar o botão não ergue o escudo")
 
 	# 10. a ruptura (E) tira o escudo e carrega
 	zerar()
@@ -343,32 +350,32 @@ func _ready() -> void:
 	# fôlego baixo: o quadro racha
 	zerar()
 	w.mouse_forcado = h.centro() + Vector2(0, 100)
-	h.folego = h.folego_max * 0.2
+	h.def = h.def_max * 0.2
 	erguer()
 	fx_passos(4)
 	ve = esc.visual_estado()
-	ok(ve.rachado and ve.celula == 3 and h.escudo_ativo, "fôlego no fim: o quadro do escudo racha (aviso de que vai cair)")
+	ok(ve.rachado and ve.celula == 3 and h.escudo_ativo, "defesa no fim: o quadro do escudo racha (aviso de que vai cair)")
 	# de lado não há quadro rachado: o aviso é o escudo avermelhado
 	w.mouse_forcado = h.centro() + Vector2(100, 0)
 	fx_passos(4)
 	ve = esc.visual_estado()
-	ok(not ve.rachado and ve.celula == 1 and ve.aviso, "fôlego no fim, mira de lado: sem quadro rachado, mas o escudo avermelha (aviso)")
+	ok(not ve.rachado and ve.celula == 1 and ve.aviso, "defesa no fim, mira de lado: sem quadro rachado, mas o escudo avermelha (aviso)")
 	w.mouse_forcado = h.centro() + Vector2(0, 100)
 	fx_passos(2)
-	# o fôlego zerou: quebra em 4 pedaços que caem e somem; o próximo erguer volta reforjado
-	for i in 120:
-		if h.cansado:
+	# a defesa zerou: quebra em 4 pedaços que caem e somem; o próximo erguer volta reforjado
+	for i in 400:
+		if h.def_quebrado:
 			break
 		fx_passos(1)
-	h.escudo_forcado = false  # soltou o botão: não ergue de novo quando o fôlego voltar sozinho
+	h.escudo_forcado = false  # soltou o botão: não ergue de novo quando a defesa voltar sozinha
 	fx_passos(2)
 	ve = esc.visual_estado()
-	ok(h.cansado and not h.escudo_ativo and not ve.visivel and ve.quebrado and ve.pedacos == 4, "fôlego zerou: o escudo quebra e 4 pedaços caem (%s)" % ve)
+	ok(h.def_quebrado and not h.escudo_ativo and not ve.visivel and ve.quebrado and ve.pedacos == 4, "defesa zerou: o escudo quebra e 4 pedaços caem (%s)" % ve)
 	fx_passos(80)
 	ve = esc.visual_estado()
 	ok(ve.pedacos == 0 and ve.quebrado, "os pedaços caem, ficam no chão e se apagam; ainda falta reforjar")
-	h.cansado = false
-	h.folego = h.folego_max
+	h.def_quebrado = false
+	h.def = h.def_max
 	h.escudo_forcado = true
 	fx_passos(2)
 	ve = esc.visual_estado()
@@ -403,16 +410,16 @@ func _ready() -> void:
 	# perfil Baixo: sem pedaços
 	zerar()
 	w.args["particulas"] = "poucas"
-	h.folego = 0.5
+	h.def = 2.0
 	erguer()
 	for i in 120:
-		if h.cansado:
+		if h.def_quebrado:
 			break
 		fx_passos(1)
 	h.escudo_forcado = false
 	fx_passos(2)
 	ve = esc.visual_estado()
-	ok(h.cansado and not ve.visivel and ve.pedacos == 0, "perfil Baixo: o escudo só some, sem pedaços")
+	ok(h.def_quebrado and not ve.visivel and ve.pedacos == 0, "perfil Baixo: o escudo só some, sem pedaços")
 	w.args.erase("particulas")
 
 	print("v2_escudo falhas=%d" % falhas)
