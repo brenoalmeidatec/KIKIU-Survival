@@ -414,7 +414,7 @@ static func _sec_heroi(m) -> Dictionary:
 	var rp := float(cfg.folego.regen_parado)
 	var ra := float(cfg.folego.regen_andando)
 	var lin: Array = []
-	lin.append(_l("heroi.vida", "Vida", "%d / %d" % [roundi(h.vida), roundi(h.vida_max)], [h.vida, h.vida_max], _mais(h.vida_max - float(cfg.heroi.vida))))
+	lin.append(_l("heroi.vida", "Vida", "%d / %d" % [roundi(h.vida), roundi(h.vida_max)], [h.vida, h.vida_max], _mais(h.vida_bonus())))
 	lin.append(_l("heroi.cura", "Cura por nível", "+%d (%s%%)" % [roundi(cura), _p(frac)], [cura, frac]))
 	lin.append(_l("heroi.andar", "Andar", "%d px/s" % roundi(h.vel_andar()), [h.vel_andar()], _mais_pct((h.m_vel_mov - 1.0) * 100.0)))
 	lin.append(_l("heroi.correr", "Correr", "%d px/s" % roundi(h.vel_correr()), [h.vel_correr()]))
