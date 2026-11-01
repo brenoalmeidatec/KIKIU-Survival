@@ -11,6 +11,7 @@ extends "res://testes/isolamento_v2.gd"
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Especial := preload("res://v2/especial.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const Herois := preload("res://v2/herois.gd")
 const HudHabilidades := preload("res://v2/hud_habilidades.gd")
 const PASSO := 1.0 / 60.0
@@ -107,6 +108,7 @@ func _ready() -> void:
 	_raio_hazaki()
 	_raio_com_limpeza()
 	_q_em_golpe_com_mouse()
+	_q_cursor_com_teclado()
 	for id in ["nicao", "lucas"]:
 		await novo(id)
 		_q_em_habilidade_com_mouse(id)
@@ -480,6 +482,71 @@ func _q_em_golpe_com_mouse() -> void:
 		ok(perdeu(frente) > 30.0, "Q em golpe %s: o raio fere quem está no cursor (%s)" % [nome, perdeu(frente)])
 
 
+## D31 (Alisson, 01/11): o Q vai SEMPRE para o cursor com mouse ou teclado, seja qual for a última fonte de entrada. Antes só a fonte MOUSE seguia o cursor e, de
+## teclado (WASD), o Hazaki ia para onde o corpo andava ("para trás"). Aqui o corpo anda para o lado oposto do cursor, também com o Q em GOLPE; o analógico (sem cursor) segue o corpo.
+func _q_cursor_com_teclado() -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	for i in 8:
+		var d := Vector2.from_angle(float(i) * TAU / 8.0)  # para onde o corpo anda
+		var cur := Vector2.from_angle(float(i) * TAU / 8.0 + PI * (0.5 + 0.25 * float(i % 4)))  # o cursor, em outro ângulo (90, 135, 180 e 225 graus)
+		var nome := "teclado %d" % i
+		zerar()
+		_virar(h, "teclado", d)
+		w.mouse_forcado = h.centro() + cur * (30.0 + 40.0 * float(i))  # distâncias diferentes
+		h.entrada_forcada = d
+		passos(3)  # andando para um lado com o cursor do outro
+		ok(h.fonte == Heroi.Fonte.ANDA and h.dir_olhar.dot(d) > 0.999, "D31 %s: a fonte é o teclado e o corpo olha para onde anda" % nome)
+		var viva: Vector2 = (w.mouse_forcado - h.centro()).normalized()
+		ok(h.especial(), "D31 %s: dispara" % nome)
+		ok(esp._dir.dot(viva) > 0.999, "D31 %s: o raio vai para o cursor, não para onde o corpo anda (%s, esperava %s)" % [nome, esp._dir, viva])
+		h.entrada_forcada = Vector2.ZERO
+	# Q em GOLPE com a fonte teclado
+	zerar()
+	_virar(h, "teclado", Vector2.LEFT)
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
+	h.atacar()
+	var q := 0
+	while h.estado != Heroi.Estado.GOLPE and q < 30:
+		passos(1)
+		q += 1
+	ok(h.estado == Heroi.Estado.GOLPE, "D31 golpe: o golpe começou")
+	h.entrada_forcada = Vector2.LEFT
+	passos(2)
+	ok(h.estado == Heroi.Estado.GOLPE, "D31 golpe: ainda no golpe quando o Q é apertado")
+	ok(h.especial(), "D31 golpe: dispara no meio do golpe")
+	ok(esp._dir.dot(Vector2.RIGHT) > 0.99, "D31 golpe: com WASD para a esquerda e o mouse à direita o Q vai para a direita (%s)" % esp._dir)
+	h.entrada_forcada = Vector2.ZERO
+	# cursor em cima do herói: cai em dir_olhar
+	zerar()
+	_virar(h, "teclado", Vector2.UP)
+	w.mouse_forcado = h.centro() + Vector2(1, 1)
+	h.entrada_forcada = Vector2.ZERO
+	var olhar: Vector2 = h.dir_olhar
+	ok(h.especial(), "D31 cursor no herói: dispara")
+	ok(esp._dir.dot(olhar.normalized()) > 0.999, "D31 cursor no herói: cai em dir_olhar (%s)" % esp._dir)
+	# controle: o analógico de mira (sem cursor) manda, mesmo com o mouse em outro lugar
+	for i in 8:
+		var d := Vector2.from_angle(float(i) * TAU / 8.0)
+		zerar()
+		_virar(h, "analogico", d)
+		w.mouse_forcado = h.centro() - d * 100.0
+		ok(h.especial(), "D31 analógico %d: dispara" % i)
+		ok(esp._dir.dot(d) > 0.999, "D31 analógico %d: o Q segue o analógico, não o cursor (%s)" % [i, esp._dir])
+	# controle só com o analógico esquerdo (fonte ANDA): sem cursor, o ponteiro do sistema parado não manda; o Q vai para onde o corpo anda
+	Glifos.definir(Glifos.Disp.XBOX)
+	for i in 8:
+		var d := Vector2.from_angle(float(i) * TAU / 8.0)
+		zerar()
+		_virar(h, "teclado", d)
+		w.mouse_forcado = h.centro() - d * 100.0
+		ok(h.fonte == Heroi.Fonte.ANDA, "D31 controle %d: a fonte é o analógico esquerdo (ANDA)" % i)
+		ok(h.especial(), "D31 controle %d: dispara" % i)
+		ok(esp._dir.dot(d) > 0.999, "D31 controle %d: sem cursor o Q segue o corpo, não o ponteiro parado (%s)" % [i, esp._dir])
+	Glifos.definir(Glifos.Disp.TECLADO)
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
+
+
 ## ULT-B, o mesmo para a E (investida do Nicão, salto do Lucas): o mouse não vira o corpo em HABILIDADE e o Q apertado nela segue o cursor.
 func _q_em_habilidade_com_mouse(id: String) -> void:
 	var h = w.heroi
@@ -512,6 +579,7 @@ func _virar(h, fonte: String, d: Vector2) -> void:
 			passos(3)
 		"teclado":
 			h.fonte = Heroi.Fonte.ANDA
+			w.mouse_forcado = h.centro() + d * 100.0  # D31: o Q segue o cursor também com o teclado; aqui o cursor fica na mesma direção em que ele anda
 			h.entrada_forcada = d
 			passos(12)
 			h.entrada_forcada = Vector2.ZERO
