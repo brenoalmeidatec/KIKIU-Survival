@@ -201,6 +201,69 @@ func _testes() -> void:
 		cs.estado[id] = {"n": 0, "usada": true}
 	ok(cs.escolha_automatica(3).is_empty(), "sem carta disponível o automático devolve vazio")
 
+	# 10. CAR-1: todo bônus tem nível máximo 5; o valor x 5 bate (até 5%) com o total que o máximo antigo dava; os stats guardam a soma aplicada
+	zerar()
+	var total_antigo := {
+		"dano": 120.0,
+		"vel_ataque": 72.0,
+		"area": 72.0,
+		"vel_mov": 48.0,
+		"vida": 160.0,
+		"ima": 175.0,
+		"critico": 40.0,
+		"onda": 160.0,
+		"fura": 180.0,
+		"explode": 150.0,
+		"folego": 48.0,
+		"abalo": 180.0,
+		"muralha": 100.0,
+		"chuva": 60.0,
+		"mira": 60.0,
+		"rb_dano": 90.0,
+		"rb_recarga": 24.0,
+		"rb_estrondo": 60.0,
+		"rb_contra": 24.0,
+		"rb_eco": 50.0
+	}
+	var n_bonus := 0
+	for id in cs._def:
+		var d: Dictionary = cs._def[id]
+		ok(int(d.max) == 5, "%s tem nível máximo 5 (tem %d)" % [id, int(d.max)])
+		if cs._cat[id] == "golpe":
+			continue
+		n_bonus += 1
+		ok(total_antigo.has(id), "%s está na tabela dos totais antigos" % id)
+		if total_antigo.has(id):
+			var novo := float(d.valor) * 5.0
+			ok(
+				absf(novo - float(total_antigo[id])) <= float(total_antigo[id]) * 0.05,
+				"%s: valor x 5 = %.0f perto do total antigo %.0f" % [id, novo, total_antigo[id]]
+			)
+	ok(n_bonus == total_antigo.size(), "a tabela cobre todos os stats, modificadores e cartas da ruptura (%d de %d)" % [n_bonus, total_antigo.size()])
+	ok(cs.cfg.evolucoes.size() == 27, "as 27 fusões seguem nos dados")
+	for ev2 in cs.cfg.evolucoes:
+		for p in ev2.pecas:
+			ok(int(p.nivel) >= 1 and int(p.nivel) <= 5, "fusão %s: peça %s pede nível %d (de 1 a 5)" % [ev2.id, p.id, int(p.nivel)])
+	var h = w.heroi
+	var dano0: float = h.m_dano
+	var vida0: float = h.vida_max
+	for k in 5:
+		ok(cs._disponivel(cs.definicao("dano")), "dano ainda sai antes do nível %d" % (k + 1))
+		cs.aplicar(cs.montar_carta(cs.definicao("dano"), 0))
+		cs.aplicar(cs.montar_carta(cs.definicao("vida"), 0))
+	ok(cs.nivel_de("dano") == 5 and not cs._disponivel(cs.definicao("dano")), "o dano para de sair no nível 5")
+	ok(is_equal_approx(float(cs.estado.dano.soma), 120.0), "o stat guarda a soma aplicada (dano: %.1f)" % float(cs.estado.dano.soma))
+	ok(is_equal_approx(h.m_dano - dano0, 1.2), "5 cartas de dano somam +120%% (%.2f)" % (h.m_dano - dano0))
+	ok(
+		is_equal_approx(float(cs.estado.vida.soma), 160.0) and is_equal_approx(h.vida_max - vida0, 160.0),
+		"5 cartas de vida somam +160 (%.0f)" % (h.vida_max - vida0)
+	)
+	cs.aplicar(cs.montar_carta(cs.definicao("critico"), 3))
+	ok(
+		is_equal_approx(float(cs.estado.critico.soma), 8.0 * 3.2),
+		"a soma guarda o valor com a raridade (crítico lendário: %.1f)" % float(cs.estado.critico.soma)
+	)
+
 
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)

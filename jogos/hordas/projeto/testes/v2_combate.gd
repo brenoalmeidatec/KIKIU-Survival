@@ -9,6 +9,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const PASSO := 1.0 / 60.0
+const SEMENTE_CARTAS := 12345  # semente do sorteio das cartas de nível (como v2_roleta e v2_cartas_espera)
 var falhas := 0
 var w
 var _niveis := 0
@@ -270,6 +271,7 @@ func _ready() -> void:
 	# 7. nível: câmera lenta de 0,4 s, escolha de 1 entre 3 melhorias (o mundo para), melhoria aplicada
 	zerar()
 	h = w.heroi
+	w.combate.cartas.rng.seed = SEMENTE_CARTAS  # cartas.gd sorteia com randomize(): sem semente, uma lendária de golpe (nível +2) quebraria "melhorias == 1"
 	var monstro_pausa = monstro_a(100)
 	_niveis = 0
 	var nv0: int = h.nivel
@@ -303,8 +305,12 @@ func _ready() -> void:
 	var tp7: float = w.tempo_partida
 	passos(40)
 	ok(w.tempo_partida == tp7, "com a escolha aberta o mundo está parado")
-	var passos_trava := ate(func(): return w.combate.telas.espera_escolha <= 0.0, 300)  # a trava (1 s, espera_s) solta antes de a tecla valer
-	ok(passos_trava >= 0, "a trava da escolha libera dentro do teto (passos %d)" % passos_trava)
+	# a trava (1 s, espera_s) E a roleta (1,2 s, roleta_s) soltam antes de a tecla valer: com a roleta girando, _entrada_roleta engole a tecla
+	var t_esc = w.combate.telas
+	var passos_trava := ate(func(): return t_esc.espera_escolha <= 0.0 and not t_esc.roleta_ativa, 300)
+	var estado_roleta := "roleta_ligada=%s ativa=%s t=%.2f trava=%.2f" % [t_esc.roleta_ligada, t_esc.roleta_ativa, t_esc.roleta_t, t_esc.espera_escolha]
+	ok(passos_trava >= 0, "a trava e a roleta da escolha liberam dentro do teto (passos %d, %s)" % [passos_trava, estado_roleta])
+	print("roleta da escolha: ", estado_roleta)
 	var snap_antes := [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico]
 	var carta: Dictionary = w.combate.progresso.cartas[1]
 	var tecla := InputEventKey.new()

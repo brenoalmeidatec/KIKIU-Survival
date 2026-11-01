@@ -981,14 +981,15 @@ func _entrada_conf(e: InputEvent) -> bool:
 			return false
 		if e.echo:
 			return true
+		if e.is_action_pressed("ui_accept"):  # Enter, Espaço, E (entrada.gd)
+			_conf_agir()
+			return true
 		match e.keycode:
 			KEY_ESCAPE, KEY_N:
 				_fechar_conf()
 			KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
 				conf_sel = 1 - conf_sel
 				_marcar_conf()
-			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
-				_conf_agir()
 		return true
 	if e is InputEventJoypadMotion:
 		return false
@@ -1364,6 +1365,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 		if travada:
 			_pulso = PULSO_T
 			return true
+		if e.is_action_pressed("ui_accept"):  # Enter, Espaço, E (entrada.gd): E confirma a carta e não arma a ruptura
+			combate.progresso.escolher(sel)
+			return true
 		match e.keycode:
 			KEY_1, KEY_2, KEY_3:
 				var i: int = e.keycode - KEY_1
@@ -1373,8 +1377,6 @@ func _entrada_escolha(e: InputEvent) -> bool:
 				_mover(-1, n)
 			KEY_RIGHT, KEY_D:
 				_mover(1, n)
-			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
-				combate.progresso.escolher(sel)
 			KEY_Q:
 				_automatico()
 		return true
@@ -1417,11 +1419,9 @@ func _entrada_bau(e: InputEvent) -> bool:
 	if e is InputEventKey and e.keycode == KEY_ESCAPE:
 		return false  # ESC é da pausa (pausa.gd), no baú como na escolha
 	var vai := false
-	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]:
+	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 		vai = true
-	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-		vai = true
-	elif e.is_action_pressed("ui_accept"):
+	elif e.is_action_pressed("ui_accept"):  # Enter, Espaço, E e o A do controle
 		vai = true
 	if vai:
 		if espera_bau <= 0.0:  # na trava de 1 s o clique é descartado: não pula nem fecha

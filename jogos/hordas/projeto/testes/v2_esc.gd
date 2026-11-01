@@ -452,8 +452,8 @@ func _t_escolha() -> void:
 	_pausa_foco()
 	ok(pausa.aberto and get_tree().paused, "a pausa abre por cima da escolha por outro caminho (perder o foco da janela)")
 	ok(_snap(true) == _sem_arvore(antes), "com a pausa aberta a escolha segue exatamente como estava")
-	# as teclas e os cliques da escolha não passam pelo menu: nada escolhe nem muda a seleção
-	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B, KEY_X, KEY_A, KEY_D, KEY_E]:
+	# as teclas e os cliques da escolha não passam pelo menu: nada escolhe nem muda a seleção (o E fica de fora: com a pausa aberta é o confirmar do menu, UI-1)
+	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B, KEY_X, KEY_A, KEY_D]:
 		_tecla(k)
 	_tecla(KEY_RIGHT)
 	_clique(Vector2(120, 300))

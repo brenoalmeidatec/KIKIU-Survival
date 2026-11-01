@@ -54,13 +54,13 @@ const MOUSE_GRANDE := [
 ]
 ## ação -> [teclado, xbox, ps]; cada um é uma lista de [tipo, texto]. Vazio = não existe nesse dispositivo.
 const TABELA := {
-	"confirmar": [[[TECLA, "Enter"]], [[FACE, "A"]], [[PS, "x"]]],
+	"confirmar": [[[TECLA, "E"], [TECLA, "Enter"]], [[FACE, "A"]], [[PS, "x"]]],
 	"voltar": [[[TECLA, "Esc"]], [[FACE, "B"]], [[PS, "o"]]],
 	"pausa": [[[TECLA, "Esc"]], [[TECLA, "Menu"]], [[TECLA, "Options"]]],
 	"automatico": [[[TECLA, "Q"]], [[FACE, "Y"]], [[PS, "t"]]],
 	"aba_anterior": [[[TECLA, "Q"]], [[TECLA, "LB"]], [[TECLA, "L1"]]],
-	"aba_proxima": [[[TECLA, "E"]], [[TECLA, "RB"]], [[TECLA, "R1"]]],
-	"abas": [[[TECLA, "Q"], [TECLA, "E"]], [[TECLA, "LB"], [TECLA, "RB"]], [[TECLA, "L1"], [TECLA, "R1"]]],
+	"aba_proxima": [[[TECLA, "R"]], [[TECLA, "RB"]], [[TECLA, "R1"]]],
+	"abas": [[[TECLA, "Q"], [TECLA, "R"]], [[TECLA, "LB"], [TECLA, "RB"]], [[TECLA, "L1"], [TECLA, "R1"]]],
 	"detalhes": [[[TECLA, "Tab"]], [[FACE, "Y"]], [[PS, "t"]]],
 	"card": [[[TECLA, "C"]], [[TECLA, "View"]], [[TECLA, "Share"]]],
 	"navegar": [[[TECLA, "Setas"]], [[TECLA, "D-pad"]], [[TECLA, "D-pad"]]],

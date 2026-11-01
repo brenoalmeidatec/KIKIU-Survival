@@ -9,11 +9,22 @@ extends RefCounted
 ## duas vezes. O dano passa por `combate.ferir` (número, flash, empurrão, atordoamento, morte na fila). Crítico usa os números do combate.
 ## Modificadores das cartas do Luke (armas.mods): `chuva` (% de chance de cada acerto soltar uma adaga extra para um lado qualquer) e `mira`
 ## (% de alcance e velocidade). O crítico explosivo (`explode`) também vale aqui.
+##
+## Projétil genérico (#509, PER-2): o campo `proj` do passo escolhe a imagem no pool (`_proj_lista`; sem o campo, ou com nome que não existe,
+## é a adaga). Entradas desenhadas em código: `adaga`, `bala` e `plasma` (a pistola e o canhão do LightWolf). Qualquer outro nome procura uma
+## folha animada em `assets/v2/armas_anim/` (v2/anim_golpes.gd): a arma `<proj>_heroi`, animação `voo` (shuriken_heroi, kunai_heroi, flecha_heroi).
+## Ricochete: o campo `ricochete` do passo (n) vale só no golpe principal (`cresce_com_nivel`); o Q, a E e a chuva usam o projétil sem ricochetear.
+## No acerto, uma varredura acha o monstro vivo mais perto (até RIC_ALCANCE px) que a lâmina ainda não acertou e a vira para ele; a direção nova
+## vale no quadro seguinte, porque a lista de candidatos deste quadro foi montada com a direção antiga.
+
+const AnimGolpes := preload("res://v2/anim_golpes.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
 const ALCANCE_EXTRA := 120.0  # a Chuva pode nascer e andar ainda neste quadro
 const R_ADAGA := 4.0  # raio de acerto da adaga (cresce com a área do herói)
 const COMPR := 16.0  # a lâmina desenhada: 16x5 px, apontando para a direita
+const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px, do ponto do acerto ao peito do alvo)
+const PROJ_PADRAO := "adaga"
 
 var combate
 var mundo
@@ -32,6 +43,8 @@ var a_emp := PackedFloat32Array()
 var a_atord := PackedFloat32Array()
 var a_raio := PackedFloat32Array()
 var a_perf := PackedInt32Array()  # monstros que ainda pode furar (-1 = acabou)
+var a_proj := PackedInt32Array()  # qual imagem (índice em _proj_lista)
+var a_ric := PackedInt32Array()  # ricochetes que ainda faltam
 var a_extra := PackedByteArray()  # 1 = veio do modificador "chuva" (não solta outra)
 var a_grupo := PackedInt64Array()  # arremesso principal; tamanho fixo MAX, sem histórico crescente
 var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina desse grupo
@@ -43,7 +56,9 @@ var a_u0: Array = []  # os últimos monstros que cada adaga acertou (não repete
 var a_u1: Array = []
 var a_u2: Array = []
 var _cand: Array = []
-var _tex: Texture2D
+var _proj_lista: Array = []  # [{nome, tex (código) ou anim (folha), compr, alt}], o índice 0 é sempre a adaga
+var _proj_nomes := {}  # nome -> índice em _proj_lista
+var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
 
 
@@ -51,7 +66,11 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	combate = c
 	mundo = c.mundo
 	tex_brilho = tex
-	_tex = _img_adaga()
+	_proj_lista.clear()
+	_proj_nomes.clear()
+	_registrar("adaga", _img_adaga(), COMPR, 5.0)
+	_registrar("bala", _img_bala(), 7.0, 3.0)
+	_registrar("plasma", _img_plasma(), 11.0, 7.0)
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
 	a_vel.resize(MAX)
@@ -61,6 +80,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_atord.resize(MAX)
 	a_raio.resize(MAX)
 	a_perf.resize(MAX)
+	a_proj.resize(MAX)
+	a_ric.resize(MAX)
 	a_extra.resize(MAX)
 	a_grupo.resize(MAX)
 	a_pausa.resize(MAX)
@@ -84,6 +105,8 @@ func limpar() -> void:
 	a_rest.fill(0.0)
 	a_grupo.fill(0)
 	a_pausa.fill(0)
+	a_ric.fill(0)
+	a_proj.fill(0)
 	_grupo = 0
 	_pausa_recarga = 0.0
 	for i in MAX:
@@ -112,7 +135,8 @@ func ativas() -> int:
 
 ## O arremesso do passo `passo`: `n` adagas em leque de `leque` graus, centrado em `dir`. O dano de cada uma já leva o dano do herói.
 ## Com `anel` (a Tempestade do especial) o leque é fixo: a área do herói não abre o círculo além de 360 graus.
-## Com `cresce_com_nivel` (só o golpe do herói, combate.golpear) o alcance ganha o crescimento por nível do golpe (combate.bonus_nivel_golpe).
+## Com `cresce_com_nivel` (só o golpe do herói, combate.golpear) o alcance ganha o crescimento por nível do golpe (combate.bonus_nivel_golpe)
+## e o passo pode ricochetear (`ricochete`).
 func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nivel := false) -> void:
 	var n := maxi(1, int(passo.get("n", 1)))
 	var abre: float = 1.0 if passo.get("anel", false) else 1.0 + (h.m_area - 1.0) * 0.5
@@ -120,6 +144,8 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 	var mira := 1.0 + float(combate.armas.mods.mira) / 100.0
 	var alcance_k: float = mira * (1.0 + (combate.bonus_nivel_golpe(h) if cresce_com_nivel else 0.0))  # o golpe do Luke cresce com o nível, o especial Q não
 	var cor := Color(passo.cor[0], passo.cor[1], passo.cor[2])
+	var proj := _indice_proj(str(passo.get("proj", PROJ_PADRAO)))
+	var ric := maxi(0, int(passo.get("ricochete", 0))) if cresce_com_nivel else 0
 	_grupo += 1
 	for k in n:
 		var ang := 0.0 if n == 1 else leque * (float(k) / float(n - 1) - 0.5)
@@ -137,6 +163,8 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 			false,
 			R_ADAGA * sqrt(h.m_area)
 		)
+		a_proj[i] = proj
+		a_ric[i] = ric
 		if cresce_com_nivel:  # só combate.golpear; Q e chuva nunca recebem grupo elegível
 			a_grupo[i] = _grupo
 			a_pausa[i] = 1
@@ -167,6 +195,8 @@ func _nova(
 	a_raio[i] = raio
 	a_perf[i] = perfura
 	a_extra[i] = 1 if extra else 0
+	a_proj[i] = 0
+	a_ric[i] = 0
 	a_grupo[i] = 0
 	a_pausa[i] = 0
 	a_cor[i] = cor
@@ -183,6 +213,7 @@ func _nova(
 
 func atualizar(dt: float) -> void:
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
+	_relogio += dt
 	var ativo := false
 	for i in MAX:
 		if a_rest[i] > 0.0:
@@ -260,6 +291,8 @@ func _mover(i: int, dt: float) -> void:
 		a_u2[i] = a_u1[i]
 		a_u1[i] = a_u0[i]
 		a_u0[i] = m
+		if a_ric[i] > 0 and _ricochetear(i, m, perto, t):
+			return
 		a_perf[i] -= 1
 		if a_perf[i] < 0:  # furou tudo o que podia: acabou aqui
 			a_pos[i] = perto
@@ -269,6 +302,29 @@ func _mover(i: int, dt: float) -> void:
 	a_rest[i] -= passo
 	if a_rest[i] <= 0.0 or not mundo.mapa.has_point(a_pos[i]):
 		_acabar(i)
+
+
+## Ricochete do acerto de `m` em `perto` (a lâmina andou `t` px neste quadro): vira a lâmina para o vivo mais perto que ela ainda não acertou.
+## Devolve false (e a lâmina segue o caminho de sempre, furando ou acabando) quando não há ninguém a RIC_ALCANCE px. Uma varredura só, sem alocar.
+func _ricochetear(i: int, m, perto: Vector2, t: float) -> bool:
+	var melhor = null
+	var melhor_d2 := RIC_ALCANCE * RIC_ALCANCE
+	for o in mundo.monstros:
+		if o == m or not o.vivo or o.morrendo or o == a_u1[i] or o == a_u2[i]:
+			continue
+		var d2: float = (o.pos + Vector2(0, -6) - perto).length_squared()
+		if d2 < melhor_d2:
+			melhor_d2 = d2
+			melhor = o
+	if melhor == null:
+		return false
+	var alvo: Vector2 = melhor.pos + Vector2(0, -6)
+	a_ric[i] -= 1
+	a_dir[i] = (alvo - perto).normalized()
+	a_pos[i] = perto
+	a_rest[i] = maxf(a_rest[i] - t, sqrt(melhor_d2) + 8.0)  # o alcance que sobrou nunca deixa a lâmina curta para chegar ao novo alvo
+	combate.fx.faiscas(perto, a_dir[i], 2, a_cor[i], 90.0)
+	return true
 
 
 func _acabar(i: int) -> void:
@@ -299,6 +355,7 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	if not a_extra[i] and randf() * 100.0 < float(combate.armas.mods.chuva):  # "Chuva de adagas": uma extra para um lado qualquer
 		var a := randf() * TAU
 		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], ALCANCE_EXTRA, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
+		a_proj[j] = a_proj[i]
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
 
 
@@ -331,8 +388,13 @@ func _desenhar_corpo() -> void:
 		var p: Vector2 = a_pos[i]
 		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
+		var e: Dictionary = _proj_lista[a_proj[i]]
+		if e.has("anim"):
+			var f: Dictionary = e.anim
+			AnimGolpes.desenhar(no_corpo, f, AnimGolpes.quadro_em(f, _relogio), p, (a_dir[i] as Vector2).angle(), Vector2.ONE, Color(1, 1, 1, fade))
+			continue
 		no_corpo.draw_set_transform(p.round(), (a_dir[i] as Vector2).angle(), Vector2.ONE)
-		no_corpo.draw_texture(_tex, Vector2(-COMPR * 0.5, -2.5), Color(1, 1, 1, fade))
+		no_corpo.draw_texture(e.tex, Vector2(-float(e.compr) * 0.5, -float(e.alt) * 0.5), Color(1, 1, 1, fade))
 	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -366,3 +428,66 @@ func _img_adaga() -> Texture2D:
 		for y in range(2 - meia, 3 + meia):
 			im.set_pixel(x, y, lamina if y == 2 else fio)
 	return ImageTexture.create_from_image(im)
+
+
+## A bala do canhão do LightWolf: 7x3 px, ponta clara e corpo âmbar.
+func _img_bala() -> Texture2D:
+	var im := Image.create(7, 3, false, Image.FORMAT_RGBA8)
+	var corpo := Color(1.0, 0.72, 0.25)
+	var ponta := Color(1.0, 0.96, 0.8)
+	var cauda := Color(0.8, 0.4, 0.15)
+	for x in 7:
+		for y in 3:
+			im.set_pixel(x, y, corpo)
+	for y in 3:
+		im.set_pixel(0, y, cauda)
+		im.set_pixel(6, y, ponta if y == 1 else corpo)
+	im.set_pixel(0, 0, Color(0, 0, 0, 0))
+	im.set_pixel(0, 2, Color(0, 0, 0, 0))
+	im.set_pixel(5, 1, ponta)
+	return ImageTexture.create_from_image(im)
+
+
+## O tiro de plasma da pistola do LightWolf: bola de 11x7 px, núcleo branco, anel ciano e uma cauda mais fraca para trás (esquerda).
+func _img_plasma() -> Texture2D:
+	var im := Image.create(11, 7, false, Image.FORMAT_RGBA8)
+	var anel := Color(0.25, 0.8, 1.0)
+	var miolo := Color(0.7, 0.95, 1.0)
+	var nucleo := Color(1.0, 1.0, 1.0)
+	var cauda := Color(0.15, 0.5, 0.85, 0.7)
+	for x in 11:
+		for y in 7:
+			var dx := (float(x) - 6.5) / 4.5
+			var dy := (float(y) - 3.0) / 3.0
+			var r := dx * dx + dy * dy
+			if r <= 0.12:
+				im.set_pixel(x, y, nucleo)
+			elif r <= 0.5:
+				im.set_pixel(x, y, miolo)
+			elif r <= 1.0:
+				im.set_pixel(x, y, anel)
+	for x in range(0, 3):
+		im.set_pixel(x, 3, cauda)
+	return ImageTexture.create_from_image(im)
+
+
+# ------------------------------------------------------------------ a tabela de projéteis
+
+
+func _registrar(nome: String, tex: Texture2D, compr: float, alt: float) -> int:
+	_proj_lista.append({"nome": nome, "tex": tex, "compr": compr, "alt": alt})
+	_proj_nomes[nome] = _proj_lista.size() - 1
+	return _proj_lista.size() - 1
+
+
+## O índice da imagem `nome`: as desenhadas em código, ou (na primeira vez) a folha animada `<nome>_heroi`/`voo`. Sem nenhuma das duas é a adaga.
+func _indice_proj(nome: String) -> int:
+	if _proj_nomes.has(nome):
+		return _proj_nomes[nome]
+	var folhas := AnimGolpes.de(nome + "_heroi")
+	if folhas.has("voo"):
+		_proj_lista.append({"nome": nome, "anim": folhas.voo})
+		_proj_nomes[nome] = _proj_lista.size() - 1
+	else:
+		_proj_nomes[nome] = 0  # lembra que não existe, para não procurar a folha de novo a cada arremesso
+	return _proj_nomes[nome]

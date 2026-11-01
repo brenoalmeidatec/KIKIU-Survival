@@ -596,13 +596,13 @@ func _ready() -> void:
 	ok(cs.evoluidas.has("anel_de_brasas"), "lâminas no 3 fecham o Anel de Brasas")
 	ok(str(sinais.get("evolucao_desc", "")).contains("Seis lâminas"), "o sinal da fusão leva o que ela faz para o cartão grande")
 	ok(w.combate.lento_acao == "fusao" and w.combate.lento_escala < 1.0, "a fusão pede câmera lenta (%s)" % w.combate.lento_acao)
-	# o ganho de poder da Ventania: a onda de 80% (2 cartas comuns) vira 80% x 2,4 = 192% do dano do corte (antes 1,9 = 152%)
+	# o ganho de poder da Ventania: a onda de 64% (2 cartas comuns de 32%) vira 64% x 2,4 = 153,6% do dano do corte
 	zerar()
 	pegar("onda", 0)
 	pegar("onda", 0)
 	pegar("fura", 0)
 	pegar("fura", 0)
-	ok(absf(w.combate.armas.pct_onda() - 80.0 * 2.4) < 0.001, "a Ventania leva a onda a 80%% x 2,4 (%s)" % w.combate.armas.pct_onda())
+	ok(absf(w.combate.armas.pct_onda() - 64.0 * 2.4) < 0.001, "a Ventania leva a onda a 64%% x 2,4 (%s)" % w.combate.armas.pct_onda())
 	print("v2_partida falhas=%d" % falhas)
 	get_tree().quit()
 

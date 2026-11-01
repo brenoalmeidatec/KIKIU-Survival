@@ -19,11 +19,10 @@ Mantenha as cores do tema da v2 (pedra fria, dourado `#FFDB6B` nos destaques, ro
 | 8 | Portal fechado (com cadeado) | 76 x 100 px | `_desenhar_portal` com `COR_TRAVADO` e cadeado desenhado | "Pixel art, 76x100 px, fundo transparente. O mesmo arco de pedra, agora fechado por uma grade de ferro escura e um cadeado grande no centro. Estilo 2.5D escuro, contorno preto de 1 px, sem texto." |
 | 9 | Piso e parede do salão (tiles) | piso 32x32, parede 32x32 | `_pintar_cenario` (retângulos e linhas) | "Pixel art, tiles de 32x32 px, repetíveis. Piso de pedra cinza-escura com juntas finas, e uma parede de tijolos de pedra com faixa de rodapé. Estilo 2.5D escuro, sem sombras fortes, sem texto." |
 | 10 | Tocha animada (4 quadros) | 20 x 40 px | `_pintar_chamas`, duas tochas | "Pixel art, 4 quadros de 20x40 px em uma folha horizontal, fundo transparente. Uma tocha de ferro com fogo laranja que balança de leve entre os quadros. Estilo 2.5D escuro, sem texto." |
-| 11 | Retrato do Breno (sem rosto na pasta) | 200 x 200 px | `personagens_tela.gd`, `_definir_retrato`, cai no quadro do herói | "Pixel art, retrato de 200x200 px, fundo escuro transparente. Busto de um rapaz brasileiro de cabelo curto, sorriso leve, olhar de frente, mesmo estilo dos rostos já existentes em assets/personagens/nicao/rosto.png. Sem texto." |
 
 ## Observações
 
-- **Retratos dos amigos:** Nicão, Lucas, João, Matheus, Beto, Lukako e Fábio já têm `rosto.png` na pasta deles; o salão e a escolha usam esses.
+- **Retratos dos amigos:** Brendan (rosto do Breno, desde o PER-1), Nicão, Lucas, João, Matheus, Beto, Lukako e Fábio já têm `rosto.png` na pasta deles; o salão e a escolha usam esses. Quem não tiver rosto cai no corpo do herói, mas hoje todos têm.
 - **Figura andando:** no salão, o personagem é o samurai (`hazaki_samurai`), porque é o único sprite de herói que a v2 tem hoje. O retrato é o do amigo escolhido. Até os outros heróis terem sprite na v2, a figura andando não muda por personagem.
 - **Pontos de atenção:** o chão e a parede são desenhados em código hoje; quando os tiles (peça 9) entrarem, troque o `_pintar_cenario` por um `TileMap` ou por um `TextureRect` repetido, e remova as linhas de perspectiva.
 - **Cores:** os tons vêm do tema atual da v2 (`COR_*` em `v2/salao.gd`). Quando a paleta única do PR #217 entrar, as cores estão centralizadas no topo do arquivo para trocar de uma vez.
