@@ -24,6 +24,34 @@ O AppImage não se instala sozinho. Para ganhar atalho e ícone no menu, use o *
 - Tela preta ou erro de OpenGL: passe o renderizador na linha de comando,
   `./KIKIU-*-x86_64.AppImage --rendering-driver opengl3`. Qualquer argumento depois do nome vai direto para o jogo.
 
+## Atalho do testador (abre sempre a build mais nova)
+
+É o par Linux do atalho "KIKIU (teste)" do Windows (`ferramentas/jogar_kikiu.ps1`). A cada clique ele pergunta ao GitHub
+qual é a Release mais nova, baixa o AppImage se ele mudou e abre o jogo. Sem internet, abre o último baixado. Tudo fica
+em `~/KIKIU-Teste`: `builds/<tag>.AppImage` (guarda só a atual e a anterior), `atual.txt` e `ultimo_log.txt`, que mostra
+o que aconteceu no último clique.
+
+Instalar, uma vez só, num terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/brenoalmeidatec/KIKIU-Survival/main/ferramentas/jogar_kikiu.sh -o /tmp/jogar_kikiu.sh
+bash /tmp/jogar_kikiu.sh --instalar
+```
+
+Isso cria o atalho "KIKIU (teste)" na área de trabalho e no menu de aplicativos, com o ícone do jogo. Depois é só clicar.
+No Arch, instale antes o FUSE 2 com `sudo pacman -S fuse2`. Sem ele o atalho ainda abre, mas extrai o jogo a cada vez e
+demora mais.
+
+Se o atalho da área de trabalho não abrir:
+- **GNOME:** clique com o botão direito no atalho e escolha "Permitir iniciar".
+- **KDE:** na primeira vez ele pergunta se confia no arquivo; responda que sim.
+- **XFCE:** na primeira vez ele pede para marcar o atalho como executável; aceite.
+- Pelo menu de aplicativos ("KIKIU (teste)") ele funciona em qualquer ambiente.
+- Para conferir sem abrir o jogo, rode no terminal `~/KIKIU-Teste/jogar_kikiu.sh --sem-abrir` e depois
+  `cat ~/KIKIU-Teste/ultimo_log.txt`.
+
+Desinstalar: apague `~/KIKIU-Teste`, `~/.local/share/applications/kikiu-teste.desktop` e o atalho da área de trabalho.
+
 ## Para quem mantém (CI)
 
 `montar.sh` monta o AppDir, baixa o `appimagetool` 1.9.1 (URL fixa, SHA-256 conferido) e gera o arquivo;
