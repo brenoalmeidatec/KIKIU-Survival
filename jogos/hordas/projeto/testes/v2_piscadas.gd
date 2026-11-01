@@ -2,13 +2,18 @@ extends "res://testes/isolamento_v2.gd"
 # Teste da opção "Reduzir piscadas" (#512, UI-2): o helper v2/piscadas.gd, a linha em Gráficos (que não vira Personalizado) e, numa partida de verdade,
 # o que mais liga e desliga: a invencibilidade do herói, o fôlego cansado, a vida baixa e o chão anunciado. Cada série é amostrada por 3 s (180 quadros)
 # e as trocas de luz são contadas. Desligada, o herói dá ~28 por segundo (prova que o teste pega o defeito); ligada, no máximo 3 por segundo.
-# Também confere a luz do fogo da aura (energia fixa), a cor da carga sobre a invencibilidade e o cache da opção no Config. Também confere: clarão de tela, glitch do clima, flash de acerto (tinta fixa e sem repetir em 0,34 s, borda inclusa) e o flash da morte, que fica.
+# Também confere a luz do fogo da aura (energia fixa), a cor da carga sobre a invencibilidade e o cache da opção no Config. Também confere: clarão de tela, glitch do clima, flash de acerto (tinta fixa e sem repetir em 0,7 s; conta TROCAS de luminância, não flashes) e o flash da morte, que fica.
+# Também: o brilho da barra de XP ao subir de nível e o escudo avermelhado de defesa baixa (cor fixa), a vinheta de vida baixa (alfa parado desde a entrada). Roda nos perfis Alto e Baixo.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_piscadas.tscn  (imprime "v2_piscadas falhas=0")
 # Não prova que PINTA: a medição na tela, em janela de verdade, é feita à parte (ver o PR).
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Piscadas := preload("res://v2/piscadas.gd")
 const Clima := preload("res://v2/clima.gd")
+const Anim := preload("res://v2/anim_golpes.gd")
+const HudHabilidades := preload("res://v2/hud_habilidades.gd")
+const HudGolpes := preload("res://v2/hud_golpes.gd")
+const HudNivel := preload("res://v2/hud_nivel.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const PASSO := 1.0 / 60.0
 const QUADROS := 180  # 3 s
@@ -51,14 +56,34 @@ func por_segundo(serie: Array) -> float:
 	return float(Piscadas.trocas(serie)) / (float(serie.size()) * PASSO)
 
 
+## Trocas por segundo de `f` (devolve número) amostrada no relógio de parede por `ms` ms (os HUDs de quadro lêem Time.get_ticks_msec).
+func por_segundo_real(f: Callable, ms := 1200) -> float:
+	var serie: Array = []
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < ms:
+		serie.append(float(f.call()))
+		OS.delay_msec(3)
+	return float(Piscadas.trocas(serie)) / (float(ms) / 1000.0)
+
+
 func _ready() -> void:
+	for perfil in ["alto", "baixo"]:  # o perfil Baixo corta efeitos: nada que pisca pode voltar por lá
+		rodar(perfil)
+	opcao(false)
+	Config.g_soltar_temporario()
+	print("v2_piscadas falhas=%d" % falhas)
+	get_tree().quit(1 if falhas > 0 else 0)
+
+
+func rodar(perfil: String) -> void:
+	print("v2_piscadas perfil=", perfil)
 	w = Mundo.instantiate()
 	w.modo_teste = true
 	add_child(w)
 	w.set_process(false)
 	w.hud.set_process(false)  # o HUD anda no passo do teste (hud.avancar), não no tempo de parede
 	w.combate.audio.mudo = true
-	Config.g_perfil_temporario("alto")
+	Config.g_perfil_temporario(perfil)
 
 	# 1. o helper e a opção
 	opcao(false)
@@ -75,7 +100,7 @@ func _ready() -> void:
 	)
 	ok(Piscadas.trocas([0.50, 0.51, 0.50, 0.51, 0.50]) == 4, "trocas(): uma oscilação pequena (0,01) também conta: nada passa por 'quase parado'")
 	ok(Piscadas.trocas([0.0, 0.0, 0.0, 0.0]) == 0 and Piscadas.trocas([0.2]) == 0, "trocas(): série constante ou de um ponto não troca")
-	ok(Piscadas.FLASH_REPETE_S >= 0.34, "o intervalo do flash de acerto é de pelo menos 0,34 s (3 por segundo no máximo)")
+	ok(Piscadas.FLASH_REPETE_S >= 0.67, "o intervalo do flash de acerto é de pelo menos 0,67 s (cada flash liga e desliga: 2 trocas, no máximo 3 por segundo)")
 	# o cache do Config acompanha a opção em definir(), temporario() e recarregar()
 	Config.definir(Piscadas.OPCAO, true)
 	ok(Config.reduzir_piscadas and Piscadas.ligado(), "o cache do Config liga com definir()")
@@ -85,7 +110,7 @@ func _ready() -> void:
 	ok(Config.reduzir_piscadas == bool(Config.v(Piscadas.OPCAO)) and Piscadas.ligado(), "o cache do Config volta ao arquivo com recarregar()")
 	Config.definir(Piscadas.OPCAO, false)
 	ok(not Config.reduzir_piscadas, "o cache do Config desliga com definir()")
-	Config.g_perfil_temporario("alto")
+	Config.g_perfil_temporario(perfil)
 
 	# 2. a linha em Gráficos: liga e desliga e NÃO vira Personalizado
 	opcao(false)
@@ -113,7 +138,7 @@ func _ready() -> void:
 	# o inverso: mexer numa opção do perfil de verdade vira Personalizado (prova que a checagem acima pegaria o defeito)
 	Config.g_definir("sombras", "alta" if str(Config.g("sombras")) != "alta" else "media")
 	ok(Config.g_perfil() == "personalizado", "controle: mexer numa opção do perfil vira Personalizado")
-	Config.g_aplicar_perfil("alto")
+	Config.g_aplicar_perfil(perfil)
 
 	# 3. o herói invencível: 3 s com a invencibilidade sempre cheia
 	zerar()
@@ -145,6 +170,8 @@ func _ready() -> void:
 	var vinheta: Array = []
 	for ligada in [false, true]:
 		opcao(ligada)
+		w.hud.vinheta_alfa = 0.0  # cada rodada entra do zero (a anterior deixou a vinheta pulsando)
+		w.hud._tempo_vinheta = 0.0
 		folego.clear()
 		vida.clear()
 		vinheta.clear()
@@ -169,6 +196,10 @@ func _ready() -> void:
 			var vmax := float(cauda.max())
 			ok(vmax - vmin < 0.0001, "ligada: o alfa da vinheta de vida baixa fica parado (variou %.4f)" % (vmax - vmin))
 			ok(vmax > 0.3, "ligada: a vinheta de vida baixa continua acesa, só parada (alfa %.2f)" % vmax)
+			var sobe_so := true
+			for q in range(1, vinheta.size()):
+				sobe_so = sobe_so and float(vinheta[q]) >= float(vinheta[q - 1]) - 0.00001
+			ok(sobe_so, "ligada: a vinheta de vida baixa só sobe até o alfa fixo, sem descer no meio (nem na entrada)")
 		else:
 			var dc := vinheta.slice(QUADROS / 3)
 			ok(
@@ -204,13 +235,13 @@ func _ready() -> void:
 	var fx = w.combate.fx
 	opcao(false)
 	fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
-	ok(fx._cl_t < fx._cl_dur, "desligada: o clarão acende")
+	ok(fx._cl_t < fx._cl_dur or not Anim.suave, "desligada: o clarão acende (o perfil Baixo, sem animação suave, nem o tem)")
 	fx._cl_t = 9.0
 	opcao(true)
 	fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
 	ok(fx._cl_t >= 9.0, "ligada: o clarão de tela não acende")
 
-	# 7. flash de acerto: tinta fixa, sem repetir no mesmo monstro em menos de 0,33 s; o da morte fica
+	# 7. flash de acerto: tinta fixa, sem repetir no mesmo monstro em menos de 0,7 s; o da morte fica
 	zerar()
 	var mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
 	var outro = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(-120, 0))
@@ -225,12 +256,12 @@ func _ready() -> void:
 	ok(fx.usados.flashes - antes == 1, "ligada: o primeiro flash de acerto passa")
 	passos(10)  # 0,17 s
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 1, "ligada: o mesmo monstro não leva outro flash em 0,34 s")
+	ok(fx.usados.flashes - antes == 1, "ligada: o mesmo monstro não leva outro flash em 0,7 s")
 	fx.flash(outro, 0.1)
 	ok(fx.usados.flashes - antes == 2, "ligada: outro monstro leva o flash normalmente")
-	passos(12)  # passou de 0,34 s desde o primeiro
+	passos(35)  # passou de 0,7 s desde o primeiro (0,75 s)
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 3, "ligada: depois de 0,34 s o mesmo monstro leva de novo")
+	ok(fx.usados.flashes - antes == 3, "ligada: depois de 0,7 s o mesmo monstro leva de novo")
 	var fixo := false
 	for s in fx._fl:
 		if s.visible and s.material != null and is_equal_approx(float((s.material as ShaderMaterial).get_shader_parameter("k")), Piscadas.FLASH_ALFA):
@@ -241,28 +272,36 @@ func _ready() -> void:
 	fx.flash(mo, 0.24, Color.WHITE, 1)
 	ok(fx.usados.flashes - antes == 2, "ligada: o flash da morte fica (não é cortado)")
 
-	# 7b. a borda do intervalo: tentando um flash por quadro no mesmo monstro, em 1 s (61 quadros) passam no máximo 3 (com 0,33 passavam 4)
+	# 7b. TROCAS de luminância (não flashes): tentando um flash por quadro no mesmo monstro por 6 s, o disco de tinta liga e desliga; cada flash são 2 trocas
+	# (com 0,34 s: ~6 trocas por segundo, o defeito apontado na revisão)
 	zerar()
 	mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
 	opcao(true)
-	antes = fx.usados.flashes
-	for q in 61:
+	var tinta: Array = []
+	for q in 360:
 		fx.flash(mo, 0.1)
 		passos(1)
-	var passaram: int = fx.usados.flashes - antes
-	ok(passaram <= 3, "ligada: um flash por quadro no mesmo monstro deixa passar %d em 1 s (máximo 3)" % passaram)
+		var lum_f := 0.0
+		for j in fx._fl.size():
+			if fx._fl[j].visible and fx._fl_alvo[j] == mo:
+				lum_f = maxf(lum_f, float((fx._fl[j].material as ShaderMaterial).get_shader_parameter("k")))
+		tinta.append(lum_f)
+	var trocas_flash := por_segundo(tinta)
+	ok(trocas_flash > 0.0, "ligada: o flash de acerto acende de vez em quando (%.1f trocas por segundo)" % trocas_flash)
+	ok(trocas_flash <= Piscadas.MAX_TROCAS_S, "ligada: o mesmo monstro apanhando sem parar troca a luminância %.1f vezes por segundo (máximo 3)" % trocas_flash)
+	# a borda: aos 0,683 s (41 quadros) ainda é barrado; aos 0,717 s (43) passa
 	zerar()
 	mo = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(120, 0))
 	antes = fx.usados.flashes
 	fx.flash(mo, 0.1)
-	passos(20)  # 0,333 s: ainda dentro de 0,34 s
+	passos(41)
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 1, "ligada: aos 0,333 s o mesmo monstro ainda não leva outro flash (a borda)")
-	passos(1)  # 0,350 s
+	ok(fx.usados.flashes - antes == 1, "ligada: aos 0,683 s o mesmo monstro ainda não leva outro flash (a borda)")
+	passos(2)
 	fx.flash(mo, 0.1)
-	ok(fx.usados.flashes - antes == 2, "ligada: aos 0,350 s o mesmo monstro leva de novo")
+	ok(fx.usados.flashes - antes == 2, "ligada: aos 0,717 s o mesmo monstro leva de novo")
 
-	# 7c. o anel de alvos: 60 outros acertos dentro de 0,34 s não apagam o primeiro (com o anel de 48 ele era sobrescrito e levava flash de novo)
+	# 7c. o anel de alvos: 60 outros acertos dentro de 0,7 s não apagam o primeiro (com o anel de 48 ele era sobrescrito e levava flash de novo)
 	opcao(true)
 	var primeiro := Node.new()
 	add_child(primeiro)
@@ -350,7 +389,102 @@ func _ready() -> void:
 	h._visual(PASSO, Vector2.ZERO)
 	ok(h.sprite.modulate.is_equal_approx(Piscadas.INVENCIVEL), "ligada: sem carga, invencível continua no tom fixo")
 
-	opcao(false)
-	Config.g_soltar_temporario()
-	print("v2_piscadas falhas=%d" % falhas)
-	get_tree().quit(1 if falhas > 0 else 0)
+	# 11. o brilho da barra de XP ao subir de nível (sin(brilho*16), ~2,5 Hz): oscila desligado; ligado, tom parado e uma subida e uma descida só
+	zerar()
+	var hud = w.hud
+	var xp_lum: Array = []
+	var xp_selo_igual := true
+	for ligada in [false, true]:
+		opcao(ligada)
+		xp_lum.clear()
+		hud.brilho = hud.BRILHO_T
+		for q in int(hud.BRILHO_T / PASSO):
+			passos(1)
+			xp_lum.append(Piscadas.luminancia(hud._xp_barra.modulate))
+			xp_selo_igual = xp_selo_igual and hud._selo.modulate.is_equal_approx(hud._xp_barra.modulate)
+		var tx := por_segundo(xp_lum)
+		if ligada:
+			ok(tx <= Piscadas.MAX_TROCAS_S, "ligada: o brilho da barra de XP troca %.1f vezes por segundo (máximo 3)" % tx)
+			var parado := xp_lum.slice(0, xp_lum.size() - 2)  # menos o último quadro, em que o brilho acaba
+			ok(
+				float(parado.max()) - float(parado.min()) < 0.0001 and float(parado.min()) > float(xp_lum.back()),
+				"ligada: a barra de XP fica num tom fixo enquanto o brilho dura (variou %.4f)" % (float(parado.max()) - float(parado.min()))
+			)
+		else:
+			ok(tx > Piscadas.MAX_TROCAS_S, "desligada: o brilho da barra de XP pisca (%.1f por segundo): o teste pega o defeito" % tx)
+	ok(xp_selo_igual, "o selo do nível acompanha a barra de XP (mesmo tom)")
+	hud.brilho = 0.0
+
+	# 12. o escudo de defesa baixa, de lado (não há quadro rachado): o aviso avermelhado pulsava a ~2,2 Hz; ligado, vermelho parado
+	zerar()
+	h = w.heroi
+	var esc = w.combate.escudo
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
+	var esc_lum: Array = []
+	var esc_cor: Array = []
+	for ligada in [false, true]:
+		opcao(ligada)
+		esc_lum.clear()
+		esc_cor.clear()
+		for q in QUADROS:
+			h.escudo_forcado = true
+			h.def = h.def_max * 0.2
+			passos(1)
+			w.combate.efeitos(PASSO)
+			esc_lum.append(Piscadas.luminancia(esc._spr.modulate))
+			esc_cor.append(esc._spr.modulate)
+		var te := por_segundo(esc_lum.slice(QUADROS / 3))
+		if ligada:
+			ok(not esc.visual_estado().rachado and esc.visual_estado().aviso, "o escudo de lado em defesa baixa está no aviso avermelhado")
+			ok(te <= Piscadas.MAX_TROCAS_S, "ligada: o escudo de defesa baixa troca %.1f vezes por segundo (máximo 3)" % te)
+			var c0: Color = esc_cor[QUADROS / 3]
+			var parado_e := true
+			for c in esc_cor.slice(QUADROS / 3):
+				parado_e = parado_e and (c as Color).is_equal_approx(c0)
+			ok(parado_e and c0.r > c0.g and c0.r > c0.b, "ligada: o escudo de defesa baixa fica num vermelho parado (%s)" % str(c0))
+		else:
+			ok(te > Piscadas.MAX_TROCAS_S, "desligada: o escudo de defesa baixa pisca (%.1f por segundo): o teste pega o defeito" % te)
+	h.escudo_forcado = false
+	h.def = h.def_max
+
+	# 13. os outros pulsos de HUD e de anel: a E em andamento e o escudo erguido (3,1 Hz), a janela perfeita da ruptura (10 Hz), o losango de fusão (2 Hz),
+	# a ponta travada da barra de nível (2 Hz, vermelha) e o pulso(): desligados trocam mais de 3 vezes por segundo; ligados, parados.
+	var hh = HudHabilidades.new()
+	hh.e_disponivel = true
+	hh.e_pronta = true
+	hh.perfeita = true
+	var hg = HudGolpes.new()
+	var hn = HudNivel.new()
+	hn.travado = true
+	for ligada in [false, true]:
+		opcao(ligada)
+		var r_pulsa := por_segundo_real(func(): return 1.0 if hh._pulsa() else 0.0)
+		var r_perf := por_segundo_real(func(): return Piscadas.luminancia(hh._cor_do_card(true, false)))
+		var r_quase := por_segundo_real(func(): return hg._fase_quase_agora())
+		var r_ponta: Array = []
+		for q in QUADROS:
+			hn._pisca = float(q) * PASSO
+			r_ponta.append(1.0 if hn._ponta_acesa() else 0.0)
+		var r_p: Array = []
+		for q in QUADROS:
+			r_p.append(Piscadas.pulso(float(q) * PASSO, 2.0))
+		var rp := por_segundo(r_ponta)
+		var rq := por_segundo(r_p)
+		if ligada:
+			ok(r_pulsa == 0.0, "ligada: o quadro da E/escudo em andamento fica parado (%.1f trocas por segundo)" % r_pulsa)
+			ok(r_perf == 0.0, "ligada: o quadro da E na janela perfeita fica parado (%.1f trocas por segundo)" % r_perf)
+			ok(r_quase == 0.0, "ligada: o losango de fusão quase pronta fica parado (%.1f trocas por segundo)" % r_quase)
+			ok(rp == 0.0, "ligada: a ponta travada da barra de nível fica vermelha e parada (%.1f trocas por segundo)" % rp)
+			ok(rq == 0.0, "ligada: pulso() fica parado (%.1f trocas por segundo)" % rq)
+		else:
+			ok(r_pulsa > Piscadas.MAX_TROCAS_S, "desligada: o quadro em andamento pulsa (%.1f por segundo): o teste pega o defeito" % r_pulsa)
+			ok(r_perf > Piscadas.MAX_TROCAS_S, "desligada: o quadro da janela perfeita pisca (%.1f por segundo): o teste pega o defeito" % r_perf)
+			ok(r_quase > Piscadas.MAX_TROCAS_S, "desligada: o losango de fusão pisca (%.1f por segundo): o teste pega o defeito" % r_quase)
+			ok(rp > Piscadas.MAX_TROCAS_S, "desligada: a ponta travada pisca (%.1f por segundo): o teste pega o defeito" % rp)
+			ok(rq > Piscadas.MAX_TROCAS_S, "desligada: pulso() oscila (%.1f por segundo): o teste pega o defeito" % rq)
+	hh.free()
+	hg.free()
+	hn.free()
+
+	pai.free()
+	w.free()

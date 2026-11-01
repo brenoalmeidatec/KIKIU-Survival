@@ -14,6 +14,7 @@ extends RefCounted
 ## fator_contragolpe(h), atualizar(dt) [tempo do mundo: o eco], efeitos(dt) [relógio de parede: o visual], resumo() e linha() [painel de status].
 
 const Armas := preload("res://v2/armas.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o anel da janela perfeita fica num tom fixo
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x
 const COR_LARANJA := Color(1.0, 0.55, 0.2)
 const COR_OURO := Color(1.0, 0.85, 0.3)
@@ -520,7 +521,7 @@ func _desenhar_carga(h) -> void:
 	no.draw_polyline(_elipse(p, raio_de(h, 1.0, false), PTS), Color(1.0, 0.9, 0.7, 0.22), 1.0)
 	var cor: Color
 	if h.rup_perfeita:
-		cor = COR_OURO.lerp(Color.WHITE, 0.5 + 0.25 * sin(float(Time.get_ticks_msec()) * 0.018))
+		cor = COR_OURO.lerp(Color.WHITE, Piscadas.valor(0.5 + 0.25 * sin(float(Time.get_ticks_msec()) * 0.018), 0.5))  # ~2,9 Hz; com a opção, no meio
 	elif f >= 1.0:
 		cor = Color.WHITE
 	elif f < 0.5:

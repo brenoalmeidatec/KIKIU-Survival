@@ -19,6 +19,7 @@ extends Control
 ## Lê, com get() e valor padrão: hud.mundo; mundo.combate (.armas.ativas, .cartas), mundo.heroi.m_vel_ataque, mundo.status.aberto().
 
 const Paleta := preload("res://v2/paleta.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o losango de fusão quase pronta não pisca
 const ICONE := 24  # lado do ícone desenhado (a arte da carta tem 32 e é reduzida a 0,75)
 const CAIXA := 26  # lado da caixa do ícone: moldura de 1 px em volta
 const ALTURA := 32  # caixa (26) + pips (3) + folgas
@@ -111,7 +112,7 @@ func avancar(dt: float) -> void:
 		# opaca ao mudar, translúcida parada: só o modulate do nó, sem redesenho
 		var alvo := 1.0 if _destaque > 0.0 else ALFA_PARADA
 		modulate.a = move_toward(modulate.a, alvo, dt * (6.0 if alvo > modulate.a else 1.5))
-	_fase_quase = int(Time.get_ticks_msec() / 250) % 2
+	_fase_quase = _fase_quase_agora()
 	var pisca := false
 	for it in itens:
 		pisca = pisca or bool(it.quase)
@@ -120,6 +121,11 @@ func avancar(dt: float) -> void:
 		_chave_desenhada = chave
 		pedidos += 1
 		queue_redraw()
+
+
+## A fase do losango "falta um nível para fundir" (0 ou 1, troca a cada 250 ms = 4 trocas/s). Com "Reduzir piscadas": sempre 0, magenta parado.
+func _fase_quase_agora() -> int:
+	return 0 if Piscadas.ligado() else int(Time.get_ticks_msec() / 250) % 2
 
 
 ## O retângulo que a faixa ocupa agora, nas coordenadas do pai, a Raiz do HUD (vazio sem golpes). Os testes conferem que não cruza o resto do HUD.

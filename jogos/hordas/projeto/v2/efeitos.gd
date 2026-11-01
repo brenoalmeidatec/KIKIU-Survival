@@ -240,7 +240,7 @@ var _fl_t := PackedFloat32Array()
 var _fl_dur := PackedFloat32Array()
 var _pisca_rel := 0.0  # relógio dos flashes de acerto (s de simulação): só serve ao intervalo mínimo da opção "Reduzir piscadas"
 # Os últimos alvos de flash de acerto (anel de 4 x MAX_FLASH = 96, tamanho fixo) e quando cada um levou. Limite aceito: mais de 96 flashes de
-# acerto em 0,34 s sobrescrevem o mais velho, e esse monstro pode levar flash de novo.
+# acerto em 0,7 s sobrescrevem o mais velho, e esse monstro pode levar flash de novo.
 var _pisca_alvo: Array = []
 var _pisca_quando := PackedFloat32Array()
 var _pisca_i := 0

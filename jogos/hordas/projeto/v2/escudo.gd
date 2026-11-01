@@ -451,7 +451,7 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	_spr.flip_h = flip
 	var tom := Color(1, 1, 1, alfa)
 	if baixo and not rachado_visivel:  # de lado ou de costas não há quadro rachado: o aviso é o escudo avermelhado, pulsando
-		var pulso := 0.5 + 0.5 * sin(_relogio * 14.0)
+		var pulso := Piscadas.valor(0.5 + 0.5 * sin(_relogio * 14.0), Piscadas.PULSO_ESCUDO_FIXO)  # com "Reduzir piscadas": o vermelho fica parado no centro do pulso
 		tom = Color(1.0, 0.82 - 0.2 * pulso, 0.78 - 0.2 * pulso, alfa)
 	_spr.modulate = tom
 	_raiz.visible = true

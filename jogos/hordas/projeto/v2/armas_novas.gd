@@ -1699,7 +1699,7 @@ func _brilho_queda(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color) -
 		var k := 1.0 - float(it.t) / maxf(float(it.a.st.aviso), 0.01)
 		var c := _queda_em(it, 0.0)
 		var cresce := clampf(k / QUEDA_CINTILA, 0.0, 1.0)
-		var pisca := Piscadas.valor(0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase)), Piscadas.ALFA_FIXO)
+		var pisca := Piscadas.valor(0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase)), Piscadas.ALFA_FIXO_QUEDA)
 		var br := roundf(2.0 + 5.0 * cresce * pisca)
 		ci.draw_line(c - Vector2(br, 0), c + Vector2(br, 0), Color(1, 1, 1, 0.8 * cresce), 1.0)
 		ci.draw_line(c - Vector2(0, br), c + Vector2(0, br), Color(1, 1, 1, 0.8 * cresce), 1.0)
@@ -1742,7 +1742,7 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		afunda = d * 10.0
 		alfa = 1.0 - d
 	elif util < 1.0:
-		alfa = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO)  # peça por desmontar: tremeluz (a opção deixa parado)
+		alfa = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO_PECA)  # peça por desmontar: tremeluz (a opção deixa parado)
 	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 	var raio_s := maxf(5.0, 17.0 - queda * 0.1)
 	ci.draw_circle(Vector2.ZERO, raio_s + 2.0, Color(0, 0, 0, 0.18 * alfa))
@@ -1858,7 +1858,7 @@ func _brilho_torre(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -
 	if util <= 0.0:
 		fade = clampf(float(it.vida) / DESMONTA, 0.0, 1.0)
 	elif util < 1.0:
-		fade = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO)
+		fade = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO_PECA)
 	var topo := p + Vector2(0, TORRE_TOPO)
 	var pulso := 0.5 + 0.5 * sin(age * 5.0)
 	var tom := Color(0.5, 0.75, 1.0) if pagode else Color(1.0, 0.62, 0.28)

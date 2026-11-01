@@ -449,6 +449,8 @@ func _animar(dt: float) -> void:
 	# Brilho do XP: a barra e o selo clareiam para o dourado, piscando em degraus de 1/4 (pixel art não tem alfa suave) e apagando até zero.
 	brilho = maxf(brilho - dt, 0.0)
 	var f := roundf(4.0 * (brilho / BRILHO_T) * (0.5 + 0.5 * sin(brilho * 16.0))) / 4.0
+	if Piscadas.ligado():  # "Reduzir piscadas": o seno de ~2,5 Hz some; dourado fixo enquanto o brilho dura, uma subida e uma descida só
+		f = Piscadas.BRILHO_XP_FIXO if brilho > 0.0 else 0.0
 	_xp_barra.modulate = Color.WHITE.lerp(BRILHO_XP, f)
 	# Pop do selo ao subir de nível (cresce 0,4 e volta, em degraus de 0,05) e o anel de luz que sai dele.
 	_pop_selo = maxf(_pop_selo - dt, 0.0)
