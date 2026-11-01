@@ -219,7 +219,7 @@ func abrir(b: Dictionary) -> void:
 	var piso := int(cfg.get("piso_raridade", 0))
 	var qtd := int(combate.cartas.cfg.escolha.cartas)
 	if not fixo and n < qtd:
-		var candidatas: Array = combate.cartas.sortear(qtd, h.nivel, bonus, piso)
+		var candidatas: Array = combate.cartas.montar_mao(h.nivel, bonus, piso, qtd)  # a mesma mão da escolha de nível: 2 upgrades + 1 novidade
 		if candidatas.size() > n:
 			_abrir_escolha(b, candidatas, n)
 			return
