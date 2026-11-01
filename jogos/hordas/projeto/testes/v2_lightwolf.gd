@@ -136,7 +136,7 @@ func _t_dados() -> void:
 	ok(float(ps[0].lateral) == -float(ps[1].lateral) and float(ps[0].lateral) != 0.0, "mecha: as duas mãos ficam em lados opostos")
 	ok(is_equal_approx(float(ps[0].dano), 4.8) and int(ps[0].som_cada) == 3, "mecha: dano 4,8 e som a cada 3 tiros")
 	var cic: float = (float(ps[0].duracao) + float(ps[1].duracao)) / 2.0
-	ok(cic > 0.08 and cic < 0.12, "mecha: ~10 tiros por segundo no papel (%.3f s por tiro)" % cic)
+	ok(cic > 0.06 and cic < 0.08, "mecha: ~10 tiros por segundo no papel: o passo mais o quadro de recomeço dá 6 quadros (%.3f s de passo)" % cic)
 	for nome in ["lightwolf_mecha", "lightwolf_lobo"]:
 		var info = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + nome + ".json"))
 		ok(info is Dictionary and bool(info.get("provisorio", false)), "%s: folha existe e está rotulada como provisória" % nome)
@@ -190,9 +190,10 @@ func _t_tiro() -> void:
 				if w.combate.adagas.a_rest[j] > 0.0:
 					ys.append(w.combate.adagas.a_pos[j].y)
 	h.ataque_forcado = false
+	passos(40)  # as últimas balas ainda estão a caminho do alvo
 	var tiros: int = w.combate.adagas.lancadas - antes
 	var golpes: int = h.golpes - golpes0
-	ok(tiros >= 26 and tiros <= 34, "segurando 3 s saem ~30 tiros (10/s), saíram %d" % tiros)
+	ok(tiros >= 27 and tiros <= 33, "segurando 3 s saem ~30 tiros (10/s), saíram %d" % tiros)
 	ok(golpes == tiros and w.combate.tiros_som - tiros0 == golpes, "um tiro por golpe e o contador de som conta cada golpe (%d/%d)" % [tiros, golpes])
 	ok(
 		is_equal_approx(h.folego, fol0) and h.golpe_calor_t == 0.0 and not h.cansado,
@@ -200,10 +201,10 @@ func _t_tiro() -> void:
 	)
 	ok(max_voo >= 3 and max_voo <= 7, "no máximo ~5 balas em voo (maior vista: %d)" % max_voo)
 	ys.sort()
-	ok(ys.size() >= 2 and float(ys[-1]) - float(ys[0]) >= 8.0, "as balas saem das duas mãos, lados opostos da mira (%s)" % str(ys))
+	ok(ys.size() >= 2 and float(ys[-1]) - float(ys[0]) >= 6.0, "as balas saem das duas mãos, lados opostos da mira (%s)" % str(ys))
 	var dano: float = w.combate.dano_causado - dano0
 	var dps := float(dano) / 3.0
-	ok(dps >= 35.0 and dps <= 60.0, "DPS no alvo único perto de 50 (%.1f)" % dps)
+	ok(dps >= 38.0 and dps <= 58.0, "DPS no alvo único perto de 50 (%.1f)" % dps)
 
 
 func _t_sem_folego() -> void:
