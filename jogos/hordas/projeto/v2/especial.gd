@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## Qual especial cada herói tem é DADO (dados/v2_especial.json > padrao e herois > chave do herói), igual ao secundário. Os três de hoje:
 ##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mostra a linha da direção em que está virado até a borda da tela, dispara UM raio num único quadro que corta tudo na
-##    faixa até a borda, atravessa um trecho e fecha com um corte em cruz em volta (ULT-B: o raio vai para onde o herói está virado, nunca para trás).
+##    faixa até a borda, atravessa um trecho e fecha com um corte em cruz em volta (ULT-B e D31: com mouse e teclado o raio vai para o cursor; no controle, para onde o herói está virado).
 ##  - TERREMOTO (Nick): ergue a marreta e bate: pancada enorme em volta, rachaduras e uma onda de choque que sai da batida e varre quem estava longe.
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ##  - CHAMAR (LightWolf em forma de Lobo, LW-2): a carga do Q é o CHAMADO (bloco `carga` próprio no dado). Cheia, o Lobo aperta Q: um aviso de 0,8 s sobre os pés e o
@@ -34,6 +34,7 @@ extends RefCounted
 
 const Armas := preload("res://v2/armas.gd")
 const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: só o analógico de mira (STICK) não segue o cursor no Q
+const Glifos := preload("res://v2/glifos.gd")  # no controle não há cursor: o Q segue o corpo
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
 const MAX_ANEIS := 10
@@ -242,9 +243,10 @@ func iniciar(h) -> bool:
 	_giro = randf() * TAU
 	_escala = (1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)) * combate.ritmo.multiplicador("q_area", h.nivel)
 	# a direção é travada no aperto (ULT-B, D31): com mouse e teclado é SEMPRE o cursor ao vivo, seja qual for a última fonte de entrada (andando para um lado com o mouse
-	# do outro, o Q vai para o cursor); em GOLPE e HABILIDADE o mouse não vira o corpo, então dir_olhar não serve. Só o analógico de mira (STICK, sem cursor) usa o corpo
+	# do outro, o Q vai para o cursor); em GOLPE e HABILIDADE o mouse não vira o corpo, então dir_olhar não serve. No controle (sem cursor: o ponteiro do sistema fica parado
+	# e velho) e no analógico de mira (STICK) vale o corpo
 	_dir = h.dir_olhar.normalized()
-	if h.fonte != Heroi.Fonte.STICK:
+	if h.fonte != Heroi.Fonte.STICK and not Glifos.eh_controle():
 		var viva: Vector2 = h.mundo.mouse_mundo() - h.centro()
 		if viva.length() > 4.0:
 			_dir = viva.normalized()

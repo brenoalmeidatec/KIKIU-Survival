@@ -11,6 +11,7 @@ extends "res://testes/isolamento_v2.gd"
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Especial := preload("res://v2/especial.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const Herois := preload("res://v2/herois.gd")
 const HudHabilidades := preload("res://v2/hud_habilidades.gd")
 const PASSO := 1.0 / 60.0
@@ -531,6 +532,17 @@ func _q_cursor_com_teclado() -> void:
 		w.mouse_forcado = h.centro() - d * 100.0
 		ok(h.especial(), "D31 analógico %d: dispara" % i)
 		ok(esp._dir.dot(d) > 0.999, "D31 analógico %d: o Q segue o analógico, não o cursor (%s)" % [i, esp._dir])
+	# controle só com o analógico esquerdo (fonte ANDA): sem cursor, o ponteiro do sistema parado não manda; o Q vai para onde o corpo anda
+	Glifos.definir(Glifos.Disp.XBOX)
+	for i in 8:
+		var d := Vector2.from_angle(float(i) * TAU / 8.0)
+		zerar()
+		_virar(h, "teclado", d)
+		w.mouse_forcado = h.centro() - d * 100.0
+		ok(h.fonte == Heroi.Fonte.ANDA, "D31 controle %d: a fonte é o analógico esquerdo (ANDA)" % i)
+		ok(h.especial(), "D31 controle %d: dispara" % i)
+		ok(esp._dir.dot(d) > 0.999, "D31 controle %d: sem cursor o Q segue o corpo, não o ponteiro parado (%s)" % [i, esp._dir])
+	Glifos.definir(Glifos.Disp.TECLADO)
 	w.mouse_forcado = h.centro() + Vector2(100, 0)
 
 
