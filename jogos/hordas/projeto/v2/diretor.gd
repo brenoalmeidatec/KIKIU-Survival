@@ -30,6 +30,10 @@ var mare_chamadas := 0  # quantas Marés o Q chamou (testes)
 var nivel := 1
 var niveis_total := 30
 var duracao_nivel := 20.0
+# ECO-1: o relógio do diretor anda `tempo_mult` vezes mais depressa que a partida (dados/v2_niveis.json > tempo_mult). Um mapa mais curto
+# com fator 1,4 passa pela mesma curva de monstros que um de 1,0: onda, taxa, teto, elenco e força por minuto. Os níveis e os chefes
+# (duracao_nivel) continuam no tempo real.
+var tempo_mult := 1.0
 var t_nivel := 0.0
 var chefes_mapa: Array = []  # [{nivel, mk (a marca do chefe, já com a vida do mapa e mini = não é o último)}], em ordem de nível
 
@@ -49,6 +53,7 @@ func carregar_niveis(id: String) -> void:
 	var m: Dictionary = mapas.get(id, mapas[str(dn.padrao)])
 	niveis_total = int(m.total)
 	duracao_nivel = float(mundo.args.get("duracao_nivel", m.duracao_nivel))
+	tempo_mult = float(m.get("tempo_mult", 1.0))
 	var marcas := {}
 	for mk in combate.cartas.cfg.chefes.marcas:
 		marcas[str(mk.id)] = mk
@@ -84,6 +89,12 @@ func zerar() -> void:
 ## Segundos de cada nível nesta partida (o Pesadelo encurta, trazendo os chefes mais cedo).
 func seg_nivel() -> float:
 	return maxf(duracao_nivel * mundo.fator_pesadelo("chefe_tempo_mult") * dificuldade("chefe_tempo_mult"), 0.01)
+
+
+## Relógio do diretor (ECO-1): o tempo da partida vezes `tempo_mult` do mapa. As ondas fortes e a Maré contam nele, e a força por minuto
+## também. As funções que recebem `t` (taxa, limite, sortear) esperam o tempo REAL da partida e aplicam o fator dentro delas.
+func relogio() -> float:
+	return mundo.tempo_partida * tempo_mult
 
 
 ## Ponto único de leitura das regras para o diretor e o relógio de elites.
@@ -158,10 +169,10 @@ func fracao_mapa() -> float:
 	return clampf((float(nivel - 1) + parcial) / float(niveis_total - 1), 0.0, 1.0)
 
 
-## Taxa de nascimento (monstros/s) e teto de vivos no instante `t` da partida: sobem em linha reta até tempo_taxa/tempo_cap.
+## Taxa de nascimento (monstros/s) no instante `t` REAL da partida: sobe em linha reta até tempo_taxa do relógio do diretor (ECO-1).
 func taxa(t: float) -> float:
 	return (
-		lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0))
+		lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t * tempo_mult / float(cfg.tempo_taxa), 0.0, 1.0))
 		* mundo.fator_pesadelo("densidade_mult")
 		* dificuldade("densidade_mult")
 		* combate.ritmo.multiplicador("densidade", mundo.heroi.nivel)
@@ -178,7 +189,7 @@ func limite(t: float) -> int:
 		teto(),
 		roundi(
 			(
-				lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0))
+				lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t * tempo_mult / float(cfg.tempo_cap), 0.0, 1.0))
 				* mundo.fator_pesadelo("densidade_mult")
 				* dificuldade("densidade_mult")
 				* combate.ritmo.multiplicador("densidade", mundo.heroi.nivel)
@@ -190,7 +201,8 @@ func limite(t: float) -> int:
 func atualizar(dt: float) -> void:
 	if not ligado:
 		return
-	var t: float = mundo.tempo_partida
+	var t: float = mundo.tempo_partida  # real: taxa, limite e elenco aplicam o fator dentro delas
+	var td: float = relogio()  # do diretor: ondas e Maré
 	if mare_t >= 0.0:
 		mare_t -= dt
 		if mare_t <= 0.0:
@@ -207,10 +219,10 @@ func atualizar(dt: float) -> void:
 			mare_chamada_fator = 1.0
 			onda_forte(fator, false)  # a chamada do Q não sobe o contador de escalada: as Marés normais seguem o relógio
 			mare_aviso = false
-			proxima_onda = maxf(proxima_onda, t + _mare_cfg("intervalo_min"))  # a Maré normal não vem colada na que o Q chamou
-	if _mare_ativa() and t >= proxima_onda - 1.2:
+			proxima_onda = maxf(proxima_onda, td + _mare_cfg("intervalo_min"))  # a Maré normal não vem colada na que o Q chamou
+	if _mare_ativa() and td >= proxima_onda - 1.2:
 		_mare_avisar()
-	if t >= proxima_onda:
+	if td >= proxima_onda:
 		onda_forte()
 		proxima_onda += intervalo_onda()
 		mare_aviso = false
@@ -240,7 +252,7 @@ func atualizar(dt: float) -> void:
 
 ## O tipo do elenco do mapa (v2/elenco.gd) sorteado para o instante `t` da partida: {sprite, nome, tinta, ...}.
 func sortear(t: float) -> Dictionary:
-	return mundo.elenco.sortear(t, rng)
+	return mundo.elenco.sortear(t * tempo_mult, rng)
 
 
 ## Nasce um monstro fora da tela. `tipo` (opcional) é a variação do elenco do mapa. Devolve false se não achou lugar (a taxa tenta de novo no próximo).
@@ -248,7 +260,7 @@ func nascer(nome: String, forcar: Variant = null, tipo := {}) -> bool:
 	var p: Variant = forcar if forcar != null else ponto_fora_da_tela()
 	if p == null:
 		return false
-	var minutos: float = mundo.tempo_partida / 60.0
+	var minutos: float = relogio() / 60.0
 	var kv := 1.0 + float(cfg.vida_por_min) * minutos
 	var kd := 1.0 + float(cfg.dano_por_min) * minutos
 	var m = mundo.nascer_monstro(nome, p, true, kv, kd, tipo)
@@ -294,7 +306,7 @@ func onda_forte(fator := 1.0, conta := true) -> void:
 	var idx := maxi(ondas, 1)
 	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (idx - 1)
 	var t: float = mundo.tempo_partida
-	mare_ultima_t = t
+	mare_ultima_t = relogio()
 	var elite := roundi(float(cfg.onda_elite) * idx * fator)
 	var folga: int = teto() - mundo.monstros.size()
 	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult") * fator) + elite, maxi(folga, 0))
@@ -336,7 +348,7 @@ func _mare_avisar() -> void:
 func mare_chamar() -> bool:
 	if not ligado or not _mare_ativa() or mare_chamada_t >= 0.0 or mare_t >= 0.0:
 		return false
-	var t: float = mundo.tempo_partida
+	var t: float = relogio()
 	var desde := t - mare_ultima_t
 	if desde < _mare_cfg("intervalo_min") or proxima_onda - t <= _mare_cfg("q_atraso"):
 		return false

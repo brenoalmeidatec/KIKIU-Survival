@@ -94,27 +94,27 @@ func _ready() -> void:
 			sinais["fim"] = conta("fim") + 1
 			sinais["fim_res"] = r
 	)
-	# 7. níveis do mapa (Floresta: 30 níveis, mini-chefes no 10 e no 20, chefão no 30), ataques anunciados
+	# 7. níveis do mapa (Floresta: 10 níveis, o chefão no 10, que é o último), ataques anunciados
 	zerar()
 	w.combate.diretor.ligado = false
 	var dir = w.combate.diretor
-	ok(dir.nivel == 1 and dir.niveis_total == 30, "a Floresta começa no nível 1 de 30 (%d/%d)" % [dir.nivel, dir.niveis_total])
-	ok(dir.chefes_mapa.map(func(e): return e.nivel) == [10, 20, 30], "chefes nos níveis 10, 20 e 30")
-	ok(dir.chefes_mapa[0].mk.mini and dir.chefes_mapa[1].mk.mini and not dir.chefes_mapa[2].mk.mini, "só o do último nível é o chefão")
+	ok(dir.nivel == 1 and dir.niveis_total == 10, "a Floresta começa no nível 1 de 10 (%d/%d)" % [dir.nivel, dir.niveis_total])
+	ok(dir.chefes_mapa.map(func(e): return e.nivel) == [10], "o chefe da Floresta está só no nível 10, o último")
+	ok(not dir.chefes_mapa[0].mk.mini, "o do último nível é o chefão, não um mini")
 	var seg: float = dir.seg_nivel()
 	dir.avancar_nivel(seg * 2.5)
 	ok(dir.nivel == 3 and absf(dir.t_nivel - seg * 0.5) < 0.2, "o nível sobe a cada %.0f s (nível %d)" % [seg, dir.nivel])
-	ok(absf(dir.fracao_mapa() - 2.5 / 29.0) < 0.02, "a barra do mapa anda com o nível (%.3f)" % dir.fracao_mapa())
+	ok(absf(dir.fracao_mapa() - 2.5 / 9.0) < 0.02, "a barra do mapa anda com o nível (%.3f)" % dir.fracao_mapa())
 	dir.ir_para_nivel(9)
 	dir.t_nivel = seg - 0.5
 	passos(10)
-	ok(not w.combate.chefes.vivo and dir.nivel == 9, "no nível 9 ainda não tem mini-chefe")
+	ok(not w.combate.chefes.vivo and dir.nivel == 9, "no nível 9 ainda não tem chefe")
 	passos(40)
-	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o mini-chefe nasce ao chegar no nível 10")
-	ok(w.combate.chefes.marca.nome == "Devourer of Flesh", "o do nível 10 é o Devourer of Flesh")
-	ok(dir.travado(), "com o mini-chefe vivo o nível trava")
+	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o chefão nasce ao chegar no nível 10")
+	ok(w.combate.chefes.marca.nome == "Devourer of Land", "o do nível 10 é o Devourer of Land")
+	ok(dir.travado(), "com o chefão vivo o nível trava")
 	dir.avancar_nivel(seg * 5.0)
-	ok(dir.nivel == 10 and dir.fracao_mapa() <= 9.0 / 29.0 + 0.001, "travado: o nível e a barra não andam (%d)" % dir.nivel)
+	ok(dir.nivel == 10 and absf(dir.fracao_mapa() - 1.0) < 0.001, "travado: o nível e a barra não andam (%d)" % dir.nivel)
 
 	# Mini-chefe da exploração das Ruínas: não perde a referência quando chega a hora de nascer o chefe de um nível.
 	zerar()

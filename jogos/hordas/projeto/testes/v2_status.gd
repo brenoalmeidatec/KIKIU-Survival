@@ -1829,7 +1829,7 @@ func _fotos(pasta: String) -> void:
 	st._aplicar()
 	await get_tree().process_frame
 	await _foto("status_hud", pasta)
-	# 1b) com o mini-chefe em campo (a barra do chefe e o aviso aparecem): o card não passa por baixo de nada do HUD
+	# 1b) com o chefão do nível 10 (o último da Floresta) em campo (a barra do chefe e o aviso aparecem): o card não passa por baixo de nada do HUD
 	w.combate.diretor.ir_para_nivel(10)
 	h.ataque_forcado = true
 	passos(45)

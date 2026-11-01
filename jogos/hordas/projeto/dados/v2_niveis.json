@@ -1,39 +1,30 @@
 {
-	"_ajuda": "Níveis de cada mapa da v2 (lido por v2/diretor.gd). Cada mapa tem um FIM: \"total\" níveis; o nível sobe a cada \"duracao_nivel\" segundos de partida (no Pesadelo, vezes chefe_tempo_mult do v2_meta.json). \"chefes\": em cada nível listado nasce o chefe da \"marca\" (id em v2_cartas.json > chefes.marcas) e o nível TRAVA até ele morrer. O do último nível é o CHEFÃO: vencer ele termina o mapa (VITÓRIA e o mapa fica marcado como vencido no save, Meta.mapa_vencido). Os outros são mini-chefes (soltam baú). \"vida\" (opcional) multiplica a vida da marca naquele mapa. Um mapa fora desta lista usa o \"padrao\". --duracao_nivel=<s> (depuração) troca a duração de todos.",
+	"_ajuda": "Níveis de cada mapa da v2 (lido por v2/diretor.gd). Cada mapa tem um FIM: \"total\" níveis; o nível sobe a cada \"duracao_nivel\" segundos de partida (no Pesadelo, vezes chefe_tempo_mult do v2_meta.json). \"tempo_mult\" (padrão 1,0) é o fator do relógio do diretor: ondas, taxa de nascimento, teto, elenco e a força por minuto leem o tempo da partida vezes esse fator. Um mapa mais curto com fator maior passa pela mesma curva de monstros que um de 1,0 (ECO-1). \"chefes\": em cada nível listado nasce o chefe da \"marca\" (id em v2_cartas.json > chefes.marcas) e o nível TRAVA até ele morrer. O do último nível é o CHEFÃO: vencer ele termina o mapa (VITÓRIA e o mapa fica marcado como vencido no save, Meta.mapa_vencido). Os outros são mini-chefes (soltam baú). \"vida\" (opcional, padrão 1,0) multiplica a vida da marca naquele mapa: o chefão da Floresta vale 0,5 x 9.000 = 4.500 de vida, o da Torre 1,2 x 9.000 = 10.800, o da Vila 1,7 x 9.000 = 15.300 e o das Ruínas 2,2 x 9.000 = 19.800. Um mapa fora desta lista usa o \"padrao\". --duracao_nivel=<s> (depuração) troca a duração de todos.",
 	"padrao": "floresta",
 	"mapas": {
 		"floresta": {
-			"total": 30,
-			"duracao_nivel": 20,
-			"chefes": [{"nivel": 10, "marca": "mini1"}, {"nivel": 20, "marca": "mini2"}, {"nivel": 30, "marca": "chefe"}]
+			"total": 10,
+			"duracao_nivel": 25,
+			"tempo_mult": 1.0,
+			"chefes": [{"nivel": 10, "marca": "chefe", "vida": 0.5}]
 		},
 		"laboratorio": {
-			"total": 40,
-			"duracao_nivel": 20,
-			"chefes": [{"nivel": 10, "marca": "mini1", "vida": 1.3}, {"nivel": 20, "marca": "mini2", "vida": 1.3}, {"nivel": 30, "marca": "mini1", "vida": 1.5}, {"nivel": 40, "marca": "chefe", "vida": 1.6}]
+			"total": 20,
+			"duracao_nivel": 24,
+			"tempo_mult": 1.15,
+			"chefes": [{"nivel": 10, "marca": "mini1", "vida": 1.3}, {"nivel": 20, "marca": "chefe", "vida": 1.2}]
 		},
 		"cidade": {
-			"total": 50,
-			"duracao_nivel": 20,
-			"chefes": [
-				{"nivel": 10, "marca": "mini1", "vida": 1.5},
-				{"nivel": 20, "marca": "mini2", "vida": 1.5},
-				{"nivel": 30, "marca": "mini1", "vida": 2.2},
-				{"nivel": 40, "marca": "mini2", "vida": 2.4},
-				{"nivel": 50, "marca": "chefe", "vida": 2.6}
-			]
+			"total": 30,
+			"duracao_nivel": 22,
+			"tempo_mult": 1.25,
+			"chefes": [{"nivel": 10, "marca": "mini1", "vida": 1.5}, {"nivel": 20, "marca": "mini2", "vida": 1.5}, {"nivel": 30, "marca": "chefe", "vida": 1.7}]
 		},
 		"medio": {
-			"total": 60,
-			"duracao_nivel": 20,
-			"chefes": [
-				{"nivel": 10, "marca": "mini1", "vida": 2.0},
-				{"nivel": 20, "marca": "mini2", "vida": 2.0},
-				{"nivel": 30, "marca": "mini1", "vida": 2.2},
-				{"nivel": 40, "marca": "mini2", "vida": 2.4},
-				{"nivel": 50, "marca": "mini1", "vida": 2.6},
-				{"nivel": 60, "marca": "chefe", "vida": 2.8}
-			]
+			"total": 40,
+			"duracao_nivel": 22,
+			"tempo_mult": 1.4,
+			"chefes": [{"nivel": 10, "marca": "mini1", "vida": 2.0}, {"nivel": 20, "marca": "mini2", "vida": 2.0}, {"nivel": 30, "marca": "mini1", "vida": 2.2}, {"nivel": 40, "marca": "chefe", "vida": 2.2}]
 		}
 	}
 }

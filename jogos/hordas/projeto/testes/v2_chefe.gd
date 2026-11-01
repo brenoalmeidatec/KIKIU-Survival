@@ -340,7 +340,7 @@ func _ready() -> void:
 	# save de teste: a vitória marca o mapa como vencido nele, nunca no save de verdade
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
 	Meta.caminho_save = SAVE_TESTE
-	# o mini-chefe do nível 10 em campo: o nível sobe sozinho até lá
+	# o chefão do nível 10 (o último da Floresta) em campo: o nível sobe sozinho até lá
 	zerar()
 	w.combate.diretor.ligado = false
 	var dir = w.combate.diretor
@@ -348,14 +348,14 @@ func _ready() -> void:
 	dir.ir_para_nivel(9)
 	dir.t_nivel = seg - 0.5
 	passos(50)
-	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o mini-chefe do nível 10 está em campo")
+	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o chefão do nível 10 está em campo")
 
 	var ch = w.combate.chefes.atual
-	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 1000.0, "o mini-chefe é grande e tem muita vida")
+	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 4000.0, "o chefão é grande e tem muita vida (%s)" % ch.vida_max)
 	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
 	ok(
-		str(sinais.get("anuncio_texto", "")).contains("MINI-CHEFE"),
-		"anuncio('MINI-CHEFE: ...') junto do chefe_apareceu (%s)" % str(sinais.get("anuncio_texto", ""))
+		str(sinais.get("anuncio_texto", "")).contains("CHEFE") and not str(sinais.get("anuncio_texto", "")).contains("MINI"),
+		"anuncio('CHEFE: ...') junto do chefe_apareceu (%s)" % str(sinais.get("anuncio_texto", ""))
 	)
 	ate(func(): return w.combate.avisos.ativos() > 0, 900)
 	ok(w.combate.avisos.ativos() > 0 and w.combate.chefes.ataques_feitos > 0, "o chefe anuncia o ataque com uma área piscando no chão")
@@ -375,32 +375,11 @@ func _ready() -> void:
 	ok(ch.vida < chefe_v0 and ch.emp.length() < 100.0 and ch.atordoa_t < 0.01, "o chefe apanha mas não sai voando nem fica atordoado")
 	passos(5)
 	ok(conta("chefe_vida") > 0, "sinal chefe_vida(vida) a cada mudança")
-	var baus0: int = w.combate.baus.soltos
-	w.combate.ferir(ch, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
-	w.combate.processar_mortes()
-	ok(not w.combate.chefes.vivo and float(sinais.get("chefe_vida_ultima", 1.0)) == 0.0, "a morte do chefe emite chefe_vida(0)")
-	ok(w.combate.baus.soltos == baus0 + 1, "o mini-chefe solta um baú")
-	ok(w.combate.jogo == "jogando", "matar o mini-chefe não é vitória")
-	ok(not dir.travado(), "mini-chefe morto: o nível destrava")
-	dir.avancar_nivel(seg + 0.01)
-	ok(dir.nivel == 11, "e segue para o nível 11")
-	dir.ir_para_nivel(20)
-	passos(2)
-	ok(
-		w.combate.chefes.vivo and w.combate.chefes.marca.id == "n20" and w.combate.chefes.marca.nome == "Devourer of Structure",
-		"nível 20: o segundo mini-chefe"
-	)
-	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
-	w.combate.processar_mortes()
-	ok(w.combate.jogo == "jogando", "matar o segundo mini-chefe também não é vitória")
-	dir.ir_para_nivel(29)
-	dir.t_nivel = 0.0
-	dir.avancar_nivel(seg + 0.01)
-	ok(dir.nivel == 30 and w.combate.chefes.vivo and not bool(w.combate.chefes.marca.mini), "o CHEFÃO nasce no nível 30, o último")
+	# o chefão é o último nível: o nível fica travado até ele morrer, e não há mais nível depois dele
 	dir.avancar_nivel(seg * 10.0)
-	ok(dir.nivel == 30, "o mapa tem fim: não passa do nível 30")
-	ok(str(sinais.get("anuncio_texto", "")).contains("CHEFE"), "anuncia o chefe")
-	# 8. vencer o chefe é a vitória
+	ok(dir.nivel == 10 and w.combate.chefes.vivo and not bool(w.combate.chefes.marca.mini), "com o chefão vivo o nível 10 segue travado")
+	ok(w.combate.jogo == "jogando", "o chefão ainda vivo: a partida segue")
+	# 8. vencer o chefão é a vitória
 	w.abates = 321
 	w.maior_combo = 55
 	w.xp_coletado = 1234.0
@@ -417,7 +396,7 @@ func _ready() -> void:
 	ok(res.get("venceu") == true and int(res.get("abates", 0)) >= 321 and int(res.get("maior_combo", 0)) == 55, "campos da vitória certos")
 	ok(int(res.get("almas", -1)) == 123 and w.almas_partida == 123, "almas = XP coletado / 10 arredondado (123)")
 	ok(int(res.get("nivel", 0)) >= 1, "nível do herói")
-	ok(str(res.get("mapa", "")) == "floresta" and int(res.get("nivel_mapa", 0)) == 30, "a vitória é no último nível da floresta")
+	ok(str(res.get("mapa", "")) == "floresta" and int(res.get("nivel_mapa", 0)) == 10, "a vitória é no último nível da floresta (o 10)")
 	ok(w.combate.telas._res_linhas.text.contains("Almas") and w.combate.telas._res_valores.text.contains("123"), "a tela mostra as almas ganhas")
 	ok(Meta.mapa_vencido("floresta") and Meta.mapas_vencidos().size() == 1, "vencer o chefão marca a Floresta como vencida no save")
 	print("v2_chefe falhas=%d" % falhas)

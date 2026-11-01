@@ -27,6 +27,7 @@ func _novo(heroi: String, mapa: String) -> void:
 	w.set_process(false)
 	w.combate.audio.mudo = true
 	w.combate.diretor.ligado = false
+	w.combate.diretor.tempo_mult = 1.0  # este teste mede a Maré no relógio da partida; o fator por mapa (ECO-1) é o de testes/v2_tempo_mult
 	w.heroi.imortal = true
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.ataque_forcado = false
