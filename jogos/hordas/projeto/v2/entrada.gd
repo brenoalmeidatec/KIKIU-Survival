@@ -25,6 +25,8 @@ const EIXOS := {
 
 ## Os menus (título, santuário, pausa, escolhas) usam ui_accept e ui_cancel. O Godot traz o D-pad e o analógico nas ações ui_*,
 ## mas não o A nem o B: sem eles o controle não confirma nem volta. Acrescenta o A e o B quando faltarem.
+## A tecla E também confirma (pedido de 01/11): entra em ui_accept como tecla física, do mesmo jeito que a ruptura. Com o menu fechado
+## o E continua sendo a ruptura, porque nenhum menu aberto consome o evento antes do herói (mundo.gd).
 static func _garantir_botoes_de_menu() -> void:
 	for par in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
 		var tem := false
@@ -35,6 +37,14 @@ static func _garantir_botoes_de_menu() -> void:
 			var b := InputEventJoypadButton.new()
 			b.button_index = par[1]
 			InputMap.action_add_event(par[0], b)
+	var tem_e := false
+	for e in InputMap.action_get_events("ui_accept"):
+		if e is InputEventKey and e.physical_keycode == KEY_E:
+			tem_e = true
+	if not tem_e:
+		var tecla := InputEventKey.new()
+		tecla.physical_keycode = KEY_E
+		InputMap.action_add_event("ui_accept", tecla)
 
 
 static func garantir() -> void:

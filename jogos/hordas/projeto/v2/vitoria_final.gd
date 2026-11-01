@@ -236,7 +236,7 @@ func _input(e: InputEvent) -> void:
 	elif e is InputEventKey and e.pressed and not e.echo:
 		if e.keycode == KEY_ESCAPE:
 			tudo = true
-		elif e.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]:
+		elif e.is_action_pressed("ui_accept"):  # Enter, Espaço, E (entrada.gd)
 			proximo = true
 	elif e is InputEventJoypadButton and e.pressed:
 		if e.button_index == JOY_BUTTON_START or e.button_index == JOY_BUTTON_B:

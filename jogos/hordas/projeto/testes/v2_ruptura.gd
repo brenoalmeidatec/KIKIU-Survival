@@ -1058,10 +1058,9 @@ func _janela() -> void:
 	h.fonte = Heroi.Fonte.MOUSE
 	_tecla(KEY_ESCAPE)
 	ok(pausa.aberto, "b) o ESC abre a pausa (sem carga)")
-	_direito(true)
+	_direito(true)  # o E (aqui, o "botão direito" da ruptura) com o menu aberto é o confirmar do menu (UI-1): fecha o Continuar
+	ok(not pausa.aberto and not get_tree().paused, "b) o E com o menu aberto confirma e fecha a pausa")
 	ok(h.rup_pedido_t == 0.0 and h.estado == Heroi.Estado.LIVRE, "b) e o herói não recebe o aperto")
-	_tecla(KEY_ESCAPE)  # fecha com o botão direito ainda segurado
-	ok(not pausa.aberto and not get_tree().paused, "b) o ESC fecha a pausa")
 	passos(8)
 	ok(h.estado == Heroi.Estado.LIVRE and h.rup_pedido_t == 0.0 and h.rup_disparos == 0, "b) o botão segurado quando o menu fecha não carrega sozinho")
 	_direito(false)

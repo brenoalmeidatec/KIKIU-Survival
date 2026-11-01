@@ -1344,7 +1344,7 @@ func _interface() -> void:
 
 
 ## Build com MUITOS golpes (todos os de dados/v2_cartas.json, o caso do PR #192): o card não tem teto. Na página visual da pausa e no painel
-## central os golpes PAGINAM: "Página X/Y" aparece, Q e E trocam de página (pela entrada de verdade), nenhum golpe fica de fora e nada passa
+## central os golpes PAGINAM: "Página X/Y" aparece, Q e R trocam de página (pela entrada de verdade), nenhum golpe fica de fora e nada passa
 ## da altura da coluna em nenhuma página. No HUD compacto o card mostra o que cabe e o pé diz "+N golpes". Com um golpe só não há paginação.
 func _paginacao(st, c) -> void:
 	zerar()
@@ -1379,10 +1379,10 @@ func _paginacao(st, c) -> void:
 	)
 	ok(int(conta[0]) * 20.0 + 13.0 <= espaco, "uma página cabe no espaço da coluna (%d golpes em %.0f px)" % [int(conta[0]), espaco])
 	var ev := InputEventKey.new()
-	ev.keycode = KEY_E
-	ev.physical_keycode = KEY_E
+	ev.keycode = KEY_R
+	ev.physical_keycode = KEY_R
 	ev.pressed = true
-	ok(pausa_entrada(ev) and int(st.paginas_golpes().pagina) == 2, "E na pausa vai para a próxima página")
+	ok(pausa_entrada(ev) and int(st.paginas_golpes().pagina) == 2, "R na pausa vai para a próxima página")
 	ok(not st.visual_cortada().has(true), "a página 2 também cabe")
 	var ev_q := InputEventKey.new()
 	ev_q.keycode = KEY_Q
@@ -1393,9 +1393,9 @@ func _paginacao(st, c) -> void:
 	for i in int(pg.paginas) + 2:
 		st.paginar(1)
 	pg = st.paginas_golpes()
-	ok(int(pg.pagina) == int(pg.paginas), "E de sobra para na última página (%d de %d)" % [int(pg.pagina), int(pg.paginas)])
+	ok(int(pg.pagina) == int(pg.paginas), "R de sobra para na última página (%d de %d)" % [int(pg.pagina), int(pg.paginas)])
 	ok(not st.visual_cortada().has(true), "a última página cabe na altura")
-	# --- a tabela de detalhes (Tab) também pagina os golpes: Q e E trocam de página, e nenhuma coluna corta nada
+	# --- a tabela de detalhes (Tab) também pagina os golpes: Q e R trocam de página, e nenhuma coluna corta nada
 	var tab := InputEventKey.new()
 	tab.keycode = KEY_TAB
 	tab.physical_keycode = KEY_TAB
@@ -1405,12 +1405,12 @@ func _paginacao(st, c) -> void:
 	var det: Dictionary = st.paginas_detalhes()
 	ok(int(det.paginas) > 1 and int(det.pagina) == 1, "a tabela de detalhes pagina os golpes com %d golpes (%s)" % [total, str(det)])
 	ok(not st.colunas_cortadas().has(true), "a tabela de detalhes não corta nada com %d golpes (%s)" % [total, str(st.retangulos())])
-	ok(pausa_entrada(ev) and int(st.paginas_detalhes().pagina) == 2, "E na tabela de detalhes vai para a página 2")
+	ok(pausa_entrada(ev) and int(st.paginas_detalhes().pagina) == 2, "R na tabela de detalhes vai para a página 2")
 	ok(not st.colunas_cortadas().has(true), "a página 2 da tabela de detalhes também cabe")
 	ok(pausa_entrada(tab) and st.pagina() == "visual", "o Tab de novo volta à página visual")
 	_achar_pausa().fechar()
 	await esperar()
-	# --- painel central: a mesma paginação, pelo teclado de verdade (C abre o painel; E passa pelo card)
+	# --- painel central: a mesma paginação, pelo teclado de verdade (C abre o painel; R passa pelo card)
 	c.progresso.pendentes = 1
 	c.progresso.abrir_escolha()
 	tecla(KEY_C)
@@ -1419,16 +1419,16 @@ func _paginacao(st, c) -> void:
 	ok(int(st.paginas_golpes().paginas) > 1, "o painel central pagina os golpes (%s)" % str(st.paginas_golpes()))
 	ok(not st.visual_cortada().has(true), "a página visual do painel central cabe com %d golpes" % total)
 	var antes: int = int(st.paginas_golpes().pagina)
-	tecla(KEY_E)
+	tecla(KEY_R)
 	await esperar()
-	ok(int(st.paginas_golpes().pagina) == antes + 1, "E no painel central troca de página")
-	# --- o controle pagina como o teclado: LB é o Q e RB é o E
+	ok(int(st.paginas_golpes().pagina) == antes + 1, "R no painel central troca de página")
+	# --- o controle pagina como o teclado: LB é o Q e RB é o R
 	botao(JOY_BUTTON_LEFT_SHOULDER)
 	await esperar()
 	ok(int(st.paginas_golpes().pagina) == antes, "LB no painel central volta uma página, como o Q")
 	botao(JOY_BUTTON_RIGHT_SHOULDER)
 	await esperar()
-	ok(int(st.paginas_golpes().pagina) == antes + 1, "RB no painel central avança uma página, como o E")
+	ok(int(st.paginas_golpes().pagina) == antes + 1, "RB no painel central avança uma página, como o R")
 	tecla(KEY_C)
 	await esperar()
 	c.progresso.escolher(0)
@@ -1771,7 +1771,7 @@ func _fotos(pasta: String) -> void:
 	var c = w.combate
 	var h = w.heroi
 	var st = w.status
-	# 0a) a build com TODOS os golpes: o HUD mostra o que cabe com "+N golpes" no pé, e a pausa pagina (Q e E)
+	# 0a) a build com TODOS os golpes: o HUD mostra o que cabe com "+N golpes" no pé, e a pausa pagina (Q e R)
 	for d in c.cartas.cfg.golpes:
 		pegar(str(d.id))
 	st._hud = true
@@ -1978,9 +1978,9 @@ func _regressao_layout_completo(st, c) -> void:
 					for r in st.retangulos_visuais():
 						ok(Rect2(0, 0, 960, 540).encloses(r), contexto + " visual dentro do viewport")
 					if i < vis - 1:
-						tecla(KEY_E)
+						tecla(KEY_R)
 						await esperar()
-						ok(int(st.paginas_golpes().pagina) == i + 2, contexto + " E percorre todas páginas visuais")
+						ok(int(st.paginas_golpes().pagina) == i + 2, contexto + " R percorre todas páginas visuais")
 				var esperados_visuais := 0
 				for sec in st.secoes:
 					if str(sec.id) == "golpes":
@@ -2066,9 +2066,9 @@ func _conferir_paginas_completas(st, contexto: String, modo: String) -> void:
 		for r in st.retangulos():
 			ok(Rect2(0, 0, 960, 540).encloses(r), contexto + " página dentro do viewport")
 		if i < total - 1:
-			tecla(KEY_PAGEDOWN if modo == "hud" else KEY_E)
+			tecla(KEY_PAGEDOWN if modo == "hud" else KEY_R)
 			await esperar()
-	tecla(KEY_PAGEDOWN if modo == "hud" else KEY_E)
+	tecla(KEY_PAGEDOWN if modo == "hud" else KEY_R)
 	await esperar()
 	ok(int(st.paginas_detalhes().pagina) == total, contexto + " não ultrapassa última página")
 
