@@ -7,10 +7,12 @@ extends RefCounted
 ##
 ## Uma carta é um Dictionary: {id, icone (nome do PNG em assets/gerado/), nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3),
 ## rar_nome, cor (Color), valor (stat/mod/rb, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat,
-## tipo ("up" = sobe um bônus que o herói já tem; "nov" = bônus novo; o cartão mostra o selo UPGRADE ou NOVO)}.
+## tipo ("up" = sobe um bônus que o herói já tem; "nov" = bônus novo; "troca" = bônus novo com as vagas cheias (limite do Difícil): escolher abre o
+## painel para o jogador largar um bônus; o cartão mostra o selo UPGRADE, NOVO ou TROCA)}.
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
+const Dificuldade := preload("res://v2/dificuldade.gd")
 const LINHA_RODAPE := 29  # letras que cabem no rodapé do cartão (Spleen 8x16 em 16 px: 8 px por letra, 232 px de largura)
 
 var combate
@@ -239,12 +241,16 @@ func golpes_ativos() -> int:
 ## o espaço vira o outro tipo; sem nenhum, a mão fica menor (quem abre a escolha completa com a cura, progresso.abrir_escolha). No começo da
 ## partida (nenhum bônus) são 3 novidades. `bonus` = quanto o baú favorece as raridades altas e `piso` = a menor raridade que pode sair (o baú dá
 ## `bau.piso_raridade`, 1 = nunca comum). Até o nível `garantir_golpe_ate`, quem ainda não tem nenhum golpe secundário vê pelo menos um na mão
-## (o começo da build). `registrar` guarda a mão em `vistas` (o roteiro de fotos e o atalho `sortear` não guardam).
-func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true) -> Array:
+## (o começo da build). `registrar` guarda a mão em `vistas` (o roteiro de fotos e o atalho `sortear` não guardam). Com as vagas cheias (`cheio`,
+## limite do Difícil): `com_troca` mantém a novidade, que sai marcada "troca" (a escolha de nível aceita, o jogador larga um bônus para pegá-la); sem
+## `com_troca` (o baú, o atalho `sortear`) a novidade não cabe e o espaço vira upgrade.
+func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true, com_troca := false) -> Array:
 	if n < 0:
 		n = int(cfg.escolha.cartas)
 	var sinergia := _pesos_sinergia()
 	var recentes := _ids_vistos()
+	var vagas := vagas_livres()  # quantas novidades ainda cabem (999 sem limite); sem `com_troca` a mão nunca passa disso
+	var sem_novidade := vagas <= 0 and not com_troca
 	var ups: Array = []
 	var pesos_up: Array = []
 	var novs: Array = []
@@ -257,7 +263,7 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true)
 		if nivel_de(str(id)) > 0:
 			ups.append(d)
 			pesos_up.append(peso)
-		elif not descartadas.has(str(id)) and not recentes.has(str(id)):
+		elif not sem_novidade and not descartadas.has(str(id)) and not recentes.has(str(id)):
 			novs.append(d)
 			pesos_nov.append(peso)
 	var quer_nov := 0 if n < 2 else clampi(int(cfg.escolha.get("mao_novidades", 1)), 0, n)
@@ -272,7 +278,17 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true)
 		if d.is_empty():
 			break
 		escolhidas.append(d)
-	if nivel <= int(cfg.escolha.garantir_golpe_ate) and golpes_ativos() == 0 and not escolhidas.is_empty():
+		if nivel_de(str(d.id)) == 0:  # uma novidade ocupa uma vaga: acabaram, as outras viram upgrade (o baú aplica a mão inteira, ou várias pegas)
+			vagas -= 1
+			if vagas <= 0 and not com_troca:
+				novs.clear()
+				pesos_nov.clear()
+	if (
+		nivel <= int(cfg.escolha.garantir_golpe_ate)
+		and golpes_ativos() == 0
+		and not escolhidas.is_empty()
+		and (com_troca or vagas > 0 or nivel_de(str(escolhidas[-1].id)) == 0)
+	):
 		var tem := false
 		for d in escolhidas:
 			if _cat[d.id] == "golpe":
@@ -373,10 +389,17 @@ func escolha_automatica(mao: Array) -> Dictionary:
 	return montar_carta(escolhida, r)
 
 
-## Novidade no automático: só com menos de auto_golpes_alvo golpes ativos e nenhum golpe ativo abaixo de auto_novidade_nivel. (A vaga do
-## limite de bônus do Difícil, CAR-4, ainda não existe: por enquanto sempre há vaga.)
+## A carta `c` serve ao tempo esgotado: não é TROCA (o automático nunca troca) e não leva o bônus além de auto_nivel_max (D26). A cura da mão serve.
+func serve_ao_automatico(c: Dictionary) -> bool:
+	return str(c.get("tipo", "")) != "troca" and int(c.get("nivel_novo", 0)) <= int(cfg.escolha.auto_nivel_max)
+
+
+## Novidade no automático: só com menos de auto_golpes_alvo golpes ativos, nenhum golpe ativo abaixo de auto_novidade_nivel e vaga no limite de bônus
+## do Difícil (o automático nunca troca: largar um bônus é de quem escolhe à mão).
 func _novidade_liberada() -> bool:
 	var e: Dictionary = cfg.escolha
+	if cheio():
+		return false
 	if golpes_ativos() >= int(e.auto_golpes_alvo):
 		return false
 	for d in cfg.golpes:
@@ -421,7 +444,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 		"stat": str(d.get("stat", "")),
 		"desc": "",
 		"proximo": "",  # linha abaixo da descrição: o que o golpe ganha no próximo nível (ou o bônus da raridade)
-		"tipo": "up" if n > 0 else "nov",  # o selo do cartão: UPGRADE (já tenho) ou NOVO
+		"tipo": "up" if n > 0 else ("troca" if cheio() else "nov"),  # o selo do cartão: UPGRADE (já tenho), NOVO ou TROCA (novo, mas as vagas estão cheias)
 		"nivel_txt": "",  # rodapé: "Nível 2 » 3 de 5" (upgrade), "Novo golpe" ou "Novo bônus"
 		"evolui": ""  # rodapé: "Evolui: ..." quando esta peça fecha uma evolução
 	}
@@ -447,6 +470,8 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 		c.valor = float(d.valor) * float(ra.mult)
 		c.desc = str(d.desc).replace("{v}", str(roundi(float(c.valor))))
 		c.nivel_txt = "Nível %d » %d de %d" % [n, n + 1, int(d.max)] if n > 0 else "Novo bônus"
+	if c.tipo == "troca":
+		c.nivel_txt = "Cheio: escolha quem sai"
 	var sin := _sinergia_texto(id)
 	if sin != "" and cat != "stat":
 		c.evolui = sin
@@ -461,6 +486,9 @@ func aplicar(c: Dictionary) -> void:
 	var h = combate.mundo.heroi
 	var id := str(c.id)
 	var cat := str(c.get("cat", "stat"))
+	if not _def.has(id):  # a carta Cura ("Alma renovada": progresso._carta_cura, o baú): não é um bônus, não ocupa vaga nem entra em `estado`
+		_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
+		return
 	if not estado.has(id):
 		estado[id] = {"n": 0, "bonus": 0.0, "soma": 0.0, "usada": false}
 	var e: Dictionary = estado[id]
@@ -507,6 +535,72 @@ func _aplicar_stat(h, stat: String, v: float) -> void:
 		"cura":
 			h.curar(h.vida_max)
 			h.repor_defesa_de("carta_cura")  # a carta Cura enche a barra do escudo
+
+
+# ------------------------------------------------------------------ limite de bônus e troca (Difícil, CAR-4)
+
+
+## O limite de bônus distintos desta partida (dados/v2_dificuldade.json > limite_bonus). 0 = sem limite.
+func limite_bonus() -> int:
+	return Dificuldade.limite_bonus(combate.mundo)
+
+
+## Os bônus que o herói tem agora, na ordem em que os pegou: nível acima de 0 e não consumidos por uma fusão. É a lista do painel de troca.
+func bonus_trocaveis() -> Array:
+	var r: Array = []
+	for id in estado:
+		if ativa(str(id)):
+			r.append(str(id))
+	return r
+
+
+## Quantas vagas de bônus estão ocupadas: os bônus de `bonus_trocaveis` e cada fusão feita (conta 1; as peças consumidas deixam de contar).
+func bonus_contados() -> int:
+	return bonus_trocaveis().size() + evoluidas.size()
+
+
+## Quantos bônus novos ainda cabem no limite (999 sem limite). Nunca negativo.
+func vagas_livres() -> int:
+	var lim := limite_bonus()
+	return 999 if lim <= 0 else maxi(lim - bonus_contados(), 0)
+
+
+## As vagas estão cheias: há limite e o herói já chegou nele. Aí um bônus novo só entra largando outro (`remover_bonus`).
+func cheio() -> bool:
+	var lim := limite_bonus()
+	return lim > 0 and bonus_contados() >= lim
+
+
+## Larga o bônus `id` por inteiro e desfaz o efeito dele: golpe sai do herói, modificador e ruptura voltam a 0 e o stat subtrai a `soma` aplicada
+## (a vida máxima cai e a vida atual não passa da nova). O id vai para `descartadas`: a novidade nunca o oferece de novo. Devolve false se
+## `id` não é um bônus trocável (não tem, ou já foi consumido por fusão).
+func remover_bonus(id: String) -> bool:
+	if not ativa(id):
+		return false
+	var e: Dictionary = estado[id]
+	var d: Dictionary = _def[id]
+	match _cat[id]:
+		"golpe":
+			combate.armas.remover(id)
+		"mod":
+			combate.armas.definir_modificador(str(d.mod), 0.0)
+		"rb":
+			combate.ruptura.definir(str(d.chave), 0.0)
+		_:
+			var h = combate.mundo.heroi
+			var v := float(e.soma)
+			if str(d.get("stat", "")) == "vida":
+				h.vida_max -= v
+				h.vida = minf(h.vida, h.vida_max)
+			else:
+				_aplicar_stat(h, str(d.get("stat", "")), -v)
+	e.n = 0
+	e.bonus = 0.0
+	e.soma = 0.0
+	combate.progresso.melhorias.erase(id)
+	if not descartadas.has(id):
+		descartadas.append(id)
+	return true
 
 
 # ------------------------------------------------------------------ evolução

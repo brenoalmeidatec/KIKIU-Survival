@@ -354,6 +354,69 @@
      ]
     }
    }
+  },
+  "shuriken_heroi": {
+   "armas": [
+    "shuriken_heroi"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "shuriken_heroi_voo.png",
+     "quadro": [
+      14,
+      14
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      7,
+      7
+     ]
+    }
+   }
+  },
+  "kunai_heroi": {
+   "armas": [
+    "kunai_heroi"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "kunai_heroi_voo.png",
+     "quadro": [
+      24,
+      10
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      20,
+      5
+     ]
+    }
+   }
+  },
+  "flecha_heroi": {
+   "armas": [
+    "flecha_heroi"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "flecha_heroi_voo.png",
+     "quadro": [
+      28,
+      8
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      24,
+      4
+     ]
+    }
+   }
   }
  }
 }
