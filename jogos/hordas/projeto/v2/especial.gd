@@ -7,7 +7,8 @@ extends RefCounted
 ## Estado.ESPECIAL: não golpeia nem corre e é INVULNERÁVEL; a ruptura, o escudo e a esquiva em andamento são cancelados.
 ##
 ## Qual especial cada herói tem é DADO (dados/v2_especial.json > padrao e herois > chave do herói), igual ao secundário. Os três de hoje:
-##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mira um instante, some num clarão na direção da mira cortando tudo na faixa e fecha com um corte em cruz em volta.
+##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mostra a linha da direção em que está virado até a borda da tela, dispara UM raio num único quadro que corta tudo na
+##    faixa até a borda, atravessa um trecho e fecha com um corte em cruz em volta (ULT-B: o raio vai para onde o herói está virado, nunca para trás).
 ##  - TERREMOTO (Nick): ergue a marreta e bate: pancada enorme em volta, rachaduras e uma onda de choque que sai da batida e varre quem estava longe.
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ##  - CHAMAR (LightWolf em forma de Lobo, LW-2): a carga do Q é o CHAMADO (bloco `carga` próprio no dado). Cheia, o Lobo aperta Q: um aviso de 0,8 s sobre os pés e o
@@ -28,12 +29,15 @@ extends RefCounted
 ## efeitos(dt) [relógio de parede: o visual].
 
 const Armas := preload("res://v2/armas.gd")
+const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: a fonte da mira (o Q com mouse segue o cursor ao vivo)
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
 const MAX_ANEIS := 10
 const FISSURAS := 9
 const PONTOS_FISSURA := 6
 const RACH_DUR := 0.7  # s da rachadura do terremoto
+const RAIO_PTS := 14  # pontos do zigue-zague do raio da investida (gerado uma vez por disparo)
+const RAIO_DUR := 0.18  # s que o raio do Hazaki fica na tela
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_POEIRA := Color(0.58, 0.5, 0.42, 0.75)
@@ -61,6 +65,9 @@ var _t := 0.0  # s desde o disparo (tempo do mundo)
 var _fase := 0
 var _dir := Vector2.RIGHT  # a direção da mira travada no disparo
 var _origem := Vector2.ZERO  # onde o herói estava ao disparar (o rastro da investida)
+var _alcance := 0.0  # investida: até onde o raio alcança neste disparo (a borda da tela + margem_borda)
+var _raio_t := -1.0  # investida: s desde o raio (< 0: ainda não saiu)
+var _zig := PackedVector2Array()  # investida: o zigue-zague do raio, gerado uma vez por disparo
 var _dash_t := 0.0
 var _rastro_t := 0.0
 var _tick_t := 0.0
@@ -224,11 +231,17 @@ func iniciar(h) -> bool:
 	_tick_t = 0.0
 	_giro = randf() * TAU
 	_escala = (1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)) * combate.ritmo.multiplicador("q_area", h.nivel)
-	var d: Vector2 = h.mira_mundo - h.centro()
-	_dir = d.normalized() if d.length() > 4.0 else h.dir_olhar
+	# a direção é para onde o herói está virado, travada no aperto (ULT-B): com mouse é a mira (o mouse vira o corpo fora do especial); com teclado ou analógico é o corpo
+	# com mouse usa a mira AO VIVO (mira_mundo - centro): em GOLPE e em HABILIDADE o mouse não vira o corpo, então dir_olhar ficaria preso na direção do começo do golpe
+	_dir = h.dir_olhar.normalized()
+	if h.fonte == Heroi.Fonte.MOUSE:
+		var viva: Vector2 = h.mira_mundo - h.centro()
+		if viva.length() > 4.0:
+			_dir = viva.normalized()
 	if _dir.length_squared() < 0.01:
 		_dir = Vector2.RIGHT
 	_origem = h.pos
+	_raio_t = -1.0
 	h.dir_olhar = _dir
 	h.esp_t = 0.0
 	h.esp_dur = float(_c.dur)
@@ -361,6 +374,8 @@ func _q_investida(h, dt: float) -> Vector2:
 	var c = combate
 	var cor := _cor(_c.cor)
 	var desl := Vector2.ZERO
+	if _raio_t >= 0.0:
+		_raio_t += dt
 	if _fase == 2:  # o corte final sai um quadro depois do último passo: aí h.pos já é onde o herói parou de verdade (colisão, limites)
 		_fase = 3
 		_final_investida(h)
@@ -370,13 +385,13 @@ func _q_investida(h, dt: float) -> Vector2:
 		c.audio.tocar("esquiva", 1.5, 0.0, 0.0)
 		c.audio.tocar("estocada", 1.3, -2.0, 0.0)
 		_anel(h.pos, 8.0, 40.0, 0.2, 3.0, Color.WHITE, 0.9)
+		_raio(h)  # o raio: um quadro só, ferindo a faixa até a borda da tela; o avanço depois só atravessa
 	if _fase == 1:
 		var dur_av := float(_c.avanco_t)
 		var passo := minf(dt, dur_av - _dash_t)
 		_dash_t += dt
 		var vel := float(_c.distancia) / dur_av
 		desl = _dir * vel * passo
-		_faixa(h, maxf(30.0, vel * passo * 1.5))
 		_rastro_t -= dt
 		if _rastro_t <= 0.0:
 			_rastro_t = 0.03
@@ -390,7 +405,45 @@ func _q_investida(h, dt: float) -> Vector2:
 	return desl
 
 
+## O raio da investida (ULT-B): UM quadro. Fere quem está na faixa de `largura` (x escala) de onde o herói está até a borda da tela, uma vez só,
+## e gera o zigue-zague que o desenho mostra por RAIO_DUR s (nenhum nó novo).
+func _raio(h) -> void:
+	_alcance = _alcance_tela(h)
+	_faixa(h, _alcance)
+	_zigue(h)
+	_raio_t = 0.0
+
+
+## Até onde vai o raio do herói nesta direção: até a borda da tela (a câmera mais margem_borda px).
+func _alcance_tela(h) -> float:
+	return alcance_ate_borda(h.pos, _dir, mundo.cam.retangulo(float(_c.margem_borda)))
+
+
+## Interseção raio-retângulo: quantos px vai de `origem` (dentro do retângulo) na direção `dir` (normalizada) até a borda dele.
+## Função estática e sem estado: o teste confere as 4 bordas, os cantos e a origem fora do centro.
+static func alcance_ate_borda(origem: Vector2, dir: Vector2, rect: Rect2) -> float:
+	var t := INF
+	if absf(dir.x) > 0.000001:
+		t = minf(t, maxf((rect.position.x - origem.x) / dir.x, (rect.end.x - origem.x) / dir.x))
+	if absf(dir.y) > 0.000001:
+		t = minf(t, maxf((rect.position.y - origem.y) / dir.y, (rect.end.y - origem.y) / dir.y))
+	return maxf(0.0, t) if t < INF else 0.0
+
+
+## O zigue-zague do raio: RAIO_PTS pontos do herói até `_alcance`, com desvio de lado (zero nas pontas). Gerado uma vez por disparo.
+func _zigue(h) -> void:
+	_zig.resize(RAIO_PTS)
+	var base: Vector2 = h.pos + Vector2(0, -6)
+	var lado := Vector2(-_dir.y, _dir.x)
+	for i in RAIO_PTS:
+		var desvio := 0.0
+		if i > 0 and i < RAIO_PTS - 1:
+			desvio = (9.0 if i % 2 == 0 else -9.0) * randf_range(0.5, 1.0)
+		_zig[i] = base + _dir * (_alcance * float(i) / float(RAIO_PTS - 1)) + lado * desvio
+
+
 ## Quem está na faixa à frente do herói (screen space: `along` ao longo da mira, `perp` de lado) leva o corte, uma vez só.
+## `olhar` é até onde a faixa vai (o alcance até a borda, no raio).
 func _faixa(h, olhar: float) -> void:
 	var c = combate
 	var largura := float(_c.largura) * _escala
@@ -826,22 +879,22 @@ func _desenhar() -> void:
 ## A mira da investida (a faixa que vai ser cortada) enquanto o herói se prepara, e o rastro de luz atrás dele no avanço.
 func _desenhar_investida(h) -> void:
 	var cor := _cor(_c.cor)
-	var lado := Vector2(-_dir.y, _dir.x)
-	var larg := float(_c.largura) * _escala
 	var base: Vector2 = h.pos + Vector2(0, -6)
 	if _fase == 0:
+		# a linha fina e translúcida até a borda da tela: a direção do raio fica à vista antes do disparo (ULT-B)
 		var k := clampf(_t / maxf(float(_c.prep), 0.001), 0.0, 1.0)
-		var ponta := base + _dir * float(_c.distancia)
-		var faixa := PackedVector2Array([base + lado * larg, ponta + lado * larg, ponta - lado * larg, base - lado * larg])
-		no.draw_colored_polygon(faixa, Color(cor.r, cor.g, cor.b, 0.1 + 0.15 * k))
-		no.draw_line(base, ponta, Color(cor.r, cor.g, cor.b, 0.35 + 0.5 * k), 1.5)
-		no.draw_polyline(PackedVector2Array([base + lado * larg, ponta + lado * larg]), Color(cor.r, cor.g, cor.b, 0.3 * k), 1.0)
-		no.draw_polyline(PackedVector2Array([base - lado * larg, ponta - lado * larg]), Color(cor.r, cor.g, cor.b, 0.3 * k), 1.0)
+		no.draw_line(base, base + _dir * _alcance_tela(h), Color(cor.r, cor.g, cor.b, 0.15 + 0.35 * k), 1.0)
 	elif _fase == 1:
 		var ini := _origem + Vector2(0, -6)
 		no.draw_line(ini, base, Color(cor.r, cor.g, cor.b, 0.35), 18.0)
 		no.draw_line(ini, base, Color(cor.r, cor.g, cor.b, 0.8), 8.0)
 		no.draw_line(ini, base, Color(1, 1, 1, 0.95), 3.0)
+	if _raio_t >= 0.0 and _raio_t < RAIO_DUR:
+		# o raio: três passadas do mesmo zigue-zague (halo, corpo e núcleo) que somem juntas em RAIO_DUR s
+		var f := 1.0 - _raio_t / RAIO_DUR
+		no.draw_polyline(_zig, Color(cor.r, cor.g, cor.b, 0.35 * f), 14.0)
+		no.draw_polyline(_zig, Color(cor.r, cor.g, cor.b, 0.85 * f), 6.0)
+		no.draw_polyline(_zig, Color(1, 1, 1, 0.95 * f), 2.0)
 
 
 ## O anel que cresce nos pés até o raio da batida, mais claro conforme a marreta sobe.
