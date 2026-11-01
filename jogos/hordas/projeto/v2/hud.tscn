@@ -132,6 +132,24 @@ patch_margin_bottom = 11
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
+[node name="Defesa" type="TextureProgressBar" parent="Raiz"]
+layout_mode = 0
+offset_left = 108.0
+offset_top = 503.0
+offset_right = 316.0
+offset_bottom = 509.0
+visible = false
+step = 0.0
+value = 100.0
+texture_under = ExtResource("3_fundo")
+texture_progress = ExtResource("5_folego")
+tint_progress = Color(0.35, 0.7, 1, 1)
+nine_patch_stretch = true
+stretch_margin_left = 1
+stretch_margin_top = 1
+stretch_margin_right = 1
+stretch_margin_bottom = 1
+
 [node name="Tempo" type="NinePatchRect" parent="Raiz"]
 layout_mode = 0
 offset_left = 428.0
