@@ -14,7 +14,7 @@ extends RefCounted
 ## (`cobre`), do bloqueio (`bloquear`), do visual e do som. Dono: o combate (`combate.escudo`).
 ##
 ## O VISUAL é um escudo de verdade, um por personagem (pixel art de assets/v2/escudos/<id>.png, gerada por fonte_arte/escudos/gerar_escudos.py): uma faixa de 8
-## células 32x32 (frente, lado, costas, rachado e 4 pedaços). O Sprite2D fica no mundo (y-sort: passa por trás do herói quando a mira vai para cima), na
+## células (32x32, ou 48x48 na faixa M do Nick, com a camada 1 nas células 8 a 11; dados > visual > faixas). O Sprite2D fica no mundo (y-sort: passa por trás do herói quando a mira vai para cima), na
 ## mira, a `distancia * raio` do herói, e troca de vista pelo ângulo. A animação é toda em código no relógio de parede (`efeitos`): ergue com um pulo,
 ## treme e solta faísca ao aparar, racha quando a defesa está no fim (só o quadro de frente racha; de lado e de costas o aviso é o escudo avermelhado pulsando; os pedaços da quebra são sempre os da frente), QUEBRA em 4 pedaços que caem (defesa zerou: o escudo cai) e volta "reforjado"
 ## no próximo erguer. Nada do visual muda a regra: `cobre`, `arco`, `raio` e `bloquear` seguem iguais. Perfil Baixo (sem partículas): sem tremor, faísca,
@@ -32,7 +32,8 @@ const LADO := 1
 const COSTAS := 2
 const RACHADO := 3
 const PEDACO := 4  # 4..7
-const CEL := 32
+const CEL_PADRAO := 32  # lado da célula das faixas sem tamanho próprio (dados > visual > celula)
+const REFORCO := 8  # índice da camada 1 na faixa (células 8 a 11: frente, lado, costas e rachado com aro de reforço)
 const GRAVIDADE := 420.0  # px/s2 dos pedaços
 const Herois := preload("res://v2/herois.gd")  # a folha da partida decide qual escudo desenhar
 const Progresso := preload("res://v2/progresso.gd")  # bonus_por_nivel: o crescimento do raio por nível (a mesma regra do golpe, outra tabela)
@@ -67,6 +68,8 @@ var _glint_t := 0.0  # clarão do "reforjado" e do aparo perfeito
 var _quebra_t := 99.0  # s desde a quebra
 var _quebrado := false  # o último erguer terminou em quebra: o próximo volta reforjado
 var _celula := -1
+var _cel := CEL_PADRAO  # lado da célula da faixa do herói agora (32, ou 48 na faixa M do Nick)
+var _faixa_reforco := false  # a faixa agora tem a camada 1 (células 8 a 11)
 var _flip := false
 var _relogio := 0.0
 var rachado_visivel := false  # testes: o quadro de agora é o rachado
@@ -128,7 +131,21 @@ func raio(h) -> float:
 ## A abertura do escudo deste herói agora, em graus: a do dado MAIS o crescimento por nível (dados > escudo.arco_por_nivel). É a COBERTURA
 ## do bloqueio (`cobre` barra tudo o que vem dentro dela). O sprite tem o mesmo tamanho em qualquer nível: o ganho de cobertura NÃO aparece no desenho.
 func arco(h) -> float:
-	return float(cfg.arco) + Progresso.bonus_por_nivel(int(h.nivel), cfg.arco_por_nivel)
+	return float(cfg.arco) + Progresso.bonus_por_nivel(int(h.nivel), cfg.arco_por_nivel) + _camada_arco(h)
+
+
+## A camada do escudo deste herói (dados > escudo > camadas, pela chave do herói): a partir de `nivel` ela liga a camada 1 (aro de reforço no visual) e soma `arco` graus à cobertura.
+func _camada(h) -> Dictionary:
+	return (cfg.get("camadas", {}) as Dictionary).get(str(h.chave), {})
+
+
+func _camada_ativa(h) -> bool:
+	var c := _camada(h)
+	return not c.is_empty() and int(h.nivel) >= int(c.nivel)
+
+
+func _camada_arco(h) -> float:
+	return float(_camada(h).arco) if _camada_ativa(h) else 0.0
 
 
 ## Os pontos do arco de COBERTURA do escudo no chão (projetados na tela, de `h.pos + (0, -8)`): a geometria do bloqueio (raio e abertura) para os
@@ -259,11 +276,16 @@ func _leve() -> bool:
 func _estilo_de(h) -> String:
 	var pasta := str(visual.get("pasta", ""))
 	var folha := str(Herois.sprite_da_partida(combate.heroi_id))
-	if folha != "" and ResourceLoader.exists(pasta + folha + ".png"):
+	if _tem_faixa(pasta, folha):
 		return folha
-	if ResourceLoader.exists(pasta + str(h.chave) + ".png"):
+	if _tem_faixa(pasta, str(h.chave)):
 		return str(h.chave)
 	return ""
+
+
+## Existe a faixa do estilo `id` na pasta (o arquivo da faixa, que pode ser outro nome, como nicao_m.png).
+func _tem_faixa(pasta: String, id: String) -> bool:
+	return id != "" and ResourceLoader.exists(pasta + str(_faixa(id).arquivo) + ".png")
 
 
 func _carregar(h) -> void:
@@ -272,10 +294,24 @@ func _carregar(h) -> void:
 	var id := _estilo_de(h)
 	if id != _estilo or _tex == null:
 		_estilo = id
-		_tex = load(str(visual.pasta) + id + ".png") as Texture2D if id != "" else null
+		var f := _faixa(id)
+		_tex = load(str(visual.pasta) + str(f.arquivo) + ".png") as Texture2D if id != "" else null
+		_cel = int(f.celula)
+		_faixa_reforco = bool(f.reforco)
 		_spr.texture = _tex
 		_bri.texture = _tex
 		_celula = -1
+
+
+## A faixa do estilo `id` (dados > visual > faixas, senão o arquivo com o nome do estilo e a célula padrão).
+func _faixa(id: String) -> Dictionary:
+	var padrao := {"arquivo": id, "celula": int(visual.get("celula", CEL_PADRAO)), "reforco": false}
+	return (visual.get("faixas", {}) as Dictionary).get(id, padrao)
+
+
+## O retângulo da célula `cel` na faixa atual.
+func _quadro(cel: int) -> Rect2:
+	return Rect2(cel * _cel, 0, _cel, _cel)
 
 
 ## Cria (ou recria, se o mundo foi refeito) o sprite do escudo e os 4 pedaços dentro do mundo y-sort. false = sem mundo para pôr (testes com mundo falso).
@@ -345,20 +381,21 @@ func _quebrar(_h) -> void:
 	var cents: Array = (visual.get("fragmentos", {}) as Dictionary).get(_estilo, [])
 	var centro: Vector2 = _raiz.position + Vector2(0, cy)
 	for i in 4:
-		var c := Vector2(float(cents[i][0]), float(cents[i][1])) if i < cents.size() else Vector2(16.0, 16.0)
-		var fora := c - Vector2(16.0, 16.0)
+		var meio := float(_cel) / 2.0
+		var c := Vector2(float(cents[i][0]), float(cents[i][1])) if i < cents.size() else Vector2(meio, meio)
+		var fora := c - Vector2(meio, meio)
 		fora = fora.normalized() if fora.length() > 0.1 else Vector2.RIGHT
 		var f: Sprite2D = _frags[i]
 		f.texture = _tex
-		f.region_rect = Rect2((PEDACO + i) * CEL, 0, CEL, CEL)
+		f.region_rect = _quadro(PEDACO + i)
 		f.offset = -c
 		f.rotation = 0.0
 		f.modulate = Color.WHITE
 		f.visible = true
 		_fv[i] = {
-			"x": centro.x + c.x - 16.0,
+			"x": centro.x + c.x - meio,
 			"gy": _raiz.position.y + float(i) - 1.5,
-			"z": -cy + (16.0 - c.y),
+			"z": -cy + (meio - c.y),
 			"vx": fora.x * randf_range(30.0, 55.0),
 			"vz": randf_range(70.0, 120.0) + fora.y * -20.0,
 			"rot": 0.0,
@@ -415,9 +452,10 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	rachado_visivel = baixo and cel == FRENTE
 	if rachado_visivel:
 		cel = RACHADO
-	if cel != _celula:
-		_celula = cel
-		_spr.region_rect = Rect2(cel * CEL, 0, CEL, CEL)
+	var quadro := cel + REFORCO if (_faixa_reforco and _camada_ativa(h)) else cel  # camada 1: as células de reforço
+	if quadro != _celula:
+		_celula = quadro
+		_spr.region_rect = _quadro(quadro)
 	var leve := _leve()
 	var esc := 1.0
 	var alfa := 1.0
