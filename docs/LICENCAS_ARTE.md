@@ -197,3 +197,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - `jogos/hordas/fonte_arte/lightwolf_icones/A19_lw_misseis.png` e `A22_lw_matriz.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com os prompts em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fontes copiadas sem alteração.
 - Derivados (mesma arte, nenhuma arte nova): `jogos/hordas/projeto/assets/v2/secundario_s/lightwolf.png` (a matriz, slot S) e `jogos/hordas/projeto/assets/v2/habilidade_e/lightwolf.png` (os mísseis, slot E; só é ligado no LW-4), 32x32, gerados por `reduzir_icones.py`. Mudanças: corte do halo de alfa baixo, recorte pela caixa do objeto, redução por média de caixa e alfa endurecido.
+
+## LW-4: ícone da E Mísseis ligado no HUD, Claude do Alisson (notebook), 01/11/2026
+
+- O ícone A19 (`assets/v2/habilidade_e/lightwolf.png`, derivado registrado na entrada do LW-3) passa a ser lido pelo slot E do HUD (`v2/hud_habilidades.gd`, `ICONES_E`). Nenhuma arte nova. O míssil em voo (10x4 px) é desenhado em código em `v2/adagas.gd` (`_img_missil`), sem arte de terceiros.
