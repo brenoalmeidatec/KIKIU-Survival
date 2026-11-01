@@ -1,5 +1,6 @@
 extends Node
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 var falhas := 0
 var w
 const Meta := preload("res://v2/meta.gd")
@@ -433,6 +434,8 @@ func _provar_segundo_raio_extra() -> void:
 	var a = c.adagas
 	var e = c.especial
 	c.limpar_partida()
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
+	c.cartas.cfg.apice.stat = 1.0  # esta regressão fixa os números da build máxima de antes do ÁPICE (a semente 149 depende deles)
 	var pos_anterior: Vector2 = h.pos
 	h.pos = Vector2(300, 800)
 	h.chave = "lucas"

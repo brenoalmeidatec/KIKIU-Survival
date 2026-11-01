@@ -214,12 +214,14 @@ func _nova(id: String, tipo: String, cor: Color) -> Dictionary:
 		"pulso": 0.0,
 		"pts": PackedVector2Array(),
 		"R": 40.0,
-		"evo": false
+		"evo": false,
+		"apice": false  # o golpe chegou ao 5/5 (CAR-5): o HUD de golpes põe o selo dourado
 	}
 
 
 ## Põe (ou sobe) o golpe `id` ao nível `nivel`: os números são a base mais o que cada nível até ali soma; o dano ganha o bônus da raridade.
-func definir_golpe(id: String, nivel: int, bonus: float) -> void:
+## `apice` (CAR-5): o golpe chegou ao 5/5 e vira a versão ÁPICE: os números do tipo mudam como diz dados/v2_cartas.json > apice.golpe.tipos.
+func definir_golpe(id: String, nivel: int, bonus: float, apice := false) -> void:
 	var d: Dictionary = combate.cartas.definicao(id)
 	if d.is_empty():
 		return
@@ -229,6 +231,7 @@ func definir_golpe(id: String, nivel: int, bonus: float) -> void:
 		ativas[id] = a
 	a.nivel = nivel
 	a.bonus = bonus
+	a.apice = apice
 	var st: Dictionary = (d.base as Dictionary).duplicate()
 	for k in range(nivel - 1):
 		var n: Dictionary = d.niveis[k]
@@ -236,7 +239,23 @@ func definir_golpe(id: String, nivel: int, bonus: float) -> void:
 			if chave != "texto":
 				st[chave] = float(st.get(chave, 0.0)) + float(n[chave])
 	st.dano = float(st.dano) * (1.0 + bonus)
+	if apice:
+		numeros_apice(str(d.tipo), st)
 	a.st = st
+
+
+## Os números do golpe `st` na versão ÁPICE, no lugar: para cada tipo, `mult` multiplica o número (se o golpe o tem) e `soma` soma ao número
+## (dados/v2_cartas.json > apice.golpe.tipos). Quantidade fica inteira. Não passa dos tetos de pool (MAX_CORVOS, MAX_RUNAS): corvos e runas só ganham dano e área.
+func numeros_apice(tipo: String, st: Dictionary) -> void:
+	var regra: Dictionary = combate.cartas.cfg.apice.golpe.tipos.get(tipo, {})
+	var mult: Dictionary = regra.get("mult", {})
+	for chave in mult:
+		if st.has(chave):
+			st[chave] = float(st[chave]) * float(mult[chave])
+	var soma: Dictionary = regra.get("soma", {})
+	for chave in soma:
+		if st.has(chave):
+			st[chave] = float(st[chave]) + float(soma[chave])
 
 
 func adicionar_evoluida(ev: Dictionary, bonus: float) -> void:
