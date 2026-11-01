@@ -231,3 +231,9 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 - `jogos/hordas/fonte_arte/blender_herois/matheus/` (`perfil.py`, `anim_combo_arremesso.py`, quadros `parado`, `andar` e `combo`, e a folha `matheus_final_{albedo,normal}.png` + `matheus_final.json`): arte PRÓPRIA, gerada por script no Blender 4.5 (sem modelagem à mão, sem material de terceiros). Nenhuma fonte, ícone ou imagem externa.
 - Mudanças: shuriken de aço fosco na mão esquerda (estrela de 4 pontas, ~4 a 5 px) nos quadros parado, andar e combo; combo de katana trocado por 3 arremessos do perfil do Matthew (só este perfil; o do Hazaki não mudou). Animações dano, morte, escudo e rolamento não foram regeradas e saíram idênticas pixel a pixel.
 - Cópia no jogo: `jogos/hordas/projeto/prototipos/cara_nova/sprites/matheus_{albedo,normal}.png` e `matheus.json` (formato igual, 50 colunas x 8 linhas, 1600x352).
+
+## PER-4: folha Blender do Lukako (TESSEN), Claude do Alisson (sessão do subagente; máquina não identificada), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/lukako/` (`perfil.py`, `gerar.py`, `medir.py`, `LEIA-ME.md`): modelo, rig e animações gerados por script (Blender 4.5, `blender -b`) sobre o framework do Hazaki e o estudo do Codex, já registrados acima. O perfil é próprio (paleta, cabelo, roupa e o leque TESSEN, no lugar da katana). Sem arte, fonte ou ícone de terceiros.
+- Derivados no jogo, gerados pelo `hazaki/montar_folha.py`, sem mudança à mão: `jogos/hordas/projeto/prototipos/cara_nova/sprites/lukako.json`, `lukako_albedo.png` e `lukako_normal.png` (grade 50x8 de quadros 32x44).
+- Sem licença de terceiros a declarar, e sem crédito obrigatório nos Créditos por isso.

@@ -2837,3 +2837,13 @@ _Claude do Alisson (notebook)_
 - **Pendente / não verificado:** a leitura do ARREMESSO ainda é fraca a 32x44. A shuriken da mão mal aparece nas fotos de 220x160 (fica em 1 a 2 px). Nas fotos do combo, nos primeiros quadros, aparece um objeto cinza grande no alto da tela que não identifiquei (não sei se é efeito do jogo ou outro inimigo). Ninguém olhou a arte em janela real de tela cheia. Pede olho do Alisson e, se preciso, do Isac.
 - **Para regerar sem mexer nas outras animações:** só `--anim=parado`, `--anim=andar` e `--anim=combo`. Sem `--anim`, a shuriken entra também em dano, morte, escudo e rolamento (ver `matheus/LEIA-ME.md`).
 - **Próximo:** olho do Alisson na folha e no combo. Se o arremesso não ler, ajustar as poses em `anim_combo_arremesso.py` (o cabeçalho diz os eixos) ou subir a shuriken para 5 px.
+
+## PER-4: folha Blender do Lukako (TESSEN: leque de ferro), Claude do Alisson (sessão do subagente; máquina não identificada), 01/11/2026
+
+- **Feito:** `jogos/hordas/fonte_arte/blender_herois/lukako/` (perfil e gerar por script, mesmo rig e animações do Hazaki). Haori azul-petróleo, cabelo preto curto, pele marrom, calça clara, botas escuras. O leque fica FECHADO na mão no parado e nas outras animações, e ABERTO em meia-lua em todos os quadros do combo. Sem rastro de lâmina no combo. Folha copiada para `prototipos/cara_nova/sprites/lukako*` e `"sprite": "lukako"` no Lukako de `dados/v2_salao.json` (o `v2_herois.json` não mudou).
+- **Gancho novo no `hazaki/gerar.py`:** `perfil.quadro` e `perfil.efeito`, lidos só com `--perfil` (sem perfil, o Hazaki sai igual). Matheus não usa.
+- **Medido:** `medir.py` do combo sem borda tocada; parado sem toque; andar toca em `baixo_esq` e `cima_dir`, como nas outras folhas. Nenhuma largura passa de 32 px.
+- **Visto:** prévia ampliada e captura real em partida (`FOLHA lukako` no log, parado e combo). O leque aberto lê como arco pálido em meia-lua, sem varetas. No golpe, o efeito de impacto do próprio jogo cobre parte do personagem.
+- **Testes (Godot pela fila, headless):** `v2_herois` falhas=0, `v2_personagens_layout` falhas=0; os de sprite (`v2_armas_sprites`, `v2_herois_novos`) no fim desta entrada.
+- **Pendente:** revisão visual do leque aberto com janela de verdade (o Isac decide se a forma serve); varetas do leque se o tamanho deixar; o vento do golpe é efeito do jogo (PER-3), não desta folha.
+- **Prévias fora do repo:** `C:\Dev\KIKIU\notas\o9_previas\per4-lukako\`.
