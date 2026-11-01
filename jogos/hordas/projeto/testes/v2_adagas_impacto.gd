@@ -50,6 +50,41 @@ func alvo(dx: float):
 	return m
 
 
+func alvo_em(dx: float, dy: float):
+	var m = alvo(dx)
+	m.definir_pos(w.heroi.pos + Vector2(dx, dy))
+	return m
+
+
+## Uma horda de 40 monstros parados (8 colunas x 5 linhas, 16 px de intervalo) na frente do herói.
+func horda40() -> Array:
+	var lista := []
+	for c in 8:
+		for l in 5:
+			lista.append(alvo_em(30.0 + 16.0 * c, -32.0 + 16.0 * l))
+	return lista
+
+
+func feridos(lista: Array) -> int:
+	var n := 0
+	for m in lista:
+		if m.vida < m.vida_max:
+			n += 1
+	return n
+
+
+## Um arremesso de uma lâmina só, sem furar, com `ric` ricochetes e a imagem `proj`.
+func lancar_um(ric: int, principal := true, proj := "") -> void:
+	var p: Dictionary = w.combate.cfg.golpe.passos[0].duplicate(true)
+	p.n = 1
+	p.leque = 0
+	p.perfura = 0
+	p.ricochete = ric
+	if proj != "":
+		p.proj = proj
+	w.combate.adagas.lancar(w.heroi, w.heroi.pos + w.heroi.ORIGEM_GOLPE, Vector2.RIGHT, p, principal)
+
+
 func lancar(principal := true) -> void:
 	var p: Dictionary = w.combate.cfg.golpe.passos[0].duplicate(true)
 	p.n = 5
@@ -162,6 +197,53 @@ func _ready() -> void:
 	ok(w.heroi.especial(), "Q real do Luke iniciou")
 	passos(180)
 	ok(w.combate.adagas.acertos > 0 and w.combate.hit_stops == 0, "Tempestade real atinge sem pedir hit-stop")
+	# PER-2: projétil genérico e ricochete
+	zerar()
+	var horda := horda40()
+	lancar_um(2)
+	passos(90)
+	ok(a.acertos == 3 and feridos(horda) == 3, "ricochete 2 na horda de 40 acerta 3 alvos distintos (acertos=%d, feridos=%d)" % [a.acertos, feridos(horda)])
+	ok(a.ativas() == 0, "lâmina sem ricochete nem furo acaba depois do terceiro alvo")
+	zerar()
+	horda = horda40()
+	lancar_um(0)
+	passos(90)
+	ok(a.acertos == 1 and feridos(horda) == 1, "sem ricochete a lâmina que não fura acerta 1 só")
+	zerar()
+	horda = horda40()
+	lancar_um(2, false)
+	passos(90)
+	ok(a.acertos == 1, "só o golpe principal ricocheteia: Q, E e chuva não")
+	zerar()
+	horda = horda40()
+	var pico := 0
+	for k in 40:  # 200 lâminas pedidas sobre um pool de 96
+		lancar()
+		var p2: Dictionary = w.combate.cfg.golpe.passos[0].duplicate(true)
+		p2.n = 5
+		p2.ricochete = 2
+		p2.perfura = 1
+		a.lancar(w.heroi, w.heroi.pos + w.heroi.ORIGEM_GOLPE, Vector2.RIGHT, p2, true)
+		pico = maxi(pico, a.ativas())
+	for i in 90:
+		passos(1)
+		pico = maxi(pico, a.ativas())
+		ok(a.a_pos.size() == a.MAX and a.a_ric.size() == a.MAX and a.a_proj.size() == a.MAX, "vetores do ricochete continuam do tamanho do pool")
+	ok(pico <= a.MAX, "o pool nunca passa de 96 com ricochete (pico=%d)" % pico)
+	zerar()
+	lancar_um(0, true, "bala")
+	lancar_um(0, true, "plasma")
+	var nomes := []
+	for i in a.MAX:
+		if a.a_rest[i] > 0.0:
+			nomes.append(a._proj_lista[a.a_proj[i]].nome)
+	nomes.sort()
+	ok(nomes == ["bala", "plasma"], "proj escolhe o desenho da bala e do plasma (%s)" % str(nomes))
+	lancar_um(0, true, "nome_que_nao_existe")
+	ok(a._proj_lista.size() == 3 and a._proj_nomes["nome_que_nao_existe"] == 0, "proj desconhecido cai na adaga sem criar entrada")
+	passos(3)  # o desenho dos três passa pelo _desenhar_corpo / _desenhar_brilho sem erro
+	zerar()
+	ok(a.a_ric.count(0) == a.MAX and a.a_proj.count(0) == a.MAX, "restart limpa ricochete e imagem")
 	zerar()
 	ok(a.a_grupo.size() == a.MAX and a.a_pausa.size() == a.MAX, "metadados limitados ao pool")
 	ok(a._grupo == 0 and a._pausa_recarga == 0 and a.a_pausa.count(1) == 0, "restart limpa grupos e cooldown")
