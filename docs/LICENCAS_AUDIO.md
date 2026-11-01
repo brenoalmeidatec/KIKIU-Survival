@@ -78,3 +78,7 @@ Os quatro "não ligados" esperam a branch `alisson/v2-ruptura` (ainda não está
 
 ## Outros sons
 Efeitos da v1 (`assets/audio/efeitos/`): gerados por código no projeto. Fonte Press Start 2P: CodeMan38, OFL.
+
+## Nota: onde `morte.wav` e `dano_heroi.wav` tocam hoje (31/10/2026, Claude do Alisson (PC))
+
+Rerrolar e banir saíram da escolha de cartas, então as duas entradas acima citam usos que não existem mais. Hoje: `morte.wav` toca na morte de monstro (`v2/combate.gd`, `matar`) e no "sumir" do golem (`v2/audio.gd`); `dano_heroi.wav` toca quando o herói apanha (`v2/combate.gd`, `heroi_apanhou`) e quando o Automático não acha carta para completar a escolha (`v2/telas.gd`, `_automatico`). O arquivo e a licença não mudaram.
