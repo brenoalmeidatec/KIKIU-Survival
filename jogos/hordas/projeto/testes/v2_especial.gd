@@ -99,6 +99,7 @@ func _ready() -> void:
 	await novo("hazaki")
 	_revisao_hazaki()
 	_raio_hazaki()
+	_raio_com_limpeza()
 	for id in ["hazaki", "nicao", "lucas"]:
 		await novo(id)
 		_fim_de_partida(id)
@@ -366,12 +367,19 @@ func _raio_hazaki() -> void:
 			var p0: Vector2 = h.pos
 			ok(h.especial(), "raio %s: dispara" % nome)
 			var quadros := 0
+			var antes: Vector2 = h.pos
 			while esp._fase == 0 and quadros < 120:  # a mira: avança até o quadro em que o raio sai
+				antes = h.pos
 				passos(1)
 				quadros += 1
 			ok(esp._fase == 1 and esp._raio_t >= 0.0, "raio %s: o raio saiu" % nome)
 			ok(perdeu(frente) > 30.0, "raio %s: fere quem está à frente já no quadro do raio (%s)" % [nome, perdeu(frente)])
-			ok((h.pos - p0).dot(d) < 60.0, "raio %s: no quadro do raio o herói ainda não andou (%s px)" % [nome, (h.pos - p0).dot(d)])
+			ok((antes - p0).length() < 0.5, "raio %s: durante a mira o herói fica parado (%s px)" % [nome, (antes - p0).length()])
+			var um_passo: float = float(esp._c.distancia) / float(esp._c.avanco_t) * PASSO  # o raio sai no quadro em que o avanço dá o 1º passo
+			ok(
+				(h.pos - antes).dot(d) <= um_passo + 0.5,
+				"raio %s: no quadro do raio o herói andou no máximo um passo do avanço (%s de %s px)" % [nome, (h.pos - antes).dot(d), um_passo]
+			)
 			ok(h.dir_olhar.normalized().dot(d) > 0.999, "raio %s: o sprite olha para a linha do raio (durante o especial)" % nome)
 			passos(60)
 			ok(perdeu(atras) == 0.0, "raio %s: quem está atrás não é ferido (%s)" % [nome, perdeu(atras)])
@@ -397,6 +405,36 @@ func _raio_hazaki() -> void:
 		absf(Especial.alcance_ate_borda(Vector2.ZERO, Vector2(1, 1).normalized(), tela) - 310.0 * sqrt(2.0)) < 0.01,
 		"alcance: diagonal sai pela borda mais perto"
 	)
+
+
+## ULT-B com a limpeza da tela LIGADA (o padrão do jogo; o resto deste teste a desliga): o raio sai antes da limpeza no mesmo quadro, então quem está
+## à frente ainda leva o corte. Com `limpa_em` antes do raio (0,14 s contra 0,22 s) a limpeza marcava todo comum da câmera como morrendo e o raio não feria ninguém.
+func _raio_com_limpeza() -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	esp.limpa_ligada = true
+	ok(float(esp.bloco_de("hazaki").limpa_em) >= float(esp.bloco_de("hazaki").prep), "raio+limpeza: a limpeza não sai antes do raio (limpa_em >= prep)")
+	for fonte in ["mouse", "teclado", "analogico"]:
+		for i in 8:
+			var d := Vector2.from_angle(float(i) * TAU / 8.0)
+			var nome := "%s %d" % [fonte, i]
+			zerar()
+			_virar(h, fonte, d)
+			var frente = monstro_a(d.x * 150.0, d.y * 150.0)
+			var atras = monstro_a(-d.x * 150.0, -d.y * 150.0)
+			var limpas0: int = esp.limpas
+			ok(h.especial(), "raio+limpeza %s: dispara" % nome)
+			var quadros := 0
+			while esp._fase == 0 and quadros < 120:
+				passos(1)
+				quadros += 1
+			ok(esp._fase == 1 and esp._raio_t >= 0.0, "raio+limpeza %s: o raio saiu" % nome)
+			ok(perdeu(frente) > 30.0, "raio+limpeza %s: o raio fere quem está à frente mesmo com a limpeza ligada (%s)" % [nome, perdeu(frente)])
+			passos(20)
+			ok(esp.limpas == limpas0 + 1, "raio+limpeza %s: a limpeza saiu junto (%s)" % [nome, esp.limpas - limpas0])
+			ok(frente.morrendo or not frente.vivo, "raio+limpeza %s: a limpeza também pegou o que o raio deixou" % nome)
+			ok(perdeu(atras) == 0.0, "raio+limpeza %s: quem está atrás não é ferido pelo raio (%s)" % [nome, perdeu(atras)])
+	esp.limpa_ligada = false
 
 
 ## Põe o herói virado para `d` pela fonte dada (mouse: a mira; teclado: andando nessa direção; analógico: o stick), e o deixa parado no fim.
