@@ -17,7 +17,7 @@ const LIMIAR_GATILHO := 0.6
 ## id da ação do InputMap, nome na tela e os slots que dá para trocar.
 const ACOES := [
 	{"id": "atacar", "nome": "Atacar", "slots": ["teclado", "controle"]},
-	{"id": "escudo", "nome": "Escudo", "slots": ["teclado", "controle"]},
+	{"id": "escudo", "nome": "Secundário", "slots": ["teclado", "controle"]},
 	{"id": "esquiva", "nome": "Esquiva", "slots": ["teclado", "controle"]},
 	{"id": "correr", "nome": "Correr", "slots": ["teclado", "controle"]},
 	{"id": "ruptura", "nome": "Habilidade", "slots": ["teclado", "controle"]},
