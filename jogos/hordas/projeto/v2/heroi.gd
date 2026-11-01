@@ -65,7 +65,16 @@ const ORIGEM_GOLPE := Vector2(0, -10)  # de onde o arco do golpe parte (altura d
 
 # ---- API pública (HUD)
 var vida := 100.0
-var vida_max := 100.0
+var vida_max := 100.0:
+	set(v):
+		if forma_lobo:  # LW-2: cartas e melhorias mexem na vida do MECHA (+v); a do Lobo é a fração dela (assim cartas.gd não precisa saber das formas)
+			vida_mecha_max += v - vida_max
+			vida_max = vida_mecha_max * lobo_pct
+		else:
+			vida_max = v
+var forma_lobo := false  # LightWolf: o mecha quebrou e o herói é o Lobo (v2/mecha.gd). Só a morte do Lobo é derrota
+var vida_mecha_max := 0.0  # a vida máxima do mecha enquanto é Lobo (vale só com forma_lobo)
+var lobo_pct := 0.31  # a fração da vida máxima do mecha que o Lobo tem (dados/v2_herois.json > lightwolf_lobo > vida_pct)
 var xp := 0.0
 var xp_proximo := 5.0
 var nivel := 1
@@ -232,6 +241,8 @@ func iniciar_stats(cfg: Dictionary) -> void:
 
 ## Volta ao começo de uma partida (jogar de novo).
 func resetar(p: Vector2) -> void:
+	if mundo.combate.mecha != null:
+		mundo.combate.mecha.reiniciar(self)  # recomeçar volta o LightWolf à forma mecha (derrota como Lobo, ou jogar de novo no meio)
 	m_dano = 1.0
 	m_vel_ataque = 1.0
 	m_area = 1.0
@@ -440,6 +451,46 @@ func curar(v: float) -> void:
 	vida = minf(vida_max, vida + v)
 
 
+## O mecha estourou: o herói passa a ser o Lobo, com `pct` da vida máxima do mecha e a vida cheia (v2/mecha.gd chama).
+func entrar_lobo(pct: float) -> void:
+	vida_mecha_max = vida_max
+	lobo_pct = pct
+	vida_max = vida_mecha_max * pct  # ainda com forma_lobo false: o setter só grava
+	forma_lobo = true
+	vida = vida_max
+
+
+## O mecha voltou: a vida máxima é a do mecha (com o que as cartas somaram no meio-tempo) e a vida vem cheia.
+func sair_lobo() -> void:
+	if not forma_lobo:
+		return
+	forma_lobo = false
+	vida_max = vida_mecha_max
+	vida = vida_max
+
+
+## Troca de forma do LightWolf (v2/mecha.gd) SEM `iniciar_stats`: o Q, a E e o resto da partida não se zeram. Muda a chave (que escolhe o Q, a E e o
+## secundário), a folha de sprites, o corpo, a velocidade e a defesa; a vida e o Q de cada forma são de quem chama. O `cfg` do combate já é o da forma.
+func trocar_forma(nova: String, folha: Dictionary) -> void:
+	cancelar_ruptura(false)
+	_baixar_escudo()
+	chave = nova
+	raio = float(Herois.heroi(nova).get("raio", raio))
+	trocar_tipo(folha)
+	_off_base = sprite.offset
+	vel_base = float(mundo.combate.cfg.heroi.get("vel", VEL))
+	_iniciar_defesa()
+	var esp = mundo.combate.especial
+	if esp != null:
+		esp.armar(self)
+	var hab = mundo.combate.habilidade
+	if hab != null:
+		if estado == Estado.HABILIDADE:
+			hab.cancelar(self)
+			estado = Estado.LIVRE
+		hab.armar(self)
+
+
 ## Velocidade de andar (px/s) com o bônus de movimento, e a de correr. O card de status (status.gd) lê estas duas; `_livre` anda com elas.
 ## Velocidade de andar (px/s): a base do herói escolhido (cfg.heroi.vel) com o modificador de movimento das cartas.
 func vel_andar() -> float:
@@ -511,6 +562,9 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	mundo.combate.heroi_apanhou(valor)
 	_dano_t = 0.0
 	if vida <= 0.0:
+		var mecha = mundo.combate.mecha
+		if mecha != null and mecha.quebrou(self):  # LW-2: a vida do mecha zerou: ele estoura e o herói vira Lobo (só a morte do Lobo cai no código abaixo)
+			return true
 		_morte_t = 0.0
 		cancelar_ruptura(false)
 		escudo_ativo = false

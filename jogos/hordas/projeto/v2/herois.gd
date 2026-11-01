@@ -25,6 +25,8 @@ static func catalogo() -> Dictionary:
 static func lista() -> Array:
 	var r: Array = []
 	for h in catalogo().get("herois", []):
+		if str(h.get("forma_de", "")) != "":
+			continue  # a forma de um herói (o Lobo do LightWolf, LW-2) não se escolhe: só `heroi(id)` a encontra
 		if not bool(h.get("beta", false)) or _beta_liberado(str(h.id)):
 			r.append(h)
 	return r
@@ -51,6 +53,9 @@ static func heroi(id: String) -> Dictionary:
 		if primeiro.is_empty():
 			primeiro = h
 		if str(h.id) == id:
+			return h
+	for h in catalogo().get("herois", []):  # as formas (campo `forma_de`) ficam fora da lista, mas têm registro
+		if str(h.id) == id and str(h.get("forma_de", "")) != "":
 			return h
 	return primeiro
 

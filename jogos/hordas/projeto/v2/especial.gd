@@ -10,6 +10,8 @@ extends RefCounted
 ##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mira um instante, some num clarão na direção da mira cortando tudo na faixa e fecha com um corte em cruz em volta.
 ##  - TERREMOTO (Nick): ergue a marreta e bate: pancada enorme em volta, rachaduras e uma onda de choque que sai da batida e varre quem estava longe.
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
+##  - CHAMAR (LightWolf em forma de Lobo, LW-2): a carga do Q é o CHAMADO (bloco `carga` próprio no dado). Cheia, o Lobo aperta Q: um aviso de 0,8 s sobre os pés e o
+##    mecha cai, ferindo em volta, e o herói volta a Mecha (v2/mecha.gd cuida da troca). Enquanto o aviso corre ele é invulnerável.
 ## Todo Q também LIMPA A TELA (ULT-A, `limpar_tela`, dados > comum.limpa e `limpa_em` de cada bloco): comuns morrem aos poucos numa frente de onda (a fila adiada
 ## é do combate: `combate.limpar_tela` e `combate.drenar_limpa`), elite perde parte da vida e chefe só uma fatia.
 ## Id desconhecido deixa a tecla Q sem efeito.
@@ -45,7 +47,7 @@ var disparos := 0  # testes: quantos especiais saíram
 var ultimo: Dictionary = {}  # o último especial (testes): id, n (monstros atingidos no total), mortes
 var ondas := 0  # testes: quantas ondas de choque do terremoto saíram
 var prontos := 0  # quantas vezes a carga chegou a 100 na partida (o robô de playtest e os testes)
-var carga_total := {"dano": 0.0, "abate": 0.0, "recebido": 0.0}  # pontos de carga ganhos na partida por fonte (calibragem, robô de playtest)
+var carga_total := {"dano": 0.0, "abate": 0.0, "recebido": 0.0, "tempo": 0.0}  # pontos de carga ganhos na partida por fonte (calibragem, robô de playtest)
 var _graca := 0.0  # s depois do fim do Q em que ainda não carrega (as últimas adagas voando)
 var limpa_ligada := true  # a limpeza da tela (ULT-A) liga/desliga por instância (os testes antigos de dano por área desligam)
 var limpas := 0  # testes: quantas limpezas saíram
@@ -138,7 +140,7 @@ func limpar() -> void:
 	disparos = 0
 	ondas = 0
 	prontos = 0
-	carga_total = {"dano": 0.0, "abate": 0.0, "recebido": 0.0}
+	carga_total = {"dano": 0.0, "abate": 0.0, "recebido": 0.0, "tempo": 0.0}
 	_graca = 0.0
 	ultimo = {}
 	a_vivo.fill(0)
@@ -159,6 +161,12 @@ func id_de(chave: String) -> String:
 func bloco_de(chave: String) -> Dictionary:
 	var id := id_de(chave)
 	return blocos[id] if id != "" else {}
+
+
+## Os números de carga do herói de agora: o bloco do Q dele pode trazer `carga` próprio (o chamado do Lobo), senão vale o `comum.carga`.
+func _carga_de(h) -> Dictionary:
+	var b := bloco_de(str(h.chave))
+	return b.carga if b.has("carga") else comum.carga
 
 
 func _carga_max() -> float:
@@ -240,6 +248,10 @@ func iniciar(h) -> bool:
 			c.audio.tocar("ruptura_carga", 0.7, 0.0, 0.0)
 		"chuva":
 			c.audio.tocar("ruptura_tique", 1.6, -4.0, 0.0)
+		"chamar":
+			c.audio.tocar("ruptura_carga", 1.3, -2.0, 0.0)
+			var q: Dictionary = _c.queda  # o aviso: o anel fecha sobre onde o mecha vai cair
+			_anel(h.pos, float(q.raio) * 1.8, float(q.raio), float(_c.dur), 2.0, cor, 0.85)
 	return true
 
 
@@ -261,6 +273,8 @@ func quadro(h, dt: float, v: Vector2) -> Vector2:
 			_q_terremoto(h)
 		"chuva":
 			desl = _q_chuva(h, dt, v)
+		"chamar":
+			_q_chamar(h)
 	if _limpa_pend and _t >= float(_c.limpa_em):
 		_limpa_pend = false
 		limpar_tela(h)
@@ -310,6 +324,32 @@ func _encerrar(h) -> void:
 	if h.estado == h.Estado.ESPECIAL:
 		h.estado = h.Estado.LIVRE
 	h.pausa_t = maxf(h.pausa_t, 0.12)  # só impede o golpe um instante, não impede andar
+
+
+# ------------------------------------------------------------------ o chamado (LightWolf em forma de Lobo)
+
+
+## O Lobo parado sob o aviso; no fim dele o mecha cai: dano em volta, onda, tremor, e `mecha.chegar` devolve o herói à forma mecha.
+func _q_chamar(h) -> void:
+	if _fase != 0 or _t < float(_c.dur):
+		return
+	_fase = 1
+	var c = combate
+	var q: Dictionary = _c.queda
+	var raio := float(q.raio) * _escala
+	var cor := _cor(_c.cor)
+	_numeros = 0
+	_pulso(h, h.pos, raio, float(q.dano), float(q.empurrao), float(q.atordoa), cor, false, float(q.get("chefe_lento", 0.0)))
+	c.fx.onda(h.pos, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.3)
+	c.fx.onda(h.pos, Color(1, 1, 1, 0.6), raio * 0.6, 0.2)
+	_anel(h.pos, raio * 0.2, raio, 0.25, 4.0, cor.lerp(Color.WHITE, 0.3), 1.0)
+	c.fx.estouro(h.pos + Vector2(0, -2), Color(0.75, 0.68, 0.55), 12)
+	c.fx.luz_rapida(h.pos + Vector2(0, -6), cor, 2.4, 2.8 * raio, 0.35)
+	c.audio.tocar("impacto", 0.45, 3.0, 0.0)
+	mundo.cam.tremer(float(q.get("tremor", 3.0)), 0.3)
+	if _n > 0:
+		c.hit_stop(float(q.get("hit_stop", 0.05)))
+	c.mecha.chegar(h)
 
 
 # ------------------------------------------------------------------ a investida (Hazaki)
@@ -619,7 +659,7 @@ func ocupado() -> bool:
 
 ## Soma `pontos` à carga do herói (para na carga máxima). Só com o jogo rolando, fora do próprio Q e com o herói vivo. Avisa uma vez ao chegar a 100.
 ## `fonte`: "dano", "abate" ou "recebido" (só a contabilidade da calibragem).
-func carregar(h, pontos: float, fonte := "dano") -> void:
+func carregar(h, pontos: float, fonte := "dano", por_nivel := true) -> void:
 	if h == null or pontos <= 0.0 or h.esp_nome == "" or h.esp_carga >= h.esp_carga_max:
 		return
 	var c = combate
@@ -627,7 +667,8 @@ func carregar(h, pontos: float, fonte := "dano") -> void:
 		return
 	var antes: float = h.esp_carga
 	# o herói fica mais forte a cada nível (dano e abates por segundo sobem), então o mesmo golpe vale menos carga: o Q segue a cada ~1 minuto e pouco
-	pontos /= 1.0 + float(comum.carga.nivel_k) * float(maxi(h.nivel - 1, 0))
+	if por_nivel:
+		pontos /= 1.0 + float(_carga_de(h).nivel_k) * float(maxi(h.nivel - 1, 0))
 	h.esp_carga = minf(h.esp_carga + pontos, h.esp_carga_max)
 	carga_total[fonte] = float(carga_total[fonte]) + (h.esp_carga - antes)
 	if h.esp_carga >= h.esp_carga_max:
@@ -638,21 +679,21 @@ func carregar(h, pontos: float, fonte := "dano") -> void:
 func dano(valor: float) -> void:
 	if mundo == null or mundo.heroi == null:
 		return
-	carregar(mundo.heroi, valor * float(comum.carga.dano), "dano")
+	carregar(mundo.heroi, valor * float(_carga_de(mundo.heroi).dano), "dano")
 
 
 ## O herói levou dano de verdade (não o que o escudo bloqueou). Chamado por combate.heroi_apanhou.
 func recebeu(valor: float) -> void:
 	if mundo == null or mundo.heroi == null:
 		return
-	carregar(mundo.heroi, valor * float(comum.carga.recebido), "recebido")
+	carregar(mundo.heroi, valor * float(_carga_de(mundo.heroi).recebido), "recebido")
 
 
 ## Um abate dá carga de bônus: comum pequeno, elite grande, chefe muito grande. Chamado por combate.matar.
 func abate(m) -> void:
 	if mundo == null or mundo.heroi == null:
 		return
-	var a: Dictionary = comum.carga.abate
+	var a: Dictionary = _carga_de(mundo.heroi).abate
 	var s := float(a.chefe) if m.chefe else (float(a.elite) if m.elite else float(a.comum))
 	if m.mare:
 		s *= float(combate.cfg.diretor.mare.abate_carga)  # monstro da Maré de Sangue: o Q enche mais rápido
@@ -666,8 +707,9 @@ func pronta(h) -> void:
 	_anel(h.pos, 6.0, 30.0, 0.3, 2.0, cor.lerp(Color.WHITE, 0.4), 0.9)
 	combate.audio.tocar("ruptura_pronta", 1.2, -2.0, 0.0)
 	combate.audio.tocar("evolucao", 1.25, -5.0, 0.0)  # o sino grave da evolução, que não se confunde com o "nivel" do level up
-	combate.fx.numero(h.pos + Vector2(0, -52), "ULTIMATE PRONTA", cor.lerp(Color.WHITE, 0.3), true)
-	combate.anunciar("ULTIMATE PRONTA", cor.lerp(Color.WHITE, 0.25))
+	var texto := str(bloco_de(str(h.chave)).get("pronta_texto", "ULTIMATE PRONTA"))  # o chamado do Lobo avisa "MECHA PRONTO"
+	combate.fx.numero(h.pos + Vector2(0, -52), texto, cor.lerp(Color.WHITE, 0.3), true)
+	combate.anunciar(texto, cor.lerp(Color.WHITE, 0.25))
 
 
 ## Apertou sem a carga cheia: o som grave (o slot do HUD treme pelo esp_nega_t do herói).
