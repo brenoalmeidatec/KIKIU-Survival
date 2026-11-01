@@ -195,7 +195,9 @@ func _partida() -> void:
 	c.pausado = false
 	c.telas.mostrar_bau(c.progresso.cartas)
 	mundo.set_process(true)
-	await get_tree().create_timer(float(cs.cfg.bau.bau_espera_s) + 2.0).timeout
+	var limite_bau := Time.get_ticks_msec() + 5000  # teto de 5 s reais; a trava do baú (bau_espera_s) corre no _process
+	while c.telas.espera_bau > 0.0 and Time.get_ticks_msec() < limite_bau:
+		await get_tree().process_frame
 	c.telas._pular_bau()
 	await get_tree().create_timer(0.3).timeout
 	mundo.set_process(false)
