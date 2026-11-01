@@ -158,3 +158,11 @@ v2_pool_cavaleiro 40.0
 v2_pool_cavaleiro_cidade 75.0
 v2_pool_cavaleiro_medio 75.0
 v2_confirmar_e 12
+# 2026-11-01 LNX-4 (pools): tempos medidos pela fila do Godot, uma cena por vez, inclui a espera na fila; valem as linhas abaixo (a ultima vence)
+v2_pool_mapa 56
+v2_pool_cavaleiro 56
+v2_aldeao_vila 18
+v2_corvo_vila 25
+v2_espectro_ruinas 11
+v2_golem_vidro 5
+v2_homunculo_torre 11
