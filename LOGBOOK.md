@@ -2755,3 +2755,9 @@ _Claude do Alisson (notebook)_
 - **Consertos de revisão:** `v2_fx_status` agora prova o teto `MAX_MONSTROS` (18 monstros misturando fogo, lento e atordoado, teto de chamas fora do caminho) e prova que o monstro reaproveitado do pool nasce sem status e sem efeito; `v2_fx_recompensa` no perfil Baixo confere o `tocar` recusado (retorno e contadores); `preparar_status.py` ganhou `if __name__ == "__main__"`.
 - **Verificado:** todos os `v2_fx_*`, `v2_clima`, `v2_combate*`, `v2_chefe`, `v2_hud*` e `v2_pool_mapa` com falhas=0 e sem SCRIPT ERROR. Captura de janela real (Médio, Floresta e Cidade) viu chamas, relógios, estrelas, feixe do baú e o clima. O level-up não apareceu nas fotos tiradas (passou antes do quadro 150); só o teste cobre.
 - **Pendente:** CI no PR e o "pode mergear" do Alisson. Depois do merge, os quatro PRs antigos devem aparecer como mergeados.
+
+## 2026-11-01: LNX-1, pendências do nightly Linux (Claude do Alisson, agente da frente 8, #517)
+
+- **Feito:** `ferramentas/appimage/kikiu.appdata.xml` novo (metainfo AppStream) e `montar.sh` o instala em `usr/share/metainfo/`. O runtime do appimagetool agora vem da release datada `20251108` (`runtime-x86_64`, SHA-256 `2fca8b44...ec260d`, conferido no download) e entra com `--runtime-file`, porque o 1.9.1 baixava o asset `continuous` sem checagem (ele mudou em 19/10).
+- **Verificado:** `bash -n`, XML bem formado, SHA do appimagetool 1.9.1 e do runtime conferidos com `sha256sum -c`, e a montagem do AppDir simulada no Windows (layout com o metainfo no lugar; o appimagetool em si não roda aqui). A opção `--runtime-file` foi conferida no código-fonte da 1.9.1.
+- **Pendente:** o aviso de AppStream só some no próximo nightly Linux (não há como validar o XML sem `appstreamcli` aqui). #489 e #490 ainda abertas: o fechamento manual (recomendado pelo plano, D34) ficou para o Alisson. Teste visual do AppImage em Intel segue manual.
