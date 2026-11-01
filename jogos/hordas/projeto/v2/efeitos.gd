@@ -27,6 +27,7 @@ const FOLHAS := {
 }
 const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": sem clarão de tela, flash de acerto em tinta fixa
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
 const CORTE_CRESCE := 0.3  # fração do corte em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
 
@@ -109,6 +110,7 @@ uniform vec4 cor : source_color = vec4(1.0);
 uniform float px = 128.0;
 uniform float semente = 0.0;
 uniform float espinhos = 1.0;
+uniform float calmo = 0.0;  // 1 = "Reduzir piscadas": os anéis não giram (g1, g2 e a bolha cintilavam a 1,4 a 2,5 Hz por pixel)
 float h(float x) { return fract(sin(x * 127.1 + semente * 31.7) * 43758.5453); }
 void fragment() {
 	vec2 uv = (floor(UV * px) + 0.5) / px;
@@ -120,13 +122,13 @@ void fragment() {
 	float e1 = 1.0 - pow(1.0 - clamp(t / 0.4, 0.0, 1.0), 3.0);
 	float r1 = 0.12 + 0.72 * e1;
 	float w1 = 0.035 + 0.05 * (1.0 - e1);
-	float g1 = smoothstep(0.2, 0.85, 0.5 + 0.5 * sin(a * 3.0 + t * 16.0 + semente * 6.0));
+	float g1 = smoothstep(0.2, 0.85, 0.5 + 0.5 * sin(a * 3.0 + t * 16.0 * (1.0 - calmo) + semente * 6.0));
 	float anel1 = exp(-pow((r - r1) / w1, 2.0)) * (0.45 + 0.55 * g1);
 	float e2 = 1.0 - pow(1.0 - clamp((t - 0.05) / 0.5, 0.0, 1.0), 3.0);
 	float r2 = 0.08 + 0.88 * e2;
-	float g2 = smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(-a * 2.0 + t * 11.0 + semente * 3.0));
+	float g2 = smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(-a * 2.0 + t * 11.0 * (1.0 - calmo) + semente * 3.0));
 	float anel2 = exp(-pow((r - r2) / 0.03, 2.0)) * g2 * step(0.05, t);
-	float bolha = (1.0 - smoothstep(r1 - 0.3, r1, r)) * 0.16 * e1 * (0.7 + 0.3 * sin(a * 5.0 - t * 9.0));
+	float bolha = (1.0 - smoothstep(r1 - 0.3, r1, r)) * 0.16 * e1 * (0.7 + 0.3 * sin(a * 5.0 - t * 9.0 * (1.0 - calmo)));
 	float setor = floor((a + 3.14159) / 6.28318 * 14.0);
 	float meio = (setor + 0.5) / 14.0 * 6.28318 - 3.14159;
 	float da = abs(mod(a - meio + 3.14159, 6.28318) - 3.14159);
@@ -237,6 +239,12 @@ var _fl: Array[Sprite2D] = []
 var _fl_alvo: Array = []  # Ator que o flash segue (ou null: parado onde nasceu)
 var _fl_t := PackedFloat32Array()
 var _fl_dur := PackedFloat32Array()
+var _pisca_rel := 0.0  # relógio dos flashes de acerto (s de simulação): só serve ao intervalo mínimo da opção "Reduzir piscadas"
+# Os últimos alvos de flash de acerto (anel de 4 x MAX_FLASH = 96, tamanho fixo) e quando cada um levou. Limite aceito: mais de 96 flashes de
+# acerto em 0,7 s sobrescrevem o mais velho, e esse monstro pode levar flash de novo.
+var _pisca_alvo: Array = []
+var _pisca_quando := PackedFloat32Array()
+var _pisca_i := 0
 var _fl_esc := PackedFloat32Array()  # tamanho do ator (elite e chefe são maiores)
 var _fl_modo := PackedByteArray()  # 0 = piscada de dano, 1 = morte (encolhe e some), 2 = rastro da esquiva
 var _fi := 0
@@ -495,6 +503,9 @@ func _montar_flashes() -> void:
 	_fl_t.resize(MAX_FLASH)
 	_fl_esc.resize(MAX_FLASH)
 	_fl_dur.resize(MAX_FLASH)
+	_pisca_alvo.resize(MAX_FLASH * 4)
+	_pisca_quando.resize(MAX_FLASH * 4)
+	_pisca_quando.fill(-9.0)
 	_fl_modo.resize(MAX_FLASH)
 	_fl_t.fill(9.0)
 	_fl_dur.fill(1.0)
@@ -604,7 +615,7 @@ func _corte_eco(origem: Vector2, ang: float, alcance: float, arco_graus: float, 
 ## Clarão de tela na cor `cor` (o alfa é a força, 0,1 a 0,4), que some em `dur` s. Escala com a opção "Tremor e clarões"; em 0% não
 ## acende. Um clarão mais fraco não apaga um mais forte em andamento.
 func clarao(cor: Color, dur := 0.15) -> void:
-	if not Anim.suave:
+	if not Anim.suave or not Piscadas.clarao_permitido():
 		return
 	var f = Config.g("tremor_clarao")
 	if f != null:
@@ -663,6 +674,7 @@ func explosao(p: Vector2, raio: float, cor: Color, espinhos := 1.0, dur := EXPLO
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("px", roundf(r * 2.0))
+	mat.set_shader_parameter("calmo", 1.0 if Piscadas.ligado() else 0.0)
 	mat.set_shader_parameter("semente", _rng.randf() * 10.0)
 	mat.set_shader_parameter("espinhos", espinhos)
 	_ex_t[i] = 0.0
@@ -701,6 +713,11 @@ func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: floa
 func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	if a == null or a.tipo.is_empty():
 		return
+	if (modo == 0 or modo == 3) and Piscadas.ligado():  # "Reduzir piscadas": o mesmo ator não leva outra silhueta (flash ou marca) logo em seguida
+		if not _pode_flash_acerto(a):
+			return
+		if modo == 0:
+			forca = Piscadas.FLASH_ALFA  # a marca do golpe forte já é cheia: não tem alfa a fixar
 	if modo == 3:
 		var marcas := 0
 		for j in MAX_FLASH:
@@ -741,6 +758,22 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	_fl_dur[i] = dur
 	_fl_modo[i] = modo
 	usados.flashes += 1
+
+
+## Pode uma silhueta de acerto nova em `a` (flash de acerto ou marca do golpe forte)? Não, se ele levou outra há menos de FLASH_REPETE_S. Registra esta
+## (anel de tamanho fixo, nada nasce). O flash e a marca do MESMO golpe chegam no mesmo quadro e se fundem num liga e desliga só: o segundo passa sem registrar.
+func _pode_flash_acerto(a) -> bool:
+	for j in _pisca_alvo.size():
+		if _pisca_alvo[j] == a:
+			var desde: float = _pisca_rel - _pisca_quando[j]
+			if absf(desde) < 0.001:
+				return true
+			if desde < Piscadas.FLASH_REPETE_S:
+				return false
+	_pisca_alvo[_pisca_i] = a
+	_pisca_quando[_pisca_i] = _pisca_rel
+	_pisca_i = (_pisca_i + 1) % _pisca_alvo.size()
+	return true
 
 
 func _livre() -> int:
@@ -867,6 +900,7 @@ func limpar() -> void:
 
 
 func atualizar(dt: float) -> void:
+	_pisca_rel += dt
 	for i in MAX_FRAGMENTOS:
 		if _frag_t[i] <= 0.0:
 			continue
@@ -959,6 +993,7 @@ func atualizar(dt: float) -> void:
 			_ex[i].visible = false
 			continue
 		(_ex[i].material as ShaderMaterial).set_shader_parameter("prog", _ex_t[i] / _ex_dur[i])
+		(_ex[i].material as ShaderMaterial).set_shader_parameter("calmo", 1.0 if Piscadas.ligado() else 0.0)
 	for i in MAX_ECOS:
 		if _eco_t[i] >= _eco_dur[i]:
 			continue
@@ -1006,7 +1041,7 @@ func atualizar(dt: float) -> void:
 					s.position = a.raiz.position
 					s.region_rect = a.regiao
 					s.flip_h = a.espelha
-				mat.set_shader_parameter("k", 1.0 - k * k)
+				mat.set_shader_parameter("k", Piscadas.FLASH_ALFA if Piscadas.ligado() else 1.0 - k * k)  # com a opção: alfa parado, sem esmaecer em degraus
 			3:
 				var a = _fl_alvo[i]
 				if a != null:

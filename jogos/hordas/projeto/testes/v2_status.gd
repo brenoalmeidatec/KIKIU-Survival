@@ -18,6 +18,7 @@ extends "res://testes/isolamento_v2.gd"
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_status.tscn -- --fotos=PASTA
 #   grava status_hud_vazio, status_hud, status_hud_chefe, status_escolha, status_bau e status_pausa (só o viewport, nunca a área de trabalho).
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Status := preload("res://v2/status.gd")
 const Meta := preload("res://v2/meta.gd")
@@ -64,6 +65,7 @@ func zerar() -> void:
 	w.reiniciar()
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	var h = w.heroi
 	h.imortal = true
 	h.entrada_forcada = Vector2.ZERO

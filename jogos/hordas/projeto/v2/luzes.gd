@@ -5,6 +5,7 @@ extends RefCounted
 ## faíscas dela. As ligadas viram os vetores `dpos/dr/de/dh` que o sistema de sombras (sombras.gd) lê.
 
 const Ator := preload("res://v2/ator.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o tremor das luzes (até 3,7 Hz) fica parado
 const GRAD_OFF := [0.0, 0.22, 0.55, 1.0]  # queda das luzes: forte no centro e escura de verdade longe (poças contrastadas)
 const GRAD_VAL := [1.0, 0.5, 0.1, 0.0]
 const MARGEM_LUZ := 24.0  # a luz liga um pouco antes de o círculo entrar na tela
@@ -162,7 +163,7 @@ func atualizar(t: float, rect: Rect2) -> void:
 		if not liga:
 			continue
 		var en := e.energia
-		if e.tremor > 0.0:
+		if e.tremor > 0.0 and not Piscadas.ligado():  # com a opção: energia parada
 			en *= 1.0 + e.tremor * sin(t * 9.0 + e.fase) + 0.6 * e.tremor * sin(t * 23.0 + 2.0 * e.fase)
 		e.luz.energy = en
 		e.luz.position = e.pos
