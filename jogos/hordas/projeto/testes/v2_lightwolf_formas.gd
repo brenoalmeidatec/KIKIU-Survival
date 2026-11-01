@@ -231,7 +231,7 @@ func _t_chamado() -> void:
 	ok(not h.forma_lobo and h.chave == "lightwolf", "o aviso de 0,8 s acabou: o mecha caiu e o herói voltou a Mecha")
 	ok(is_equal_approx(h.vida_max, 130.0) and is_equal_approx(h.vida, 130.0), "mecha com a vida cheia (%.1f)" % h.vida)
 	ok(
-		h.tipo.w == 64 and h.def_max == 100.0 and h.def == 100.0 and h.hab_nome != "" and h.esp_rotulo != "CHAMAR",
+		h.tipo.w == 128 and h.def_max == 100.0 and h.def == 100.0 and h.hab_nome != "" and h.esp_rotulo != "CHAMAR",
 		"folha, E, Q e a barra da matriz do mecha de volta (estava cheia, segue cheia)"
 	)
 	ok(is_equal_approx(h.esp_carga, guardada) and guardada >= 61.0, "o Q do mecha volta como estava (%.1f de %.1f)" % [h.esp_carga, guardada])
