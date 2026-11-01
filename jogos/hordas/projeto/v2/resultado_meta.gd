@@ -17,6 +17,8 @@ const ALT := 540
 const SANTUARIO := "res://v2/salao.tscn"
 const TEMPO_ANIM := 1.4  # s para as almas subirem até o total
 const TEMPO_ACEITA := 0.8  # s antes de aceitar continuar (evita o clique de quem estava segurando o golpe)
+const DISTANCIA_BAU := 72.0  # px do herói onde cai o baú de conquista (fora do alcance de abrir, 22 px)
+const PISO_BAU_CONQUISTA := 2  # índice da raridade mínima do baú de conquista: 0 comum, 1 raro, 2 épico (dados/v2_cartas.json)
 const MAX_NOVAS := 6  # conquistas que cabem embaixo das almas (três linhas de duas)
 const DANO_LINHAS := 5  # golpes no quadro "dano por golpe" (os maiores; o resto soma em "outros" só no total)
 const FRASE_Y := 110.0  # sob o título (y 52, Jersey 56) e acima do quadro "dano por golpe" (y 128)
@@ -230,8 +232,7 @@ func _process(dt: float) -> void:
 	if _checa_t <= 0.0 and not _terminou:
 		_checa_t = 1.0
 		var novas: Array = Meta.checar_ao_vivo(mundo.tempo_partida, mundo.maior_combo, Meta.vivo_da_partida(mundo))
-		if not novas.is_empty():
-			_avisar(novas)
+		_conquistas_ao_vivo(novas)
 	var tela = mundo.combate.telas if mundo.combate != null else null
 	if tela != null and tela.resultado_aberto and not _terminou:
 		_terminar(_resultado_do_mundo())
@@ -335,6 +336,24 @@ func _avisar(ids: Array) -> void:
 	conquista_cumprida.emit(ids)
 	if mundo.combate != null:
 		mundo.combate.audio.tocar("nivel", 1.0, -2.0, 0.0)
+
+
+## Conquistas cumpridas ao vivo (checar_ao_vivo): avisa a HUD e larga um baú de conquista. Sem conquista nova, nada muda.
+func _conquistas_ao_vivo(novas: Array) -> void:
+	if novas.is_empty():
+		return
+	_avisar(novas)
+	_bau_de_conquista()
+
+
+## O baú de conquista cai a `DISTANCIA_BAU` px do herói, pelo mesmo caminho do baú de elite (v2/bau.gd, soltar), com piso de raridade 2
+## (épico ou melhor). Só as conquistas da partida: as do fim (vitória, partidas, total de abates) pagam almas e não têm baú.
+func _bau_de_conquista() -> void:
+	var c = mundo.combate
+	if c == null or c.baus == null or not mundo.heroi.vivo():
+		return
+	var direcao := Vector2.from_angle(randf() * TAU)
+	c.baus.soltar(mundo.heroi.pos + direcao * DISTANCIA_BAU, 1.0, 0, PISO_BAU_CONQUISTA)
 
 
 func _nome_conquista(id) -> String:
