@@ -48,6 +48,8 @@ const ITENS := [
 	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Ajuste dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
+	# Reduzir piscadas (#512): no máximo 3 trocas de luz por segundo, nenhum vermelho piscando. Fora do perfil dos Gráficos: não vira Personalizado. Quem pisca consulta v2/piscadas.gd.
+	{"chave": "reduzir_piscadas", "grupo": "Gráfico", "nome": "Reduzir piscadas", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{
 		"chave": "tamanho_ui",
 		"grupo": "Gráfico",

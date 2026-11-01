@@ -34,6 +34,7 @@ extends "res://v2/ator.gd"
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 const Foguinho := preload("res://v2/foguinho.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a invencibilidade vira tom fixo
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
@@ -100,6 +101,7 @@ var andando := false
 var vel := Vector2.ZERO  # deslocamento real do último quadro, px/s
 var emp := Vector2.ZERO  # empurrão que o herói leva ao apanhar (px/s)
 var invenc := 0.0  # s de invencibilidade que faltam (ao apanhar)
+var _pisca_t := 0.0  # relógio do pisca da invencibilidade (s de simulação, não de parede: o teste de piscadas conta por quadro)
 # golpe
 var golpe_i := 0  # índice do passo do combo em andamento
 var golpe_t := 0.0
@@ -524,6 +526,7 @@ func atualizar(dt: float) -> void:
 	_anda_ant = v
 	# relógios
 	invenc = maxf(0.0, invenc - dt)
+	_pisca_t += dt
 	golpe_calor_t = maxf(0.0, golpe_calor_t - dt)
 	pedido_t = maxf(0.0, pedido_t - dt)
 	esq_pedido = maxf(0.0, esq_pedido - dt)
@@ -1026,13 +1029,15 @@ func _visual(dt: float, v: Vector2) -> void:
 			sprite.offset = _off_base
 		sprite.position = desloca
 	sprite.scale = esc
-	var piscando := invenc > 0.0 and int(Time.get_ticks_msec() / 1000.0 * float(mundo.combate.cfg.heroi.pisca_hz) * 2.0) % 2 == 0
+	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:
 		sprite.modulate = Color(1, 1, 1, 0.78)
 	elif estado == Estado.ESPECIAL:
 		sprite.modulate = Color.WHITE.lerp(esp_cor, 0.45)  # o corpo toma a cor do especial
 	elif estado == Estado.HABILIDADE:
 		sprite.modulate = Color.WHITE.lerp(hab_cor, 0.4)  # o corpo toma a cor da E
+	elif invenc > 0.0 and Piscadas.ligado():
+		sprite.modulate = Piscadas.INVENCIVEL  # sem liga e desliga: translúcido, vermelho fixo
 	elif piscando:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)
 	elif estado == Estado.CARGA:

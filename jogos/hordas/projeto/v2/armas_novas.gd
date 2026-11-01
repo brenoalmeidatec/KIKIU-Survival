@@ -48,6 +48,7 @@ const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
 const Golem := preload("res://v2/golem.gd")  # o Golem de Barro e o Colosso: andar, ataque e as 8 direções
 const Andante := preload("res://v2/andante.gd")  # as outras invocações que andam de verdade (Espírito do Urso...): folha de 8 direções, andar e ataque
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": brasas e marcas com alfa parado, sem clarão de tela
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas animadas de projétil, meteoro, anel e nuvem (docs/combate_v2/SPEC_ARTE.md)
 ## Fases dos golpes com folha (docs/combate_v2/ENTREGA.md): no PREPARO não há hitbox (o tiro carrega na boca, o anel junta força, a nuvem se
 ## forma); no ATIVO a colisão vale e cada monstro é atingido uma vez por item; o IMPACTO e a marca no chão são só efeito (pool `x_*`), tocados no
@@ -404,7 +405,7 @@ func _brilho_partes(ci: CanvasItem, tex: Texture2D) -> void:
 		var k := v / q_max[i]
 		var c := q_cor[i]
 		var p := (q_pos[i] + Vector2(0, -q_z[i])).round()
-		var pisca := 0.7 + 0.3 * sin(v * 23.0 + float(i))
+		var pisca := Piscadas.valor(0.7 + 0.3 * sin(v * 23.0 + float(i)), 0.85)
 		var a := minf(1.0, k * 2.0) * pisca
 		var t := q_tam[i]
 		ci.draw_texture_rect(tex, Rect2(p - Vector2(t, t) * 2.0, Vector2(t, t) * 4.0), false, Color(c.r, c.g, c.b, 0.55 * a))
@@ -704,7 +705,7 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 			pai.mundo.cam.tremer(4.0 if Anim.suave else 1.5, 0.25 if Anim.suave else 0.1)
 			if Anim.suave:  # o martelo bate: soco de zoom e clarão
 				pai.mundo.cam.socar(0.045)
-				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
+				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)  # Piscadas: o próprio clarao() recusa com a opção ligada
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
 			fumaca_impacto(it.p, 40.0, a.cor)
 			pai.fx.explosao(it.p, 44.0, a.cor)
@@ -1605,7 +1606,7 @@ func _marca_amigo(ci: CanvasItem, it: Dictionary, p: Vector2, topo: float, raio:
 	var total := float(st.duracao)
 	var falta := float(it.vida) if resta < 0.0 else resta
 	var frac := clampf(falta / maxf(total, 0.1), 0.0, 1.0)
-	var pisca := 1.0 if (falta > 5.0 or fmod(_relogio, 0.4) < 0.25) else 0.35  # nos últimos 5 s a marca pisca: vai sumir
+	var pisca := 1.0 if (falta > 5.0 or Piscadas.ligado() or fmod(_relogio, 0.4) < 0.25) else 0.35  # nos últimos 5 s a marca pisca: vai sumir (a opção deixa parada)
 	ci.draw_set_transform(p, 0.0, Vector2(1.0, 0.62))
 	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.1, 0.35, 0.15, 0.45 * pisca), 2.5)
 	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.45, 1.0, 0.5, 0.7 * pisca), 1.0)
@@ -1698,7 +1699,7 @@ func _brilho_queda(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color) -
 		var k := 1.0 - float(it.t) / maxf(float(it.a.st.aviso), 0.01)
 		var c := _queda_em(it, 0.0)
 		var cresce := clampf(k / QUEDA_CINTILA, 0.0, 1.0)
-		var pisca := 0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase))
+		var pisca := Piscadas.valor(0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase)), 0.8)
 		var br := roundf(2.0 + 5.0 * cresce * pisca)
 		ci.draw_line(c - Vector2(br, 0), c + Vector2(br, 0), Color(1, 1, 1, 0.8 * cresce), 1.0)
 		ci.draw_line(c - Vector2(0, br), c + Vector2(0, br), Color(1, 1, 1, 0.8 * cresce), 1.0)
@@ -1741,7 +1742,7 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		afunda = d * 10.0
 		alfa = 1.0 - d
 	elif util < 1.0:
-		alfa = 0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0))
+		alfa = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO)  # peça por desmontar: tremeluz (a opção deixa parado)
 	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 	var raio_s := maxf(5.0, 17.0 - queda * 0.1)
 	ci.draw_circle(Vector2.ZERO, raio_s + 2.0, Color(0, 0, 0, 0.18 * alfa))
@@ -1857,7 +1858,7 @@ func _brilho_torre(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -
 	if util <= 0.0:
 		fade = clampf(float(it.vida) / DESMONTA, 0.0, 1.0)
 	elif util < 1.0:
-		fade = 0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0))
+		fade = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO)
 	var topo := p + Vector2(0, TORRE_TOPO)
 	var pulso := 0.5 + 0.5 * sin(age * 5.0)
 	var tom := Color(0.5, 0.75, 1.0) if pagode else Color(1.0, 0.62, 0.28)
