@@ -13,7 +13,7 @@ extends RefCounted
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ##  - CHAMAR (LightWolf em forma de Lobo, LW-2): a carga do Q é o CHAMADO (bloco `carga` próprio no dado). Cheia, o Lobo aperta Q: um aviso de 0,8 s sobre os pés e o
 ##    mecha cai, ferindo em volta, e o herói volta a Mecha (v2/mecha.gd cuida da troca). Enquanto o aviso corre ele é invulnerável.
-##  - AUTODESTRUIÇÃO (LightWolf em forma de mecha, LW-5): o piloto salta para trás da mira e vira Lobo NA HORA (v2/mecha.gd `autodestruir`: invulnerável, chamado em 45, Q gasto), o
+##  - AUTODESTRUIÇÃO (LightWolf em forma de mecha, LW-5): o piloto salta para trás da mira e vira Lobo NA HORA (v2/mecha.gd `autodestruir`: invulnerável, chamado em 35, Q gasto), o
 ##    mecha fica no lugar e acende sem piscar por 1 s (o fusível) e EXPLODE: limpa a tela pela peça comum (`limpar_tela`, com a frente de onda saindo do mecha, não do Lobo) e chama a Maré
 ##    do LightWolf (anel, atraso 4 s, sempre curta). Só o Lobo sobra: o mecha só volta pelo CHAMAR.
 ## Todo Q também LIMPA A TELA, menos o CHAMAR do Lobo (ULT-A, `limpar_tela`, dados > comum.limpa e `limpa_em` de cada bloco): comuns morrem aos poucos numa frente de onda (a fila adiada

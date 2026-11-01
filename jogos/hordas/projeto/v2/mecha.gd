@@ -5,7 +5,7 @@ extends RefCounted
 ##  - CHAMADO (o Q do Lobo, `chamar` em v2/especial.gd): com a carga cheia o Lobo aperta Q, o mecha cai (aviso de 0,8 s, dano de queda) e `chegar` o devolve
 ##    à forma mecha com a vida cheia e o Q de antes. A carga do chamado enche por dano, abates e (para nunca travar sem monstro) por tempo (`atualizar`).
 ##  - AUTODESTRUIÇÃO (o Q do mecha, `autodestruir`, chamada por v2/especial.gd, LW-5): o piloto salta e vira Lobo NA HORA, sem o estouro da quebra (o fusível e a explosão são do Q),
-##    com o chamado já em `inicio_autodestruicao` (45) e o Q do mecha gasto (volta a 0 quando o mecha cai). Depois dela o Lobo chama o mecha de volta como depois de uma quebra.
+##    com o chamado já em `inicio_autodestruicao` (35) e o Q do mecha gasto (volta a 0 quando o mecha cai). Depois dela o Lobo chama o mecha de volta como depois de uma quebra.
 ##  - Só a morte do Lobo é derrota: ela cai no `heroi_morreu` de sempre (tela de resultado e olho). Recomeçar a partida volta ao mecha (`reiniciar`).
 ## A troca NUNCA chama `iniciar_stats` (zeraria Q e E): `Heroi.trocar_forma` mexe só na chave, na folha, no corpo e na defesa, e `combate.cfg` passa a ser o do
 ## herói-forma (dados/v2_herois.json > lightwolf_lobo, com `forma_de`). O herói da partida (`combate.heroi_id`) segue "lightwolf": cartas, bônus e resultado
@@ -67,11 +67,11 @@ func autodestruir(h) -> bool:
 	if not tem() or h.forma_lobo or combate.jogo != "jogando":
 		return false
 	autodestruicoes += 1
-	virar_lobo(h, float(_bloco().get("inicio_autodestruicao", 45.0)), false)
+	virar_lobo(h, float(_bloco().get("inicio_autodestruicao", 35.0)), false)
 	return true
 
 
-## Mecha -> Lobo. `chamado`: a carga do chamado com que o Lobo começa (a quebra dá 20; a Autodestruição do LW-5 dá 45). `quebra` = false (a Autodestruição): sem o estouro,
+## Mecha -> Lobo. `chamado`: a carga do chamado com que o Lobo começa (a quebra dá 20; a Autodestruição do LW-5 dá 35, ULT-D). `quebra` = false (a Autodestruição): sem o estouro,
 ## o anúncio e o empurrão da quebra, e o estado do herói não muda (o Q segue em Estado.ESPECIAL).
 func virar_lobo(h, chamado: float, quebra := true) -> void:
 	var c = combate
