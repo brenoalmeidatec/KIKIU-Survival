@@ -218,3 +218,9 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - `jogos/hordas/fonte_arte/lightwolf_icones/A23_lw_cartas.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com o prompt em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fonte copiada sem alteração.
 - Derivados (mesma arte, nenhuma arte nova), gerados por `jogos/hordas/fonte_arte/lightwolf_icones/reduzir_cartas.py`: `jogos/hordas/projeto/assets/v2/icones_cartas/{sifao,ampla,cabo,aurora_lunar}.png` (32x32), `.../icones_cartas/16/` (16x16) e, para as três cartas de bônus, `jogos/hordas/projeto/assets/gerado/icone_{matriz_sifao,matriz_ampla,cabo_resgate}.png` (16x16, o ícone antigo de reserva). Mudanças: separação dos quatro desenhos pelas colunas com alfa, corte do halo de alfa baixo (alfa < 160 vira 0), recorte pela caixa do objeto, encaixe no quadrado (30 px e 15 px) com a proporção mantida, média de caixa com cor pré-multiplicada e alfa endurecido (>= 128 vira 255).
+
+## PER-4: folha Blender do Lukako (TESSEN), Claude do Alisson (sessão do subagente; máquina não identificada), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/lukako/` (`perfil.py`, `gerar.py`, `medir.py`, `LEIA-ME.md`): modelo, rig e animações gerados por script (Blender 4.5, `blender -b`) sobre o framework do Hazaki e o estudo do Codex, já registrados acima. O perfil é próprio (paleta, cabelo, roupa e o leque TESSEN, no lugar da katana). Sem arte, fonte ou ícone de terceiros.
+- Derivados no jogo, gerados pelo `hazaki/montar_folha.py`, sem mudança à mão: `jogos/hordas/projeto/prototipos/cara_nova/sprites/lukako.json`, `lukako_albedo.png` e `lukako_normal.png` (grade 50x8 de quadros 32x44).
+- Sem licença de terceiros a declarar, e sem crédito obrigatório nos Créditos por isso.

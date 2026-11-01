@@ -13,7 +13,7 @@
 		{"nome": "John", "nome_antigo": "João", "pasta": "joao", "heroi": "joao"},
 		{"nome": "Matthew", "nome_antigo": "Matheus", "pasta": "matheus", "heroi": "matheus", "sprite": "matheus"},
 		{"nome": "Bert", "nome_antigo": "Beto", "pasta": "beto", "heroi": "beto"},
-		{"nome": "Lukako", "pasta": "lukako", "heroi": "lukako"},
+		{"nome": "Lukako", "pasta": "lukako", "heroi": "lukako", "sprite": "lukako"},
 		{"nome": "Fabian", "nome_antigo": "Fábio", "pasta": "fabio", "heroi": "fabio"},
 		{"nome": "LightWolf", "pasta": "lightwolf", "heroi": "lightwolf"}
 	],
