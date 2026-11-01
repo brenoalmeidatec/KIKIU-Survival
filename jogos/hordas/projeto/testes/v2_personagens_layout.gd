@@ -192,6 +192,7 @@ func _nomes() -> void:
 		_cabe_texto(info, t._info.size, 32, "info com o herói de %s" % n.nome)
 		# só o nome sem rosto.png usa o sprite parado: a folha própria do nome (Matthew) ou a do herói dele; cada nome com rosto mostra o próprio rosto
 		var pasta := str(n.get("pasta", ""))
+		ok(pasta != "" and FileAccess.file_exists("res://assets/personagens/%s/rosto.png" % pasta), "'%s' tem rosto.png na pasta dele (%s)" % [n.nome, pasta])
 		if pasta == "" or not ResourceLoader.exists("res://assets/personagens/%s/rosto.png" % pasta):
 			var folha := Personagens.folha_do_nome(str(n.nome))
 			var esperada := Personagens.sprite_do_nome(str(n.nome))

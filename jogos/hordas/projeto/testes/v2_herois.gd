@@ -137,7 +137,7 @@ func _t_dados() -> void:
 	var ids := []
 	for h in Herois.lista():
 		ids.append(str(h.id))
-		for k in ["id", "nome", "titulo", "desc", "sprite", "raio", "bonus", "cfg"]:
+		for k in ["id", "nome", "titulo", "arma", "desc", "sprite", "raio", "bonus", "cfg"]:
 			ok(h.has(k), "%s tem o campo %s" % [h.id, k])
 		var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + str(h.sprite) + ".json"))
 		ok(
@@ -742,7 +742,7 @@ func _secao_card(secs: Array, id: String) -> Dictionary:
 ## O card SUA BUILD mostra o herói ESCOLHIDO: o nome na seção HERÓI, a arma na seção de golpe, os números dele e os modificadores
 ## dele (e só os dele). O número de cada modificador é o que o jogo usa (armas.mods).
 func _t_card() -> void:
-	var arma := {"hazaki": "KATANA (CLIQUE)", "nicao": "MARRETA (CLIQUE)", "lucas": "ADAGAS (CLIQUE)"}
+	var arma := {"hazaki": "KATANA (CLIQUE)", "nicao": "KANABO (CLIQUE)", "lucas": "KUNAI (CLIQUE)"}
 	var mods := {"hazaki": ["onda", "fura"], "nicao": ["abalo", "muralha"], "lucas": ["chuva", "mira"]}
 	for id in ["hazaki", "nicao", "lucas"]:
 		await novo(id)
