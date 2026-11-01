@@ -186,7 +186,8 @@ func sincronizar(heroi) -> void:
 ## O secundário (escudo): disponível se o herói publica escudo_ativo. Pronto se erguido ou se não está cansado e tem o fôlego mínimo; cansado, a cortina
 ## de recarga mede quanto falta para o fôlego voltar ao limite em que o cansaço acaba (cfg.folego.cansado_ate).
 func _sincronizar_secundario(heroi) -> void:
-	s_disponivel = _tem_propriedade(heroi, "escudo_ativo")
+	# sem barra de defesa (def_max 0: o Lobo do LightWolf não tem secundário) o slot fica apagado; herói sem o campo (mundos de teste) segue como antes
+	s_disponivel = _tem_propriedade(heroi, "escudo_ativo") and float(_campo(heroi, "def_max", 1.0)) > 0.0
 	s_pronta = false
 	s_ativo = false
 	s_recarga_px = 0

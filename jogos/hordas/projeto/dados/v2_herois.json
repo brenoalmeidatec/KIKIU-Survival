@@ -1,5 +1,5 @@
 {
-	"_ajuda": "Os heróis jogáveis da v2, lido por v2/herois.gd (e por altar.gd, combate.gd, heroi.gd e cartas.gd). Uma lista em \"herois\", na ordem em que aparecem no santuário; o primeiro (hazaki) é o padrão: sem escolha gravada no save, vale ele. Cada herói: id, nome, titulo, desc (curta, mostrada no santuário), sprite (folha em prototipos/cara_nova/sprites, sem extensão), raio (corpo no chão, px), bonus {dano, vel_ataque, area (multiplicam; 1 = normal), sorte (fração: chance de uma carta comum subir para rara, soma com a do santuário)} e cfg: o que SOBRESCREVE em dados/v2_combate.json para esse herói (mesclagem por chaves; a lista passos substitui a inteira). Em cfg.heroi: vida, vel (px/s de andar) e mov_golpe (fração da velocidade andando durante o golpe: o peso). O Hazaki repete aqui os números de v2_combate.json e por isso não muda nada (o teste v2_herois confere). cfg.golpe.passos é o combo, na ordem. Passo corpo a corpo (tipo ausente ou \"melee\"): nome (corte, estocada, batida ou pancada), dano, alcance, arco (graus; 360 = em volta), duracao, acerto_em, avanco, empurrao, atordoa, hit_stop, tremor, lado, som (+ tom e vol opcionais), cor. Passo \"adagas\": nome, dano (de CADA adaga), n (quantas saem), leque (graus entre a primeira e a última), vel (px/s), alcance (px que voam), perfura (quantos monstros a mais atravessa), duracao, acerto_em (quando saem), empurrao, atordoa, som, cor; cfg.golpe.impacto_adagas define hit_stop (s, primeiro acerto de cada arremesso principal) e recarga (s de tempo simulado); Q, chuva e novas perfurações do mesmo grupo não repetem a pausa. Passos \"adagas\" ignoram arco e avanco. Campos opcionais novos (PER-2 e PER-3): passo \"adagas\" aceita proj (imagem do projétil no pool de v2/adagas.gd: adaga, bala, plasma, ou uma folha <proj>_heroi em assets/v2/armas_anim; nome sem arte cai na adaga) e ricochete (n vezes que a lâmina do golpe principal vira para o monstro vivo mais perto depois de acertar). Passo corpo a corpo aceita puxa (true: o empurrão vira puxão para dentro, sem passar do herói) e vento (fração do dano do passo que sai como onda de vento para a frente, a mesma onda da carta Corte ondulante; se a carta também estiver ativa sai uma onda só, a maior). Passo com arco de 360 graus empurra para fora em volta, como a pancada. Campos opcionais do LightWolf (LW-1): no herói, beta (true: escondido do jogador comum; só aparece com o modo beta tester, --beta-tester, --heroi=<id> ou herói forçado por teste, ver Herois.lista); no passo, custo_mult (multiplica o gasto de fôlego do golpe da dificuldade; 0 = o tiro nunca gasta fôlego), lateral (px da boca da arma para o lado da mira: o mecha alterna mão esquerda e direita) e som_cada (o som do golpe toca só de 1 em cada N golpes, para o tiro de ~10 por segundo não virar ruído). Quem ainda não tem folha de sprites própria usa a do Hazaki (sprite = hazaki_samurai) até a arte do PER-4 chegar.",
+	"_ajuda": "Os heróis jogáveis da v2, lido por v2/herois.gd (e por altar.gd, combate.gd, heroi.gd e cartas.gd). Uma lista em \"herois\", na ordem em que aparecem no santuário; o primeiro (hazaki) é o padrão: sem escolha gravada no save, vale ele. Cada herói: id, nome, titulo, desc (curta, mostrada no santuário), sprite (folha em prototipos/cara_nova/sprites, sem extensão), raio (corpo no chão, px), bonus {dano, vel_ataque, area (multiplicam; 1 = normal), sorte (fração: chance de uma carta comum subir para rara, soma com a do santuário)} e cfg: o que SOBRESCREVE em dados/v2_combate.json para esse herói (mesclagem por chaves; a lista passos substitui a inteira). Em cfg.heroi: vida, vel (px/s de andar) e mov_golpe (fração da velocidade andando durante o golpe: o peso). O Hazaki repete aqui os números de v2_combate.json e por isso não muda nada (o teste v2_herois confere). cfg.golpe.passos é o combo, na ordem. Passo corpo a corpo (tipo ausente ou \"melee\"): nome (corte, estocada, batida ou pancada), dano, alcance, arco (graus; 360 = em volta), duracao, acerto_em, avanco, empurrao, atordoa, hit_stop, tremor, lado, som (+ tom e vol opcionais), cor. Passo \"adagas\": nome, dano (de CADA adaga), n (quantas saem), leque (graus entre a primeira e a última), vel (px/s), alcance (px que voam), perfura (quantos monstros a mais atravessa), duracao, acerto_em (quando saem), empurrao, atordoa, som, cor; cfg.golpe.impacto_adagas define hit_stop (s, primeiro acerto de cada arremesso principal) e recarga (s de tempo simulado); Q, chuva e novas perfurações do mesmo grupo não repetem a pausa. Passos \"adagas\" ignoram arco e avanco. Campos opcionais novos (PER-2 e PER-3): passo \"adagas\" aceita proj (imagem do projétil no pool de v2/adagas.gd: adaga, bala, plasma, ou uma folha <proj>_heroi em assets/v2/armas_anim; nome sem arte cai na adaga) e ricochete (n vezes que a lâmina do golpe principal vira para o monstro vivo mais perto depois de acertar). Passo corpo a corpo aceita puxa (true: o empurrão vira puxão para dentro, sem passar do herói) e vento (fração do dano do passo que sai como onda de vento para a frente, a mesma onda da carta Corte ondulante; se a carta também estiver ativa sai uma onda só, a maior). Passo com arco de 360 graus empurra para fora em volta, como a pancada. Campos opcionais do LightWolf (LW-1): no herói, beta (true: escondido do jogador comum; só aparece com o modo beta tester, --beta-tester, --heroi=<id> ou herói forçado por teste, ver Herois.lista); no passo, custo_mult (multiplica o gasto de fôlego do golpe da dificuldade; 0 = o tiro nunca gasta fôlego), lateral (px da boca da arma para o lado da mira: o mecha alterna mão esquerda e direita) e som_cada (o som do golpe toca só de 1 em cada N golpes, para o tiro de ~10 por segundo não virar ruído). Quem ainda não tem folha de sprites própria usa a do Hazaki (sprite = hazaki_samurai) até a arte do PER-4 chegar. Formas do LightWolf (LW-2, v2/mecha.gd): `forma_lobo` no herói aponta para o id da forma, e a forma é um registro com `forma_de` (o id do herói), que a `Herois.lista()` não mostra (só `Herois.heroi(id)` a acha) e que traz o `cfg` dela (vida, vel, recuo, golpe), `vida_pct` (fração da vida máxima do mecha que o Lobo tem), `invencivel` (s ao virar Lobo) e `quebra` (raio, empurrao e tremor da explosão do mecha).",
 	"herois": [
 		{
 			"id": "hazaki",
@@ -645,6 +645,7 @@
 			"titulo": "O Piloto",
 			"arma": "CANHÃO",
 			"beta": true,
+			"forma_lobo": "lightwolf_lobo",
 			"desc": "Piloto de mecha azul claro. O canhão atira sem parar e nunca cansa. Muita vida, anda devagar e apanha sem recuar. (Em teste: só no modo beta.)",
 			"sprite": "lightwolf_mecha",
 			"raio": 9,
@@ -701,6 +702,51 @@
 							"tom": 1.5,
 							"vol": -6,
 							"cor": [0.75, 0.95, 1.0]
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "lightwolf_lobo",
+			"nome": "LightWolf (Lobo)",
+			"titulo": "O Lobo",
+			"arma": "PISTOLA",
+			"forma_de": "lightwolf",
+			"desc": "A forma do LightWolf sem o mecha: pouca vida, rápido e com uma pistola de plasma muito forte. Junta pontos para chamar o mecha de volta. Não se escolhe no santuário.",
+			"sprite": "lightwolf_lobo",
+			"raio": 5,
+			"vida_pct": 0.31,
+			"invencivel": 1.5,
+			"quebra": {"raio": 70, "empurrao": 260, "tremor": 3.0},
+			"bonus": {"dano": 1.0, "vel_ataque": 1.0, "area": 1.0, "sorte": 0.0},
+			"cfg": {
+				"heroi": {"vida": 40, "vel": 130, "mov_golpe": 0.8, "recuo_dano": 150},
+				"folego": {"max": 3},
+				"golpe": {
+					"janela_combo": 0.3,
+					"pausa_fim_combo": 0.08,
+					"variacao": 0.1,
+					"impacto_adagas": {"hit_stop": 0.0, "recarga": 0.0},
+					"passos": [
+						{
+							"tipo": "adagas",
+							"nome": "plasma",
+							"proj": "plasma",
+							"dano": 34,
+							"n": 1,
+							"leque": 0,
+							"vel": 380,
+							"alcance": 260,
+							"perfura": 3,
+							"duracao": 0.25,
+							"acerto_em": 0.2,
+							"empurrao": 60,
+							"atordoa": 0.1,
+							"som": "estocada",
+							"tom": 0.85,
+							"vol": -3,
+							"cor": [0.85, 1.0, 1.0]
 						}
 					]
 				}
