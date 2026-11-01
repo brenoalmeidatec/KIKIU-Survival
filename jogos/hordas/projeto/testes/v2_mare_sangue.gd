@@ -412,6 +412,8 @@ func _chamada_por_heroi() -> void:
 		ok(d.mare_chamada_t < 0.0 and marcados > 0, "%s: a Maré chegou com monstros marcados (%d)" % [par[0], marcados])
 
 
+## Metade 1: o Q real, a onda e o Q que chama a Maré. A metade 2 (Maré no fator, Maré de cada herói, cone, borda, chamada pelo Q e som) é o
+## testes/v2_mare_heroi.gd, que herda daqui: as duas juntas passavam do limite de 120 s por cena do CI.
 func _ready() -> void:
 	await _q_real("nicao", "cidade", 1.0, true)
 	await _q_real("nicao", "cidade", 0.0, false)
@@ -419,15 +421,13 @@ func _ready() -> void:
 	await _q_real("hazaki", "cidade", 1.0, false)
 	await _onda()
 	await _q_chama_mare()
-	await _mare_no_fator()
-	await _formacao_por_heroi()
-	await _cone()
-	_borda()
-	await _chamada_por_heroi()
-	await _som_prioritario()
+	await _fim("v2_mare_sangue")
+
+
+func _fim(nome: String) -> void:
 	Herois.forcado = ""
 	if w != null:
 		w.queue_free()
 	await get_tree().process_frame
-	print("v2_mare_sangue falhas=%d" % falhas)
+	print("%s falhas=%d" % [nome, falhas])
 	get_tree().quit(1 if falhas else 0)

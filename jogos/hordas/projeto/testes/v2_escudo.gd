@@ -322,9 +322,19 @@ func _ready() -> void:
 	# 15. o escudo de verdade: um sprite por personagem, vistas pela mira, rachado, quebra em pedaços e volta reforjado
 	w.args["particulas"] = "muitas"
 	for id in ["hazaki", "nicao", "lucas", "matheus"]:
+		ok((d.escudo.visual.fragmentos as Dictionary).has(id), "dados > visual > fragmentos tem o escudo %s" % id)
+	for id in ["hazaki", "lucas", "matheus"]:
 		var tex := load("res://assets/v2/escudos/%s.png" % id) as Texture2D
 		ok(tex != null and tex.get_width() == 256 and tex.get_height() == 32, "o escudo %s existe: faixa 256x32 (8 células)" % id)
-		ok((d.escudo.visual.fragmentos as Dictionary).has(id), "dados > visual > fragmentos tem o escudo %s" % id)
+	# DEF-4a (pedido 9): o Nick tem a faixa M, de células de 48 px: 8 da camada 0 e 4 da camada 1 (aro de reforço)
+	var tex_m := load("res://assets/v2/escudos/nicao_m.png") as Texture2D
+	ok(tex_m != null and tex_m.get_width() == 576 and tex_m.get_height() == 48, "o escudo do Nick é a faixa M: 576x48 (12 células de 48)")
+	if tex_m != null:
+		var img := tex_m.get_image()
+		var bbox_frente := img.get_region(Rect2i(0, 0, 48, 48)).get_used_rect()
+		ok(bbox_frente.size.x >= 36, "a frente do escudo do Nick tem pelo menos 36 px de largura (%s)" % [bbox_frente.size])
+		var bbox_reforco := img.get_region(Rect2i(8 * 48, 0, 48, 48)).get_used_rect()
+		ok(bbox_reforco.size.x >= 36, "a frente da camada 1 (célula 8) também tem pelo menos 36 px (%s)" % [bbox_reforco.size])
 	zerar()
 	ok(not esc.visual_estado().visivel, "sem erguer o sprite do escudo não aparece")
 	erguer()
@@ -414,6 +424,35 @@ func _ready() -> void:
 	h.chave = chave_antes
 	esc.combate.heroi_id = heroi_antes
 	Meta.caminho_save = save_antes
+	# DEF-4a: a camada 1 do Nick no nível 6 (+10 graus de cobertura e o aro de reforço); até o nível 5 ele cobre o mesmo arco que os outros
+	var nivel_antes: int = h.nivel
+	h.chave = "nicao"
+	h.nivel = 5
+	var arco_nick_5: float = esc.arco(h)
+	h.nivel = 6
+	var arco_nick_6: float = esc.arco(h)
+	h.chave = "hazaki"
+	var arco_haz_6: float = esc.arco(h)
+	h.nivel = 5
+	var arco_haz_5: float = esc.arco(h)
+	ok(perto(arco_nick_5, arco_haz_5, 0.01), "o Nick no nível 5 cobre o mesmo arco que os outros (camada 0)")
+	ok(perto(arco_nick_6 - arco_haz_6, 10.0, 0.01), "o Nick no nível 6 ganha +10 graus de cobertura (camada 1): dif %.2f" % (arco_nick_6 - arco_haz_6))
+	zerar()
+	esc.combate.heroi_id = "nicao"
+	h.chave = "nicao"
+	h.nivel = 5
+	erguer()
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(str(ve.estilo) == "nicao" and esc._spr.texture.get_width() == 576 and ve.celula < 8, "o Nick no nível 5 usa a faixa M de 48 px, camada 0 (%s)" % ve)
+	h.nivel = 6
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(ve.celula >= 8 and ve.celula <= 11, "o Nick no nível 6 mostra a camada 1, células 8 a 11 (%s)" % ve)
+	zerar()
+	h.chave = chave_antes
+	h.nivel = nivel_antes
+	esc.combate.heroi_id = heroi_antes
 	# perfil Baixo: sem pedaços
 	zerar()
 	w.args["particulas"] = "poucas"
