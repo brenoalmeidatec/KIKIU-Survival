@@ -116,9 +116,17 @@ func _ready() -> void:
 	Anim.suave = false
 	c.baus.soltar(p)
 	ok(c.baus.lista[0].fx == 0 and cf.ativos == 0, "perfil Baixo: o baú não acende o feixe")
+	var tocar_b: int = cf.usados.tocar
+	var prender_b: int = cf.usados.prender
 	c.nivel_subiu(3)
 	c.efeitos(PASSO)
 	ok(cf.ativos == 0, "perfil Baixo: o level-up não fica no ar")
+	ok(
+		cf.usados.tocar == tocar_b and cf.usados.prender == prender_b,
+		"perfil Baixo: o level-up foi recusado, nenhum tocar/prender contado (tocar %d -> %d)" % [tocar_b, cf.usados.tocar]
+	)
+	ok(not cf.tocar("level-up", p), "perfil Baixo: tocar devolve false (recusado)")
+	ok(cf.usados.tocar == tocar_b and cf.ativos == 0, "perfil Baixo: o tocar recusado não gastou vaga nem contador")
 	Anim.suave = true
 	c.limpar_partida()
 	w.queue_free()

@@ -85,6 +85,18 @@ func _ready() -> void:
 	w.devolver_monstro(m2)
 	_quadros(w, 4)
 	ok(st.n_efeitos() == 0 and st.ativos == 0, "monstro devolvido ao pool solta o efeito (%d)" % st.n_efeitos())
+	# o mesmo monstro renasce do pool: sem fogo, sem lentidão, sem atordoamento e sem efeito nenhum preso
+	var m2b = w.nascer_monstro(TIPO, p0 + Vector2(-40, 0))
+	ok(m2b == m2, "o pool devolveu o mesmo monstro (reaproveitado)")
+	ok(
+		m2b.vivo and m2b.queima_t == 0.0 and m2b.lento_t == 0.0 and m2b.atordoa_t == 0.0,
+		"o reaproveitado renasce sem status (fogo=%.2f lento=%.2f atordoa=%.2f)" % [m2b.queima_t, m2b.lento_t, m2b.atordoa_t]
+	)
+	_quadros(w, 24)
+	ok(st.n_efeitos() == 0 and st.ativos == 0, "o reaproveitado nasce sem efeito (%d)" % st.n_efeitos())
+	m2b.esconder()
+	m2b.morrendo = false
+	w.devolver_monstro(m2b)
 
 	# 5. saiu da tela: solta; voltou: pega de novo
 	var m3 = w.nascer_monstro(TIPO, p0 + Vector2(0, 40))
@@ -101,16 +113,27 @@ func _ready() -> void:
 	m3.lento_t = 0.0
 	_quadros(w, 4)
 
-	# 6. limite: muitos monstros queimando não passam do teto
+	# 6. limite: mais monstros com status que o teto de monstros, misturando os três tipos para o teto de chamas (6) não barrar antes
 	var lista: Array = []
-	for k in 16:
-		var mk = w.nascer_monstro(TIPO, p0 + Vector2(-60 + 8 * k, 70))
-		mk.queimar(0.01, 20.0)
+	for k in 18:
+		var mk = w.nascer_monstro(TIPO, p0 + Vector2(-70 + 8 * k, 70))
+		match k % 3:
+			0:
+				mk.queimar(0.01, 20.0)
+			1:
+				mk.deixar_lento(20.0)
+			_:
+				mk.atordoa_t = 20.0
 		lista.append(mk)
-	_quadros(w, 40)
-	ok(st.ativos <= st.MAX_MONSTROS, "monstros com efeito dentro do teto (%d de %d)" % [st.ativos, st.MAX_MONSTROS])
-	ok(st.n_efeitos() <= st.LIMITE[0], "chamas dentro do limite (%d de %d)" % [st.n_efeitos(), st.LIMITE[0]])
-	ok(st.n_efeitos() > 0, "e mesmo assim há chamas (%d)" % st.n_efeitos())
+	var com_status := 0
+	for mk in lista:
+		if mk.queima_t > 0.0 or mk.lento_t > 0.0 or mk.atordoa_t >= st.ATORDOA_MIN:
+			com_status += 1
+	ok(com_status > st.MAX_MONSTROS, "há mais monstros com status (%d) que o teto de monstros (%d)" % [com_status, st.MAX_MONSTROS])
+	_quadros(w, 60)
+	ok(st.ativos == st.MAX_MONSTROS, "o teto de monstros foi o que barrou: %d de %d com efeito" % [st.ativos, st.MAX_MONSTROS])
+	ok(st.n_efeitos() >= st.MAX_MONSTROS, "e há ao menos um efeito por monstro preso (%d)" % st.n_efeitos())
+	ok(st.n_efeitos() <= st.LIMITE[0] + st.LIMITE[1] + st.LIMITE[2], "efeitos dentro da soma dos limites por tipo (%d)" % st.n_efeitos())
 
 	# 7. perfil Baixo: nada é desenhado
 	Anim.suave = false

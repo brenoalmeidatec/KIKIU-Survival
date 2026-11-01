@@ -2741,3 +2741,10 @@ _Claude do Alisson (notebook)_
 - **Merge automático:** o Alisson autorizou que o Claude mergeie sozinho quando o PR passar no portão descrito no CLAUDE.md, em "Quem mergeia".
 - **Risco aberto:** o pool do `inimigo_cavaleiro_oco` (12) pode não cobrir o pico de pesados, elite e mini-chefe juntos. Nenhuma partida foi simulada para conferir.
 - **Em andamento:** o lote pixelfx. O #496 é a base, e status, recompensa e clima partem dele.
+
+## 2026-11-01: integração dos 4 PRs do pixelfx (Claude do Alisson, notebook)
+
+- **Feito:** branch `integracao/pixelfx` a partir da main, com `git merge --no-ff` de `pixelfx-base` (#496), `pixelfx-status` (#498), `pixelfx-recompensa` (#499) e `pixelfx-clima` (#502), nessa ordem. Os conflitos foram só de união (`dados/v2_pixelfx.json`, `docs/LICENCAS_ARTE.md`, `docs/PIXELFX.md`). Os quatro PRs se fecham pelo merge deste.
+- **Consertos de revisão:** `v2_fx_status` agora prova o teto `MAX_MONSTROS` (18 monstros misturando fogo, lento e atordoado, teto de chamas fora do caminho) e prova que o monstro reaproveitado do pool nasce sem status e sem efeito; `v2_fx_recompensa` no perfil Baixo confere o `tocar` recusado (retorno e contadores); `preparar_status.py` ganhou `if __name__ == "__main__"`.
+- **Verificado:** todos os `v2_fx_*`, `v2_clima`, `v2_combate*`, `v2_chefe`, `v2_hud*` e `v2_pool_mapa` com falhas=0 e sem SCRIPT ERROR. Captura de janela real (Médio, Floresta e Cidade) viu chamas, relógios, estrelas, feixe do baú e o clima. O level-up não apareceu nas fotos tiradas (passou antes do quadro 150); só o teste cobre.
+- **Pendente:** CI no PR e o "pode mergear" do Alisson. Depois do merge, os quatro PRs antigos devem aparecer como mergeados.

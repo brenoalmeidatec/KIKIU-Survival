@@ -103,4 +103,5 @@ def main():
     print("burning", qs[0].size, len(qs))
 
 
-main()
+if __name__ == "__main__":
+    main()
