@@ -469,6 +469,8 @@ func rodar(perfil: String) -> void:
 	hud.brilho = 0.0
 
 	# 12. o escudo de defesa baixa, de lado (não há quadro rachado): o aviso avermelhado pulsava a ~2,2 Hz; ligado, vermelho parado
+	# DEF-2: o escudo é só do Nick; o aviso do escudo é testado no herói padrão, a quem o dado devolve o escudo neste teste (antes do reiniciar, que monta o sprite)
+	w.combate.escudo.herois["hazaki"] = "escudo"
 	zerar()
 	h = w.heroi
 	var esc = w.combate.escudo
