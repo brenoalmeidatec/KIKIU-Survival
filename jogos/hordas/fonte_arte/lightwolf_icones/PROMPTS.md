@@ -13,3 +13,11 @@ Gerados no ChatGPT logado do Alisson em 01/11/2026, com os prompts da seção 5.
 ## A22 Secundário, Matriz (`A22_lw_matriz.png`) -> `assets/v2/secundario_s/lightwolf.png`
 
 > a curved arc-shaped energy barrier made of interlocking light sky-blue hexagon panels with thin white highlights and a cyan edge, seen slightly from above, with three small cyan sparks where it deflects impacts. (S)
+
+## A20 Q Autodestruição (`A20_lw_autodestruicao.png`) -> `assets/v2/especial_q/lightwolf.png` (círculo do Q do mecha, LW-5)
+
+> a small white wolf-head emblem on a light sky-blue mech chest-core about to detonate, a big crisp starburst of white and cyan hard-edged spikes radiating from the center, a tiny silhouette of a wolf figure leaping out of the top-left. (S)
+
+## A21 Q Chamar o mecha (`A21_lw_chamar_mecha.png`) -> `assets/v2/especial_q/lightwolf_lobo.png` (círculo do Q do Lobo, LW-5)
+
+> a light sky-blue armored mech silhouette dropping from above onto a small circular cyan landing ring on the ground, one thick vertical cyan beam from the top edge to the mech, a tiny white wolf-head emblem on its chest. (S)
