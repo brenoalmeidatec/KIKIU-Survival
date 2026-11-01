@@ -205,6 +205,11 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - O ícone A19 (`assets/v2/habilidade_e/lightwolf.png`, derivado registrado na entrada do LW-3) passa a ser lido pelo slot E do HUD (`v2/hud_habilidades.gd`, `ICONES_E`). Nenhuma arte nova. O míssil em voo (10x4 px) é desenhado em código em `v2/adagas.gd` (`_img_missil`), sem arte de terceiros.
 
+## LW-5: ícones do Q do LightWolf (autodestruição e chamar o mecha), Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/lightwolf_icones/A20_lw_autodestruicao.png` e `A21_lw_chamar_mecha.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com os prompts em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fontes copiadas sem alteração.
+- Derivados (mesma arte, nenhuma arte nova): `jogos/hordas/projeto/assets/v2/especial_q/lightwolf.png` (A20, Q do mecha) e `jogos/hordas/projeto/assets/v2/especial_q/lightwolf_lobo.png` (A21, Q do Lobo), 32x32, gerados por `reduzir_icones.py`. Mudanças: corte do halo de alfa baixo, recorte pela caixa do objeto, redução por média de caixa e alfa endurecido. O brilho do mecha que acende na Autodestruição é o próprio quadro da folha dele em luz aditiva (desenho em código), sem arte nova.
+
 ## LW-6: ícones das cartas do LightWolf (Sifão, Matriz Ampla, Cabo de Resgate, Aurora Lunar), Claude do Alisson (notebook), 01/11/2026
 
 - `jogos/hordas/fonte_arte/lightwolf_icones/A23_lw_cartas.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com o prompt em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fonte copiada sem alteração.

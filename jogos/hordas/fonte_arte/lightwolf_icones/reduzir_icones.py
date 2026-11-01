@@ -1,4 +1,4 @@
-"""Reduz as fontes A19 (E mísseis) e A22 (matriz) do LightWolf ao tamanho do slot (32x32).
+"""Reduz as fontes A19 (E mísseis), A22 (matriz), A20 (Q autodestruição) e A21 (Q chamar o mecha) do LightWolf ao tamanho do slot (32x32).
 
 Uso (da raiz do repositório): python jogos/hordas/fonte_arte/lightwolf_icones/reduzir_icones.py
 
@@ -7,6 +7,8 @@ de 30 px com a proporção mantida, reduz com média de caixa (BOX), endurece o 
 centra num quadro de 32x32. Saídas:
   projeto/assets/v2/secundario_s/lightwolf.png   (slot S: a matriz, v2/hud_habilidades.gd)
   projeto/assets/v2/habilidade_e/lightwolf.png   (slot E: os mísseis; ligado no LW-4)
+  projeto/assets/v2/especial_q/lightwolf.png     (círculo do Q do mecha: a autodestruição; LW-5)
+  projeto/assets/v2/especial_q/lightwolf_lobo.png (círculo do Q do Lobo: chamar o mecha; LW-5)
 """
 
 from pathlib import Path
@@ -20,6 +22,8 @@ LADO_MAX = 30
 SAIDAS = {
     "A22_lw_matriz.png": PROJETO / "assets/v2/secundario_s/lightwolf.png",
     "A19_lw_misseis.png": PROJETO / "assets/v2/habilidade_e/lightwolf.png",
+    "A20_lw_autodestruicao.png": PROJETO / "assets/v2/especial_q/lightwolf.png",
+    "A21_lw_chamar_mecha.png": PROJETO / "assets/v2/especial_q/lightwolf_lobo.png",
 }
 
 
