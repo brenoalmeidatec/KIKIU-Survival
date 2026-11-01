@@ -84,6 +84,7 @@ const ANCORAS := {
 	"Ultimate": Vector2(0, 1),  # o Q em círculo, no centro e logo acima da barra de XP
 	"Habilidades": Vector2(1, 1),  # o E e o secundário: canto inferior direito do canvas
 	"Golpes": Vector2(-1, 1),  # faixa de golpes: canto inferior esquerdo do canvas, não do bloco (senão flutua sobre o campo)
+	"Conquista": Vector2(-1, -1),  # a conquista em andamento: canto superior esquerdo do canvas (UI-5)
 }
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]
@@ -168,6 +169,7 @@ var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desl
 @onready var _chefe_txt: Label = $Raiz/Chefe/Texto
 @onready var _chefe_busto: TextureRect = $Raiz/Chefe/Busto
 @onready var _anuncio = $Raiz/Anuncio
+@onready var _conquista = $Raiz/Conquista  # a conquista em andamento (hud_conquista.gd, UI-5)
 
 
 ## Cria o HUD já ligado ao mundo. É o que o mundo.gd chama (numa linha).
@@ -214,6 +216,7 @@ func _ready() -> void:
 	_vinheta.visible = false
 	_retrato_do_heroi()
 	_criar_selo_pesadelo()
+	_conquista.ligar(mundo)
 	EscalaUi.cobrir(_vinheta)
 	add_to_group("ui_escala")
 	ui_reencaixar(EscalaUi.canvas_atual, EscalaUi.desloc_atual)
@@ -324,6 +327,7 @@ func avancar(dt: float) -> void:
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+	_conquista.avancar(0.0 if cartas_na_tela else dt)  # o selo CUMPRIDA espera a escolha de carta, como a barra
 
 
 ## A placa do NÍVEL DO MAPA (moldura de pedra igual à do relógio) com a barra do mapa dentro.
@@ -378,6 +382,11 @@ func _criar_selo_pesadelo() -> void:
 	_selo_pesadelo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_selo_pesadelo.visible = false
 	$Raiz.add_child(_selo_pesadelo)
+
+
+## Chamado por resultado_meta.gd quando a partida cumpre conquistas ao vivo: o topo mostra CUMPRIDA (hud_conquista.gd).
+func conquistas_cumpridas(ids: Array) -> void:
+	_conquista.cumprir(ids)
 
 
 ## Verdadeiro com a escolha de carta ou o baú abertos (telas.gd). Sem combate no mundo (testes), é falso.

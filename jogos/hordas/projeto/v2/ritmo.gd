@@ -151,6 +151,7 @@ func atualizar(dt: float) -> void:
 		else:
 			var antes: float = h.vida
 			h.curar(h.vida_max * float(cfg.cura.fracao))
+			h.repor_defesa_de("coracao")  # a cura repõe a barra do escudo (valor nominal: vale com a vida cheia)
 			cura_efetiva += h.vida - antes
 		combate.audio.tocar("escolher", 1.2, -6.0, 0.0)
 
@@ -161,6 +162,7 @@ func _curar_aliado(it: Dictionary, h, dt: float) -> void:
 	var falta: float = maxf(0.0, h.vida_max * float(cfg.curandeiro.teto_cura) - float(it.curado))
 	var antes: float = h.vida
 	h.curar(minf(falta, h.vida_max * float(cfg.curandeiro.por_s) * dt))
+	h.repor_defesa_de("curandeiro_s", dt)  # dentro da aura: a barra do escudo sobe por segundo
 	var efetiva: float = h.vida - antes
 	if efetiva > 0.0 and it.curado == 0.0:
 		coletados.curandeiro += 1

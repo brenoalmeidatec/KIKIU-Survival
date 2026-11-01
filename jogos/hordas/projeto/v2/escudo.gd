@@ -2,20 +2,21 @@ extends RefCounted
 ## O tiro SECUNDÁRIO da v2 (botão direito do mouse ou gatilho esquerdo), no padrão Overwatch: botão direito = secundário (definido por herói),
 ## E / LB = habilidade (a ruptura, v2/ruptura.gd), Q / RB = especial (um por herói, v2/especial.gd). Para o herói de hoje o
 ## secundário é o ESCUDO: segurar ergue um escudo na frente do herói (arco de ~120 graus na direção da mira) que bloqueia o dano que vem de
-## dentro do arco (contato dos monstros, ataques anunciados e ataques do chefe). O herói anda a ~60%, não corre nem golpeia e o escudo gasta o
-## MESMO fôlego da corrida; zerar o fôlego deixa cansado e o escudo cai. Bloqueio PERFEITO (nos primeiros ~0,15 s depois de erguer): não gasta
-## fôlego e empurra e atordoa quem bateu. Soltar volta ao fôlego normal.
+## dentro do arco (contato dos monstros, ataques anunciados e ataques do chefe). O herói anda a ~60%, não corre nem golpeia e o escudo gasta a
+## BARRA DE DEFESA própria do herói (h.def, h.def_max; dados > escudo > barra), separada do fôlego: segurar gasta `gasto_s` por segundo e cada golpe barrado custa
+## uma fração do dano; zerar a defesa QUEBRA o escudo (h.def_quebrado) sem deixar o herói cansado. Bloqueio PERFEITO (nos primeiros ~0,15 s depois de erguer): não gasta
+## defesa, devolve um pouco e empurra e atordoa quem bateu. Soltar volta a recarregar a defesa depois do atraso (a recarga e a reposição pela cura são do herói).
 ##
 ## Qual secundário cada herói tem é DADO (dados/v2_secundario.json > padrao e herois > chave do herói), para que a branch de heróis mapeie
 ## outro secundário depois sem mexer no código: aqui só existe o id "escudo"; id desconhecido deixa o botão direito sem efeito.
 ##
-## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo`, `escudo_t`, velocidade, fôlego); este módulo cuida da geometria
+## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo`, `escudo_t`, velocidade, a barra de defesa); este módulo cuida da geometria
 ## (`cobre`), do bloqueio (`bloquear`), do visual e do som. Dono: o combate (`combate.escudo`).
 ##
 ## O VISUAL é um escudo de verdade, um por personagem (pixel art de assets/v2/escudos/<id>.png, gerada por fonte_arte/escudos/gerar_escudos.py): uma faixa de 8
 ## células 32x32 (frente, lado, costas, rachado e 4 pedaços). O Sprite2D fica no mundo (y-sort: passa por trás do herói quando a mira vai para cima), na
 ## mira, a `distancia * raio` do herói, e troca de vista pelo ângulo. A animação é toda em código no relógio de parede (`efeitos`): ergue com um pulo,
-## treme e solta faísca ao aparar, racha quando o fôlego está no fim (só o quadro de frente racha; de lado e de costas o aviso é o escudo avermelhado pulsando; os pedaços da quebra são sempre os da frente), QUEBRA em 4 pedaços que caem (fôlego zerou: o escudo cai) e volta "reforjado"
+## treme e solta faísca ao aparar, racha quando a defesa está no fim (só o quadro de frente racha; de lado e de costas o aviso é o escudo avermelhado pulsando; os pedaços da quebra são sempre os da frente), QUEBRA em 4 pedaços que caem (defesa zerou: o escudo cai) e volta "reforjado"
 ## no próximo erguer. Nada do visual muda a regra: `cobre`, `arco`, `raio` e `bloquear` seguem iguais. Perfil Baixo (sem partículas): sem tremor, faísca,
 ## estouro nem pedaços, só some e aparece. O clarão do acerto é um sprite aditivo filho do escudo (dentro do y-sort); o Node2D aditivo da camada glow (`no`) ficou só para as faíscas. A cobertura (arco por nível) não aparece no desenho.
 ##
@@ -168,16 +169,16 @@ func ergueu(h) -> void:
 	_carregar(h)
 
 
-## Soltou o botão ou o fôlego acabou: `h.cansado` quer dizer que o escudo CAIU (quebra, pedaços no chão); senão ele só desce.
+## Soltou o botão ou a defesa acabou: `h.def_quebrado` quer dizer que o escudo CAIU (quebra, pedaços no chão); senão ele só desce.
 func abaixou(h) -> void:
-	if h != null and h.cansado and _raiz != null and _raiz.visible:
+	if h != null and h.def_quebrado and _raiz != null and _raiz.visible:
 		_quebrar(h)
 	else:
 		_desce_t = 0.0
 
 
 ## O herói barrou um golpe de `valor` que vinha de `de`; `quem` é o monstro que bateu (null: ataque de área, sem alvo para empurrar).
-## Devolve true se foi PERFEITO. Comum: gasta um pouco de fôlego e empurra de leve; perfeito: não gasta e empurra e atordoa forte.
+## Devolve true se foi PERFEITO. Comum: gasta defesa (custo_golpe) e empurra de leve; perfeito: não gasta (devolve um pouco) e empurra e atordoa forte.
 func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	var perfeito: bool = h.escudo_t <= float((cfg.perfeito as Dictionary).janela)
 	bloqueios += 1
@@ -188,8 +189,10 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	if perfeito:
 		perfeitos += 1
 		h.escudo_perfeitos += 1
+		h._gastar_defesa(float((cfg.barra.perfeito as Dictionary).custo))
+		h._ganhar_defesa(float((cfg.barra.perfeito as Dictionary).devolve))
 	else:
-		h._gastar(float(cfg.gasto_golpe))
+		h._gastar_defesa(custo_golpe(valor))
 	if quem != null:
 		var longe: Vector2 = quem.pos - h.pos
 		longe = longe.normalized() if longe.length() > 0.5 else h.dir_olhar
@@ -224,12 +227,18 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	return perfeito
 
 
+## Quanto de defesa um golpe barrado de `valor` de dano custa: fracao x o dano, com piso e teto (dados > escudo > barra > custo_golpe).
+func custo_golpe(valor: float) -> float:
+	var c: Dictionary = cfg.barra.custo_golpe
+	return clampf(valor * float(c.fracao), float(c.piso), float(c.teto))
+
+
 ## Os números de agora para o painel de status.
 func resumo() -> Dictionary:
 	return {
 		"arco": arco(mundo.heroi) if mundo.heroi != null else float(cfg.arco),
 		"mov": float(cfg.mov),
-		"gasto": float(cfg.gasto),
+		"gasto": float(cfg.barra.gasto_s),
 		"perfeito_janela": float((cfg.perfeito as Dictionary).janela),
 	}
 
@@ -402,8 +411,8 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	elif g.y < -0.55:
 		cel = COSTAS
 		flip = false
-	var frac: float = float(h.folego) / maxf(float(h.folego_max), 0.001)
-	var baixo := ativo and frac <= float(visual.get("folego_rachado", 0.25))  # fôlego no fim: o escudo está para quebrar
+	var frac: float = float(h.def) / maxf(float(h.def_max), 0.001)
+	var baixo := ativo and frac <= float(visual.get("rachado", 0.25))  # defesa no fim: o escudo está para quebrar
 	rachado_visivel = baixo and cel == FRENTE
 	if rachado_visivel:
 		cel = RACHADO
