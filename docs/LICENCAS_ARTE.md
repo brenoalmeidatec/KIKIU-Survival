@@ -158,3 +158,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Nota: onde `morte.wav` e `dano_heroi.wav` tocam hoje (31/10/2026, Claude do Alisson (PC))
 
 Rerrolar e banir saíram da escolha de cartas, então as duas entradas acima citam usos que não existem mais. Hoje: `morte.wav` toca na morte de monstro (`v2/combate.gd`, `matar`) e no "sumir" do golem (`v2/audio.gd`); `dano_heroi.wav` toca quando o herói apanha (`v2/combate.gd`, `heroi_apanhou`) e quando o Automático não acha carta para completar a escolha (`v2/telas.gd`, `_automatico`). O arquivo e a licença não mudaram.
+
+## pixelfx: base do tocador de folhas, Claude do Alisson (notebook), 31/10/2026
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/collect-burst.png` (e o `.import`): folha 784x648, 42 quadros de 112x108 (o registro usa os 34 primeiros), do efeito `pickups/collect-burst` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (uso comercial, redistribuição e modificação permitidos, com o aviso de copyright e a licença junto). Exportada sem o boneco com `node tools/render.mjs pickups/collect-burst --sheet --no-actor` no clone do pixelfx; sem retoque no PNG. No jogo é recolorida por modulate (azul-ciano da alma) em `dados/v2_pixelfx.json`. Toca ao pegar um orbe de XP (`v2/fx_folha.gd`). Como regenerar e registrar outro efeito: `docs/PIXELFX.md`.
