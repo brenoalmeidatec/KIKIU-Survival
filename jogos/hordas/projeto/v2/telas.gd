@@ -643,6 +643,8 @@ func _montar_resultado() -> void:
 
 ## Mostra a escolha. `refresh` = é o mesmo menu com as cartas que sobraram (o baú entre uma pega e outra): mantém a marcação.
 func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
+	if mundo.heroi != null and mundo.heroi.has_method("cancelar_habilidade_pedida"):
+		mundo.heroi.cancelar_habilidade_pedida()
 	escolha_aberta = true
 	if not refresh:
 		sel = 0
@@ -810,6 +812,8 @@ func ligar_depuracao(v: bool) -> void:
 
 ## A roleta do baú: as cartas já foram aplicadas; aqui só aparecem, uma a uma, depois de girar.
 func mostrar_bau(cartas: Array) -> void:
+	if mundo.heroi != null and mundo.heroi.has_method("cancelar_habilidade_pedida"):
+		mundo.heroi.cancelar_habilidade_pedida()
 	bau_aberto = true
 	bau_pronto = false
 	espera_bau = float(combate.cartas.cfg.bau.bau_espera_s)
