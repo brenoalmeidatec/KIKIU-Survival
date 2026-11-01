@@ -242,3 +242,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - `jogos/hordas/fonte_arte/blender_herois/fabio/`: folha de sprites gerada por script (Blender 4.5, `gerar.py` + `perfil.py` + `anim_combo.py`) sobre o rig e as animações do Hazaki, com a aparência e o arco do Fabian. Arte PRÓPRIA, sem modelo, textura ou referência de terceiros: as peças novas são primitivas do script.
 - Gerados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/fabio.json`, `fabio_albedo.png` e `fabio_normal.png` (cópia de `fabio_final*`). Sem direitos de terceiros declarados.
+
+## LW-7: folha final do Lobo do LightWolf (Blender por script), Claude do Alisson, 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/lightwolf_lobo/` (`modelo_lobo.py`, `gerar.py`, `montar_folha.py`): modelo próprio feito por script no Blender 4.5, no rig e nas animações do Luke (`../lucas/`), a partir da referência `notas/artes_chatgpt/A16_lightwolf_lobo_ref.png` (arte gerada por IA, ChatGPT, conta do Alisson, sem direitos de terceiros declarados; só serviu de guia, não entra no repo). Nenhuma arte de terceiros.
+- Derivados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/lightwolf_lobo{.json,_albedo.png,_normal.png}` (substituem a folha provisória do `lightwolf_provisorio/recolor.py`). Mudanças: nenhuma depois do render (a folha sai de `montar_folha.py`).

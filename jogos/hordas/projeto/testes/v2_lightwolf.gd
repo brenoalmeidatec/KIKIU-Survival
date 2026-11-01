@@ -139,7 +139,10 @@ func _t_dados() -> void:
 	ok(cic > 0.06 and cic < 0.08, "mecha: ~10 tiros por segundo no papel: o passo mais o quadro de recomeço dá 6 quadros (%.3f s de passo)" % cic)
 	for nome in ["lightwolf_mecha", "lightwolf_lobo"]:
 		var info = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + nome + ".json"))
-		ok(info is Dictionary and bool(info.get("provisorio", false)), "%s: folha existe e está rotulada como provisória" % nome)
+		if nome == "lightwolf_lobo":
+			ok(info is Dictionary and not info.has("provisorio"), "%s: folha final (LW-7), sem o rótulo de provisória" % nome)
+		else:
+			ok(info is Dictionary and bool(info.get("provisorio", false)), "%s: folha existe e está rotulada como provisória" % nome)
 		ok(
 			ResourceLoader.exists(PASTA_SPRITES + nome + "_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + nome + "_normal.png"),
 			"%s: albedo e normal existem" % nome
