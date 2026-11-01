@@ -75,7 +75,10 @@ func _testes() -> void:
 	ok(Progressao.aberto("estrutura", "estatuas"), "Estátuas abertas desde o começo")
 	ok(not Progressao.aberto("estrutura", "altar") and not Progressao.aberto("estrutura", "codice"), "Altar e Códice trancados no começo")
 	ok(Mapas.condicao(Mapas.buscar("laboratorio")).begins_with("Trancado"), "o texto do portal trancado começa com Trancado")
-	ok(Mapas.curto(Mapas.buscar("laboratorio")) == "Vença a Floresta", "linha do cadeado do Laboratório (%s)" % Mapas.curto(Mapas.buscar("laboratorio")))
+	ok(
+		Mapas.curto(Mapas.buscar("laboratorio")) == "Vença a Floresta ou 300 almas",
+		"linha do cadeado do Laboratório (%s)" % Mapas.curto(Mapas.buscar("laboratorio"))
+	)
 	ok(Mapas.curto(Mapas.buscar("floresta")) == "", "a Floresta não tem linha de cadeado")
 	ok(Progressao.curto("estrutura", "altar") == "Vença a Floresta", "linha do Altar (%s)" % Progressao.curto("estrutura", "altar"))
 	ok(Progressao.curto("estrutura", "codice") == "1 conquista", "linha do Códice (%s)" % Progressao.curto("estrutura", "codice"))
@@ -91,7 +94,7 @@ func _testes() -> void:
 	var por_id := {}
 	for a in s._alvos:
 		por_id[str(a.id)] = a
-	ok(str(por_id.laboratorio.trava) == "Vença a Floresta" and str(por_id.floresta.trava) == "", "o alvo do portal leva a linha do cadeado")
+	ok(str(por_id.laboratorio.trava) == "Vença a Floresta ou 300 almas" and str(por_id.floresta.trava) == "", "o alvo do portal leva a linha do cadeado")
 	ok(str(por_id.altar.trava) != "" and str(por_id.estatuas.trava) == "", "o alvo da estrutura leva a linha do cadeado")
 	ok(not s.usar_portal("laboratorio"), "portal trancado não entra")
 	ok(s._aviso_lbl.text.begins_with("Trancado"), "Enter no portal trancado avisa (%s)" % s._aviso_lbl.text)

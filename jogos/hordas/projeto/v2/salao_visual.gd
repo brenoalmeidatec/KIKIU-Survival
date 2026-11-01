@@ -85,10 +85,13 @@ func nome_portal(n: Node2D, a: Dictionary, fechado: bool) -> void:
 		)
 
 
-## A linha de baixo do portal trancado: cadeado e condição.
+## A linha de baixo do portal trancado: cadeado e o que abre. Com chave à venda (ECO-5, "preco" em almas) mostra só o preço, porque
+## "Vença a Floresta ou 300 almas" não cabe nos 200 px entre portais; o texto completo fica no prompt e no aviso (salao.gd).
 func trava_portal(n: Node2D, a: Dictionary) -> void:
 	var p: Vector2 = a.pos
 	var trava := str(a.get("trava", ""))
+	if trava != "" and int(a.get("preco", 0)) > 0:
+		trava = "%d almas" % int(a.preco)
 	if trava != "":
 		linha_trava(n, Vector2(p.x, p.y + 37), trava)
 

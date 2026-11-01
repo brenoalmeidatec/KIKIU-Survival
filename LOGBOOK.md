@@ -2761,3 +2761,9 @@ _Claude do Alisson (notebook)_
 - **Feito:** `ferramentas/appimage/kikiu.appdata.xml` novo (metainfo AppStream) e `montar.sh` o instala em `usr/share/metainfo/`. O runtime do appimagetool agora vem da release datada `20251108` (`runtime-x86_64`, SHA-256 `2fca8b44...ec260d`, conferido no download) e entra com `--runtime-file`, porque o 1.9.1 baixava o asset `continuous` sem checagem (ele mudou em 19/10).
 - **Verificado:** `bash -n`, XML bem formado, SHA do appimagetool 1.9.1 e do runtime conferidos com `sha256sum -c`, e a montagem do AppDir simulada no Windows (layout com o metainfo no lugar; o appimagetool em si não roda aqui). A opção `--runtime-file` foi conferida no código-fonte da 1.9.1.
 - **Pendente:** o aviso de AppStream só some no próximo nightly Linux (não há como validar o XML sem `appstreamcli` aqui). #489 e #490 ainda abertas: o fechamento manual (recomendado pelo plano, D34) ficou para o Alisson. Teste visual do AppImage em Intel segue manual.
+
+## 2026-11-01: ECO-5, almas compram a chave dos portais (Claude do Alisson, agente da frente 5, #514)
+
+- **Feito:** a Torre (300 almas), a Vila (800) e as Ruínas (1.800) se compram uma vez por personagem, com o E duas vezes em até 4 s no salão. Condição nova `{"almas": N}` em `dados/v2_progressao.json`, gravada em `[compras] mapa_<id>` do save; não cumpre conquista e não conta o saldo. Cadeado do chão mostra só o preço (o texto completo fica no prompt e no aviso).
+- **Verificado:** `v2_compra_chave` (novo) falhas=0; `v2_progressao`, `v2_mapas`, `v2_beta_tester`, `v2_meta`, `v2_salao`, `v2_salao_entrada`, `v2_codigo_secreto`, `v2_segredos`, `v2_salao_visual`, `v2_letreiros`, `v2_confirmar_e` com falhas=0 e sem SCRIPT ERROR. Captura de janela real do santuário em `notas/o2_capturas/ECO-5/` (cadeados lidos, sem sobreposição). Não foi visto ao vivo o aviso de compra nem a confirmação com E.
+- **Pendente:** o robô ainda não mediu se 300/800/1.800 são o preço certo; o playtest é de ECO-8.
