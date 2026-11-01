@@ -148,7 +148,8 @@ v2_ritmo 15
 v2_robo_borda 15
 v2_roleta 15
 v2_salao_entrada 15
-v2_segredos 15
+v2_segredos 54
+v2_segredos_riscos 31
 v2_sentinela 15
 v2_som_invocacoes 15
 v2_transicoes 15
