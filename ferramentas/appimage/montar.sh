@@ -34,9 +34,12 @@ appdir="$trabalho/KIKIU.AppDir"
 mkdir -p "$appdir/usr/bin" "$appdir/usr/share/applications" "$appdir/usr/share/icons/hicolor/256x256/apps" "$appdir/usr/share/metainfo"
 install -m 755 "$binario" "$appdir/usr/bin/KIKIU.x86_64"
 install -m 755 "$aqui/AppRun" "$appdir/AppRun"
-install -m 644 "$aqui/kikiu.desktop" "$appdir/kikiu.desktop"
-install -m 644 "$aqui/kikiu.desktop" "$appdir/usr/share/applications/kikiu.desktop"
-install -m 644 "$aqui/kikiu.appdata.xml" "$appdir/usr/share/metainfo/kikiu.appdata.xml"
+# .desktop e metainfo com o nome do <id> do AppStream: o appimagetool acha o metainfo pelo nome do .desktop e o
+# appstreamcli reprova se o nome do metainfo não for o <id> (metainfo-filename-cid-mismatch)
+cid=io.github.brenoalmeidatec.kikiu
+install -m 644 "$aqui/kikiu.desktop" "$appdir/$cid.desktop"
+install -m 644 "$aqui/kikiu.desktop" "$appdir/usr/share/applications/$cid.desktop"
+install -m 644 "$aqui/kikiu.appdata.xml" "$appdir/usr/share/metainfo/$cid.appdata.xml"
 install -m 644 "$aqui/kikiu.png" "$appdir/kikiu.png"
 install -m 644 "$aqui/kikiu.png" "$appdir/usr/share/icons/hicolor/256x256/apps/kikiu.png"
 ln -s kikiu.png "$appdir/.DirIcon"

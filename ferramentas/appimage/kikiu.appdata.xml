@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Metainfo do AppImage (AppStream). Sem ele o appimagetool avisa que falta usr/share/metainfo/kikiu.appdata.xml. -->
+<!-- Metainfo do AppImage (AppStream). O montar.sh instala este arquivo e o kikiu.desktop com o nome do <id> (io.github.brenoalmeidatec.kikiu.*). -->
 <component type="desktop-application">
   <id>io.github.brenoalmeidatec.kikiu</id>
-  <launchable type="desktop-id">kikiu.desktop</launchable>
+  <launchable type="desktop-id">io.github.brenoalmeidatec.kikiu.desktop</launchable>
   <name>K.I.K.I.U</name>
   <summary>Sobreviva às hordas em ação 2.5D</summary>
   <developer id="io.github.brenoalmeidatec">
