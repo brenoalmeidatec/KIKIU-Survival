@@ -472,7 +472,7 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 		return
 	var id := str(_itens_atuais[sel].id)
 	if id == "" or bool(_itens_atuais[sel].get("bloqueado", false)):
-		return  # cabeçalho ou linha apagada (Avançado com o Detalhe dinâmico ligado): não faz nada
+		return  # cabeçalho ou linha apagada (Avançado com o Ajuste dinâmico ligado): não faz nada
 	if _eh_stepper(id):
 		_executar(id, passo)
 	elif confirmar:

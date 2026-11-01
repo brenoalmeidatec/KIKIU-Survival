@@ -8,17 +8,17 @@ extends RefCounted
 ## O menu só mostra as opções que a v2 lê hoje (LIDAS_NA_V2), todas valendo na hora na partida. As outras do json seguem nos
 ## perfis (a v1 usa), mas sem linha aqui: opção que não faz nada na tela não aparece. Opção nova só entra na lista depois de ser lida.
 ## Ids das linhas: "g:perfil", "g:dinamico", "g:detectar", "g:tela", "g:fps", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
-## Perfil tem só Baixo, Médio e Alto (e Personalizado, quando uma opção é mexida à mão). O Detalhe dinâmico (qualidade_auto) é uma linha
+## Perfil tem só Baixo, Médio e Alto (e Personalizado, quando uma opção é mexida à mão). O Ajuste dinâmico (qualidade_auto) é uma linha
 ## própria, logo abaixo do Perfil: com ele ligado a partida começa no Perfil escolhido, desce um degrau por vez se o fps travar e sobe de
 ## volta só até o Perfil escolhido (v2/qualidade_auto.gd; o Config guarda o escolhido em g_perfil_escolhido e a queda só na memória).
 ## Com ele ligado os DOIS seletores manuais de detalhe ficam apagados (linha com "bloqueado": true: a pausa não deixa mudar): o Perfil (Baixo,
-## Médio, Alto: cada um fixa todos os detalhes de uma vez) e as opções soltas da tela Avançado. A ajuda diz que quem manda é o Detalhe dinâmico
+## Médio, Alto: cada um fixa todos os detalhes de uma vez) e as opções soltas da tela Avançado. A ajuda diz que quem manda é o Ajuste dinâmico
 ## e o Perfil que estava escolhido vira o teto da subida. Por isso com ele ligado não há Personalizado: o Config.recarregar abre um save
 ## Personalizado como Não e ligar o dinâmico estando em Personalizado aplica o perfil da máquina (senão ficaria sem Perfil e sem como sair).
 ## Desligado, tudo volta a ser editável e mexer numa opção vira Personalizado. Detectar pela máquina, Tela cheia, Mostrar FPS e o Tamanho da
-## interface ficam sempre livres. Detectar escolhe o Perfil (a máquina, não o jogador) e deixa o Detalhe dinâmico como está (o padrão de
+## interface ficam sempre livres. Detectar escolhe o Perfil (a máquina, não o jogador) e deixa o Ajuste dinâmico como está (o padrão de
 ## máquina nova é Sim).
-## Tela cheia, o Detalhe dinâmico e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
+## Tela cheia, o Ajuste dinâmico e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 
 const CursorKikiu := preload("res://v2/cursor_kikiu.gd")
 const PERFIS := ["baixo", "medio", "alto"]
@@ -28,8 +28,8 @@ const NOMES_SECAO := {"cpu": "CPU (simulação)", "gpu": "GPU (visual)"}
 const LIDAS_NA_V2 := ["particulas_sim", "calculo_monstros", "luz_relevo", "sombras", "nevoa", "tremor_clarao", "limite_fps", "vsync"]
 const AJUDA_PERFIL := "Baixo, Médio e Alto fixam tudo. Mexer numa opção vira Personalizado."
 const AJUDA_DINAMICO := "Baixa a qualidade sozinho se o jogo travar e volta quando o FPS firmar, sem passar do Perfil escolhido. Ligado, o Perfil e os detalhes do Avançado ficam travados."
-const AJUDA_BLOQUEADO := "Controlado pelo Detalhe dinâmico. Desligue-o para ajustar à mão."
-const AJUDA_PERFIL_BLOQUEADO := "Travado: o Detalhe dinâmico escolhe a qualidade sozinho e este Perfil é o teto dele. Desligue-o para escolher à mão."
+const AJUDA_BLOQUEADO := "Controlado pelo Ajuste dinâmico. Desligue-o para ajustar à mão."
+const AJUDA_PERFIL_BLOQUEADO := "Travado: o Ajuste dinâmico escolhe a qualidade sozinho e este Perfil é o teto dele. Desligue-o para escolher à mão."
 const AJUDA_AVANCADO := "Opção por opção, separadas pelo que pesa na CPU (a conta do jogo) e na GPU (o desenho na tela)."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
@@ -53,7 +53,7 @@ func itens() -> Array:
 		r
 		. append_array(
 			[
-				_it("g:dinamico", "Detalhe dinâmico", _sim_nao("qualidade_auto"), AJUDA_DINAMICO),
+				_it("g:dinamico", "Ajuste dinâmico", _sim_nao("qualidade_auto"), AJUDA_DINAMICO),
 				_it("g:detectar", "Detectar pela máquina", "", AJUDA_DETECTAR),
 				_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
 				_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
@@ -83,7 +83,7 @@ func itens_avancado() -> Array:
 	return r
 
 
-## O perfil que o jogador vê: o de agora (Baixo, Médio, Alto ou Personalizado); se o Detalhe dinâmico já desceu, "Médio (dinâmico)".
+## O perfil que o jogador vê: o de agora (Baixo, Médio, Alto ou Personalizado); se o Ajuste dinâmico já desceu, "Médio (dinâmico)".
 func _nome_perfil() -> String:
 	var agora := str(Config.g_perfil())
 	var nome: String = NOMES_PERFIL.get(agora, "Personalizado")
@@ -118,7 +118,7 @@ func agir(id: String, passo: int) -> void:
 		_mudar_opcao(id.substr(3), passo)
 
 
-## O Detalhe dinâmico está ligado? Com ele ligado o Perfil e as opções do Avançado ficam travados (a linha pede "bloqueado": true).
+## O Ajuste dinâmico está ligado? Com ele ligado o Perfil e as opções do Avançado ficam travados (a linha pede "bloqueado": true).
 func dinamico_ligado() -> bool:
 	return bool(Config.v("qualidade_auto"))
 
@@ -128,7 +128,7 @@ func lida_na_v2(chave: String) -> bool:
 	return LIDAS_NA_V2.has(chave)
 
 
-## Liga ou desliga uma opção de sim ou não que fica fora do perfil (tela cheia, o Detalhe dinâmico, o contador de fps).
+## Liga ou desliga uma opção de sim ou não que fica fora do perfil (tela cheia, o Ajuste dinâmico, o contador de fps).
 ## Forma e cor do cursor: giram na lista e o cursor já muda na tela (v2/cursor_kikiu.gd lê a escolha de novo).
 func _girar_cursor(chave: String, vals: Array, passo: int) -> void:
 	var i := maxi(0, vals.find(CursorKikiu._opcao(chave, str(vals[0]))))
@@ -163,7 +163,7 @@ func _texto_valor(op: Dictionary) -> String:
 
 func _trocar_perfil(passo: int) -> void:
 	if dinamico_ligado():
-		return  # o Detalhe dinâmico manda (a linha aparece apagada): defesa para quem chamar sem passar pela pausa
+		return  # o Ajuste dinâmico manda (a linha aparece apagada): defesa para quem chamar sem passar pela pausa
 	var i := PERFIS.find(Config.g_perfil_escolhido())  # as setas partem do escolhido, não da queda do dinâmico
 	if i < 0:
 		i = 0 if passo > 0 else PERFIS.size() - 1  # personalizado: a seta começa de um lado ou do outro (como na v1)
@@ -172,7 +172,7 @@ func _trocar_perfil(passo: int) -> void:
 	aplicar_perfil(PERFIS[i])
 
 
-## Escolhe um perfil da lista (Baixo, Médio ou Alto). Não mexe no Detalhe dinâmico: ele segue como o jogador deixou.
+## Escolhe um perfil da lista (Baixo, Médio ou Alto). Não mexe no Ajuste dinâmico: ele segue como o jogador deixou.
 func aplicar_perfil(nome: String) -> void:
 	Config.g_aplicar_perfil(nome)
 
@@ -189,7 +189,7 @@ func _detectar() -> void:
 ## Uma opção do json: slider soma o passo (arredondado à grade), menu e sim_nao dão a volta na lista de valores.
 func _mudar_opcao(chave: String, passo: int) -> void:
 	if dinamico_ligado():
-		return  # o Detalhe dinâmico manda (a linha aparece apagada): defesa para quem chamar sem passar pela pausa
+		return  # o Ajuste dinâmico manda (a linha aparece apagada): defesa para quem chamar sem passar pela pausa
 	var op: Dictionary = Config.g_opcao(chave)
 	if op.is_empty():
 		return

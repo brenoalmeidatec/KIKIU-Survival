@@ -1,5 +1,5 @@
 extends RefCounted
-## Detalhe dinâmico (aba Gráficos, opção "qualidade_auto"): a partida começa no Perfil escolhido e acompanha o fps medido. Com o
+## Ajuste dinâmico (aba Gráficos, opção "qualidade_auto"): a partida começa no Perfil escolhido e acompanha o fps medido. Com o
 ## fps abaixo de 40 por 8 s seguidos, o perfil desce um degrau (Alto, Médio, Baixo); com o fps firme (no alvo) por 30 s, sobe um
 ## degrau de volta, mas só até o Perfil escolhido (o teto): nunca acima dele. Se a subida foi seguida de outra queda em menos de
 ## 60 s, a espera para subir de novo dobra (até 4 min): assim não fica trocando de um lado para o outro.

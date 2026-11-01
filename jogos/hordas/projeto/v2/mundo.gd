@@ -791,7 +791,7 @@ func _nivel_particulas() -> Dictionary:
 	return Config.PART_NIVEL.get(str(args.get("particulas", Config.g("particulas_sim"))), {})
 
 
-## Detalhe dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um, mas só
+## Ajuste dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um, mas só
 ## até o Perfil escolhido (o teto), só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
 func _baixar_qualidade(dt: float, fps: float) -> void:
 	if (
