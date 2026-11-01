@@ -77,7 +77,7 @@ func _ready() -> void:
 	cfg.folego["abate_max_s"] = 0.0
 	h.folego = 0.0
 	_abates(h, 1)
-	ok(is_equal_approx(h.folego, minf(1.536, h.folego_max)), "teto 0 desliga o limite: o abate devolve tudo (%s)" % h.folego)
+	ok(is_equal_approx(h.folego, minf(1.6, h.folego_max)), "teto 0 desliga o limite: o abate devolve tudo (%s)" % h.folego)
 	cfg.folego["abate_max_s"] = teto
 
 	# sai do cansaço ao passar do limite, como antes (começa meio crédito abaixo do limite, então um abate cruza)
