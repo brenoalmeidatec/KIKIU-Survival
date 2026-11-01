@@ -43,6 +43,12 @@ func novo(id: String) -> void:
 	w.combate.especial.limpa_ligada = false  # este teste mede o dano por área de cada Q; a limpeza da tela tem teste próprio (v2_limpa_tela)
 
 
+## DEF-2: o escudo é só do Nick; o herói da partida ganha o escudo pelo dado quando o teste precisa dele erguido.
+func esc_dado(h) -> void:
+	w.combate.escudo.herois[str(h.chave)] = "escudo"
+	h._iniciar_defesa()
+
+
 ## Mapa sem monstros, herói parado e mortal, sem crítico (o dano fica previsível), mira (mouse) 100 px à direita, especial pronto.
 func zerar() -> void:
 	w.reiniciar()
@@ -443,8 +449,9 @@ func _cancelamentos_e_bordas() -> void:
 	ok(h.especial() and h.estado == Heroi.Estado.ESPECIAL, "o especial cancela a ruptura em carga")
 	h.ruptura_forcada = false
 	esp.cancelar(h)
-	# derruba o escudo
+	# derruba o escudo (DEF-2: o escudo é só do Nick; o herói padrão o ganha pelo dado neste trecho)
 	zerar()
+	esc_dado(h)
 	h.escudo_forcado = true
 	passos(5)
 	ok(h.escudo_ativo, "o escudo está erguido")

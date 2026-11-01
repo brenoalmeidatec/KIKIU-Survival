@@ -503,6 +503,8 @@ func _mecanicas_d(w, marcas: Array) -> void:
 	var bloqueios0: int = w.combate.escudo.bloqueios
 	w.combate.jogo = "jogando"  # a escolha que o XP do mercador abriu foi fechada à mão acima: o jogo volta a jogar
 	w.heroi.vida = vida0
+	w.combate.escudo.herois[str(w.heroi.chave)] = "escudo"  # DEF-2: o escudo é só do Nick; o herói padrão o ganha pelo dado para provar que o espinho passa por ele
+	w.heroi._iniciar_defesa()
 	w.heroi.escudo_forcado = true
 	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 705.0))
 	w.avancar(PASSO)

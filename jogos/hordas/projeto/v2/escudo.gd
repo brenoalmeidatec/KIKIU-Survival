@@ -8,7 +8,13 @@ extends RefCounted
 ## defesa, devolve um pouco e empurra e atordoa quem bateu. Soltar volta a recarregar a defesa depois do atraso (a recarga e a reposição pela cura são do herói).
 ##
 ## Qual secundário cada herói tem é DADO (dados/v2_secundario.json > padrao e herois > chave do herói), para que a branch de heróis mapeie
-## outro secundário depois sem mexer no código: aqui só existe o id "escudo"; id desconhecido deixa o botão direito sem efeito.
+## outro secundário depois sem mexer no código: aqui existem os ids "escudo" (segurar; só o Nick, e o Luke até a fumaça dele) e "aparo" (apertar; o
+## padrão: Hazaki e os outros); id desconhecido deixa o botão direito sem efeito.
+##
+## O APARO (DEF-2) é a postura de iai: apertar abre uma janela curta (dados > aparo > janela) com arco de 140 graus na direção da mira; todo golpe que
+## chega de dentro do arco nessa janela é um bloqueio PERFEITO (`bloquear`, o mesmo do escudo: empurra e atordoa quem bateu, sem barra de defesa) e abre o
+## contragolpe da katana. Sem golpe na janela é erro: recuperação parado e recarga mais longa. O estado (fase, tempos) é do herói (`aparo_*`); aqui ficam
+## a geometria (`cobre_arco`), o bloqueio e o desenho do arco de lâmina no chão (procedural: não há folha, só o arco no glow).
 ##
 ## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo`, `escudo_t`, velocidade, a barra de defesa); este módulo cuida da geometria
 ## (`cobre`), do bloqueio (`bloquear`), do visual e do som. Dono: o combate (`combate.escudo`).
@@ -20,7 +26,8 @@ extends RefCounted
 ## no próximo erguer. Nada do visual muda a regra: `cobre`, `arco`, `raio` e `bloquear` seguem iguais. Perfil Baixo (sem partículas): sem tremor, faísca,
 ## estouro nem pedaços, só some e aparece. O clarão do acerto é um sprite aditivo filho do escudo (dentro do y-sort); o Node2D aditivo da camada glow (`no`) ficou só para as faíscas. A cobertura (arco por nível) não aparece no desenho.
 ##
-## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, para_heroi(chave), cobre(h, de) -> bool, raio(h) -> float, arco(h) -> float, pontos_do_arco(h),
+## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, aparo_para(chave) -> bool, rotulo_de(chave) -> Dictionary, para_heroi(chave),
+## cobre(h, de) -> bool, cobre_arco(h, de, graus) -> bool, raio(h) -> float, arco(h) -> float, pontos_do_arco(h),
 ## ergueu(h), abaixou(h), bloquear(h, valor, de, quem) -> bool [perfeito?], efeitos(dt) [relógio de parede: o visual], resumo().
 
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura e dos avisos)
@@ -40,6 +47,8 @@ const Progresso := preload("res://v2/progresso.gd")  # bonus_por_nivel: o cresci
 var combate
 var mundo
 var cfg: Dictionary = {}  # dados/v2_secundario.json > escudo
+var cfg_aparo: Dictionary = {}  # dados/v2_secundario.json > aparo
+var rotulos: Dictionary = {}  # dados/v2_secundario.json > rotulos: id do secundário -> {nome, icone} para o slot S da HUD
 var padrao := "escudo"
 var herois: Dictionary = {}  # chave do herói -> id do secundário (os testes mexem aqui)
 var no: Node2D
@@ -77,6 +86,8 @@ func montar(c, camada: Node) -> void:
 	mundo = c.mundo
 	var d: Dictionary = Dados.json("v2_secundario")
 	cfg = d.escudo
+	cfg_aparo = d.get("aparo", {})
+	rotulos = d.get("rotulos", {})
 	padrao = str(d.get("padrao", "escudo"))
 	herois = d.get("herois", {})
 	visual = cfg.get("visual", {})
@@ -119,6 +130,16 @@ func ativo_para(chave: String) -> bool:
 	return id_de(chave) == "escudo"
 
 
+## O secundário deste herói é o aparo?
+func aparo_para(chave: String) -> bool:
+	return id_de(chave) == "aparo"
+
+
+## O nome e o ícone do secundário do herói `chave` para o slot S da HUD ({} = não tem: o slot fica apagado).
+func rotulo_de(chave: String) -> Dictionary:
+	return rotulos.get(id_de(chave), {})
+
+
 ## O raio do escudo deste herói agora (a distância do sprite e a cobertura): o do dado MAIS o crescimento por nível (dados > escudo.raio_por_nivel). Não usa a área das cartas
 ## (h.m_area): o escudo do nível 1 é o de antes, para todo herói. Lido pela distância do sprite à frente do herói (`_deslocamento`) e pelo ponto da faísca.
 func raio(h) -> float:
@@ -134,10 +155,14 @@ func arco(h) -> float:
 ## Os pontos do arco de COBERTURA do escudo no chão (projetados na tela, de `h.pos + (0, -8)`): a geometria do bloqueio (raio e abertura) para os
 ## testes medirem. Não é desenhada: o visual é o sprite.
 func pontos_do_arco(h) -> PackedVector2Array:
+	return _pontos_arco(h, arco(h), raio(h))
+
+
+## Os pontos de um arco de `graus` de abertura e raio `r` no chão em volta do herói, na direção da mira (o do escudo e o do aparo).
+func _pontos_arco(h, graus: float, r: float) -> PackedVector2Array:
 	var c: Vector2 = h.pos + Vector2(0, -8)
 	var a0: float = atan2(h.dir_olhar.y / ACHATA, h.dir_olhar.x)  # o ângulo no chão, de volta para a tela
-	var meio := deg_to_rad(arco(h) * 0.5)
-	var r := raio(h)
+	var meio := deg_to_rad(graus * 0.5)
 	var pts := PackedVector2Array()
 	for i in PTS + 1:
 		var a := a0 - meio + 2.0 * meio * float(i) / float(PTS)
@@ -147,12 +172,22 @@ func pontos_do_arco(h) -> PackedVector2Array:
 
 ## O dano que vem de `de` (posição no mundo) cai dentro do arco do escudo? A conta é no chão (y dividido pela achatada), a mesma da ruptura e dos avisos.
 func cobre(h, de: Vector2) -> bool:
+	return cobre_arco(h, de, arco(h))
+
+
+## O mesmo teste de `cobre` com a abertura em graus dada (o aparo usa a dele, fixa; a matriz do LightWolf usará a dela).
+func cobre_arco(h, de: Vector2, graus: float) -> bool:
 	var rel: Vector2 = de - h.pos
 	rel = Vector2(rel.x, rel.y / ACHATA)
 	if rel.length() < 0.5:
 		return true  # em cima do herói: vem da frente de quem está encostado
 	var d := Vector2(h.dir_olhar.x, h.dir_olhar.y / ACHATA).normalized()
-	return rel.normalized().dot(d) >= cos(deg_to_rad(arco(h) * 0.5))
+	return rel.normalized().dot(d) >= cos(deg_to_rad(graus * 0.5))
+
+
+## O dano que vem de `de` cai dentro do arco do APARO (dados > aparo > arco, 140 graus)?
+func cobre_aparo(h, de: Vector2) -> bool:
+	return cobre_arco(h, de, float(cfg_aparo.arco))
 
 
 func ergueu(h) -> void:
@@ -168,6 +203,11 @@ func ergueu(h) -> void:
 	_carregar(h)
 
 
+## O aparo abriu a janela (o herói apertou o secundário): só o som; o arco aparece sozinho enquanto `h.aparo_fase` for 1 (`_desenhar`).
+func abriu_aparo(_h) -> void:
+	combate.audio.tocar("ruptura_tique", 1.9, -5.0, 0.05)
+
+
 ## Soltou o botão ou a defesa acabou: `h.def_quebrado` quer dizer que o escudo CAIU (quebra, pedaços no chão); senão ele só desce.
 func abaixou(h) -> void:
 	if h != null and h.def_quebrado and _raiz != null and _raiz.visible:
@@ -179,19 +219,23 @@ func abaixou(h) -> void:
 ## O herói barrou um golpe de `valor` que vinha de `de`; `quem` é o monstro que bateu (null: ataque de área, sem alvo para empurrar).
 ## Devolve true se foi PERFEITO. Comum: gasta defesa (custo_golpe) e empurra de leve; perfeito: não gasta (devolve um pouco) e empurra e atordoa forte.
 func bloquear(h, valor: float, de: Vector2, quem) -> bool:
-	var perfeito: bool = h.escudo_t <= float((cfg.perfeito as Dictionary).janela)
+	var aparo: bool = h.aparo_fase == 1  # dentro da janela do aparo: todo golpe é perfeito e não há barra para gastar
+	var perfeito: bool = aparo or h.escudo_t <= float((cfg.perfeito as Dictionary).janela)
 	bloqueios += 1
-	h.escudo_bloqueios += 1
-	var p: Dictionary = cfg.perfeito
+	var p: Dictionary = cfg_aparo if aparo else cfg.perfeito
 	var emp: float = float(p.empurrao) if perfeito else float(cfg.empurrao)
 	var atordoa: float = float(p.atordoa) if perfeito else 0.0
-	if perfeito:
+	if aparo:
 		perfeitos += 1
-		h.escudo_perfeitos += 1
-		h._gastar_defesa(float((cfg.barra.perfeito as Dictionary).custo))
-		h._ganhar_defesa(float((cfg.barra.perfeito as Dictionary).devolve))
 	else:
-		h._gastar_defesa(custo_golpe(valor))
+		h.escudo_bloqueios += 1
+		if perfeito:
+			perfeitos += 1
+			h.escudo_perfeitos += 1
+			h._gastar_defesa(float((cfg.barra.perfeito as Dictionary).custo))
+			h._ganhar_defesa(float((cfg.barra.perfeito as Dictionary).devolve))
+		else:
+			h._gastar_defesa(custo_golpe(valor))
 	if quem != null:
 		var longe: Vector2 = quem.pos - h.pos
 		longe = longe.normalized() if longe.length() > 0.5 else h.dir_olhar
@@ -383,8 +427,9 @@ func efeitos(dt: float) -> void:
 	_atualizar_sprite(h, ativo)
 	_atualizar_pedacos(dt)
 	var brilho := _flash_t > 0.0 or _perf_t > 0.0  # só as faíscas do acerto ficam na camada glow
-	if brilho or _desenhou:
-		_desenhou = brilho
+	var aparando: bool = h != null and h.aparo_fase == 1  # o arco do aparo também (só enquanto a janela está aberta)
+	if brilho or aparando or _desenhou:
+		_desenhou = brilho or aparando
 		no.queue_redraw()
 
 
@@ -531,6 +576,8 @@ func _desenhar() -> void:
 	var h = mundo.heroi
 	if h == null:
 		return
+	if h.aparo_fase == 1:
+		_desenhar_arco_aparo(h)
 	if (_flash_t > 0.0 or _perf_t > 0.0) and not _leve():
 		var perfeito := _perf_t > 0.0
 		var t := _perf_t / 0.22 if perfeito else _flash_t / 0.14
@@ -541,3 +588,18 @@ func _desenhar() -> void:
 			var d := Vector2.from_angle(TAU * float(i) / (8.0 if perfeito else 4.0))
 			no.draw_line(impacto + d * tamanho * 0.4, impacto + d * tamanho, Color(c2.r, c2.g, c2.b, t), 2.0)
 		no.draw_circle(impacto, 3.0 * t, Color(1.0, 0.97, 0.8, t))
+
+
+## O arco de lâmina do aparo no chão (140 graus, na direção da mira) enquanto a janela está aberta: dois traços que esmaecem com o tempo; dourado depois de aparar.
+## Procedural e barato (nenhum nó), então também aparece no perfil Baixo, que é o único feedback do aparo ali (sem faíscas).
+func _desenhar_arco_aparo(h) -> void:
+	var v: Dictionary = cfg_aparo.get("visual", {})
+	var janela := maxf(float(cfg_aparo.janela), 0.001)
+	var t := clampf(h.aparo_t / janela, 0.0, 1.0)
+	var cor := COR_OURO if h.aparo_acertou else Color(0.85, 0.95, 1.0)
+	var r := float(v.get("raio", 26.0))
+	var largura := float(v.get("largura", 2.0))
+	var fora := _pontos_arco(h, float(cfg_aparo.arco), r)
+	var dentro := _pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8)
+	no.draw_polyline(fora, Color(cor.r, cor.g, cor.b, 0.95 * (1.0 - 0.6 * t)), largura)
+	no.draw_polyline(dentro, Color(cor.r, cor.g, cor.b, 0.5 * (1.0 - 0.6 * t)), maxf(largura * 0.5, 1.0))
