@@ -61,7 +61,9 @@ Categories=Game;"
 	chmod +x "$menu"
 	# área de trabalho: a pasta do usuário (xdg-user-dir dá o nome certo em qualquer idioma)
 	mesa="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
-	[ -z "$mesa" ] && mesa="$HOME/Desktop"
+	if [ -z "$mesa" ]; then
+		for d in "$HOME/Área de trabalho" "$HOME/Área de Trabalho" "$HOME/Desktop"; do [ -d "$d" ] && mesa="$d" && break; done
+	fi
 	if [ -d "$mesa" ]; then
 		atalho="$mesa/kikiu-teste.desktop"
 		printf '%s\n' "$entrada" >"$atalho"
@@ -94,7 +96,8 @@ atual=""
 if [ -n "$tag" ] && { [ "$tag" != "$atual" ] || [ ! -f "$BUILDS/$tag.AppImage" ]; }; then
 	echo "Baixando a build $tag ..."
 	tmp="$BUILDS/$tag.AppImage.tmp"
-	if curl -L --fail --retry 3 --silent --show-error -o "$tmp" "$url"; then
+	rm -f "$BUILDS"/*.AppImage.tmp  # sobra de um download interrompido
+	if curl -L --fail --retry 3 --connect-timeout 15 --silent --show-error -o "$tmp" "$url"; then
 		chmod +x "$tmp"
 		mv -f "$tmp" "$BUILDS/$tag.AppImage"
 		printf '%s\n' "$tag" >"$ARQ_ATUAL"
