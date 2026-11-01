@@ -128,8 +128,8 @@ func _dados() -> void:
 		var b: Dictionary = d.get(id, {})
 		ok(b.has("limpa_em") and float(b.limpa_em) > 0.0 and float(b.limpa_em) < float(b.dur), "%s tem limpa_em dentro da duração" % id)
 	ok(
-		is_equal_approx(float(d.investida.limpa_em), 0.14) and is_equal_approx(float(d.terremoto.limpa_em), 0.55),
-		"limpa_em: investida 0,14 s e terremoto 0,55 s"
+		is_equal_approx(float(d.investida.limpa_em), 0.22) and is_equal_approx(float(d.terremoto.limpa_em), 0.55),
+		"limpa_em: investida 0,22 s (o quadro do raio, ULT-B) e terremoto 0,55 s"
 	)
 	ok(is_equal_approx(float(d.chuva.limpa_em), 0.30), "limpa_em: chuva 0,30 s")
 
