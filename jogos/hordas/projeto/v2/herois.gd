@@ -1,5 +1,5 @@
 extends RefCounted
-## Os heróis jogáveis da v2 (Hazaki, Nick e Luke): catálogo em dados/v2_herois.json, herói de cada personagem do salão (v2/personagens.gd) e a aplicação dos números do herói escolhido. Tudo estático, sem estado além de `forcado`.
+## Os heróis jogáveis da v2 (Hazaki, Nick, Luke e os outros): catálogo em dados/v2_herois.json, herói de cada personagem do salão (v2/personagens.gd) e a aplicação dos números do herói escolhido. Tudo estático, sem estado além de `forcado`.
 ##
 ## Como o herói entra na partida (sem espalhar `if` pelo combate):
 ##  - `cfg_para(base, id)`: o dados/v2_combate.json COPIADO e coberto pelo `cfg` do herói (vida, velocidade, fôlego, combo de golpes). O
@@ -19,8 +19,22 @@ static func catalogo() -> Dictionary:
 	return Dados.json("v2_herois")
 
 
+## Os heróis que o jogo mostra. Herói com `"beta": true` (LightWolf, #511) fica escondido do jogador comum e só entra com o modo beta tester
+## (Konami/IDKFA ou `-- --beta-tester`), com `-- --heroi=<id>` ou forçado por teste e foto. Assim cada PR do herói pode ser mesclado sem
+## expor um herói pela metade; no RC o campo vira false só se passar no playtest.
 static func lista() -> Array:
-	return catalogo().get("herois", [])
+	var r: Array = []
+	for h in catalogo().get("herois", []):
+		if not bool(h.get("beta", false)) or _beta_liberado(str(h.id)):
+			r.append(h)
+	return r
+
+
+static func _beta_liberado(id: String) -> bool:
+	if forcado == id or ("--heroi=" + id) in OS.get_cmdline_user_args():
+		return true
+	var prog = load("res://v2/progressao.gd")  # load e não preload: a Progressao chama o Meta, que chama este script (ciclo)
+	return prog.beta_tester()
 
 
 static func existe(id: String) -> bool:

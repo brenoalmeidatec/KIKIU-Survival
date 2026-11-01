@@ -805,7 +805,10 @@ func _camera_adiantada(dt: float) -> void:
 
 func _iniciar_golpe() -> bool:
 	var dif := preload("res://v2/dificuldade.gd").da_partida(mundo)
-	var custo := float(dif.golpe_custo)
+	var passos: Array = mundo.combate.cfg.golpe.passos
+	var idx: int = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
+	# custo_mult do passo (LW-1): 0 = o tiro do mecha nunca gasta fôlego nem espera o calor; o resto dos heróis não tem o campo (1).
+	var custo := float(dif.golpe_custo) * float((passos[idx] as Dictionary).get("custo_mult", 1.0))
 	if custo > 0.0:
 		if golpe_calor_t > 0.0:
 			return false
@@ -815,8 +818,7 @@ func _iniciar_golpe() -> bool:
 		_gastar(custo, false)
 		if folego <= 0.0:
 			golpe_calor_t = float(dif.golpe_calor)
-	var passos: Array = mundo.combate.cfg.golpe.passos
-	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
+	golpe_i = idx
 	golpe_cfg = passos[golpe_i]
 	golpe_dur = duracao_do_passo(golpe_i)
 	golpe_t = 0.0
