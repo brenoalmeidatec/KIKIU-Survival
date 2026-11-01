@@ -90,7 +90,7 @@ func definir_fatores(amb: float, efe: float, det := 1.0) -> void:
 	fator_efe = efe
 	fator_det = det
 	if _detritos == null and _glow != null and fator_det > 0.0:
-		_criar_detritos()  # o perfil subiu (Detalhe dinâmico ou menu): só agora o emissor passa a existir
+		_criar_detritos()  # o perfil subiu (Ajuste dinâmico ou menu): só agora o emissor passa a existir
 	for r in _regs:
 		_aplicar(r)
 

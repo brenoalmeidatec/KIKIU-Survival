@@ -45,7 +45,7 @@ const ITENS := [
 	{"chave": "tecla_status", "grupo": "Controles", "nome": "Status (inventário)", "valores": [""], "padrao": "", "acao": "status"},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	# Gráfico: perfil, CPU e GPU ficam em dados/graficos.json (Config.g / g_definir). Aqui só o que é do jogador, fora do perfil.
-	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Detalhe dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Ajuste dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{
@@ -150,7 +150,7 @@ func recarregar() -> void:
 	if sombra_antiga.has(sombra):
 		_cfg.set_value("graficos", "sombras", sombra_antiga[sombra])
 		_cfg.save(arquivo)
-	# migração, uma vez: com o Detalhe dinâmico ligado não há Personalizado (os detalhes ficam travados no Perfil). Um save com as duas
+	# migração, uma vez: com o Ajuste dinâmico ligado não há Personalizado (os detalhes ficam travados no Perfil). Um save com as duas
 	# coisas (o jogador montou à mão, v1 ou antes do dinâmico existir) abre com o dinâmico desligado: o que ele montou fica como está
 	if str(_cfg.get_value("graficos", "perfil", "")) == "personalizado" and bool(v("qualidade_auto")):
 		_cfg.set_value("opcoes", "qualidade_auto", false)
@@ -171,7 +171,7 @@ func g(chave: String) -> Variant:
 	return perfis.get(base, perfis.get("alto", {})).get(chave)
 
 
-## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado". Com o Detalhe dinâmico (qualidade_auto) pode estar um degrau
+## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado". Com o Ajuste dinâmico (qualidade_auto) pode estar um degrau
 ## abaixo do escolhido, só na memória.
 func g_perfil() -> String:
 	if _temp_perfil != "":
@@ -179,12 +179,12 @@ func g_perfil() -> String:
 	return g_perfil_escolhido()
 
 
-## O perfil que o jogador escolheu (o que está salvo), sem a queda só da memória do Detalhe dinâmico: é o teto da subida.
+## O perfil que o jogador escolheu (o que está salvo), sem a queda só da memória do Ajuste dinâmico: é o teto da subida.
 func g_perfil_escolhido() -> String:
 	return str(_cfg.get_value("graficos", "perfil", _perfil_padrao))
 
 
-## Desfaz a queda só da memória (Detalhe dinâmico): volta ao perfil escolhido. Sem queda, não faz nada.
+## Desfaz a queda só da memória (Ajuste dinâmico): volta ao perfil escolhido. Sem queda, não faz nada.
 func g_soltar_temporario() -> void:
 	if _temp_perfil == "":
 		return
