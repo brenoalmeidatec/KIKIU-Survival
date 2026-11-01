@@ -26,12 +26,38 @@ func perto(a: Vector2, b: Vector2) -> bool:
 func _ready() -> void:
 	Config.arquivo = OPCOES_TESTE
 	_tabela()
+	_encaixe_salao()
 	await _mundo()
 	EscalaUi.janela_forcada = Vector2i.ZERO
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
 	Config.arquivo = "user://testes_v2/v2_escala_ui/opcoes.cfg"
 	print("v2_escala_ui falhas=%d" % falhas)
 	get_tree().quit()
+
+
+## O salão encaixa a cena inteira continuamente, sem mudar os passos dos menus.
+func _encaixe_salao() -> void:
+	var personagens = load("res://v2/personagens.gd")
+	personagens.ativar(personagens.criar("Brendan"))  # fixture temporária, sem ler nem gravar o perfil do jogador
+	Config.temporario("tamanho_ui", "pequeno")
+	var sala = load("res://v2/salao.tscn").instantiate()
+	add_child(sala)
+	ok(sala._camadas.size() >= 3, "o salão tem as camadas reais de fundo, cenário e brilho")
+	for j in [Vector2i(1390, 782), Vector2i(2560, 1080), Vector2i(1024, 1200), Vector2i(800, 450)]:
+		EscalaUi.janela_forcada = j
+		get_window().size_changed.emit()  # mesmo sinal usado ao redimensionar a janela
+		var esperado := minf(float(j.x) / 960.0, float(j.y) / 540.0)
+		ok(is_equal_approx(EscalaUi.fator_atual, esperado), "salão %s usa encaixe contínuo %.4f" % [str(j), esperado])
+		ok(is_equal_approx(get_window().content_scale_factor, 1.0), "salão %s usa o encaixe inteiro da janela" % str(j))
+		ok(EscalaUi.canvas_atual.x * esperado >= float(j.x) - 0.01, "salão %s cobre a largura" % str(j))
+		ok(EscalaUi.canvas_atual.y * esperado >= float(j.y) - 0.01, "salão %s cobre a altura" % str(j))
+		ok(sala.position == EscalaUi.deslocamento(EscalaUi.canvas_atual), "salão %s centraliza o bloco" % str(j))
+		ok(sala.size == EscalaUi.BLOCO, "salão %s preserva o bloco sem corte" % str(j))
+		for camada in sala._camadas:
+			ok(camada.offset == EscalaUi.desloc_atual, "salão %s reencaixa a camada %s" % [str(j), camada.name])
+	sala.free()
+	EscalaUi.janela_forcada = Vector2i.ZERO
+	Config.temporario("tamanho_ui", "auto")
 
 
 ## janela -> fator por opção (auto, pequeno, medio, grande)
@@ -66,7 +92,7 @@ func _tabela() -> void:
 	ok(EscalaUi.deslocamento(cv) == Vector2(160, 90), "o bloco fica no centro do canvas")
 	ok(EscalaUi.cobertura(cv, Vector2(160, 90)) == Rect2(-160, -90, 1280, 720), "a cobertura começa em -deslocamento")
 	ok(EscalaUi.deslocamento(Vector2(960, 540)) == Vector2.ZERO, "canvas igual ao bloco: sem deslocamento")
-	# a opção forçada (o salão usa "grande"): ignora o que está salvo e encaixa o bloco na janela
+	# a opção forçada Grande ignora o que está salvo; neste tamanho, ela encaixa o bloco na janela
 	Config.temporario("tamanho_ui", "pequeno")
 	EscalaUi.janela_forcada = Vector2i(1920, 1080)
 	ok(

@@ -183,7 +183,7 @@ func _codigo_alternou(_ligado: bool) -> void:
 
 
 func _ajustar_janela() -> void:
-	add_child(UiJanela.new().montar(self, "grande"))  # a sala 960x540 é cena, não menu: fica sempre encaixada na janela (o tamanho da interface não a encolhe); só a borda extra de janelas fora de 16:9 é chão escuro
+	add_child(UiJanela.new().montar(self, "encaixe"))  # a sala 960x540 é cena, não menu: fica sempre encaixada na janela (o tamanho da interface não a encolhe); só a borda extra de janelas fora de 16:9 é chão escuro
 
 
 # ------------------------------------------------------------------ dados e alvos
