@@ -28,6 +28,9 @@ def zerar(arm):
         pb.rotation_euler = (0.0, 0.0, 0.0)
         pb.location = (0.0, 0.0, 0.0)
         pb.scale = (1.0, 1.0, 1.0)
+    for o in arm.children:
+        if o.name.startswith("Olho clarao"):
+            o.hide_render = True      # clarao do tiro: so o anim_combo liga (quadro do disparo)
 
 
 def _repouso(arm, nome):

@@ -1,19 +1,12 @@
-"""ESCUDO / DEFESA (guarda firme, o secundário do Nicão): 2 quadros. q0 = ENTRADA (a marreta sobe do chão na diagonal, o corpo se agacha); q1 = GUARDA: o cabo
-atravessa o peito na horizontal, as duas mãos nele, a cabeça da marreta para a esquerda da tela, joelhos dobrados, o tronco pesa para a frente (o jogo
-fica no último quadro enquanto o botão está apertado, ver heroi.gd: _coluna_por_tempo).
-
-A marreta é posada no espaço do herói (ossos.empunhar) e as mãos a seguram por IK (ossos.segurar).
-"""
+"""ESCUDO / MATRIZ DE DEFESA: 2 quadros. q0 = ENTRADA (agacha, os canhoes sobem); q1 = GUARDA: antebracos levantados cruzando a frente do peito (os canhoes apontam para cima
+e para a frente), joelhos dobrados, o tronco pesa para a frente. O jogo fica no ultimo quadro enquanto o botao esta apertado (heroi.gd: _coluna_por_tempo)."""
 import ossos
 
 N_QUADROS = 2
 S_POR_QUADRO = [0.07, 0.12]
 
-# g = onde fica a mão em d0 (espaço do herói), elev/azim da marreta (graus), agacha, tronco
-QUADROS = [
-    dict(g=(0.05, -0.45, 1.55), elev=55, azim=-70, agacha=0.20, tx=0.08),
-    dict(g=(0.00, -0.60, 1.80), elev=10, azim=-85, agacha=0.45, tx=0.15),
-]
+QUADROS = [dict(agacha=0.20, tx=0.06, braco=-0.50, ante=-0.60, y=0.10),
+           dict(agacha=0.45, tx=0.14, braco=-0.70, ante=-1.10, y=0.28)]
 
 
 def posar(arm, quadro, n_quadros):
@@ -28,7 +21,9 @@ def posar(arm, quadro, n_quadros):
     ossos.girar(arm, "quadril", x=-0.08 * a)
     ossos.girar(arm, "torso", x=p["tx"])
     ossos.girar(arm, "cabeca", x=-0.5 * p["tx"])
-    ossos.empunhar(arm, p["g"], ossos.dirv(p["elev"], p["azim"]), d0=0.0)
-    ossos.segurar(arm, mao_e=0.55, mao_d=0.0)      # a cabeça aponta para -x: a mão da esquerda da tela é a de cima
+    ossos.girar(arm, "braco_e", x=p["braco"], y=-p["y"])      # os bracos fecham para o centro
+    ossos.girar(arm, "braco_d", x=p["braco"], y=p["y"])
+    ossos.girar(arm, "antebraco_e", x=p["ante"])
+    ossos.girar(arm, "antebraco_d", x=p["ante"])
     ossos.pisar(arm)
     ossos.encaixar_x(arm)

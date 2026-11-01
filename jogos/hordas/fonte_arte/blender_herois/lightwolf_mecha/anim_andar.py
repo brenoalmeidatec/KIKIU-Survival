@@ -1,6 +1,5 @@
 """ANDAR: 6 quadros, ciclo do piloto (contato, descida, passagem, contato oposto, descida, passagem; 60 graus de fase por quadro).
-Anão pesado: passo curto, quadril balança mais que o do Hazaki, o corpo desce a cada apoio. A mão esquerda leva a marreta pelo cabo (IK em ossos.segurar):
-a marreta vai inclinada para a frente e balança no ritmo do passo; o braço direito balança solto.
+Mecha pesado: passo curto, quadril balança mais que o do Hazaki, o corpo desce a cada apoio. Bracos soltos com os canhoes para a frente.
 """
 import math
 
@@ -29,11 +28,9 @@ def posar(arm, quadro, n_quadros):
     ossos.girar(arm, "quadril", z=QUADRIL * c, x=-0.05, y=0.10 * c)       # balanço de lado do anão pesado
     ossos.girar(arm, "torso", z=-2.0 * QUADRIL * c, x=0.10, y=-0.12 * c)
     ossos.girar(arm, "cabeca", z=QUADRIL * c, x=-0.06)
-    # braço direito solto, cotovelo dobrado
-    ossos.girar(arm, "braco_d", x=-BRACO * c - 0.15, y=-0.10)
-    ossos.girar(arm, "antebraco_d", x=-0.45 - 0.25 * max(0.0, c))
-    # marreta: inclinada para a frente, balança com o passo (o cabo bate no ombro a cada apoio)
-    ossos.girar(arm, "marreta", x=0.30 + 0.06 * c, y=0.05 * s)
-    ossos.mover(arm, "marreta", z=0.10 + 0.04 * abs(s), y=-0.10 - 0.10 * c)
-    ossos.segurar(arm)
+    # bracos pesados, soltos: balancam contra as pernas, canhoes para a frente e para baixo
+    ossos.girar(arm, "braco_e", x=BRACO * c * 0.6 - 0.10)
+    ossos.girar(arm, "braco_d", x=-BRACO * c * 0.6 - 0.10)
+    ossos.girar(arm, "antebraco_e", x=-0.10 - 0.15 * max(0.0, -c))
+    ossos.girar(arm, "antebraco_d", x=-0.10 - 0.15 * max(0.0, c))
     ossos.pisar(arm)

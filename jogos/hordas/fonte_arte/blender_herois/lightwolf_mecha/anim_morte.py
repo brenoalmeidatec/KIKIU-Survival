@@ -83,22 +83,4 @@ def posar(arm, quadro, n_quadros, ang=0.0):
         ossos.girar(arm, "canela_" + lado, x=canela)
         plana = -(perna + canela + p["raiz"])
         ossos.girar(arm, "pe_" + lado, x=plana * max(0.0, 1.0 - fase * 1.3))
-    if quadro < 2:
-        # a marreta ainda na mão esquerda; no q1 já escorrega (cabeça para fora e para trás)
-        ossos.girar(arm, "marreta", x=-0.30 * quadro, y=-0.15 * quadro)
-        ossos.segurar(arm)
     ossos.ancorar(arm, extra_z=p.get("extra_z", 0.0))
-    if quadro >= 2:
-        t = MARRETA_T[quadro]
-        arco = math.sin(min(t, 1.0) * math.pi) * 0.45          # sobe um pouco antes de cair
-        centro = MARRETA_INICIO.lerp(MARRETA_FIM, t) + Vector((0.0, 0.0, arco))
-        az_fim = -90.0 * sinal                                 # a cabeça da marreta aponta para o lado dos PÉS do anão
-        el = 90.0 * (1.0 - t) ** 1.5
-        az = az_fim * t
-        d = ossos.dirv(el, az - ang)                           # azimute do mundo -> do armature (o objeto gira `ang`)
-        corpo = ossos.verts_mundo(arm, True)                   # o centro do corpo no mundo: a marreta cai em volta dele
-        base = Vector((float(corpo[:, 0].min() + corpo[:, 0].max()) / 2, float(corpo[:, 1].min() + corpo[:, 1].max()) / 2, arm["z_chao_mundo"]))
-        esc = arm.scale[0]                                     # o objeto tem a escala do herói: o mundo é `esc` vezes o espaço do modelo
-        mundo = base + centro * esc
-        ponto = _local((mundo - Vector(arm.location)) / esc, ang)
-        ossos.empunhar(arm, ponto, d, d0=0.4)

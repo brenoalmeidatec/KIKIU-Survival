@@ -12,6 +12,6 @@ python medir.py combo                  # largura/altura por direção e se algo 
 ```
 Depois copie `lightwolf_mecha_final_albedo.png`, `_normal.png` e `.json` para `projeto/prototipos/cara_nova/sprites/` como `lightwolf_mecha_albedo.png`, `_normal.png` e `.json`.
 
-Quadro 64x96, sem aumentá-lo. Borda medida (`medir.py`): andar, parado, combo, escudo, dano e morte não encostam; o rolamento encosta em 2 direções (poucos pixels).
-Pendente: os braços ainda seguem as poses do Nicão (a mão esquerda "segura" um cabo que não existe), então o combo é um gesto de martelo sem martelo; refazer as poses com os canhões apontados para a frente.
+Quadro 64x96, sem aumentá-lo. Poses próprias do mecha (sem IK de cabo): parado com bracos soltos e canhoes para a frente/baixo, andar pesado, combo = dois tiros (canhao esquerdo e depois direito, bracos estendidos para a frente, clarao ciano na boca do cano no quadro 1 de cada tiro, que e o `acerto_em` 0,2 do v2_herois.json), escudo com os antebracos cruzados, dano, rolamento e morte sem arma de mao.
+O clarao e geometria emissiva (`Olho clarao ...` no modelo.py; ossos.zerar esconde, anim_combo liga). Borda (`medir.py`): andar, parado, combo, escudo, dano e morte nao encostam; o rolamento encosta em 4 direcoes (poucos pixels).
 Paleta escura do jogo, contorno no tom escuro da própria cor.

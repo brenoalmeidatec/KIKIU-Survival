@@ -23,13 +23,12 @@ def posar(arm, quadro, n_quadros):
     ossos.girar(arm, "cabeca", x=p["cabeca"], y=-0.8 * p["lado"])
     ossos.girar(arm, "braco_d", x=p["braco_d"][0], y=p["braco_d"][1])
     ossos.girar(arm, "antebraco_d", x=p["antebraco_d"])
+    ossos.girar(arm, "braco_e", x=0.25 * p["braco_d"][0], y=-0.5 * p["braco_d"][1])
+    ossos.girar(arm, "antebraco_e", x=p["antebraco_d"])
     for lado in ("e", "d"):
         perna, canela = p["perna_" + lado], p["canela_" + lado]
         ossos.girar(arm, "perna_" + lado, x=perna)
         ossos.girar(arm, "canela_" + lado, x=canela)
         ossos.girar(arm, "pe_" + lado, x=-(perna + canela + p["raiz"]))
-    ossos.girar(arm, "marreta", x=p["marreta"], y=p["mar_y"])
-    ossos.mover(arm, "marreta", z=p["mar_z"])
-    ossos.segurar(arm)
     ossos.pisar(arm)
     ossos.encaixar_x(arm)

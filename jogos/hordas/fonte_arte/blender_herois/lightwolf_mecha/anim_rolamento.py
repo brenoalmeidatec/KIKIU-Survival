@@ -36,14 +36,11 @@ def posar(arm, quadro, n_quadros):
         ossos.girar(arm, "perna_" + lado, x=p["coxa"])
         ossos.girar(arm, "canela_" + lado, x=p["canela"])
         ossos.girar(arm, "pe_" + lado, x=-(p["coxa"] + p["canela"]) * p["pe"])
-    # marreta deitada de lado diante do peito, as duas mãos nela
+    # bracos recolhidos junto ao peito, canhoes para a frente
     f = (-p["marreta"]) / 1.5
-    ossos.girar(arm, "marreta", y=p["marreta"])
-    ossos.mover(arm, "marreta", x=1.60 * f, y=-0.15 * f, z=0.25 * f)
-    ossos.segurar(arm, mao_e=0.55 if f > 0.6 else 0.0, mao_d=-0.25 if f > 0.6 else None)
-    if f <= 0.6:
-        ossos.girar(arm, "braco_d", x=-0.4)
-        ossos.girar(arm, "antebraco_d", x=-0.7)
+    for l in ("e", "d"):
+        ossos.girar(arm, "braco_" + l, x=-0.5 * f)
+        ossos.girar(arm, "antebraco_" + l, x=-0.9 * f)
     ossos.ancorar(arm, extra_z=p["sobe"])
 
 
