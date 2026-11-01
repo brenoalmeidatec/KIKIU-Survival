@@ -32,6 +32,7 @@ const Ritmo := preload("res://v2/ritmo.gd")
 const Especial := preload("res://v2/especial.gd")
 const Mecha := preload("res://v2/mecha.gd")
 const Matriz := preload("res://v2/matriz.gd")
+const Fumaca := preload("res://v2/fumaca.gd")  # a fumaça do Luke, o secundário dele (DEF-5)
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
@@ -69,6 +70,7 @@ var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário ca
 var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
 var ritmo
 var matriz  # a matriz de defesa do LightWolf, o secundário do mecha (v2/matriz.gd; só age com ela erguida)
+var fumaca  # a fumaça do Luke, o secundário dele (v2/fumaca.gd; a nuvem mora no pool de armas_novas.gd)
 var mecha  # as formas Mecha e Lobo do LightWolf (v2/mecha.gd; só age em eventos, sem custo para os outros heróis)
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Luke (pool, v2/adagas.gd)
@@ -205,6 +207,8 @@ func montar(m) -> void:
 	habilidade.montar(self)
 	matriz = Matriz.new()
 	matriz.montar(self, m.glow)
+	fumaca = Fumaca.new()
+	fumaca.montar(self)
 	mecha = Mecha.new()
 	mecha.montar(self)
 	elites = Elites.new()
@@ -334,6 +338,7 @@ func atualizar(dt: float) -> void:
 		ruptura.atualizar(dt)
 		especial.atualizar(dt)
 		matriz.atualizar(dt)
+		fumaca.atualizar(dt)
 		mecha.atualizar(dt)
 		drenar_limpa(dt)
 		baus.atualizar(dt)
@@ -1229,6 +1234,7 @@ func limpar_partida() -> void:
 	ruptura.limpar()
 	escudo.limpar()
 	matriz.limpar()
+	fumaca.limpar()
 	especial.limpar()
 	habilidade.limpar()
 	baus.limpar()
@@ -1287,6 +1293,7 @@ func liberar() -> void:
 		ruptura,
 		escudo,
 		matriz,
+		fumaca,
 		especial,
 		habilidade,
 		mecha,
@@ -1313,6 +1320,7 @@ func liberar() -> void:
 	ruptura = null
 	escudo = null
 	matriz = null
+	fumaca = null
 	ritmo = null
 	especial = null
 	habilidade = null

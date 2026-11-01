@@ -1,7 +1,7 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste do LW-5 (#511): o Q do LightWolf em forma de mecha, a AUTODESTRUIÇÃO (v2/especial.gd `_q_autodestruicao`, v2/mecha.gd `autodestruir`, dados/v2_especial.json >
 # autodestruicao), e a Maré do LightWolf ligada a ele (v2/diretor.gd `mare_chamar`, bloco `mare`: anel, atraso 4 s, curta). Confere: os dados e os ícones A20 e A21; o aperto
-# (o piloto vira Lobo na hora, invulnerável, com o chamado em 45 e o Q do mecha gasto, sem estouro de quebra), o fusível de 1 s (nada morre antes, o piloto salta para trás da
+# (o piloto vira Lobo na hora, invulnerável, com o chamado em 35 e o Q do mecha gasto, sem estouro de quebra), o fusível de 1 s (nada morre antes, o piloto salta para trás da
 # mira, o corpo não leva dano, a pausa congela), a explosão (um estouro, uma limpeza saindo de onde o mecha ficou: comuns morrem, a elite perde 60% e vive), a Maré chamada
 # (4 s depois, curta, em anel pelos quatro lados) e a volta do mecha pelo CHAMAR (vida cheia, Q de novo em 0). Um herói sem formas (Hazaki) segue com o Q dele.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_lightwolf_q.tscn  (imprime "v2_lightwolf_q falhas=0")
@@ -107,7 +107,7 @@ func _t_dados() -> void:
 	ok(float(b.salto.t) > 0.0 and float(b.salto.t) < float(b.dur) and float(b.salto.distancia) > 0.0, "o salto do piloto cabe dentro do fusível")
 	var m: Dictionary = b.mare
 	ok(str(m.formacao) == "anel" and is_equal_approx(float(m.atraso), 4.0) and bool(m.get("curta", false)), "Maré do LightWolf: anel, atraso 4 s, curta")
-	ok(is_equal_approx(float(d.chamar.inicio_autodestruicao), 45.0), "depois da autodestruição o chamado começa em 45")
+	ok(is_equal_approx(float(d.chamar.inicio_autodestruicao), 35.0), "depois da autodestruição o chamado começa em 35")
 	for nome in ["lightwolf", "lightwolf_lobo"]:
 		var t := load("res://assets/v2/especial_q/%s.png" % nome) as Texture2D
 		ok(t != null and t.get_width() == 32 and t.get_height() == 32, "ícone do Q %s existe e tem 32x32 (A20 / A21)" % nome)
@@ -145,7 +145,7 @@ func _t_cena() -> void:
 		is_equal_approx(h.vida_max, vida_mecha_max * 0.31) and is_equal_approx(h.vida, h.vida_max),
 		"vida do Lobo: 31%% da do mecha, cheia (%.1f de %.1f)" % [h.vida, h.vida_max]
 	)
-	ok(is_equal_approx(h.esp_carga, 45.0) and h.esp_rotulo == "CHAMAR", "o chamado começa em 45 (%.1f) e o Q vira CHAMAR" % h.esp_carga)
+	ok(is_equal_approx(h.esp_carga, 35.0) and h.esp_rotulo == "CHAMAR", "o chamado começa em 35 (%.1f) e o Q vira CHAMAR" % h.esp_carga)
 	ok(is_equal_approx(c.mecha.carga_mecha, 0.0), "o Q do mecha foi gasto: volta a 0 quando ele cair (%.1f)" % c.mecha.carga_mecha)
 	ok(c.mecha.autodestruicoes == 1 and c.mecha.quebras == 0, "uma autodestruição, nenhuma quebra (sem estouro nem empurrão de quebra)")
 	ok(not esp._g_tipo.is_empty() and int(esp._g_tipo.w) == 64, "o mecha que fica no lugar guarda a folha dele (64 de largura)")
@@ -177,7 +177,7 @@ func _t_cena() -> void:
 		"a elite perde 60%% e vive (%.0f de %.0f)" % [elite.vida, elite.vida_max]
 	)
 	ok(str(esp.ultimo.get("id", "")) == "autodestruicao", "o último Q foi a autodestruição")
-	# o chamado: 45 não basta; cheio, o mecha cai e volta com vida cheia e o Q de antes (0)
+	# o chamado: 35 não basta; cheio, o mecha cai e volta com vida cheia e o Q de antes (0)
 	ok(h.forma_lobo and h.esp_carga < h.esp_carga_max and not h.especial(), "com o chamado em %.0f o CHAMAR é negado" % h.esp_carga)
 	h.esp_carga = h.esp_carga_max
 	ok(h.especial(), "chamado cheio: o Lobo chama o mecha")

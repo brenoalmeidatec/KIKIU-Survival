@@ -96,7 +96,7 @@ func _ready() -> void:
 	ok(esc.id_de("nicao") == "escudo" and esc.ativo_para("nicao") and not esc.aparo_para("nicao"), "o Nick tem o escudo")
 	ok(esc.id_de("hazaki") == "aparo" and esc.aparo_para("hazaki") and not esc.ativo_para("hazaki"), "o Hazaki tem o aparo, não o escudo")
 	ok(esc.aparo_para("heroi_novo_qualquer"), "quem não está em herois cai no padrão: aparo")
-	ok(esc.ativo_para("lucas"), "o Luke mantém o escudo até a fumaça ficar pronta (uma linha de dado)")
+	ok(esc.id_de("lucas") == "fumaca" and not esc.ativo_para("lucas") and not esc.aparo_para("lucas"), "o Luke tem a fumaça (DEF-5), não o escudo nem o aparo")
 	ok(
 		not esc.aparo_para("lightwolf") and not esc.ativo_para("lightwolf") and esc.matriz_para("lightwolf") and esc.rotulo_de("lightwolf").nome == "MATRIZ",
 		"o LightWolf tem a matriz (LW-3), não o aparo nem o escudo"

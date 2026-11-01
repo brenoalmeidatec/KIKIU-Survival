@@ -24,14 +24,15 @@ const Salao := preload("res://v2/salao.tscn")
 const Mundo := preload("res://v2/mundo.tscn")
 const Roteiro := preload("res://v2/roteiro.gd")
 const PASSO := 1.0 / 60.0
-const PASTA := "user://testes_v2/v2_segredos/"
-const SAVE_TESTE := PASTA + "teste_v2_segredos_meta.cfg"
-const OPCOES_TESTE := PASTA + "teste_v2_segredos_opcoes.cfg"
-const SAVE_REAL := PASTA + "v2_progresso.cfg"
 const GATILHOS := ["encostar", "parado", "golpe"]
 
 var falhas := 0
 var pasta_fotos := ""
+# a fixture desta cena (user://testes_v2/<cena>/): a metade 2, testes/v2_segredos_riscos.gd, herda este script e usa a pasta dela
+var pasta := ""
+var save_teste := ""
+var opcoes_teste := ""
+var save_real := ""
 
 
 ## Um herói de coop de mentira: só o que o vigia lê (posição, vida, golpes e empurrão).
@@ -49,35 +50,48 @@ func ok(cond: bool, msg: String) -> void:
 		print("FALHOU: ", msg)
 
 
+## Metade 1: os segredos de cada mapa. A metade 2 (riscos do robô, do empurrão e do coop, estado e Códice) é o testes/v2_segredos_riscos.gd,
+## que herda daqui: as duas juntas passavam do limite de 120 s por cena do CI (~90 s sozinhas no notebook).
 func _ready() -> void:
-	var md5_real := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
+	var md5_real := _preparar()
+	for id in Mapas.ids():
+		await _mapa(id)
+	_fim(md5_real, "v2_segredos")
+
+
+## Saves temporários na pasta da cena, dados conferidos; devolve o md5 do save "real" da fixture para o _fim conferir que ninguém o tocou.
+func _preparar() -> String:
+	pasta = "user://testes_v2/%s/" % get_script().resource_path.get_file().get_basename()
+	save_teste = pasta + "teste_v2_segredos_meta.cfg"
+	opcoes_teste = pasta + "teste_v2_segredos_opcoes.cfg"
+	save_real = pasta + "v2_progresso.cfg"
+	var md5_real := FileAccess.get_md5(save_real) if FileAccess.file_exists(save_real) else ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--fotos="):
 			pasta_fotos = arg.substr(8)
-	Meta.caminho_save = SAVE_TESTE
-	Config.arquivo = OPCOES_TESTE
-	Personagens.caminho_base = PASTA + "teste_v2_segredos_p"
-	Personagens.caminho_indice = PASTA + "teste_v2_segredos_personagens.cfg"
-	Personagens.caminho_antigo = PASTA + "teste_v2_segredos_antigo.cfg"
+	Meta.caminho_save = save_teste
+	Config.arquivo = opcoes_teste
+	Personagens.caminho_base = pasta + "teste_v2_segredos_p"
+	Personagens.caminho_indice = pasta + "teste_v2_segredos_personagens.cfg"
+	Personagens.caminho_antigo = pasta + "teste_v2_segredos_antigo.cfg"
 	_limpar()
 	_dados()
-	for id in Mapas.ids():
-		await _mapa(id)
-	await _riscos()
-	_nova_partida_e_estado()
-	await _codice()
+	return md5_real
+
+
+func _fim(md5_real: String, nome: String) -> void:
 	_limpar()
-	var depois := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
+	var depois := FileAccess.get_md5(save_real) if FileAccess.file_exists(save_real) else ""
 	ok(md5_real == depois, "o save real da meta nao foi tocado")
-	print("v2_segredos falhas=%d" % falhas)
+	print("%s falhas=%d" % [nome, falhas])
 	get_tree().quit(1 if falhas > 0 else 0)
 
 
 func _limpar() -> void:
 	get_tree().paused = false
-	for f in DirAccess.get_files_at(PASTA):
+	for f in DirAccess.get_files_at(pasta):
 		if f.begins_with("teste_v2_segredos_"):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(PASTA + f))
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(pasta + f))
 
 
 ## Os dados: cada mapa tem segredo, ids únicos, gatilho conhecido, lore curta (cabe na faixa de anúncio), prêmio e ícone próprio.
@@ -466,7 +480,7 @@ func _foto(w, id: String) -> void:
 func _nova_partida_e_estado() -> void:
 	var cf := ConfigFile.new()
 	cf.set_value("moeda", "almas", 7)
-	cf.save(SAVE_TESTE)  # save de antes dos segredos: nenhum achado, nada quebra
+	cf.save(save_teste)  # save de antes dos segredos: nenhum achado, nada quebra
 	ok(Meta.segredos_achados().is_empty(), "save antigo: nenhum segredo achado")
 	ok(Meta.estado().conquistas.size() == Meta.conquistas().size(), "save antigo: o estado cobre o catalogo inteiro")
 	ok(Progressao.aviso("estrutura", "codice") != "", "sem conquistas o Codice segue trancado")
