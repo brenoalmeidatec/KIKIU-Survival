@@ -386,11 +386,11 @@ func entrada(e: InputEvent) -> bool:
 	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.alternar_detalhe()
 		return true
-	# Q e E trocam a página dos golpes do card (status.gd); a Antena entrega a tecla aqui antes do card, então o pedido passa por aqui
-	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_E] and tela == "menu" and mundo != null and mundo.get("status") != null:
+	# Q e R trocam a página dos golpes do card (status.gd); E é só confirmar (ui_accept). A Antena entrega a tecla aqui antes do card, então o pedido passa por aqui
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_R] and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.paginar(-1 if e.keycode == KEY_Q else 1)
 		return true
-	# Controle: Y troca o card SUA BUILD para os detalhes (o Tab) e LB/RB mudam a página dos golpes (o Q e o E)
+	# Controle: Y troca o card SUA BUILD para os detalhes (o Tab) e LB/RB mudam a página dos golpes (o Q e o R)
 	if e is InputEventJoypadButton and e.pressed and tela == "menu" and mundo != null and mundo.get("status") != null:
 		if e.button_index == JOY_BUTTON_Y:
 			mundo.status.alternar_detalhe()

@@ -369,9 +369,7 @@ func entrada(e: InputEvent) -> bool:
 	var aceita := false
 	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 		aceita = true
-	elif e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]:
-		aceita = true
-	elif e.is_action_pressed("ui_accept"):
+	elif e.is_action_pressed("ui_accept"):  # Enter, Espaço, E e o A do controle (entrada.gd)
 		aceita = true
 	if aceita and _t >= TEMPO_ACEITA:
 		_continuar()

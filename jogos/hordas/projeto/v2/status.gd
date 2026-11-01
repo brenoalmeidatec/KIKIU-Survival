@@ -102,8 +102,8 @@ var _paginas_detalhes: Array = [1, 1, 1]
 var _diagnostico: Array = []
 var _golpes_visuais: Array = []
 
-var _pag := 0  # página dos golpes na página visual (pausa e painel central): Q e E trocam; a altura da coluna decide quantos cabem
-var _npag_golpes := 1  # páginas dos golpes na última medida (Q e E não passam dali)
+var _pag := 0  # página dos golpes na página visual (pausa e painel central): Q e R trocam; a altura da coluna decide quantos cabem
+var _npag_golpes := 1  # páginas dos golpes na última medida (Q e R não passam dali)
 
 
 ## Cria o card ligado ao mundo. É o que o mundo.gd chama (e guarda em `mundo.status`).
@@ -152,7 +152,7 @@ func ui_reencaixar(_canvas: Vector2, _desloc: Vector2) -> void:
 
 ## C (ou o Select do controle): liga e desliga o card compacto (ou o painel central, sobre as cartas). Devolve true se usou o evento (o mundo.gd o
 ## passa antes da escolha de cartas e do baú, que comem as teclas). Com o painel central aberto o card engole TODA a entrada, menos o ESC (que é
-## da pausa): nenhum clique, tecla ou botão chega às cartas escondidas. No controle, com o painel aberto, B fecha e LB/RB paginam como Q e E.
+## da pausa): nenhum clique, tecla ou botão chega às cartas escondidas. No controle, com o painel aberto, B fecha e LB/RB paginam como Q e R.
 func entrada(e: InputEvent) -> bool:
 	if _modo_atual == "central" and not _sobre_cartas():
 		_aplicar()  # as cartas fecharam por outro caminho: o painel sai antes de engolir a entrada
@@ -164,7 +164,7 @@ func entrada(e: InputEvent) -> bool:
 				alternar_detalhe()
 			if e.keycode == KEY_C and e.pressed and not e.echo and not (e.ctrl_pressed or e.alt_pressed or e.meta_pressed):
 				alternar()
-			if e.keycode in [KEY_Q, KEY_E] and e.pressed and not e.echo:
+			if e.keycode in [KEY_Q, KEY_R] and e.pressed and not e.echo:
 				paginar(-1 if e.keycode == KEY_Q else 1)
 		elif e is InputEventJoypadButton and e.pressed:
 			if e.button_index == BOTAO_PAINEL:
@@ -175,7 +175,7 @@ func entrada(e: InputEvent) -> bool:
 				_central = false  # B fecha o painel (o "voltar" das outras telas)
 				_aplicar()
 			elif e.button_index == JOY_BUTTON_LEFT_SHOULDER or e.button_index == JOY_BUTTON_RIGHT_SHOULDER:
-				paginar(-1 if e.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)  # LB é o Q, RB é o E
+				paginar(-1 if e.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)  # LB é o Q, RB é o R
 		return true  # o resto da entrada é engolido: as cartas estão escondidas
 	if _modo_atual == "hud" and e is InputEventMouseButton and e.pressed and e.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		for r in retangulos():
@@ -1396,7 +1396,7 @@ func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
 
 
 ## Os golpes da página visual: cabem quantos a altura que sobra (até `limite`) deixar, sem teto fixo. Se não couberem todos, a última linha
-## da coluna é "Página X/Y · Q E" e Q e E trocam de página (`paginar`). Uma página só não ganha linha nenhuma de paginação.
+## da coluna é "Página X/Y · Q R" e Q e R trocam de página (`paginar`). Uma página só não ganha linha nenhuma de paginação.
 func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: float) -> float:
 	_golpes_visuais.clear()
 	var blocos: Array = []
