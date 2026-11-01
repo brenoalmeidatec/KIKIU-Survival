@@ -218,6 +218,8 @@ func _passo_local(dt: float) -> float:
 		return 0.0
 	if lento_t > 0.0:
 		lento_t -= dt
+		if lento_acao == "morte" and mundo.olho != null:
+			mundo.olho.por_restante(lento_t)
 		if lento_t <= 0.0:
 			_fim_camera_lenta()
 			if pausado or pausado_mundo:
@@ -876,6 +878,7 @@ func heroi_morreu() -> void:
 	ritmo.encerrar()
 	habilidade.fim_de_partida()
 	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
+	mundo.olho.iniciar(mundo.hud, mundo.minimapa)  # as pálpebras fecham nos últimos 1,2 s dessa janela (_passo_local): não atrasam a tela de resultado
 
 
 func nivel_subiu(nivel: int) -> void:
@@ -1024,6 +1027,8 @@ func limpar_partida() -> void:
 	lento_t = 0.0
 	lento_escala = 1.0
 	lento_acao = ""
+	if mundo.olho != null:
+		mundo.olho.limpar()
 	pausado = false
 	pausado_mundo = false
 	jogo = "jogando"
