@@ -25,6 +25,7 @@ const Atmosfera := preload("res://v2/atmosfera.gd")
 const CursorKikiu := preload("res://v2/cursor_kikiu.gd")  # mira em pixel art na partida; volta à seta ao sair
 const Luzes := preload("res://v2/luzes.gd")
 const Sombras := preload("res://v2/sombras.gd")
+const Clima := preload("res://v2/clima.gd")
 const AnimGolpes := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (meio-quadro e rastros), pela opção de partículas
 const Cenario := preload("res://v2/cenario.gd")
 const Sprites := preload("res://v2/sprites.gd")
@@ -83,6 +84,7 @@ var cam
 var luzes
 var sombras
 var atm
+var clima  # clima do mapa em espaço de tela (v2/clima.gd, dados/v2_clima.json)
 var cenario
 var copas  # buraco raio-x nas árvores atrás das quais o herói está (copas.gd)
 var oclusao  # silhueta do herói quando um monstro na frente o cobre (oclusao.gd)
@@ -342,6 +344,8 @@ func _montar() -> void:
 	atm.fator_det = float(_nivel_particulas().get("amb_detritos", 1.0))  # antes do ambiente: no Baixo o emissor de detritos nem nasce
 	atm.ambiente(cam.position)
 	_vinheta()
+	clima = Clima.new()
+	clima.montar(sv, id_mapa, atm.tex_brilho)
 	_ler_graficos()
 	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build") or args.has("playtest"):
 		roteiro = Roteiro.new()
@@ -769,6 +773,8 @@ func _ler_graficos() -> void:
 	var nivel := str(args.get("particulas", Config.g("particulas_sim")))
 	var f := _nivel_particulas()
 	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)), float(f.get("amb_detritos", 1.0)))
+	if clima != null:
+		clima.definir_fator(1.0 if nivel == "muitas" else (0.5 if nivel == "medias" else 0.0))  # Baixo desliga o clima; Médio usa metade
 	AnimGolpes.suave = nivel in ["medias", "muitas"]  # golpes suaves custam uma chamada a mais por golpe: o perfil Baixo (poucas) fica sem
 	if combate != null:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
@@ -972,6 +978,8 @@ func avancar(dt: float) -> void:
 	var p5 := Time.get_ticks_usec()
 	var rect: Rect2 = cam.retangulo()
 	atm.seguir(cam.position)
+	if clima != null and not get_tree().paused:
+		clima.atualizar(dt)
 	cenario.atualizar_blocos(rect)
 	var p6 := Time.get_ticks_usec()
 	copas.atualizar(dt, cenario.ativos, heroi)
