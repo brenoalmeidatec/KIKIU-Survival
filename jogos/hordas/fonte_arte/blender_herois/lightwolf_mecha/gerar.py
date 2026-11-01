@@ -31,14 +31,14 @@ ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SO_ANIM = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--anim=")), None)
 SAIDA = AQUI / "quadros"
 
-W, H = 64, 96             # quadro (o Hazaki usa 32x44): a marreta de 3,2 passa da cabeça e as pancadas a levam longe do corpo
+W, H = 128, 192           # mecha grande: preserva o PPU e deixa folga para tiros e rolamento
 PPU = 24.5                # px por metro (câmera do jogo)
 ELEV = 45.0               # graus
-MARGEM_BAIXO = 20        # px abaixo do pé: a cabeça da marreta bate no chão À FRENTE do herói, que na câmera 45 graus cai abaixo da linha do pé
+MARGEM_BAIXO = 70        # folga sob os pés para o rolamento invertido, sem deslocar a âncora
 PE_LINHA = H - 1 - MARGEM_BAIXO   # última linha do desenho (pé = PE_LINHA - 1, mais 1 px de contorno)
-ESCALA = 0.55             # unidades do modelo -> metros do jogo (3,0 de anão = 1,65 m = 40 px)
+ESCALA = 1.03             # alvo 1,7 a 2x a altura do humano, renderizado nativamente com PPU igual
 LARGURA = 1.0             # largura relativa (1.0: o IK dos braços trabalha em escala uniforme)
-CONTORNO = 0.062          # espessura da casca do contorno, em metros do mundo (~1 px)
+CONTORNO = 0.0            # contorno externo de exatamente 1 px aplicado por quadro em montar_folha.py
 # ordem das linhas do jogo (v2/sprites.gd) e ângulo do herói em torno de Z (0 = de frente para a câmera)
 DIRECOES = [("baixo", 0.0), ("esquerda", -90.0), ("direita", 90.0), ("cima", 180.0),
             ("baixo_esq", -45.0), ("baixo_dir", 45.0), ("cima_esq", -135.0), ("cima_dir", 135.0)]
@@ -50,7 +50,7 @@ def hexa(h):
 
 
 LUZ_PRINCIPAL = Vector((-0.80, -0.35, 0.50)).normalized()
-LUZ_CONTRA = Vector((0.60, 0.75, 0.30)).normalized()
+LUZ_CONTRA = Vector((0.45, 0.70, 0.95)).normalized()  # recorte frio de trás e de cima
 
 
 def srgb_para_linear(v):
@@ -108,9 +108,9 @@ def estilizar(material, base):
     links.new(ao.outputs["AO"], mult.inputs[1])
     rampa = nodes.new("ShaderNodeValToRGB")
     rampa.color_ramp.interpolation = "CONSTANT"
-    escura = clampc(mais(base, (0.012, 0.022, 0.058), 0.36))
-    sombra = clampc(mais(base, (0.008, 0.014, 0.034), 0.64))
-    luz = clampc(mais(base, (0.075, 0.042, 0.004), 1.10))
+    escura = clampc(mais(base, (0.008, 0.014, 0.030), 0.24))
+    sombra = clampc(mais(base, (0.008, 0.014, 0.024), 0.52))
+    luz = clampc(mais(base, (0.065, 0.075, 0.095), 1.12))
     for i, (pos, cor) in enumerate([(0.0, escura), (0.30, sombra), (0.52, base), (0.76, luz)]):
         el = rampa.color_ramp.elements[i] if i < 2 else rampa.color_ramp.elements.new(pos)
         el.position = pos
@@ -124,13 +124,24 @@ def estilizar(material, base):
     borda.operation = "GREATER_THAN"
     borda.inputs[1].default_value = 0.45
     links.new(dot2.outputs["Value"], borda.inputs[0])
+    vista = nodes.new("ShaderNodeVectorMath")
+    vista.operation = "DOT_PRODUCT"
+    links.new(geo.outputs["Normal"], vista.inputs[0])
+    links.new(geo.outputs["Incoming"], vista.inputs[1])
+    absoluto = nodes.new("ShaderNodeMath")
+    absoluto.operation = "ABSOLUTE"
+    links.new(vista.outputs["Value"], absoluto.inputs[0])
+    rasante = nodes.new("ShaderNodeMath")
+    rasante.operation = "LESS_THAN"
+    rasante.inputs[1].default_value = 0.55
+    links.new(absoluto.outputs[0], rasante.inputs[0])
     fac = nodes.new("ShaderNodeMath")
     fac.operation = "MULTIPLY"
-    fac.inputs[1].default_value = 0.70
     links.new(borda.outputs[0], fac.inputs[0])
+    links.new(rasante.outputs[0], fac.inputs[1])
     mix = nodes.new("ShaderNodeMixRGB")
     mix.blend_type = "MIX"
-    mix.inputs["Color2"].default_value = lin(clampc(mais(base, (0.09, 0.16, 0.30), 0.55)))
+    mix.inputs["Color2"].default_value = lin(hexa("#b3e8ff"))
     links.new(fac.outputs[0], mix.inputs["Fac"])
     links.new(rampa.outputs["Color"], mix.inputs["Color1"])
     links.new(mix.outputs["Color"], emissao.inputs["Color"])
@@ -206,7 +217,7 @@ def material_contorno(m):
 bpy.context.view_layer.update()
 S = Matrix.Diagonal((ESCALA * LARGURA, ESCALA, ESCALA))
 CASCAS = []
-for original in list(heroi):
+for original in list(heroi) if CONTORNO > 0 else []:
     if original.type != "MESH" or len(original.data.polygons) < 6 or original.name.startswith(("Olho", "Sobrancelha")):
         continue
     mats = [m for m in original.data.materials if m]

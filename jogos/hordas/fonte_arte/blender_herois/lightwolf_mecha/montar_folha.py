@@ -1,9 +1,9 @@
-"""Monta a FOLHA FINAL do Nicão (todas as animações) no formato que v2/sprites.gd e v2/heroi.gd leem (Python com Pillow).
+"""Monta a FOLHA FINAL do mecha do LightWolf no formato que v2/sprites.gd e v2/heroi.gd leem (Python com Pillow).
 
     python montar_folha.py
 
 Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava nesta pasta:
-  lightwolf_mecha_final_albedo.png e lightwolf_mecha_final_normal.png: grade de 8 linhas x 38 colunas, quadros 64x96 (cor e normal, mesma silhueta)
+  lightwolf_mecha_final_albedo.png e lightwolf_mecha_final_normal.png: grade de 8 linhas x 38 colunas, quadros 128x192 (cor e normal, mesma silhueta)
   lightwolf_mecha_final.json: formato do jogo (quadro, linhas, colunas, pe_y) + animação -> colunas, quadros e tempo por quadro
   lightwolf_mecha_final_previa_x3.png: cópia de prévia (albedo ampliado 3x, sobre fundo escuro)
 
@@ -14,13 +14,15 @@ estão em "animacoes".
 import json
 import os
 
-from PIL import Image
+from PIL import Image, ImageChops, ImageFilter
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-W, H = 64, 96
-PE_Y = 74          # PE_LINHA - 1 do gerar.py (H - 1 - MARGEM_BAIXO = 75 é a linha do contorno da sola)
+W, H = 128, 192
+PE_Y = 120         # PE_LINHA - 1 do gerar.py (H - 1 - MARGEM_BAIXO = 121)
 DIRECOES = ["baixo", "esquerda", "direita", "cima", "baixo_esq", "baixo_dir", "cima_esq", "cima_dir"]
 FUNDO = (34, 34, 42)
+CONTORNO = (12, 18, 30, 255)
+NORMAL_NEUTRA = (128, 128, 255, 255)
 
 # animação, quadros, segundos por quadro sugeridos
 ANIMACOES = [
@@ -48,8 +50,8 @@ COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(1
 COLUNAS += [("escudo", i) for i in range(2)] + [("dano", i) for i in range(2)] + [("morte", i) for i in range(6)]
 
 AVISOS = {
-    "combo": "golpe 1 (batida, quadros 0 a 5) e golpe 2 (pancada, 6 a 11); o impacto e o quadro 3 de cada golpe; a marreta de 3,2 passa de 40 px e cai fora do quadro em poucos quadros de diagonal (medir.py)",
-    "morte": "cai DE LADO, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido; a marreta cai ao lado, no chao a frente dele",
+    "combo": "tiro esquerdo (quadros 0 a 5) e direito (6 a 11); clarão no quadro 1 de cada tiro, alinhado a acerto_em=0.2; medir.py confere as quatro bordas com o contorno",
+    "morte": "cai de lado, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido",
 }
 
 
@@ -62,6 +64,23 @@ def carregar(anim, quadro, direcao, tipo):
     return Image.open(caminho).convert("RGBA")
 
 
+def mascara_contorno(alfa):
+    """Um pixel externo em cada quadro, incluindo diagonais; nunca dilata entre células."""
+    opaco = alfa.point(lambda a: 255 if a else 0)
+    return ImageChops.subtract(opaco.filter(ImageFilter.MaxFilter(3)), opaco)
+
+
+def contornar(im, tipo, alfa_cor=None):
+    """Preserva pixels originais e acrescenta o mesmo contorno opaco a cor e normal."""
+    alfa = im.getchannel("A")
+    if alfa_cor is not None and alfa.tobytes() != alfa_cor.tobytes():
+        raise ValueError("silhueta da normal difere da cor")
+    mascara = mascara_contorno(alfa_cor if alfa_cor is not None else alfa)
+    saida = im.copy()
+    saida.paste(CONTORNO if tipo == "cor" else NORMAL_NEUTRA, (0, 0, im.width, im.height), mascara)
+    return saida
+
+
 def montar(tipo):
     folha = Image.new("RGBA", (len(COLUNAS) * W, len(DIRECOES) * H), (0, 0, 0, 0))
     for c, (anim, q) in enumerate(COLUNAS):
@@ -69,6 +88,11 @@ def montar(tipo):
             im = carregar(anim, q, d, tipo)
             if im.size != (W, H):
                 raise SystemExit("quadro com tamanho errado: %s %s %d %s" % (anim, d, q, im.size))
+            alfa_cor = carregar(anim, q, d, "cor").getchannel("A") if tipo == "normal" else None
+            try:
+                im = contornar(im, tipo, alfa_cor)
+            except ValueError as erro:
+                raise SystemExit("%s %s %d: %s" % (anim, d, q, erro)) from erro
             folha.paste(im, (c * W, r * H))
     return folha
 
@@ -94,10 +118,10 @@ def main():
         "elevacao": 45.0,
         "ppu": 24.5,
         "pe_y": PE_Y,
-        "retrato": {"regiao": [10, 34, 38, 42]},  # recorte do quadro parado de frente (linha baixo) que o HUD mostra, sem o vazio em volta
+        "retrato": {"regiao": [27, 42, 74, 84]},  # provisório: conferir o mecha renderizado de frente no HUD
         "linhas": DIRECOES,
         "colunas": ["parado"] + ["andar%d" % i for i in range(6)],
-        "render": "Cycles, pixel nativo 64x96 (anao ~40 px), 1 amostra, sem bloom (gerar.py, 8 direcoes, cor e normal)",
+        "render": "Cycles, pixel nativo 128x192 (mecha em escala ampliada), 1 amostra, sem bloom (gerar.py, 8 direcoes, cor e normal)",
         "grade": {"linhas": len(DIRECOES), "colunas": len(COLUNAS), "quadro": [W, H]},
         "nomes_colunas": [nome_coluna(a, q) for a, q in COLUNAS],
         "animacoes": {},
@@ -122,4 +146,5 @@ def main():
     print("folha %dx%d (%d colunas x %d linhas)" % (albedo.width, albedo.height, len(COLUNAS), len(DIRECOES)))
 
 
-main()
+if __name__ == "__main__":
+    main()
