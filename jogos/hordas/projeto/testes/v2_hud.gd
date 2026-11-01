@@ -43,9 +43,15 @@ class HeroiComRuptura:
 	var contragolpe_max := 1.5
 
 
-class HeroiComEscudo:
+class HeroiComSecundario:
 	extends Heroi
-	var escudo_ativo := false
+	var sec_nome := "ESCUDO"
+	var sec_icone := "escudo"
+	var sec_pronta := true
+	var sec_ativo := false
+	var sec_barra := 1.0
+	var sec_recarga := 0.0
+	var sec_recarga_s := 0.0
 
 
 class DiretorFalso:
@@ -406,26 +412,47 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 	h.rup_carga = 0.0
 	slots.sincronizar(h)
 	ok(slots._rotulo_e() == "RUPTURA", "E anuncia Ruptura pronta sem carga pendente")
-	# o secundário (botão direito, o escudo): apagado sem o campo; pronto, erguido (pulsa) e cansado (cortina de recarga até o fôlego voltar a 34%)
+	# o secundário (botão direito): o slot só lê o contrato sec_* (DEF-2) e não conhece o escudo nem o aparo. Apagado sem sec_nome; pronto, em uso (pulsa),
+	# na recarga (cortina e tempo que falta) e outro nome (aparo) com o ícone próprio de carta
 	slots.sincronizar(mundo_falso.heroi)
-	ok(not slots.s_disponivel and not slots.s_pronta and slots._rotulo_s() == "INDISP.", "o secundário fica apagado sem o campo escudo_ativo no herói")
-	var he := HeroiComEscudo.new()
+	ok(not slots.s_disponivel and not slots.s_pronta and slots._rotulo_s() == "INDISP.", "o secundário fica apagado sem os campos sec_* no herói")
+	var he := HeroiComSecundario.new()
+	he.sec_nome = ""
 	slots.sincronizar(he)
-	ok(slots.s_disponivel and slots.s_pronta and not slots.s_ativo and slots._rotulo_s() == "ESCUDO", "o secundário acende pronto com o herói descansado")
-	he.escudo_ativo = true
+	ok(not slots.s_disponivel and slots._rotulo_s() == "INDISP.", "sec_nome vazio (herói sem secundário, como o LightWolf): o slot fica apagado")
+	he.sec_nome = "ESCUDO"
 	slots.sincronizar(he)
-	ok(slots.s_pronta and slots.s_ativo and slots._rotulo_s() == "ERGUIDO", "o secundário pulsa com o escudo erguido")
-	he.escudo_ativo = false
-	he.cansado = true
-	he.folego = 0.0
+	ok(
+		slots.s_disponivel and slots.s_pronta and not slots.s_ativo and slots._rotulo_s() == "ESCUDO",
+		"o secundário acende pronto com o nome que o herói publica"
+	)
+	he.sec_ativo = true
 	slots.sincronizar(he)
-	ok(not slots.s_pronta and slots.s_recarga_px == 20 and slots._rotulo_s() == "CANSADO", "cansado e sem fôlego: cortina cheia e CANSADO")
-	he.folego = 17.0
+	ok(slots.s_pronta and slots.s_ativo and slots._rotulo_s() == "ESCUDO", "o secundário pulsa em uso")
+	he.sec_ativo = false
+	he.sec_pronta = false
+	he.sec_recarga = 1.0
+	he.sec_recarga_s = 0.0
 	slots.sincronizar(he)
-	ok(slots.s_recarga_px == 10, "a cortina desce com o fôlego voltando (17 de 34 = metade, %d/20)" % slots.s_recarga_px)
-	he.cansado = false
+	ok(not slots.s_pronta and slots.s_recarga_px == 20 and slots._rotulo_s() == "RECARGA", "sem tempo para contar (escudo quebrado): cortina cheia e RECARGA")
+	he.sec_nome = "APARO"
+	he.sec_icone = "katana"
+	he.sec_recarga = 0.5
+	he.sec_recarga_s = 0.7
 	slots.sincronizar(he)
-	ok(slots.s_pronta and slots.s_recarga_px == 0, "fim do cansaço: o secundário volta pronto, sem cortina")
+	ok(
+		slots.s_recarga_px == 10 and slots._rotulo_s() == "0.7 S" and slots.s_icone == "katana",
+		"recarga por tempo: a cortina é a fração e o texto os segundos que faltam"
+	)
+	ok(slots.arte_s() != null, "o ícone do slot S cai no ícone de carta do sec_icone quando não há arte própria do herói")
+	he.sec_pronta = true
+	he.sec_recarga = 0.0
+	he.sec_recarga_s = 0.0
+	slots.sincronizar(he)
+	ok(
+		slots.s_pronta and slots.s_recarga_px == 0 and slots._rotulo_s() == "APARO",
+		"recarga acabou: o secundário volta pronto, sem cortina, com o nome do aparo"
+	)
 	var area := Rect2(slots.position, slots.size * slots.scale)
 	ok(area.position == Vector2(693, 423) and area.size == Vector2(261, 111), "E e secundário ocupam o canto de baixo à direita")
 	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")

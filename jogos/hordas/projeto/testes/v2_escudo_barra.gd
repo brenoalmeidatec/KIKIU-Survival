@@ -73,6 +73,8 @@ func _ready() -> void:
 	w.combate.audio.mudo = true
 	var h = w.heroi
 	var esc = w.combate.escudo
+	esc.herois["hazaki"] = "escudo"  # DEF-2: o escudo é só do Nick; a barra do escudo é testada no herói padrão, a quem o dado devolve o escudo neste teste
+	h._iniciar_defesa()
 	var rit = w.combate.ritmo
 	var d: Dictionary = Dados.json("v2_secundario")
 	var b: Dictionary = d.escudo.barra

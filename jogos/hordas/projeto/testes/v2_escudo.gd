@@ -91,7 +91,14 @@ func _ready() -> void:
 	ok(d.has("padrao") and d.has("herois") and d.has("escudo"), "v2_secundario.json tem padrao, herois e escudo")
 	var e: Dictionary = d.escudo
 	ok(float(e.arco) == 120.0 and float(e.mov) == 0.6 and float(e.perfeito.janela) == 0.15, "arco 120, movimento 60% e janela perfeita de 0,15 s")
-	ok(esc.ativo_para("hazaki") and esc.id_de("hazaki") == "escudo", "o herói de hoje tem o escudo como secundário")
+	ok(esc.ativo_para("nicao") and esc.id_de("nicao") == "escudo", "o Nick tem o escudo como secundário")
+	ok(
+		not esc.ativo_para("hazaki") and esc.aparo_para("hazaki") and str(d.padrao) == "aparo",
+		"o Hazaki e o padrão têm o aparo, não o escudo (DEF-2; o aparo é de v2_aparo.gd)"
+	)
+	# a mecânica do escudo é testada no herói padrão (Hazaki): o dado lhe devolve o escudo só neste teste, como o `esc.herois` mexido mais abaixo
+	esc.herois["hazaki"] = "escudo"
+	h._iniciar_defesa()
 	var tem_direito := false
 	var tem_lt := false
 	for ev in InputMap.action_get_events("escudo"):
