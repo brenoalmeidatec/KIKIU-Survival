@@ -51,10 +51,10 @@ class HeroiComEscudo:
 class DiretorFalso:
 	extends RefCounted
 	var nivel := 1
-	var niveis_total := 30
+	var niveis_total := 10
 	var fracao := 0.0
 	var trava := false
-	var chefes_mapa: Array = [{"nivel": 10, "mk": {"mini": true}}, {"nivel": 30, "mk": {"mini": false}}]
+	var chefes_mapa: Array = [{"nivel": 5, "mk": {"mini": true}}, {"nivel": 10, "mk": {"mini": false}}]
 
 	func fracao_mapa() -> float:
 		return fracao
@@ -123,9 +123,9 @@ func _testes() -> void:
 	falso.combate = CombateFalso.new()
 	var dir: DiretorFalso = falso.combate.diretor
 	dir.nivel = 7
-	dir.fracao = 6.5 / 29.0
+	dir.fracao = 6.5 / 9.0
 	hud.avancar(PASSO)
-	ok(placa.visible and placa.get_node("Barra").texto() == "NÍVEL 7/30", "a placa mostra NÍVEL 7/30")
+	ok(placa.visible and placa.get_node("Barra").texto() == "NÍVEL 7/10", "a placa mostra NÍVEL 7/10")
 	ok(placa.get_node("Barra").chefes.size() == 2 and not placa.get_node("Barra").travado, "duas marcas de chefe, nível livre")
 	dir.nivel = 10
 	dir.trava = true
@@ -798,15 +798,15 @@ func _fotos(pasta: String) -> void:
 		if not w.ui.get_node("Hud")._chefe.visible:
 			break
 		await get_tree().process_frame
-	# Nível do mapa com o mundo de verdade ligado ao HUD: nível 14, com a barra andando, e o chefão do nível 30 em campo (nível travado).
+	# Nível do mapa com o mundo de verdade ligado ao HUD: nível 5 (da Floresta, de 10), com a barra andando, e o chefão do nível 10 em campo (nível travado).
 	w.ui.get_node("Hud").ligar(w)
-	w.combate.diretor.ir_para_nivel(14)
+	w.combate.diretor.ir_para_nivel(5)
 	w.combate.diretor.t_nivel = w.combate.diretor.seg_nivel() * 0.5
 	await get_tree().create_timer(0.5).timeout
-	await _foto(w, pasta, "hud_nivel_mapa_14")
-	w.combate.diretor.ir_para_nivel(30)
+	await _foto(w, pasta, "hud_nivel_mapa_5")
+	w.combate.diretor.ir_para_nivel(10)
 	await get_tree().create_timer(0.8).timeout
-	await _foto(w, pasta, "hud_nivel_mapa_30_chefao")
+	await _foto(w, pasta, "hud_nivel_mapa_10_chefao")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

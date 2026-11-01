@@ -704,7 +704,7 @@ static func _bloco(
 static func _sec_partida(m) -> Dictionary:
 	var c = m.combate
 	var cs = c.cartas
-	var falta_onda: float = maxf(0.0, c.diretor.proxima_onda - m.tempo_partida)
+	var falta_onda: float = c.diretor.falta_onda_real()
 	# as almas que o fim da partida credita de fato: as coletadas mais o bônus "Almas abundantes" do Santuário (a conta de Meta.registrar_partida)
 	var bruto: int = m.almas_partida
 	var bonus_almas := float(m.meta_bonus.get("almas", 0.0)) if m.meta_bonus is Dictionary else 0.0

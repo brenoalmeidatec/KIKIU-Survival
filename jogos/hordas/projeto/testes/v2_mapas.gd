@@ -486,6 +486,7 @@ func _mecanicas_d(w, marcas: Array) -> void:
 	ok(w._almas_gastas == int(merc.custo) and w.combate.baus.soltos == antes + 1, "lote D: com almas o mercador troca e uma carta cai")
 	ok(w.almas_partida == 30 - int(merc.custo), "lote D: as almas gastas saem do total (%d)" % w.almas_partida)
 	w.monstros.clear()
+	w.combate.diretor.ligado = false  # o diretor põe monstros em volta do herói: este lote mede só o dano de ambiente (e o escudo que bloqueia)
 	w.heroi.imortal = false
 	var vida0: float = w.heroi.vida
 	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 705.0))  # na zona, fora do caminho de pedra
