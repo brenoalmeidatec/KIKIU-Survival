@@ -10,7 +10,7 @@
 		{"nome": "Brendan", "nome_antigo": "Breno", "pasta": "breno"},
 		{"nome": "Nick", "nome_antigo": "Nicão", "pasta": "nicao", "heroi": "nicao"},
 		{"nome": "Luke", "nome_antigo": "Lucas", "pasta": "lucas", "heroi": "lucas"},
-		{"nome": "John", "nome_antigo": "João", "pasta": "joao", "heroi": "joao"},
+		{"nome": "John", "nome_antigo": "João", "pasta": "joao", "heroi": "joao", "sprite": "joao"},
 		{"nome": "Matthew", "nome_antigo": "Matheus", "pasta": "matheus", "heroi": "matheus", "sprite": "matheus"},
 		{"nome": "Bert", "nome_antigo": "Beto", "pasta": "beto", "heroi": "beto"},
 		{"nome": "Lukako", "pasta": "lukako", "heroi": "lukako"},
