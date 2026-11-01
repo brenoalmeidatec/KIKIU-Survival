@@ -192,3 +192,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - Correção da entrada acima: as três fontes são RGBA de verdade (alfa 0 em 67% a 92% dos pixels, máximo 254). O halo de alfa baixo em volta do objeto é cortado por alfa >= 160 antes de qualquer redução.
 - Derivadas (mesma arte, nenhuma arte nova): `jogos/hordas/projeto/assets/v2/armas_anim/shuriken_heroi_voo.png` (8 quadros de 14x14, giro de 11,25 graus a partir do 1º quadro), `kunai_heroi_voo.png` (4 de 24x10) e `flecha_heroi_voo.png` (4 de 28x8), geradas por `jogos/hordas/fonte_arte/armas_anim/importar_projeteis_heroi.py`. Mudanças: corte por alfa, recorte pela caixa do objeto, redução por vizinho mais próximo e giro da shuriken.
+
+## LW-3: ícones da matriz e dos mísseis do LightWolf, Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/lightwolf_icones/A19_lw_misseis.png` e `A22_lw_matriz.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com os prompts em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fontes copiadas sem alteração.
+- Derivados (mesma arte, nenhuma arte nova): `jogos/hordas/projeto/assets/v2/secundario_s/lightwolf.png` (a matriz, slot S) e `jogos/hordas/projeto/assets/v2/habilidade_e/lightwolf.png` (os mísseis, slot E; só é ligado no LW-4), 32x32, gerados por `reduzir_icones.py`. Mudanças: corte do halo de alfa baixo, recorte pela caixa do objeto, redução por média de caixa e alfa endurecido.

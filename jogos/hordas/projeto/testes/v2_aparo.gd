@@ -98,9 +98,10 @@ func _ready() -> void:
 	ok(esc.aparo_para("heroi_novo_qualquer"), "quem não está em herois cai no padrão: aparo")
 	ok(esc.ativo_para("lucas"), "o Luke mantém o escudo até a fumaça ficar pronta (uma linha de dado)")
 	ok(
-		not esc.aparo_para("lightwolf") and not esc.ativo_para("lightwolf") and esc.rotulo_de("lightwolf").is_empty(),
-		"o LightWolf fica sem secundário até a matriz"
+		not esc.aparo_para("lightwolf") and not esc.ativo_para("lightwolf") and esc.matriz_para("lightwolf") and esc.rotulo_de("lightwolf").nome == "MATRIZ",
+		"o LightWolf tem a matriz (LW-3), não o aparo nem o escudo"
 	)
+	ok(esc.rotulo_de("lightwolf_lobo").is_empty() and not esc.posse_para("lightwolf_lobo"), "o Lobo continua sem secundário")
 	ok(
 		float(a.janela) == 0.30 and float(a.arco) == 140.0 and float(a.recuperacao) == 0.35 and float(a.recarga_erro) == 1.5,
 		"janela 0,30 s, arco 140, recuperação 0,35 s, recarga do erro 1,5 s"
@@ -322,9 +323,9 @@ func _ready() -> void:
 	var chave0: String = h.chave
 	h.chave = "lightwolf"
 	passos(2)
-	ok(h.sec_nome == "" and not h.sec_pronta and not h.sec_ativo, "sec_*: o LightWolf não publica secundário")
+	ok(h.sec_nome == "MATRIZ" and not h.sec_ativo, "sec_*: o LightWolf publica a matriz (sem barra de defesa aqui, não está pronta a erguer)")
 	apertar()
-	ok(h.aparo_fase == 0 and not h.escudo_ativo, "o LightWolf não aparo nem ergue escudo com o botão")
+	ok(h.aparo_fase == 0 and not h.escudo_ativo, "o LightWolf não aparo e, sem barra de defesa, a matriz não ergue (a matriz tem teste próprio)")
 	h.chave = chave0
 
 	print("v2_aparo falhas=%d" % falhas)

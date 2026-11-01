@@ -8,8 +8,8 @@ extends RefCounted
 ## defesa, devolve um pouco e empurra e atordoa quem bateu. Soltar volta a recarregar a defesa depois do atraso (a recarga e a reposição pela cura são do herói).
 ##
 ## Qual secundário cada herói tem é DADO (dados/v2_secundario.json > padrao e herois > chave do herói), para que a branch de heróis mapeie
-## outro secundário depois sem mexer no código: aqui existem os ids "escudo" (segurar; só o Nick, e o Luke até a fumaça dele) e "aparo" (apertar; o
-## padrão: Hazaki e os outros); id desconhecido deixa o botão direito sem efeito.
+## outro secundário depois sem mexer no código: aqui existem os ids "escudo" (segurar; só o Nick, e o Luke até a fumaça dele), "aparo" (apertar; o
+## padrão: Hazaki e os outros) e "matriz" (segurar; o mecha do LightWolf, v2/matriz.gd, que usa a mesma barra de defesa); id desconhecido deixa o botão direito sem efeito.
 ##
 ## O APARO (DEF-2) é a postura de iai: apertar abre uma janela curta (dados > aparo > janela) com arco de 140 graus na direção da mira; todo golpe que
 ## chega de dentro do arco nessa janela é um bloqueio PERFEITO (`bloquear`, o mesmo do escudo: empurra e atordoa quem bateu, sem barra de defesa) e abre o
@@ -26,7 +26,8 @@ extends RefCounted
 ## no próximo erguer. Nada do visual muda a regra: `cobre`, `arco`, `raio` e `bloquear` seguem iguais. Perfil Baixo (sem partículas): sem tremor, faísca,
 ## estouro nem pedaços, só some e aparece. O clarão do acerto é um sprite aditivo filho do escudo (dentro do y-sort); o Node2D aditivo da camada glow (`no`) ficou só para as faíscas. A cobertura (arco por nível) não aparece no desenho.
 ##
-## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, aparo_para(chave) -> bool, rotulo_de(chave) -> Dictionary, para_heroi(chave),
+## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, aparo_para(chave) -> bool, matriz_para(chave) -> bool, posse_para(chave) -> bool,
+## barra_de(chave) -> Dictionary, mov_de(chave) -> float, modulo_de(chave), rotulo_de(chave) -> Dictionary, para_heroi(chave),
 ## cobre(h, de) -> bool, cobre_arco(h, de, graus) -> bool, raio(h) -> float, arco(h) -> float, pontos_do_arco(h),
 ## ergueu(h), abaixou(h), bloquear(h, valor, de, quem) -> bool [perfeito?], efeitos(dt) [relógio de parede: o visual], resumo().
 
@@ -48,6 +49,8 @@ var combate
 var mundo
 var cfg: Dictionary = {}  # dados/v2_secundario.json > escudo
 var cfg_aparo: Dictionary = {}  # dados/v2_secundario.json > aparo
+var cfg_matriz: Dictionary = {}  # dados/v2_secundario.json > matriz (a barreira do LightWolf, v2/matriz.gd)
+var barra_matriz: Dictionary = {}  # a barra de defesa da matriz: escudo > barra com as chaves de matriz > barra por cima (uma só barra, um só bloco de números)
 var rotulos: Dictionary = {}  # dados/v2_secundario.json > rotulos: id do secundário -> {nome, icone} para o slot S da HUD
 var padrao := "escudo"
 var herois: Dictionary = {}  # chave do herói -> id do secundário (os testes mexem aqui)
@@ -87,6 +90,9 @@ func montar(c, camada: Node) -> void:
 	var d: Dictionary = Dados.json("v2_secundario")
 	cfg = d.escudo
 	cfg_aparo = d.get("aparo", {})
+	cfg_matriz = d.get("matriz", {})
+	barra_matriz = (cfg.barra as Dictionary).duplicate(true)
+	barra_matriz.merge(cfg_matriz.get("barra", {}), true)
 	rotulos = d.get("rotulos", {})
 	padrao = str(d.get("padrao", "escudo"))
 	herois = d.get("herois", {})
@@ -135,6 +141,31 @@ func aparo_para(chave: String) -> bool:
 	return id_de(chave) == "aparo"
 
 
+## O secundário deste herói é a matriz de defesa do LightWolf?
+func matriz_para(chave: String) -> bool:
+	return id_de(chave) == "matriz"
+
+
+## O secundário deste herói é por POSSE (segurar o botão) e gasta a barra de defesa: o escudo e a matriz. O aparo é por aperto e não tem barra.
+func posse_para(chave: String) -> bool:
+	return ativo_para(chave) or matriz_para(chave)
+
+
+## O bloco de números da barra de defesa do herói `chave` (o do escudo, ou o da matriz: o mesmo com as chaves da matriz por cima).
+func barra_de(chave: String) -> Dictionary:
+	return barra_matriz if matriz_para(chave) else cfg.barra
+
+
+## A fração da velocidade de andar enquanto o secundário por posse está erguido.
+func mov_de(chave: String) -> float:
+	return float(cfg_matriz.get("mov", 0.75)) if matriz_para(chave) else float(cfg.mov)
+
+
+## Quem desenha e conta o secundário por posse do herói: este módulo (escudo) ou o da matriz (`ergueu` e `abaixou` são os mesmos nos dois).
+func modulo_de(chave: String):
+	return combate.matriz if matriz_para(chave) and combate.matriz != null else self
+
+
 ## O nome e o ícone do secundário do herói `chave` para o slot S da HUD ({} = não tem: o slot fica apagado).
 func rotulo_de(chave: String) -> Dictionary:
 	return rotulos.get(id_de(chave), {})
@@ -155,11 +186,11 @@ func arco(h) -> float:
 ## Os pontos do arco de COBERTURA do escudo no chão (projetados na tela, de `h.pos + (0, -8)`): a geometria do bloqueio (raio e abertura) para os
 ## testes medirem. Não é desenhada: o visual é o sprite.
 func pontos_do_arco(h) -> PackedVector2Array:
-	return _pontos_arco(h, arco(h), raio(h))
+	return pontos_arco(h, arco(h), raio(h))
 
 
 ## Os pontos de um arco de `graus` de abertura e raio `r` no chão em volta do herói, na direção da mira (o do escudo e o do aparo).
-func _pontos_arco(h, graus: float, r: float) -> PackedVector2Array:
+func pontos_arco(h, graus: float, r: float) -> PackedVector2Array:
 	var c: Vector2 = h.pos + Vector2(0, -8)
 	var a0: float = atan2(h.dir_olhar.y / ACHATA, h.dir_olhar.x)  # o ângulo no chão, de volta para a tela
 	var meio := deg_to_rad(graus * 0.5)
@@ -175,7 +206,7 @@ func cobre(h, de: Vector2) -> bool:
 	return cobre_arco(h, de, arco(h))
 
 
-## O mesmo teste de `cobre` com a abertura em graus dada (o aparo usa a dele, fixa; a matriz do LightWolf usará a dela).
+## O mesmo teste de `cobre` com a abertura em graus dada (o aparo usa a dele, fixa; a matriz do LightWolf, a dela).
 func cobre_arco(h, de: Vector2, graus: float) -> bool:
 	var rel: Vector2 = de - h.pos
 	rel = Vector2(rel.x, rel.y / ACHATA)
@@ -423,7 +454,7 @@ func efeitos(dt: float) -> void:
 	_desce_t = minf(_desce_t + dt, 9.0)
 	_quebra_t = minf(_quebra_t + dt, 99.0)
 	var h = mundo.heroi
-	var ativo: bool = h != null and h.escudo_ativo
+	var ativo: bool = h != null and h.escudo_ativo and ativo_para(str(h.chave))  # a matriz do LightWolf também liga escudo_ativo e não tem sprite de escudo
 	_atualizar_sprite(h, ativo)
 	_atualizar_pedacos(dt)
 	var brilho := _flash_t > 0.0 or _perf_t > 0.0  # só as faíscas do acerto ficam na camada glow
@@ -566,7 +597,7 @@ func _brilho(h) -> Color:
 		var c := COR_OURO.lerp(Color.WHITE, 0.5)
 		return Color(c.r, c.g, c.b, sin(_glint_t / 0.24 * PI) * 0.6)
 	var janela := float((cfg.perfeito as Dictionary).janela)
-	if h.escudo_ativo and h.escudo_t <= janela:
+	if h.escudo_ativo and ativo_para(str(h.chave)) and h.escudo_t <= janela:
 		return Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, 0.35 * (1.0 - h.escudo_t / maxf(janela, 0.001)))
 	return Color(1, 1, 1, 0)
 
@@ -599,7 +630,7 @@ func _desenhar_arco_aparo(h) -> void:
 	var cor := COR_OURO if h.aparo_acertou else Color(0.85, 0.95, 1.0)
 	var r := float(v.get("raio", 26.0))
 	var largura := float(v.get("largura", 2.0))
-	var fora := _pontos_arco(h, float(cfg_aparo.arco), r)
-	var dentro := _pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8)
+	var fora := pontos_arco(h, float(cfg_aparo.arco), r)
+	var dentro := pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8)
 	no.draw_polyline(fora, Color(cor.r, cor.g, cor.b, 0.95 * (1.0 - 0.6 * t)), largura)
 	no.draw_polyline(dentro, Color(cor.r, cor.g, cor.b, 0.5 * (1.0 - 0.6 * t)), maxf(largura * 0.5, 1.0))

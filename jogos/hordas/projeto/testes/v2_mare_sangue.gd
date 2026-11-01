@@ -239,7 +239,7 @@ func _q_chama_mare() -> void:
 	ok(not w.combate.diretor.mare_chamar(), "com mare: false no mapa o Q não chama Maré")
 
 
-## A Maré da Vila no fator de tempo REAL do mapa (ECO-1, tempo_mult 1,25): proxima_onda está no relógio do diretor, mas q_atraso e o aviso de
+## A Maré da Vila no fator de tempo REAL do mapa (ECO-1, tempo_mult 1,25): proxima_onda está no relógio do diretor, mas o atraso da Maré e o aviso de
 ## 1,2 s andam em dt (tempo real). A guarda do Q e o aviso comparam o tempo real que falta, não os segundos do relógio.
 func _mare_no_fator() -> void:
 	await _novo("nicao", "cidade")
@@ -250,12 +250,12 @@ func _mare_no_fator() -> void:
 	ok(is_equal_approx(d.relogio(), 37.5), "Vila: aos 30 s reais o relógio do diretor marca 37,5 s")
 	d.proxima_onda = d.relogio() + 5.0
 	ok(is_equal_approx(d.falta_onda_real(), 4.0), "faltam 5 s do relógio = 4 s reais (%s)" % d.falta_onda_real())
-	# 3,5 s do relógio = 2,8 s reais, menos que q_atraso (3 s): a Maré normal chega antes da chamada, então o Q não chama
+	# 3,5 s do relógio = 2,8 s reais, menos que o atraso do Nick (3 s): a Maré normal chega antes da chamada, então o Q não chama
 	d.proxima_onda = d.relogio() + float(_mare("nicao").atraso) + 0.5
 	ok(not d.mare_chamar(), "Vila 1,25: a Maré normal chega em 2,8 s reais (< atraso do Nick), o Q não chama")
-	# 3,9 s do relógio = 3,12 s reais, mais que q_atraso: chama
+	# 3,9 s do relógio = 3,12 s reais, mais que o atraso: chama
 	d.proxima_onda = d.relogio() + 3.9
-	ok(d.mare_chamar() and d.mare_chamadas == 1, "Vila 1,25: a Maré normal só chega em 3,12 s reais (> q_atraso), o Q chama")
+	ok(d.mare_chamar() and d.mare_chamadas == 1, "Vila 1,25: a Maré normal só chega em 3,12 s reais (> atraso), o Q chama")
 	d.mare_chamada_t = -1.0
 	d.mare_aviso = false
 	# o aviso sai 1,2 s REAIS antes: 2 s do relógio = 1,6 s reais ainda não, 1,4 s do relógio = 1,12 s reais já
