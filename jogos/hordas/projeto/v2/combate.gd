@@ -607,6 +607,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var pancada: bool = passo.nome == "pancada"  # o Nick no chão: em volta, empurrão para fora
+	var em_volta: bool = pancada or arco >= 359.0  # o giro do Bert (360 graus) também empurra para fora, sem puxar para a frente
+	var puxa: bool = passo.get("puxa", false)  # a corrente do Bert (PER-3): o empurrão vira puxão para o herói
 	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nick: empurra e atordoa mais
 	if pancada:
 		_estouro_chao(h, alc, passo)
@@ -635,8 +637,12 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			criticos += 1
 		var dano := maxi(1, roundi(d))
 		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
-		var rumo: Vector2 = longe if pancada else (dir * 0.55 + longe * 0.45).normalized()
-		var emp: Vector2 = rumo * float(passo.empurrao) * (1.25 if crit else 1.0) * forca
+		var rumo: Vector2 = longe if em_volta else (dir * 0.55 + longe * 0.45).normalized()
+		var forca_emp: float = float(passo.empurrao) * (1.25 if crit else 1.0) * forca
+		if puxa:  # o puxão nunca passa do herói: o empurrão se amortece (exp(-9 dt)), então a distância andada é velocidade / 9
+			rumo = -longe
+			forca_emp = minf(forca_emp, maxf(dist - 6.0, 0.0) * 9.0 * float(m.peso) / maxf(float(m.emp_mult), 0.01))
+		var emp: Vector2 = rumo * forca_emp
 		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
 		especial.dano(util)
@@ -660,10 +666,13 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		matar(m)
 		parada = maxf(parada, float(cfg.morte.hit_stop))
 		tremor = maxf(tremor, float(cfg.morte.tremor))
-	# modificadores da katana: o corte solta uma onda, a estocada solta uma lança de luz
+	# o vento da Lukako (PER-3) e o modificador da katana: o corte solta uma onda (uma só: com os dois, vale a maior), a estocada solta uma lança de luz
+	var dano_onda: float = dano_do_passo(passo) * float(passo.get("vento", 0.0))
 	if passo.nome == "corte" and float(armas.mods.onda) > 0.0:
-		armas.lancar_onda(origem, dir, armas.dano_da_onda(dano_do_passo(passo)))
-	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
+		dano_onda = maxf(dano_onda, armas.dano_da_onda(dano_do_passo(passo)))
+	if dano_onda > 0.0:
+		armas.lancar_onda(origem, dir, dano_onda)
+	if passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
 		armas.lancar_lanca(origem, dir, armas.dano_da_lanca(dano_do_passo(passo)))
 	if pancada and float(armas.mods.abalo) > 0.0:  # modificador do Nick: a pancada solta uma onda de choque para a frente
 		armas.lancar_onda(origem, dir, dano_do_passo(passo) * float(armas.mods.abalo) / 100.0)

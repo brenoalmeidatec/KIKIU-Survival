@@ -40,7 +40,7 @@ func _ready() -> void:
 	ok(Meta.saldo() == 0 and Meta.nivel("vida") == 0, "fixture começa sem progresso herdado")
 	ok(Config.arquivo.begins_with(Ambiente.raiz) and Personagens.caminho_antigo.begins_with(Ambiente.raiz), "opções e save antigo já isolados antes do ready")
 	Config.temporario("pausar_fora", false)
-	for nome in ["Breno", "Matthew", "Nick", "Luke"]:
+	for nome in ["Breno", "Matthew", "Nick", "Luke", "John", "Bert", "Lukako", "Fabian"]:
 		var id = Personagens.criar(nome, Personagens.heroi_do_nome(nome))
 		Personagens.ativar(id)
 		Herois.forcado = ""
@@ -85,9 +85,11 @@ func _ready() -> void:
 					onda_no_acerto = onda_no_acerto or w.combate.fx.o_t[j] < w.combate.fx.o_dur[j]
 				cauda_no_acerto = cauda_no_acerto or w.combate.adagas.ativas() > 0
 		ok(m.vida < m.vida_max and m.vivo, nome + " combo atinge alvo vivo")
-		if nome == "Luke":
-			ok(cauda_no_acerto, "adagas ativas com cauda no quadro do acerto")
-			ok(pausa_no_acerto, "Luke tem micro hit-stop no primeiro acerto do arremesso")
+		if nome == "Luke" or nome == "Fabian":
+			ok(cauda_no_acerto, nome + ": projétil ativo com cauda no quadro do acerto")
+			ok(pausa_no_acerto, nome + " tem micro hit-stop no primeiro acerto do arremesso")
+		elif nome == "Matthew":  # a estrela sem outro alvo para ricochetear some no próprio acerto: só o hit-stop
+			ok(pausa_no_acerto, "Matthew tem micro hit-stop no primeiro acerto do arremesso")
 		else:
 			ok(pausa_no_acerto, nome + " hit-stop curto por acerto preservado")
 			ok(rastro_no_acerto, nome + " rastro visível no quadro do acerto")

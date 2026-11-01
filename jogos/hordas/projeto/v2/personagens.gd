@@ -53,8 +53,12 @@ static func nome(id: String) -> String:
 	return gravado
 
 
+## O herói do personagem `id`. Quem manda é o NOME (dados/v2_salao.json): o herói nunca foi escolha do jogador, então um save antigo que gravou o padrão
+## (Hazaki) para um nome que hoje tem herói próprio (John, Matthew, Bert, Lukako, Fabian: #509, PER-3) passa a jogar com ele. Saves de Brendan, Nick e
+## Luke não mudam, e um herói gravado que não é o padrão vale como está. Só leitura: o índice no disco continua como estava.
 static func heroi(id: String) -> String:
-	return str(_indice().get_value(id, "heroi", HEROI_PADRAO))
+	var gravado := str(_indice().get_value(id, "heroi", HEROI_PADRAO))
+	return heroi_do_nome(nome(id)) if gravado == HEROI_PADRAO else gravado
 
 
 ## O herói que o nome joga ao ser criado (campo "heroi" de dados/v2_salao.json; sem ele, o Hazaki).
