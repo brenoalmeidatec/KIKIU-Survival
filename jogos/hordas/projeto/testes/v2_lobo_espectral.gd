@@ -136,6 +136,15 @@ func _t_formas() -> void:
 	h.entrada_forcada = Vector2(-1, 0)
 	passos(20)
 	ok(h.espectral.no.flip_h == h.sprite.flip_h and h.espectral.no.position == h.sprite.position, "Lobo: espelho e posição do brilho seguem o corpo")
+	var e = h.espectral
+	ok(e._heroi() == h and e.get("heroi") == null, "Lobo: o visual guarda o herói por referência fraca (sem ciclo Heroi <-> espectral)")
+	ok(is_equal_approx(float(e._mat.get_shader_parameter("forca")), 1.0), "Lobo: brilho cheio fora da invencibilidade")
+	h.invenc = 1.0
+	passos(2)
+	ok(is_equal_approx(float(e._mat.get_shader_parameter("forca")), 0.35), "Lobo invencível: o brilho cai e o vermelho da invencibilidade manda")
+	h.invenc = 0.0
+	passos(2)
+	ok(is_equal_approx(float(e._mat.get_shader_parameter("forca")), 1.0), "Lobo: o brilho volta ao fim da invencibilidade")
 	h.entrada_forcada = Vector2.ZERO
 	w.combate.mecha.chegar(h)
 	passos(3)
@@ -164,11 +173,14 @@ func _t_clarao() -> void:
 	Config.g_temporario("tremor_clarao", 100)
 	Config.temporario("reduzir_piscadas", false)
 	_apagar_tela()
-	var n0: int = e.claroes
 	var fl0: int = fx.usados.flashes
+	e.clarao(true)  # sozinho: no quebrar() o golpe também faz flash no herói e esconderia a falta da silhueta
+	ok(fx.usados.flashes > fl0, "clarão: silhueta branco-ciano no herói")
+	passos(120)
+	_apagar_tela()
+	var n0: int = e.claroes
 	quebrar()
 	ok(e.claroes == n0 + 1, "clarão: dispara uma vez ao quebrar (%d)" % (e.claroes - n0))
-	ok(fx.usados.flashes > fl0, "clarão: silhueta branco-ciano no herói")
 	ok(_tela_acesa(), "clarão: flash de tela acende com 'Tremor e clarões' em 100%")
 	passos(120)
 	ok(e.claroes == n0 + 1, "clarão: não repete sozinho com o tempo (%d)" % (e.claroes - n0))
@@ -180,11 +192,12 @@ func _t_clarao() -> void:
 	passos(120)
 	Config.g_temporario("tremor_clarao", 0)
 	_apagar_tela()
-	fl0 = fx.usados.flashes
 	quebrar()
 	ok(not _tela_acesa(), "'Tremor e clarões' em 0: sem flash de tela")
-	ok(fx.usados.flashes > fl0, "'Tremor e clarões' em 0: sobra o brilho no herói")
 	ok(e.claroes == n0 + 3, "'Tremor e clarões' em 0: o clarão do herói ainda conta uma vez")
+	fl0 = fx.usados.flashes
+	e.clarao(true)
+	ok(fx.usados.flashes > fl0, "'Tremor e clarões' em 0: sobra a silhueta no herói")
 	Config.g_temporario("tremor_clarao", 100)
 	Config.temporario("reduzir_piscadas", true)
 	w.combate.mecha.chegar(h)

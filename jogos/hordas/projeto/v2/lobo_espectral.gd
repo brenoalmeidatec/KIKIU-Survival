@@ -21,6 +21,7 @@ render_mode blend_add, unshaded;
 uniform vec4 cor_brilho : source_color = vec4(0.45, 0.88, 1.0, 1.0);
 uniform float brilho = 0.5;
 uniform float contorno = 1.0;
+uniform float forca = 1.0;
 uniform float pulso_hz = 0.7;
 uniform float pulso_amp = 0.3;
 uniform float cintila = 0.45;
@@ -41,11 +42,11 @@ void fragment() {
 	float fantasma = 1.0 - cintila * 0.55 * faixa;
 	float corpo = t.a * (0.35 + 0.65 * lum) * brilho;
 	float e = (corpo + borda * contorno) * pulso * fantasma;
-	COLOR = vec4(cor_brilho.rgb * e, clamp(max(t.a, borda), 0.0, 1.0));
+	COLOR = vec4(cor_brilho.rgb * e * forca, clamp(max(t.a, borda), 0.0, 1.0));
 }
 """
 
-var heroi
+var _heroi_ref: WeakRef = null  # fraca: o Heroi (RefCounted) guarda este objeto em `espectral`; uma referência forte fecharia um ciclo que nunca se libera
 var no: Sprite2D = null  # o sprite aditivo do shader (null antes de montar)
 var ativo := false  # o herói é o Lobo e o visual espectral vale
 var corpo := Color.WHITE  # a tinta do corpo (rgb de cor_corpo, alfa = translucidez); Heroi._visual a põe no sprite
@@ -56,6 +57,8 @@ var claroes := 0  # testes: quantos clarões de troca dispararam na partida
 var _mat: ShaderMaterial = null
 var _cfg: Dictionary = {}
 var _clarao: Dictionary = {}
+var _forca_invenc := 0.35  # o brilho cai a isto enquanto o herói está invencível: o vermelho da invencibilidade é o aviso que manda
+var _forca := -1.0
 var _alfa := 0.75
 var _brilho := 0.5
 var _cor_brilho := Color(0.45, 0.88, 1.0)
@@ -77,10 +80,11 @@ var _tex: Texture2D = null
 
 ## Lê os números e cria o sprite do shader (uma vez por herói, escondido): `raiz` é o nó nos pés do herói, `lobo_id` o registro da forma Lobo.
 func montar(h, lobo_id: String) -> void:
-	heroi = h
+	_heroi_ref = weakref(h)
 	_cfg = Herois.heroi(lobo_id).get("espectral", {})
 	_clarao = _cfg.get("clarao", {})
 	_alfa = float(_cfg.get("alfa", 0.75))
+	_forca_invenc = float(_cfg.get("brilho_invencivel", 0.35))
 	var cc: Array = _cfg.get("cor_corpo", [0.82, 0.95, 1.0])
 	corpo = Color(float(cc[0]), float(cc[1]), float(cc[2]), _alfa)
 	_brilho = float(_cfg.get("brilho", 0.5))
@@ -134,7 +138,7 @@ func desligar() -> void:
 
 ## Perfil gráfico e Reduzir piscadas de agora: decide se o sprite do shader aparece e quanto ele pulsa/cintila.
 func _ler_perfil() -> void:
-	var c = heroi.mundo.combate
+	var c = _heroi().mundo.combate
 	baixo = c != null and c._perfil_baixo()
 	reduz = Piscadas.ligado()
 	if _mat == null:
@@ -161,19 +165,20 @@ func atualizar(dt: float) -> void:
 	_sincronizar(false)
 	if _nevoa_s <= 0.0 or dt <= 0.0:
 		return
-	var fx = heroi.mundo.combate.fx
+	var fx = _heroi().mundo.combate.fx
 	_acum += dt * _nevoa_s * fx.fator_part
 	while _acum >= 1.0:
 		_acum -= 1.0
-		var p: Vector2 = heroi.pos + Vector2(randf_range(-_nevoa_raio, _nevoa_raio), randf_range(-24.0, -4.0))
+		var p: Vector2 = _heroi().pos + Vector2(randf_range(-_nevoa_raio, _nevoa_raio), randf_range(-24.0, -4.0))
 		fx.particula(
 			p, Vector2(randf_range(-8.0, 8.0), randf_range(-22.0, -8.0)), _nevoa_vida * randf_range(0.7, 1.2), _nevoa_tam, _nevoa_cor, _nevoa_sobe, true
 		)
 
 
 func _sincronizar(forcar: bool) -> void:
-	var s: Sprite2D = heroi.sprite
-	var t = heroi.tipo.alb
+	var h = _heroi()
+	var s: Sprite2D = h.sprite
+	var t = h.tipo.alb
 	if forcar or t != _tex:
 		_tex = t
 		no.texture = t
@@ -187,15 +192,24 @@ func _sincronizar(forcar: bool) -> void:
 	no.position = s.position
 	no.scale = s.scale
 	no.rotation = s.rotation
+	var f := _forca_invenc if float(h.invenc) > 0.0 else 1.0
+	if f != _forca:
+		_forca = f
+		_mat.set_shader_parameter("forca", f)
+
+
+func _heroi():
+	return _heroi_ref.get_ref() if _heroi_ref != null else null
 
 
 ## O clarão da troca de forma: `entrando` = o mecha quebrou e o Lobo apareceu (forte); falso = o mecha caiu de volta (mais fraco). Dispara UMA vez por troca.
 ## A silhueta no herói vale sempre (fx.flash já vira tinta fixa e sem repetir com Reduzir piscadas); o flash de tela só acende com "Tremor e clarões" > 0 e sem Reduzir piscadas.
 func clarao(entrando: bool) -> void:
 	claroes += 1
-	var fx = heroi.mundo.combate.fx
+	var h = _heroi()
+	var fx = h.mundo.combate.fx
 	var hc: Array = _clarao.get("heroi_cor", [0.88, 1.0, 1.0])
-	fx.flash(heroi, float(_clarao.get("heroi_dur", 0.4)), Color(float(hc[0]), float(hc[1]), float(hc[2])), 0, float(_clarao.get("heroi_forca", 1.0)))
+	fx.flash(h, float(_clarao.get("heroi_dur", 0.4)), Color(float(hc[0]), float(hc[1]), float(hc[2])), 0, float(_clarao.get("heroi_forca", 1.0)))
 	var tc: Array = _clarao.get("tela_cor", [0.82, 0.97, 1.0])
 	var alfa := float(_clarao.get("tela_alfa", 0.3)) if entrando else float(_clarao.get("volta_tela_alfa", 0.16))
 	var dur := float(_clarao.get("tela_dur", 0.45)) if entrando else float(_clarao.get("volta_dur", 0.35))
