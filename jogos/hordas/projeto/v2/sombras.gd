@@ -69,41 +69,70 @@ static func borrar_folha(im: Image, w: int, h: int) -> ImageTexture:
 	cp.convert(Image.FORMAT_RGBA8)
 	var iw := cp.get_width()
 	var ih := cp.get_height()
-	var dados := cp.get_data()
-	var a := PackedByteArray()
-	a.resize(iw * ih)
-	for i in iw * ih:
-		a[i] = dados[i * 4 + 3]
-	for passe in 2:
-		a = _caixa1d(a, iw, ih, w, h, true)
-		a = _caixa1d(a, iw, ih, w, h, false)
 	var saida := PackedByteArray()
 	saida.resize(iw * ih * 4)
-	for i in iw * ih:
-		saida[i * 4 + 3] = a[i]
+	# Cada célula é independente. A caixa do alfa é nativa; três pixels de halo incluem o alcance dos dois passes e uma borda vazia.
+	# Assim, a divisão nos limites artificiais do recorte não altera nenhum pixel não transparente do resultado.
+	for cy in range(0, ih, h):
+		for cx in range(0, iw, w):
+			var cw := mini(w, iw - cx)
+			var ch := mini(h, ih - cy)
+			var celula := cp.get_region(Rect2i(cx, cy, cw, ch))
+			var usado := celula.get_used_rect()
+			if not usado.has_area():
+				continue
+			var area := usado.grow(3).intersection(Rect2i(0, 0, cw, ch))
+			var largura := area.size.x
+			var altura := area.size.y
+			var dados := celula.get_region(area).get_data()
+			var a := PackedByteArray()
+			a.resize(largura * altura)
+			for i in largura * altura:
+				a[i] = dados[i * 4 + 3]
+			for passe in 2:
+				a = _caixa1d(a, largura, altura, largura, altura, true)
+				a = _caixa1d(a, largura, altura, largura, altura, false)
+			for y in altura:
+				var destino := ((cy + area.position.y + y) * iw + cx + area.position.x) * 4 + 3
+				for x in largura:
+					saida[destino + x * 4] = a[y * largura + x]
 	return ImageTexture.create_from_image(Image.create_from_data(iw, ih, false, Image.FORMAT_RGBA8, saida))
 
 
 static func _caixa1d(a: PackedByteArray, iw: int, ih: int, w: int, h: int, horiz: bool) -> PackedByteArray:
 	var o := PackedByteArray()
 	o.resize(iw * ih)
-	for y in ih:
-		var y0 := (y / h) * h
-		var y1 := mini(y0 + h, ih) - 1
-		for x in iw:
-			var soma := 0
-			var n := 0
-			if horiz:
-				var x0 := (x / w) * w
-				var x1 := mini(x0 + w, iw) - 1
-				for k in range(maxi(x - 1, x0), mini(x + 1, x1) + 1):
-					soma += a[y * iw + k]
-					n += 1
-			else:
-				for k in range(maxi(y - 1, y0), mini(y + 1, y1) + 1):
-					soma += a[k * iw + x]
-					n += 1
-			o[y * iw + x] = soma / n
+	if horiz:
+		for y in ih:
+			var linha := y * iw
+			for x0 in range(0, iw, w):
+				var primeiro := linha + x0
+				var ultimo := linha + mini(x0 + w, iw) - 1
+				if primeiro == ultimo:
+					o[primeiro] = a[primeiro]
+					continue
+				o[primeiro] = (a[primeiro] + a[primeiro + 1]) / 2
+				for i in range(primeiro + 1, ultimo):
+					o[i] = (a[i - 1] + a[i] + a[i + 1]) / 3
+				o[ultimo] = (a[ultimo - 1] + a[ultimo]) / 2
+	else:
+		for y0 in range(0, ih, h):
+			var y1 := mini(y0 + h, ih) - 1
+			var primeira := y0 * iw
+			var ultima := y1 * iw
+			if y0 == y1:
+				for x in iw:
+					o[primeira + x] = a[primeira + x]
+				continue
+			for x in iw:
+				o[primeira + x] = (a[primeira + x] + a[primeira + iw + x]) / 2
+			for y in range(y0 + 1, y1):
+				var linha := y * iw
+				for x in iw:
+					var i := linha + x
+					o[i] = (a[i - iw] + a[i] + a[i + iw]) / 3
+			for x in iw:
+				o[ultima + x] = (a[ultima - iw + x] + a[ultima + x]) / 2
 	return o
 
 
