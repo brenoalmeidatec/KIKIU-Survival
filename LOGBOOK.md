@@ -2861,6 +2861,13 @@ _Claude do Alisson (notebook)_
 - Comparação em janela Windows real 1280x720, perfil Baixo, Nicão e Lucas em cenário preparado, entrada sintética com 0,08 s de recarga: na main ambos negaram e não dispararam; na branch ambos dispararam uma vez ao zerar, sem negação. Logs e fotos fora do Git; a primeira tentativa visual via `--script` falhou porque não inicializou autoloads; a cena externa normal passou nas duas versões. Fotos mostram quadros, não medem duração, sensação ao jogar, teclado/controle físico, áudio ou FPS. Nenhuma partida humana foi jogada.
 - Revisão independente e CI do HEAD final ficam registrados no PR. Nenhum merge pelo Codex.
 
+## 2026-11-01: sorteio reproduzível no teste da Ruptura (Codex do Alisson)
+
+- A pedido do Alisson, corrigida a amostragem aleatória de `v2_ruptura`: a seed do RNG das cartas é fixada após o último reinício do bloco. As 40 mãos de três cartas e as verificações das descrições continuam; a presença das cinco cartas da Ruptura agora é exigida pelo sorteio do pool elegível inteiro, temporariamente sem limite de bônus. Confere tamanho, ausência de duplicações e a descrição de todas as cinco, restaurando a configuração da fixture ao terminar. Nenhuma mudança no sorteador, pesos ou randomização de produção.
+- Godot 4.4.1 pela fila, importação e APPDATA próprias: duas execuções completas com `falhas=0`, mesma assinatura de IDs/raridades `3748801893` e pool 68. Mutação externa em cópia do sorteador real, excluindo `rb_` apenas da montagem da mão: o mesmo teste acusou seis falhas (tamanho e cada uma das cinco cartas ausentes), pool 63. Os arquivos e logs da mutação ficaram fora do repo/export. Avisos de RID/ObjectDB/recursos no encerramento foram preservados; nenhuma investigação de vazamento declarada.
+- `gdformat -l 160 --check` limpo: 423 arquivos; `git diff --check` limpo. Alterados somente o teste e esta entrada. Revisão independente e CI do HEAD final pendentes no PR; sem merge.
+- Revisão independente do coordenador Codex aprovada sem bloqueios: conferidos o diff e os logs das três execuções, incluindo a restauração da fixture e a rejeição das cinco cartas ausentes pela mutação. CI do HEAD final continua pendente no PR.
+
 ## 2026-11-01: progresso do executor de testes (Codex do Alisson)
 
 - A pedido do Alisson, o executor informa início, limite, caminho do log, fim e duração de cada cena. A cada 30 s informa que a cena continua em execução; isso permite localizar a espera sem declarar travamento. O log recebe a saída desde o início. O monitor é encerrado e aguardado antes do resultado final.
