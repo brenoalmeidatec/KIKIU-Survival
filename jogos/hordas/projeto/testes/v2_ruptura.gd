@@ -707,16 +707,34 @@ func _ready() -> void:
 	ok(rp.ecos == 0 and rp.somas.eco == 0.0, "reiniciar descarta o eco pendente e zera os bônus")
 	# sorteio e textos
 	zerar()
+	cs.rng.seed = 4242  # zerar randomiza o RNG próprio das cartas; só esta amostra precisa ser reproduzível
 	ok(cs.disponiveis().filter(func(d): return d.id.begins_with("rb_")).size() == 5, "as 5 cartas aparecem em disponiveis()")
-	var viu_rb := false
+	var sequencia_sorteio: Array = []
 	for i in 40:
 		var tres: Array = cs.sortear(3, 5)
 		ok(tres.size() == 3, "sortear(3, 5) devolve 3 cartas")
 		for cc in tres:
+			sequencia_sorteio.append([cc.id, cc.rar])
 			if str(cc.id).begins_with("rb_"):
-				viu_rb = true
 				ok(not str(cc.desc).contains("{v}") and str(cc.desc).length() > 8, "a desc da carta sorteada traz o número: %s" % cc.desc)
-	ok(viu_rb, "as cartas da ruptura saem no sorteio")
+	# Sortear o pool inteiro prova a presença das cinco sem depender da chance nas 40 mãos.
+	# Sem limite de bônus, nenhum candidato é cortado por vagas; no nível 5 não há golpe garantido substituindo a última carta.
+	var bonus_antes: Dictionary = w.meta_bonus
+	w.meta_bonus = w.meta_bonus.duplicate(true)
+	w.meta_bonus["dificuldade"] = {"limite_bonus": 0}
+	var elegiveis: Array = cs.disponiveis()
+	var pool: Array = cs.sortear(elegiveis.size(), 5)
+	var ids_pool := {}
+	ok(pool.size() == elegiveis.size(), "o sorteio completo devolve todos os candidatos elegíveis")
+	for cc in pool:
+		ok(not ids_pool.has(cc.id), "sem duplicação no sorteio completo: %s" % cc.id)
+		ids_pool[cc.id] = true
+		if str(cc.id).begins_with("rb_"):
+			ok(not str(cc.desc).contains("{v}") and str(cc.desc).length() > 8, "a desc da carta sorteada traz o número: %s" % cc.desc)
+	for cc in dj.cartas:
+		ok(ids_pool.has(cc.id), "a carta da ruptura sai no sorteio completo: %s" % cc.id)
+	w.meta_bonus = bonus_antes
+	print("ruptura sorteio seed=4242; assinatura=", hash(sequencia_sorteio), "; pool=", pool.size())
 
 	# 20. os stats existentes valem na ruptura
 	zerar()
