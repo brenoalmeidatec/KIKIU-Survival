@@ -820,35 +820,43 @@ func particula(pos: Vector2, vel: Vector2, vida: float, tam: float, cor: Color, 
 
 
 ## Faíscas do acerto: um cone para longe do golpe, mais a estrela de impacto.
-func faiscas(pos: Vector2, dir: Vector2, n: int, cor: Color, vel := 170.0) -> void:
+## desenhar=false mantém a mesma sequência de RNG, sem ocupar vagas (o mecha tem visual próprio).
+func faiscas(pos: Vector2, dir: Vector2, n: int, cor: Color, vel := 170.0, desenhar := true) -> void:
 	n = maxi(1, roundi(n * fator_part))
 	var base := dir.angle()
 	for i in n:
 		var a := base + randf_range(-1.1, 1.1)
 		var v := Vector2.from_angle(a) * vel * randf_range(0.35, 1.0)
-		particula(pos, v, randf_range(0.12, 0.28), 2.0 if randf() < 0.6 else 3.0, cor.lerp(Color.WHITE, randf() * 0.6), 120.0)
-	particula(pos, Vector2.ZERO, 0.11, 22.0, Color(1, 0.95, 0.8, 0.9), 0.0, true)
+		var vida := randf_range(0.12, 0.28)
+		var tam := 2.0 if randf() < 0.6 else 3.0
+		var tinta := cor.lerp(Color.WHITE, randf() * 0.6)
+		if desenhar:
+			particula(pos, v, vida, tam, tinta, 120.0)
+	if desenhar:
+		particula(pos, Vector2.ZERO, 0.11, 22.0, Color(1, 0.95, 0.8, 0.9), 0.0, true)
 
 
 ## O estouro da morte do monstro: ossos/cinzas para todo lado e almas que sobem.
-func estouro(pos: Vector2, cor: Color, n: int) -> void:
+## desenhar=false mantém o consumo de RNG do efeito substituído sem criar partículas/onda.
+func estouro(pos: Vector2, cor: Color, n: int, desenhar := true) -> void:
 	n = maxi(2, roundi(n * fator_part))
 	for i in n:
 		var a := randf() * TAU
 		var v := Vector2(cos(a), sin(a) * 0.7) * randf_range(35.0, 150.0)
-		particula(pos, v, randf_range(0.3, 0.55), 2.0 if randf() < 0.7 else 3.0, cor.lerp(Color(0.85, 0.85, 0.8), randf() * 0.7), 150.0)
+		var vida := randf_range(0.3, 0.55)
+		var tam := 2.0 if randf() < 0.7 else 3.0
+		var tinta := cor.lerp(Color(0.85, 0.85, 0.8), randf() * 0.7)
+		if desenhar:
+			particula(pos, v, vida, tam, tinta, 150.0)
 	for i in maxi(2, roundi(5 * fator_part)):
-		particula(
-			pos + Vector2(randf_range(-5, 5), randf_range(-4, 2)),
-			Vector2(randf_range(-14, 14), randf_range(-30, -12)),
-			randf_range(0.45, 0.8),
-			9.0,
-			Color(0.5, 0.9, 1.0, 0.6),
-			-20.0,
-			true
-		)
-	particula(pos, Vector2.ZERO, 0.16, 34.0, Color(1, 0.9, 0.75, 0.85), 0.0, true)
-	onda(pos, Color(1, 0.9, 0.8, 0.8), 26.0, 0.18)
+		var origem := pos + Vector2(randf_range(-5, 5), randf_range(-4, 2))
+		var vel := Vector2(randf_range(-14, 14), randf_range(-30, -12))
+		var vida := randf_range(0.45, 0.8)
+		if desenhar:
+			particula(origem, vel, vida, 9.0, Color(0.5, 0.9, 1.0, 0.6), -20.0, true)
+	if desenhar:
+		particula(pos, Vector2.ZERO, 0.16, 34.0, Color(1, 0.9, 0.75, 0.85), 0.0, true)
+		onda(pos, Color(1, 0.9, 0.8, 0.8), 26.0, 0.18)
 
 
 func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:

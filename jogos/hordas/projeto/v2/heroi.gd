@@ -230,6 +230,7 @@ var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
 var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
+var _pose_tiro_t := 0.0  # somente a pose visual da folha: evita baixar e erguer os braços entre tiros rápidos
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
 var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
@@ -349,6 +350,7 @@ func resetar(p: Vector2) -> void:
 	sprite.offset = _off_base
 	sprite.material = null
 	morte_t = 0.0
+	_pose_tiro_t = 0.0
 	foguinho.resetar()
 	definir_pos(p)
 	iniciar_stats(mundo.combate.cfg)
@@ -1397,7 +1399,7 @@ func _visual(dt: float, v: Vector2) -> void:
 		_punch = maxf(0.0, _punch - dt / 0.16)
 	var desloca := Vector2.ZERO
 	var esc := Vector2.ONE
-	if estado == Estado.GOLPE:
+	if estado == Estado.GOLPE and not bool(tipo.info.get("corpo_fixo_ao_atirar", false)):
 		var corpo := CurvaGolpe.corpo(golpe_t / golpe_dur, float(golpe_cfg.acerto_em))
 		desloca = (golpe_dir * corpo.x).round()
 		esc = Vector2(1.0 + 0.1 * corpo.y, 1.0 - 0.07 * corpo.y)
@@ -1520,7 +1522,11 @@ func _duracao_anim(nome: String, sem_ultimo := false) -> float:
 ## A coluna do quadro `i` da animação `nome` (limitado ao último).
 func _coluna_anim(nome: String, i: int) -> int:
 	var cols: Array = tipo.info.animacoes[nome].colunas
-	return int(cols[clampi(i, 0, cols.size() - 1)])
+	var indice := clampi(i, 0, cols.size() - 1)
+	if Piscadas.ligado():
+		var sem_clarao: Dictionary = tipo.info.animacoes[nome].get("sem_clarao", {})
+		indice = clampi(int(sem_clarao.get(str(indice), indice)), 0, cols.size() - 1)
+	return int(cols[indice])
 
 
 ## A coluna da animação `nome` depois de `t` segundos, pelos tempos s_quadros da folha (ou s_por_quadro); trava no último quadro.
@@ -1538,6 +1544,11 @@ func _coluna_por_tempo(nome: String, t: float) -> int:
 
 ## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
 func _coluna_acao(dt: float) -> int:
+	var corpo_fixo := bool(tipo.info.get("corpo_fixo_ao_atirar", false))
+	if corpo_fixo and estado == Estado.GOLPE:
+		_pose_tiro_t = maxf(float(tipo.info.get("segurar_mira_s", 0.0)), 0.0)
+	else:
+		_pose_tiro_t = maxf(_pose_tiro_t - dt, 0.0)
 	if _dano_t >= 0.0:
 		_dano_t += dt
 		if _tem_anim("dano") and estado != Estado.ESQUIVA:
@@ -1561,6 +1572,10 @@ func _coluna_acao(dt: float) -> int:
 		var passo := mini(esp_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
 		var p := fposmod(esp_t / maxf(esp_dur, 0.001) * esp_anim_ciclos, 0.999)
 		return _coluna_anim("combo", passo * por_golpe + int(p * por_golpe))
+	if estado == Estado.HABILIDADE:
+		var pose_habilidade := str(tipo.info.get("poses_habilidades", {}).get(hab_id, ""))
+		if pose_habilidade != "" and _tem_anim(pose_habilidade):
+			return _coluna_anim(pose_habilidade, 0)  # mísseis saem dos pods: sem simular tiro dos canhões dos braços
 	if estado == Estado.HABILIDADE and _tem_anim("combo"):  # a E toca um passo do combo (hab_anim_passo), repetido hab_anim_ciclos vezes
 		var por_golpe_h := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
@@ -1574,6 +1589,8 @@ func _coluna_acao(dt: float) -> int:
 		if not hab_anim_quadros.is_empty():
 			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
+	if corpo_fixo and estado == Estado.LIVRE and not andando and not escudo_ativo and _pose_tiro_t > 0.0 and _tem_anim("combo"):
+		return _coluna_anim("combo", 0)
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)
 	return -1

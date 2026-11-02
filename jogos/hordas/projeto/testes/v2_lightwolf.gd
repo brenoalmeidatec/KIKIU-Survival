@@ -139,16 +139,15 @@ func _t_dados() -> void:
 	ok(cic > 0.06 and cic < 0.08, "mecha: ~10 tiros por segundo no papel: o passo mais o quadro de recomeço dá 6 quadros (%.3f s de passo)" % cic)
 	for nome in ["lightwolf_mecha", "lightwolf_lobo"]:
 		var info = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + nome + ".json"))
-		if nome == "lightwolf_lobo":
-			ok(info is Dictionary and not info.has("provisorio"), "%s: folha final (LW-7), sem o rótulo de provisória" % nome)
-		else:
-			ok(info is Dictionary and bool(info.get("provisorio", false)), "%s: folha existe e está rotulada como provisória" % nome)
+		# As duas formas já têm folha final do Blender (LW-7).
+		ok(info is Dictionary and not info.has("provisorio"), "%s: folha final, sem rótulo provisório" % nome)
 		ok(
 			ResourceLoader.exists(PASTA_SPRITES + nome + "_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + nome + "_normal.png"),
 			"%s: albedo e normal existem" % nome
 		)
 	var mecha = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "lightwolf_mecha.json"))
-	ok(int(mecha.quadro[0]) == 64 and int(mecha.quadro[1]) == 96, "mecha: folha 64x96 como a do Nick")
+	ok(int(mecha.quadro[0]) == 128 and int(mecha.quadro[1]) == 192, "mecha: quadro ampliado 128x192 sem cortar o rolamento (#587)")
+	ok(int(mecha.pe_y) == 120, "mecha: pés ancorados na linha 120 do quadro ampliado")
 	var lobo = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "lightwolf_lobo.json"))
 	ok(int(lobo.quadro[0]) == 32 and int(lobo.quadro[1]) == 44, "lobo: folha 32x44 como a do Luke")
 

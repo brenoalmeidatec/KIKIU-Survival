@@ -103,9 +103,14 @@ static func escala_dpi(w: Window) -> float:
 	return clampf(roundf(e * 4.0) / 4.0, 1.0, 4.0)
 
 
-## Calcula para a janela e a opção atuais (ou a `opcao_forcada`, que o salão usa para ficar sempre encaixado), guarda no estado estático e devolve o fator.
+## Calcula para a janela e a opção atuais. O salão pede "encaixe", modo interno sem os passos de tamanho dos menus.
 static func atualizar(w: Window, opcao_forcada := "") -> float:
 	var j := janela_px(w)
+	if opcao_forcada == "encaixe":
+		fator_atual = minf(maxf(j.x, 1.0) / LARG, maxf(j.y, 1.0) / ALT)
+		canvas_atual = Vector2(ceilf(j.x / fator_atual - 0.001), ceilf(j.y / fator_atual - 0.001))
+		desloc_atual = deslocamento(canvas_atual)
+		return fator_atual
 	var o := opcao_forcada if OPCOES.has(opcao_forcada) else opcao_atual()
 	var d := escala_dpi(w)
 	fator_atual = fator(j, o, d)
