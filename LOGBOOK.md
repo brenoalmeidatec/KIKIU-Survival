@@ -2883,3 +2883,10 @@ _Claude do Alisson (notebook)_
 - O salão usa encaixe contínuo da cena 960x540, independente do tamanho escolhido para a interface; menus mantêm seus passos e opções anteriores. Em janelas de outras proporções, o chão cobre a área excedente.
 - Godot 4.4.1 pela fila, com APPDATA isolada: teste integrado anterior à correção `v2_escala_ui falhas=4`; depois, `falhas=0`, incluindo resize por sinal e offsets das camadas. Regressões `v2_salao`, `v2_salao_entrada` e `v2_janela_modo`: `falhas=0`. Houve avisos de recursos/RID no encerramento; eles não foram investigados como vazamento.
 - Em captura real 1390x782, o santuário com Brendan preencheu a área sem bordas cinzas. Foto e helper ficaram fora do repositório. Não foram observados interação, redimensionamento manual, áudio ou desempenho nessa captura. Revisão independente e CI do commit final ficam no PR; sem merge pelo Codex.
+
+## 2026-11-01: HUD da conquista cortava o progresso ("Experiente ıível") (Claude do Alisson)
+
+- **Causa:** o rótulo do progresso em `v2/hud_conquista.gd` tinha 70 px fixos, alinhado à direita e com `clip_text`. Na fonte de 16 px por letra, "0/15 nível" ocupa 160 px. O que sobrava visível era o fim da palavra, com o "n" cortado ao meio ("ıível"). Nenhuma conquista mostrava os números na partida, só pedaços da unidade.
+- **Conserto:** o texto da direita passa a ocupar a largura que precisa, e o nome fica com o resto. Quando nome e unidade não cabem juntos, aparece só a contagem ("1/15", campo novo `contagem` em `Conquistas.linhas`). No selo CUMPRIDA, o prêmio só aparece se couber inteiro.
+- **Testes:** `v2_conquistas` ganhou a checagem de que o progresso e o prêmio cabem inteiros em toda conquista, com a largura medida pela fonte real. Deu 58 falhas na main e `falhas=0` na branch. `v2_recompensa_conquista` também deu `falhas=0`. `gdformat` limpo.
+- **Janela real** 960x540 (roteiro `lightwolf`): o canto mostra "Experiente 1/15". Não visto: o selo CUMPRIDA em janela (só coberto pelo teste) e a tela em outras escalas da interface.
