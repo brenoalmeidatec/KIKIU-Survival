@@ -148,7 +148,7 @@ func _t_cena() -> void:
 	ok(is_equal_approx(h.esp_carga, 35.0) and h.esp_rotulo == "CHAMAR", "o chamado começa em 35 (%.1f) e o Q vira CHAMAR" % h.esp_carga)
 	ok(is_equal_approx(c.mecha.carga_mecha, 0.0), "o Q do mecha foi gasto: volta a 0 quando ele cair (%.1f)" % c.mecha.carga_mecha)
 	ok(c.mecha.autodestruicoes == 1 and c.mecha.quebras == 0, "uma autodestruição, nenhuma quebra (sem estouro nem empurrão de quebra)")
-	ok(not esp._g_tipo.is_empty() and int(esp._g_tipo.w) == 64, "o mecha que fica no lugar guarda a folha dele (64 de largura)")
+	ok(not esp._g_tipo.is_empty() and int(esp._g_tipo.w) == 128, "o mecha que fica no lugar guarda a folha ampliada dele (128 de largura)")
 	# o fusível: meio segundo depois nada morreu, o piloto saltou para trás da mira, e o corpo não leva dano
 	passos(30)
 	ok(esp.limpas == 0 and esp.explosoes == 0 and vivos(lista) == 60, "durante o fusível nada explode nem morre")

@@ -1,17 +1,188 @@
 {
  "quadro": [
-  64,
-  96
+  128,
+  192
  ],
  "elevacao": 45.0,
  "ppu": 24.5,
- "pe_y": 74,
+ "pe_y": 120,
+ "corpo_fixo_ao_atirar": true,
+ "bocas_projeteis": {
+  "canhoes": [
+   [
+    [
+     -20.9,
+     -8.5
+    ],
+    [
+     20.9,
+     -8.5
+    ]
+   ],
+   [
+    [
+     -38.32,
+     -50.37
+    ],
+    [
+     -38.32,
+     -20.81
+    ]
+   ],
+   [
+    [
+     38.32,
+     -20.81
+    ],
+    [
+     38.32,
+     -50.37
+    ]
+   ],
+   [
+    [
+     20.9,
+     -62.69
+    ],
+    [
+     -20.9,
+     -62.69
+    ]
+   ],
+   [
+    [
+     -41.87,
+     -26.89
+    ],
+    [
+     -12.31,
+     -5.99
+    ]
+   ],
+   [
+    [
+     12.31,
+     -5.99
+    ],
+    [
+     41.87,
+     -26.89
+    ]
+   ],
+   [
+    [
+     -12.31,
+     -65.2
+    ],
+    [
+     -41.87,
+     -44.3
+    ]
+   ],
+   [
+    [
+     41.87,
+     -44.3
+    ],
+    [
+     12.31,
+     -65.2
+    ]
+   ]
+  ],
+  "pods": [
+   [
+    [
+     -19.18,
+     -48.98
+    ],
+    [
+     19.18,
+     -48.98
+    ]
+   ],
+   [
+    [
+     -4.13,
+     -65.47
+    ],
+    [
+     -4.13,
+     -38.34
+    ]
+   ],
+   [
+    [
+     4.13,
+     -38.34
+    ],
+    [
+     4.13,
+     -65.47
+    ]
+   ],
+   [
+    [
+     19.18,
+     -54.82
+    ],
+    [
+     -19.18,
+     -54.82
+    ]
+   ],
+   [
+    [
+     -16.48,
+     -59.43
+    ],
+    [
+     10.64,
+     -40.25
+    ]
+   ],
+   [
+    [
+     -10.64,
+     -40.25
+    ],
+    [
+     16.48,
+     -59.43
+    ]
+   ],
+   [
+    [
+     10.64,
+     -63.56
+    ],
+    [
+     -16.48,
+     -44.38
+    ]
+   ],
+   [
+    [
+     16.48,
+     -44.38
+    ],
+    [
+     -10.64,
+     -63.56
+    ]
+   ]
+  ]
+ },
+ "segurar_mira_s": 0.12,
+ "poses_habilidades": {
+  "misseis": "parado"
+ },
  "retrato": {
   "regiao": [
-   10,
-   34,
-   38,
-   42
+   27,
+   42,
+   74,
+   84
   ]
  },
  "linhas": [
@@ -33,13 +204,13 @@
   "andar4",
   "andar5"
  ],
- "render": "Cycles, pixel nativo 64x96 (anao ~40 px), 1 amostra, sem bloom (gerar.py, 8 direcoes, cor e normal)",
+ "render": "Cycles, pixel nativo 128x192 (mecha em escala ampliada), 1 amostra, sem bloom (gerar.py, 8 direcoes, cor e normal)",
  "grade": {
   "linhas": 8,
   "colunas": 38,
   "quadro": [
-   64,
-   96
+   128,
+   192
   ]
  },
  "nomes_colunas": [
@@ -166,8 +337,12 @@
     0.16,
     0.1
    ],
-   "aviso": "golpe 1 (batida, quadros 0 a 5) e golpe 2 (pancada, 6 a 11); o impacto e o quadro 3 de cada golpe; a marreta de 3,2 passa de 40 px e cai fora do quadro em poucos quadros de diagonal (medir.py)",
+   "aviso": "tiro esquerdo (quadros 0 a 5) e direito (6 a 11); clarão no quadro 1 de cada tiro, alinhado a acerto_em=0.2; medir.py confere as quatro bordas com o contorno",
    "golpes": 2,
+   "sem_clarao": {
+    "1": 2,
+    "7": 8
+   },
    "quadros_por_golpe": 6,
    "golpes_tipo": [
     "batida",
@@ -228,10 +403,8 @@
     0.1,
     0.4
    ],
-   "aviso": "cai DE LADO, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido; a marreta cai ao lado, no chao a frente dele"
+   "aviso": "cai de lado, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido"
   }
  },
- "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'.",
- "provisorio": true,
- "origem": "nicao (recolor.py, LW-1; troca pela arte final do LW-7)"
+ "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."
 }
