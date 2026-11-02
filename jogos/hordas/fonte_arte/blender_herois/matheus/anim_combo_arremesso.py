@@ -87,6 +87,6 @@ def efeito(arm, quadro, n_quadros, ang):
     centro = bpy.data.objects["Shuriken miolo"].matrix_world.translation
     d = arm.matrix_world.to_3x3() @ Vector(DIRECAO[g]).normalized()
     c = centro + d * {2: 0.0, 3: 0.5, 4: 0.9}[i]
-    r = 0.22
+    r = 0.30
     pontos = [c + Vector((r, 0, 0)), c + Vector((0, 0, r)), c + Vector((-r, 0, 0)), c + Vector((0, 0, -r))]
     return [(pontos, (196, 208, 220))]

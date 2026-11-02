@@ -351,7 +351,7 @@
 			"titulo": "O Lanceiro",
 			"arma": "NAGINATA",
 			"desc": "Lanceiro de lâmina longa. Corta em arco largo, corta de volta e fecha com uma estocada de alcance enorme. Fere de mais longe, mas golpeia devagar.",
-			"sprite": "hazaki_samurai",
+			"sprite": "joao",
 			"raio": 6,
 			"bonus": {"dano": 1.0, "vel_ataque": 1.0, "area": 1.0, "sorte": 0.0},
 			"cfg": {
@@ -417,7 +417,7 @@
 			"titulo": "O Laçador",
 			"arma": "KUSARIGAMA",
 			"desc": "Laçador de corrente. A corrente puxa os monstros para perto, o giro acerta em volta toda e a última puxada junta a horda. Aguenta muito, mas golpeia devagar.",
-			"sprite": "hazaki_samurai",
+			"sprite": "beto",
 			"raio": 7,
 			"bonus": {"dano": 1.0, "vel_ataque": 1.0, "area": 1.0, "sorte": 0.0},
 			"cfg": {
@@ -490,7 +490,7 @@
 			"titulo": "O Vendaval",
 			"arma": "TESSEN",
 			"desc": "Dança com um leque de ferro. Três cortes rápidos, e cada um solta uma rajada de vento que segue em frente. Leve e veloz.",
-			"sprite": "hazaki_samurai",
+			"sprite": "lukako",
 			"raio": 5,
 			"bonus": {"dano": 1.0, "vel_ataque": 1.0, "area": 1.0, "sorte": 0.0},
 			"cfg": {
@@ -567,7 +567,7 @@
 			"titulo": "O Arqueiro",
 			"arma": "YUMI",
 			"desc": "Arqueiro de arco longo. Dois tiros e um disparo duplo, e cada flecha atravessa vários monstros. Golpes lentos, de longe, e pouca vida.",
-			"sprite": "hazaki_samurai",
+			"sprite": "fabio",
 			"raio": 5,
 			"bonus": {"dano": 1.0, "vel_ataque": 1.0, "area": 1.0, "sorte": 0.0},
 			"cfg": {
