@@ -11,6 +11,19 @@ extends RefCounted
 const MAX_PART := 360
 const MAX_FRAGMENTOS := 24
 const MAX_NUM := 64
+## Números de dano que nascem juntos (um míssil e a explosão dele, uma salva num bando em volta do herói) se somam em um só: um número novo
+## que pede lugar a menos de NUM_JUNTA_X x NUM_JUNTA_Y px de outro da mesma cor e tamanho, nascido há menos de NUM_JUNTA_S s, entra na conta dele.
+const NUM_JUNTA_S := 0.3
+const NUM_JUNTA_X := 30.0
+const NUM_JUNTA_Y := 20.0
+## O que não soma não nasce em cima de outro: se já tem um número novo (menos de NUM_AFASTA_S s) a menos de NUM_AFASTA_X x NUM_AFASTA_Y px do lugar,
+## o novo sobe NUM_AFASTA_PASSO px, até NUM_AFASTA_MAX vezes. Só no sorteio de lugar (os `exato` já vêm no lugar escolhido por quem chama).
+## "A menos de" = as caixas dos dois textos se cruzam (cada dígito tem ~NUM_AFASTA_LARG da altura da fonte de largura; a altura da caixa é NUM_AFASTA_ALT da fonte).
+const NUM_AFASTA_S := 0.5
+const NUM_AFASTA_LARG := 0.6
+const NUM_AFASTA_ALT := 0.75
+const NUM_AFASTA_PASSO := 14.0
+const NUM_AFASTA_MAX := 3
 const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
@@ -208,6 +221,8 @@ var n_dur := PackedFloat32Array()
 var n_txt := PackedStringArray()
 var n_tam := PackedInt32Array()
 var n_cor := PackedColorArray()
+var n_orig := PackedVector2Array()  # onde o número foi pedido (antes do sorteio de lado e de altura): é daqui que se mede a vizinhança
+var n_val := PackedInt32Array()  # o valor inteiro do número (0 = o texto não é uma conta de dano, "LIMPOU x14" ou "+12": não soma)
 var n_ativos := 0
 var _ni := 0
 
@@ -282,7 +297,7 @@ var _cl_cor := Color.WHITE
 var _ex_i := 0
 var _rng := RandomNumberGenerator.new()  # sorteio dos enfeites novos: fora do randf() global, de que o jogo e os testes dependem
 
-var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0, "chao": 0}  # contadores para os testes
+var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "somados": 0, "folhas": 0, "marcas": 0, "explosoes": 0, "chao": 0}  # contadores para os testes
 
 
 func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
@@ -313,6 +328,8 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	n_txt.resize(MAX_NUM)
 	n_tam.resize(MAX_NUM)
 	n_cor.resize(MAX_NUM)
+	n_orig.resize(MAX_NUM)
+	n_val.resize(MAX_NUM)
 	o_pos.resize(MAX_ONDAS)
 	o_t.resize(MAX_ONDAS)
 	o_dur.resize(MAX_ONDAS)
@@ -854,18 +871,67 @@ func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:
 
 ## Número de dano que salta, com contorno. `grande` = crítico (fonte 24; o normal é 16). Um dano que não é do golpe da katana (fogo,
 ## raio, aura...) usa `tam` menor se quiser.
+## `usados.numeros` conta os pedidos; os que entraram na soma de outro número contam também em `usados.somados` e não ocupam lugar na tela.
 func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0, exato := false) -> void:
+	usados.numeros += 1
+	var tam_final := tam if tam > 0 else (24 if grande else 16)
+	var valor := texto.to_int() if (not exato and texto.is_valid_int() and texto.unicode_at(0) >= 48) else 0  # só dígitos: sem "+" nem "-"
+	# o sorteio de lado vem ANTES da soma: o randf() global é consumido igual para todo número, some ele ou não (o jogo e os testes dependem da sequência)
+	var lado := 0.0 if exato else randf_range(-12.0, 12.0)
+	if valor > 0 and _somar_vizinho(pos, valor, cor, tam_final):
+		usados.somados += 1
+		return
 	var i := _ni
 	_ni = (_ni + 1) % MAX_NUM
 	# `exato`: quem chama já escolheu o lugar (os estilhaços abrem em leque), então sem o sorteio de lado e de altura
-	n_pos[i] = pos if exato else pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0)
+	n_pos[i] = pos if exato else _afastar(pos + Vector2(lado, -10.0 - float(_ni % 4) * 8.0), texto.length(), tam_final)
 	n_t[i] = 0.0
 	n_dur[i] = 1.0 if grande else 0.75
 	n_txt[i] = texto
-	n_tam[i] = tam if tam > 0 else (24 if grande else 16)
+	n_tam[i] = tam_final
 	n_cor[i] = cor
+	n_orig[i] = pos
+	n_val[i] = valor
 	n_ativos += 1
-	usados.numeros += 1
+
+
+## Sobe `p` até não cair em cima de um número recém-nascido (ver NUM_AFASTA_*).
+func _afastar(p: Vector2, digitos: int, tam: int) -> Vector2:
+	for _tentativa in NUM_AFASTA_MAX:
+		var ocupado := false
+		for j in MAX_NUM:
+			if n_t[j] >= NUM_AFASTA_S:
+				continue
+			var meia_larg := (float(digitos * tam) + float(n_txt[j].length() * n_tam[j])) * NUM_AFASTA_LARG * 0.5
+			var meia_alt := float(maxi(tam, n_tam[j])) * NUM_AFASTA_ALT
+			if absf(n_pos[j].x - p.x) < meia_larg and absf(n_pos[j].y - p.y) < meia_alt:
+				ocupado = true
+				break
+		if not ocupado:
+			break
+		p.y -= NUM_AFASTA_PASSO
+	return p
+
+
+## Soma `valor` no número vivo mais perto de `pos` que aceita a conta (mesma cor e tamanho, nascido há menos de NUM_JUNTA_S s). Devolve se achou.
+func _somar_vizinho(pos: Vector2, valor: int, cor: Color, tam: int) -> bool:
+	var melhor := -1
+	var d_melhor := INF
+	for i in MAX_NUM:
+		if n_val[i] <= 0 or n_t[i] >= NUM_JUNTA_S or n_tam[i] != tam or n_cor[i] != cor:
+			continue
+		var d := pos - n_orig[i]
+		if absf(d.x) > NUM_JUNTA_X or absf(d.y) > NUM_JUNTA_Y:
+			continue
+		var d2 := d.length_squared()
+		if d2 < d_melhor:
+			d_melhor = d2
+			melhor = i
+	if melhor < 0:
+		return false
+	n_val[melhor] += valor
+	n_txt[melhor] = str(n_val[melhor])
+	return true
 
 
 func limpar() -> void:
