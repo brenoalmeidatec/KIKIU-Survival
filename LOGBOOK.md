@@ -2877,3 +2877,9 @@ _Claude do Alisson (notebook)_
 - Revisão independente pelo coordenador Codex: aprovada sem bloqueios após ampliar a janela do mock de interrupção para 5 s. Ele releu os três arquivos e executou `bash -n` e o autoteste completo independentemente: `falhas=0` em 7,17 s; formatter na base com 423 arquivos limpos, sem alteração de GDScript. CI do HEAD segue pendente no PR.
 
 **Ultra/Max, plano para o PC (01/11/2026, Codex do Alisson):** a pedido do Alisson, docs/ULTRA_MAX_PC.md registra o protótipo proposto de iluminação 2D, etapas, orçamento de efeitos e comparação reproduzível no PC. Somente documentação: perfil ainda não implementado, nenhum novo efeito visto e Godot não rodado neste bloco. Sem merge; implementação e desempenho dependem de PR posterior e revisão independente.
+
+## 2026-11-01: encaixe do santuário — Codex do Alisson
+
+- O salão usa encaixe contínuo da cena 960x540, independente do tamanho escolhido para a interface; menus mantêm seus passos e opções anteriores. Em janelas de outras proporções, o chão cobre a área excedente.
+- Godot 4.4.1 pela fila, com APPDATA isolada: teste integrado anterior à correção `v2_escala_ui falhas=4`; depois, `falhas=0`, incluindo resize por sinal e offsets das camadas. Regressões `v2_salao`, `v2_salao_entrada` e `v2_janela_modo`: `falhas=0`. Houve avisos de recursos/RID no encerramento; eles não foram investigados como vazamento.
+- Em captura real 1390x782, o santuário com Brendan preencheu a área sem bordas cinzas. Foto e helper ficaram fora do repositório. Não foram observados interação, redimensionamento manual, áudio ou desempenho nessa captura. Revisão independente e CI do commit final ficam no PR; sem merge pelo Codex.
