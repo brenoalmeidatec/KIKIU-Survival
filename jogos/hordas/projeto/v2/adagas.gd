@@ -66,6 +66,9 @@ var a_visual_offset := PackedVector2Array()
 var a_visual_dist := PackedFloat32Array()
 var a_visual_t := PackedFloat32Array()
 var a_visual_compr := PackedFloat32Array()  # janela de convergência: só encurta ao prever uma colisão próxima
+var a_visual_ultima := PackedVector2Array()
+var a_visual_oculto := PackedByteArray()
+var a_visual_seguir := PackedByteArray()  # só a boca projetada arma a proteção contra voo visual reverso
 var a_fonte: Array = []  # de onde a adaga veio (combate.fonte_dano no arremesso: principal, especial ou habilidade), para o dano por golpe da tela de fim
 var a_u0: Array = []  # os últimos monstros que cada adaga acertou (não repete)
 var a_u1: Array = []
@@ -114,6 +117,9 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_visual_t.resize(MAX)
 	a_visual_compr.resize(MAX)
 	a_visual_compr.fill(VISUAL_DIST)
+	a_visual_ultima.resize(MAX)
+	a_visual_oculto.resize(MAX)
+	a_visual_seguir.resize(MAX)
 	a_fonte.resize(MAX)
 	a_u0.resize(MAX)
 	a_u1.resize(MAX)
@@ -142,6 +148,9 @@ func limpar() -> void:
 	a_visual_dist.fill(0.0)
 	a_visual_t.fill(0.0)
 	a_visual_compr.fill(VISUAL_DIST)
+	a_visual_ultima.fill(Vector2.ZERO)
+	a_visual_oculto.fill(0)
+	a_visual_seguir.fill(0)
 	_grupo = 0
 	_pausa_recarga = 0.0
 	for i in MAX:
@@ -249,6 +258,9 @@ func _nova(
 	a_visual_dist[i] = 0.0
 	a_visual_t[i] = 0.0
 	a_visual_compr[i] = VISUAL_DIST
+	a_visual_ultima[i] = Vector2.ZERO
+	a_visual_oculto[i] = 0
+	a_visual_seguir[i] = 0
 	a_fonte[i] = combate.fonte_dano
 	a_u0[i] = null
 	a_u1[i] = null
@@ -285,6 +297,7 @@ func atualizar(dt: float) -> void:
 		_mover(i, dt)
 		a_visual_dist[i] += antes.distance_to(a_pos[i])
 		a_visual_t[i] = maxf(0.0, a_visual_t[i] - dt)
+		_atualizar_visual(i)
 	_desenha = true
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
@@ -470,6 +483,9 @@ func _ricochetear(i: int, m, perto: Vector2, t: float) -> bool:
 	var alvo: Vector2 = melhor.pos + Vector2(0, -6)
 	a_ric[i] -= 1
 	a_dir[i] = (alvo - perto).normalized()
+	if a_visual_seguir[i] != 0:
+		a_visual_ultima[i] = perto  # a nova direção efetiva permite uma trajetória visual nova
+		a_visual_oculto[i] = 0
 	a_pos[i] = perto
 	a_rest[i] = maxf(a_rest[i] - t, sqrt(melhor_d2) + 8.0)  # o alcance que sobrou nunca deixa a lâmina curta para chegar ao novo alvo
 	combate.fx.faiscas(perto, a_dir[i], 2, a_cor[i], 90.0)
@@ -551,7 +567,7 @@ func _desenhar_corpo() -> void:
 	if misseis_visual.ativas() > 0:
 		misseis_visual.desenhar(no_corpo, float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3)
 	for i in MAX:
-		if a_rest[i] <= 0.0:
+		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
 		var p: Vector2 = a_pos[i]
 		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
@@ -569,7 +585,7 @@ func _desenhar_corpo() -> void:
 
 func _desenhar_brilho() -> void:
 	for i in MAX:
-		if a_rest[i] <= 0.0:
+		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
 		var p: Vector2 = _pos_visual(i)
 		var dir: Vector2 = a_dir[i]
@@ -670,14 +686,29 @@ func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -
 		return
 	a_visual_offset[i] = h.pos + Vector2(float(xy[0]), float(xy[1])) - a_pos[i]
 	a_visual_t[i] = VISUAL_DUR
+	a_visual_ultima[i] = h.pos + Vector2(float(xy[0]), float(xy[1]))
+	a_visual_seguir[i] = 1
 
 
 func _pos_visual(i: int) -> Vector2:
 	if a_visual_compr[i] <= 0.0:
 		return a_pos[i]
 	var k := clampf(minf(1.0 - a_visual_dist[i] / a_visual_compr[i], a_visual_t[i] / VISUAL_DUR), 0.0, 1.0)
-	k = k * k * (3.0 - 2.0 * k)
+	if a_visual_compr[i] >= VISUAL_DIST:
+		k = k * k * (3.0 - 2.0 * k)
 	return a_pos[i] + a_visual_offset[i] * k
+
+
+## Boca já além do contato ou alvo tardio: não desenha uma volta para trás. A física segue e o desenho volta ao alcançar a última posição.
+func _atualizar_visual(i: int) -> void:
+	if a_visual_seguir[i] == 0 or a_rest[i] <= 0.0:
+		return
+	var p := _pos_visual(i)
+	if (p - a_visual_ultima[i]).dot(a_dir[i]) < -0.01:
+		a_visual_oculto[i] = 1
+	else:
+		a_visual_oculto[i] = 0
+		a_visual_ultima[i] = p
 
 
 ## O tiro de plasma da pistola do LightWolf: bola de 11x7 px, núcleo branco, anel ciano e uma cauda mais fraca para trás (esquerda).

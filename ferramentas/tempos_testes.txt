@@ -209,5 +209,5 @@ v2_sombras_blur 1
 v2_mecha_projeteis 5
 v2_mecha_animacao 5
 
-# v2_mecha_contato: 4,320 s pela fila no notebook em 01/11/2026, com inicialização, sem mensagem de espera; arredondado para os shards.
+# v2_mecha_contato: 4,623 s pela fila no notebook em 01/11/2026, com inicialização, sem mensagem de espera; arredondado para os shards.
 v2_mecha_contato 5
