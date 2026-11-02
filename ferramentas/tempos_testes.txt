@@ -200,3 +200,4 @@ v2_apice_tela 15
 
 # v2_habilidade_buffer: 47,895 s no notebook pela fila em 01/11/2026, sem contar espera por vaga.
 v2_habilidade_buffer 50
+v2_lobo_espectral 50

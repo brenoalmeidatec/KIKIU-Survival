@@ -235,6 +235,7 @@ var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
 var morte_t := 0.0  # s de jogo desde a morte (só anda em _visual_morto, no dt do herói: hit-stop e pausa o congelam)
 var _mat_morte: ShaderMaterial = null
+var espectral = null  # o visual do Lobo espectral (v2/lobo_espectral.gd; só o LightWolf, nasce em Mecha.precarregar): null nos outros heróis
 var foguinho = null  # o brilho no peito (v2/foguinho.gd): só visual, sem colisão; `foguinho.no` é o Sprite2D
 
 
@@ -1438,8 +1439,12 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)
 	elif estado == Estado.CARGA:
 		sprite.modulate = Color.WHITE.lerp(Color(1.0, 0.85, 0.65), rup_carga)  # o corpo esquenta com a carga
+	elif espectral != null and espectral.ativo:
+		sprite.modulate = espectral.corpo  # o Lobo espectral: meio translúcido, tinta gelo (dados/v2_herois.json > lightwolf_lobo > espectral)
 	else:
 		sprite.modulate = Color.WHITE
+	if espectral != null:
+		espectral.atualizar(dt)
 	foguinho.seguir(desloca)
 	foguinho.atualizar(dt)
 
@@ -1447,6 +1452,8 @@ func _visual(dt: float, v: Vector2) -> void:
 ## Gancho do visual da morte: põe o shader de dissolução no corpo (só agora, então o herói vivo não paga nada por ele).
 func _iniciar_morte() -> void:
 	morte_t = 0.0
+	if espectral != null:
+		espectral.desligar()  # o sprite do brilho some; o corpo se dissolve sozinho
 	if _mat_morte == null:
 		var sh := Shader.new()
 		sh.code = SHADER_MORTE

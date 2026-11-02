@@ -2867,3 +2867,10 @@ _Claude do Alisson (notebook)_
 - Godot 4.4.1 pela fila, importação e APPDATA próprias: duas execuções completas com `falhas=0`, mesma assinatura de IDs/raridades `3748801893` e pool 68. Mutação externa em cópia do sorteador real, excluindo `rb_` apenas da montagem da mão: o mesmo teste acusou seis falhas (tamanho e cada uma das cinco cartas ausentes), pool 63. Os arquivos e logs da mutação ficaram fora do repo/export. Avisos de RID/ObjectDB/recursos no encerramento foram preservados; nenhuma investigação de vazamento declarada.
 - `gdformat -l 160 --check` limpo: 423 arquivos; `git diff --check` limpo. Alterados somente o teste e esta entrada. Revisão independente e CI do HEAD final pendentes no PR; sem merge.
 - Revisão independente do coordenador Codex aprovada sem bloqueios: conferidos o diff e os logs das três execuções, incluindo a restauração da fixture e a rejeição das cinco cartas ausentes pela mutação. CI do HEAD final continua pendente no PR.
+
+## 2026-11-01: lobo espectral e clarão na troca do LightWolf (Claude do Alisson)
+
+- Lore do Isac (#511): quando sai do mecha, o lobo fica espectral. `v2/lobo_espectral.gd` faz contorno e brilho ciano pulsante, corpo translúcido com tinta gelo e névoa. A troca mecha⇄lobo dispara clarão no herói e na tela, e isso respeita "Tremor e clarões" e "Reduzir piscadas". No perfil Baixo, o material e a névoa saem. Os números ficam em `dados/v2_herois.json > lightwolf_lobo > espectral`.
+- Testes pela fila, com APPDATA própria. `v2_lobo_espectral` dá 15 falhas na main e `falhas=0` na branch. `v2_lightwolf`, `v2_lightwolf_q`, `v2_lightwolf_roteiro` e `v2_lightwolf_formas` dão `falhas=0`.
+- Janela real 960x540 (fotos 1280x720) pelo roteiro `lightwolf` com `res://v2/mundo.tscn`: o shader compilou sem SHADER ERROR. Fotos 4_salto, 7_lobo e 8_chamado vistas: o lobo aparece translúcido, com contorno ciano, e continua distinguível do chão.
+- Não visto: jogo humano, FPS no i5, o vermelho da invencibilidade nos 1,5 s seguintes à troca, e o caso "Tremor e clarões" em 0, que só foi coberto pelo teste. No encerramento ficou um aviso de 1 shader GLES3 não liberado, sem investigação.
