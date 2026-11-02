@@ -876,13 +876,15 @@ func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0, 
 	usados.numeros += 1
 	var tam_final := tam if tam > 0 else (24 if grande else 16)
 	var valor := texto.to_int() if (not exato and texto.is_valid_int() and texto.unicode_at(0) >= 48) else 0  # só dígitos: sem "+" nem "-"
+	# o sorteio de lado vem ANTES da soma: o randf() global é consumido igual para todo número, some ele ou não (o jogo e os testes dependem da sequência)
+	var lado := 0.0 if exato else randf_range(-12.0, 12.0)
 	if valor > 0 and _somar_vizinho(pos, valor, cor, tam_final):
 		usados.somados += 1
 		return
 	var i := _ni
 	_ni = (_ni + 1) % MAX_NUM
 	# `exato`: quem chama já escolheu o lugar (os estilhaços abrem em leque), então sem o sorteio de lado e de altura
-	n_pos[i] = pos if exato else _afastar(pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0), texto.length(), tam_final)
+	n_pos[i] = pos if exato else _afastar(pos + Vector2(lado, -10.0 - float(_ni % 4) * 8.0), texto.length(), tam_final)
 	n_t[i] = 0.0
 	n_dur[i] = 1.0 if grande else 0.75
 	n_txt[i] = texto
