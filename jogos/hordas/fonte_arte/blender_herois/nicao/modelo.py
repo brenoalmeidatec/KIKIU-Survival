@@ -18,8 +18,8 @@ def P(x, y, z):
 
 # nome do material -> (cor base; é o tom do meio das 4 faixas), lido pelo gerar.py
 PALETA = {
-    "Elmo de ferro": "#6a6c82", "Crista do elmo": "#aab0c4", "Armadura carvão": "#3b3640", "Ombreira azul": "#5a62a2",
-    "Barba ruiva": "#a83e24", "Tabardo vermelho": "#932e26", "Couro castanho": "#6e4a28", "Luva": "#523622", "Pele": "#bc7a3a",
+    "Elmo de ferro": "#a0a6b8", "Crista do elmo": "#aab0c4", "Armadura carvão": "#4a4c5c", "Ombreira azul": "#b8322a",
+    "Barba ruiva": "#d0481e", "Tabardo vermelho": "#c8302a", "Couro castanho": "#6e4a28", "Luva": "#523622", "Pele": "#bc7a3a",
     "Cabo de madeira": "#8a5624", "Cabeça da marreta": "#6c78b8", "Latão antigo": "#b48c3a", "Bota de ferro": "#4c464c", "Olho": "#0a0c14",
 }
 

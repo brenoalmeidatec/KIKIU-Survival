@@ -6,6 +6,14 @@
  "elevacao": 45.0,
  "ppu": 24.5,
  "pe_y": 74,
+ "retrato": {
+  "regiao": [
+   10,
+   34,
+   38,
+   42
+  ]
+ },
  "linhas": [
   "baixo",
   "esquerda",

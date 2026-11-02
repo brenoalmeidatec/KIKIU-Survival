@@ -21,3 +21,6 @@ Cópia para o jogo: `prototipos/cara_nova/sprites/joao{.json,_albedo.png,_normal
 
 ## Medição (combo, contra o Hazaki)
 Encostes no quadro: combo 2 direções (Hazaki 7), andar 6 (Hazaki 6). Prévia e captura real ficam fora do repo (`notas/o9_previas/per4-joao/`).
+
+## Padrão do elenco (issue #586)
+Perfil no padrão novo: camisa laranja queimado (cor-assinatura do John), cabeça 1,42 (massa ~38% da altura), naginata 1,5x mais comprida/mais clara com a haste de pé no parado, andar e dano (ARMA_DIRECAO como o Brendan), contorno escuro + rim light e retrato 64x64 em `assets/personagens/joao/retrato.png`.
