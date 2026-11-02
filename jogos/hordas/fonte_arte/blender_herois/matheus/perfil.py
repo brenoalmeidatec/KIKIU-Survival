@@ -4,7 +4,7 @@ Referência: ../../referencia_herois/matheus.png (colete azul de gola alta sobre
 morena, cabelo curto e crespo, cinto e tira de couro cruzada no peito, calça azul-marinho, botas pretas, katana de cabo azul).
 O modelo parte do mesmo estudo do Codex que o Hazaki usa (pernas, braços e katana recriados em repouso reto, presos aos mesmos ossos);
 aqui trocamos o que faz o Matheus ser o Matheus: cores, colete sem lenço e com gola alta, camisa escura aparecendo, tira de couro, braçadeiras,
-antebraço de pele, botas pretas e cabelo curto. A katana continua NA MÃO (as animações de golpe e escudo dependem dela); a bainha fica no quadril.
+antebraço de pele, botas pretas e cabelo curto. A katana e a bainha saem (ele luta com shuriken; ver ajustar()).
 """
 import math
 
@@ -66,10 +66,11 @@ def ajustar(ns, heroi, osso_de, apagar):
     for o in novos:
         osso_de[o] = "torso"
     # KATANA FORA (revisão de arte, PER-4): o Matthew joga com shuriken; a katana branca na mão o deixava igual ao Brendan. Some em todas as animações
-    # (a bainha vazia do quadril continua, a "sacada" não existe: o combo dele é de arremesso).
+    # A bainha do quadril sai também (2ª revisão de arte: de perfil ela lia como a do Hazaki).
     for o in [o for o in heroi if o.name.startswith(("Cabo da katana", "Trança do cabo", "Guarda da katana", "Lâmina da katana", "Ponta da katana", "Fio azul refletido"))]:
         osso_de.pop(o, None)
-    apagar(("Cabo da katana", "Trança do cabo", "Guarda da katana", "Lâmina da katana", "Ponta da katana", "Fio azul refletido"))
+    apagar(("Cabo da katana", "Trança do cabo", "Guarda da katana", "Lâmina da katana", "Ponta da katana", "Fio azul refletido",
+            "Bainha", "Terminal da bainha"))
     # SHURIKEN GRANDE (~8 px) em aço claro com miolo dourado: uma na mão esquerda (presa ao antebraço; o quadro() abaixo ergue o braço à frente do peito)
     # e uma segunda na bandoleira branca do peito (presa ao torso).
     def estrela(sufixo, c, comp, larg, material_aco, osso, tilt_graus):
