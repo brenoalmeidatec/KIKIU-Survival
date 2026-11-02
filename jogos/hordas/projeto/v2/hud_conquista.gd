@@ -15,6 +15,7 @@ const TEMPO_CUMPRIDA := 2.6  # s que o selo CUMPRIDA fica no topo
 const LARG := 268.0  # a caixa da conquista (hud.tscn, Raiz/Conquista): 6 a 274 x 6 a 46 no canvas
 const ALT := 40.0
 const MARGEM := 8.0
+const ESPACO := 8.0  # entre o nome e o texto da direita
 const BARRA_Y := 26.0
 const BARRA_ALT := 8.0
 const COR_FUNDO := Color(0.0, 0.0, 0.0, 0.7)
@@ -120,9 +121,8 @@ func _atualizar() -> void:
 		visible = false
 		return
 	visible = true
-	_nome.text = str(linha.nome)
+	_linha_de_cima(str(linha.nome), [str(linha.progresso), str(linha.contagem)])
 	_nome.add_theme_color_override("font_color", Paleta.TEXTO)
-	_progresso.text = str(linha.progresso)
 	_barra.color = COR_PROGRESSO
 	_barra.size.x = (LARG - 2.0 * MARGEM) * clampf(float(linha.frac), 0.0, 1.0)
 
@@ -144,12 +144,32 @@ func cumprir(ids: Array) -> void:
 		return
 	var extra := " +%d" % (ids.size() - 1) if ids.size() > 1 else ""
 	visible = true
-	_nome.text = "CUMPRIDA: " + str(c.nome) + extra
+	_linha_de_cima("CUMPRIDA: " + str(c.nome) + extra, [Conquistas.premio(c), ""])
 	_nome.add_theme_color_override("font_color", COR_CUMPRIDA)
-	_progresso.text = Conquistas.premio(c)
 	_barra.color = COR_CUMPRIDA
 	_barra.size.x = LARG - 2.0 * MARGEM
 	_cumprida_t = TEMPO_CUMPRIDA
+
+
+## Nome à esquerda e, à direita, a primeira opção que cabe inteira junto com ele (senão a última). O texto da direita ganha a largura
+## que precisa e o nome fica com o resto: com 70 px fixos e 16 px por letra, "1/15 nível" saía cortado pela esquerda ("ıível").
+func _linha_de_cima(nome: String, opcoes: Array) -> void:
+	_nome.text = nome
+	var util := LARG - 2.0 * MARGEM
+	var direita := str(opcoes[-1])
+	for o in opcoes:
+		if _largura(nome) + ESPACO + _largura(str(o)) <= util:
+			direita = str(o)
+			break
+	var w := minf(_largura(direita), util)
+	_progresso.text = direita
+	_progresso.position.x = LARG - MARGEM - w
+	_progresso.size.x = w
+	_nome.size.x = maxf(util - w - (ESPACO if w > 0.0 else 0.0), 0.0)
+
+
+func _largura(t: String) -> float:
+	return ceilf(_nome.get_theme_font("font").get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, _nome.get_theme_font_size("font_size")).x)
 
 
 ## A partida viva para a conta de progresso, a mesma de Meta.vivo_da_partida (herói, abates, nível, evoluções, tempo e combo). Lê com get:

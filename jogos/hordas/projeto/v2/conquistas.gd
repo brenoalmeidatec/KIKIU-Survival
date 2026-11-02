@@ -55,6 +55,7 @@ static func linhas(vivo := {}, estado := {}) -> Array:
 			"feita": feita,
 			"frac": frac,
 			"progresso": "%d/%d %s" % [int(mostra), int(lim), unidade],
+			"contagem": "%d/%d" % [int(mostra), int(lim)],  # o progresso sem unidade, para a HUD quando o nome e a unidade não cabem juntos
 			"premio": premio(c),
 			"frase_premio": str(Meta.item_da_recompensa(c.get("recompensa", {})).get("frase", "")),
 			"icone": icone_da_conquista(c),

@@ -52,6 +52,7 @@ func _ready() -> void:
 	_limpar()
 	_escolha()
 	_travada()
+	_cabe()
 	_topo()
 	_dados()
 	_progresso()
@@ -128,6 +129,34 @@ func _travada() -> void:
 	ok(c._travada != "" and c._travada != id1, "depois do selo entra outra conquista (%s)" % c._travada)
 	ok(bool(c._estado.conquistas.get(id1, false)), "a cumprida fica marcada no estado da partida (sem reler o save)")
 	c.queue_free()
+
+
+## A linha de cima mostra o progresso (e o prêmio do selo) inteiro: com 70 px fixos, "1/15 nível" saía cortado pela esquerda como "ıível".
+func _cabe() -> void:
+	var m := MundoFalsoConq.new()
+	var c := ConquistaHud.new()
+	add_child(c)
+	c.ligar(m)
+	c.avancar(0.0)
+	for cc in Meta.conquistas():
+		c._travada = str(cc.id)
+		c._t = 0.0
+		c.avancar(0.0)
+		if c.visible:
+			_confere_linha(c, "%s em andamento" % cc.id)
+			ok(str(c._progresso.text).contains("/"), "%s: o progresso traz a contagem (%s)" % [cc.id, c._progresso.text])
+	for cc in Meta.conquistas():
+		c.cumprir([str(cc.id)])
+		_confere_linha(c, "%s cumprida" % cc.id)
+	c.queue_free()
+
+
+func _confere_linha(c: Control, onde: String) -> void:
+	var p: Label = c._progresso
+	var w := p.get_theme_font("font").get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, p.get_theme_font_size("font_size")).x
+	ok(w <= p.size.x + 0.5, '%s: "%s" cabe inteiro (%.0f de %.0f px)' % [onde, p.text, w, p.size.x])
+	ok(c._nome.position.x + c._nome.size.x <= p.position.x + 0.5, "%s: o nome não invade o progresso" % onde)
+	ok(p.position.x + p.size.x <= c.size.x - 0.5, "%s: o progresso fica dentro da caixa" % onde)
 
 
 ## O retângulo da conquista no canvas: 6 a 274 x 6 a 46, sem cobrir nenhum bloco da HUD, nas três escalas fixas da interface.

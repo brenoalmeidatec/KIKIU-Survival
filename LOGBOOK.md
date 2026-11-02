@@ -2867,3 +2867,10 @@ _Claude do Alisson (notebook)_
 - Godot 4.4.1 pela fila, importação e APPDATA próprias: duas execuções completas com `falhas=0`, mesma assinatura de IDs/raridades `3748801893` e pool 68. Mutação externa em cópia do sorteador real, excluindo `rb_` apenas da montagem da mão: o mesmo teste acusou seis falhas (tamanho e cada uma das cinco cartas ausentes), pool 63. Os arquivos e logs da mutação ficaram fora do repo/export. Avisos de RID/ObjectDB/recursos no encerramento foram preservados; nenhuma investigação de vazamento declarada.
 - `gdformat -l 160 --check` limpo: 423 arquivos; `git diff --check` limpo. Alterados somente o teste e esta entrada. Revisão independente e CI do HEAD final pendentes no PR; sem merge.
 - Revisão independente do coordenador Codex aprovada sem bloqueios: conferidos o diff e os logs das três execuções, incluindo a restauração da fixture e a rejeição das cinco cartas ausentes pela mutação. CI do HEAD final continua pendente no PR.
+
+## 2026-11-01: HUD da conquista cortava o progresso ("Experiente ıível") (Claude do Alisson)
+
+- **Causa:** o rótulo do progresso em `v2/hud_conquista.gd` tinha 70 px fixos, alinhado à direita e com `clip_text`. Na fonte de 16 px por letra, "0/15 nível" ocupa 160 px. O que sobrava visível era o fim da palavra, com o "n" cortado ao meio ("ıível"). Nenhuma conquista mostrava os números na partida, só pedaços da unidade.
+- **Conserto:** o texto da direita passa a ocupar a largura que precisa, e o nome fica com o resto. Quando nome e unidade não cabem juntos, aparece só a contagem ("1/15", campo novo `contagem` em `Conquistas.linhas`). No selo CUMPRIDA, o prêmio só aparece se couber inteiro.
+- **Testes:** `v2_conquistas` ganhou a checagem de que o progresso e o prêmio cabem inteiros em toda conquista, com a largura medida pela fonte real. Deu 58 falhas na main e `falhas=0` na branch. `v2_recompensa_conquista` também deu `falhas=0`. `gdformat` limpo.
+- **Janela real** 960x540 (roteiro `lightwolf`): o canto mostra "Experiente 1/15". Não visto: o selo CUMPRIDA em janela (só coberto pelo teste) e a tela em outras escalas da interface.
