@@ -2868,6 +2868,22 @@ _Claude do Alisson (notebook)_
 - `gdformat -l 160 --check` limpo: 423 arquivos; `git diff --check` limpo. Alterados somente o teste e esta entrada. Revisão independente e CI do HEAD final pendentes no PR; sem merge.
 - Revisão independente do coordenador Codex aprovada sem bloqueios: conferidos o diff e os logs das três execuções, incluindo a restauração da fixture e a rejeição das cinco cartas ausentes pela mutação. CI do HEAD final continua pendente no PR.
 
+## 2026-11-01: progresso do executor de testes (Codex do Alisson)
+
+- A pedido do Alisson, o executor informa início, limite, caminho do log, fim e duração de cada cena. A cada 30 s informa que a cena continua em execução; isso permite localizar a espera sem declarar travamento. O log recebe a saída desde o início. O monitor é encerrado e aguardado antes do resultado final.
+- Mantidos os limites de 120 s (300 s para regras_armas) e todas as exigências de aprovação. Autoteste Bash com Godot falso: `falhas=0`, incluindo timeout/crash/erro de script/resultado incompleto, limites, aviso durante uma cena lenta, log parcial antes do resultado e ausência de mensagens depois do fim. Sintaxe Bash e `git diff --check` limpos. Nenhum Godot rodou; nenhum GDScript mudou.
+- Pendente: revisão independente e CI do PR. Sem mudança em workflow, project.godot, save ou export; sem merge.
+- Revisão do coordenador identificou que um filho que ignora TERM podia sobreviver ao limite. Acrescentado KILL após 5 s de tolerância, mantendo o limite inicial de 120/300 s. Diagnóstico separado do GNU timeout distingue encerramento forçado (137) de SIGKILL do próprio teste. Autoteste ampliado passou com `falhas=0`: filho que ignora TERM, SIGKILL independente e interrupção do executor por TERM, sem resultado incompleto nem monitor escrevendo depois da saída. Nenhum Godot rodou.
+- Revisão independente pelo coordenador Codex: aprovada sem bloqueios após ampliar a janela do mock de interrupção para 5 s. Ele releu os três arquivos e executou `bash -n` e o autoteste completo independentemente: `falhas=0` em 7,17 s; formatter na base com 423 arquivos limpos, sem alteração de GDScript. CI do HEAD segue pendente no PR.
+
+**Ultra/Max, plano para o PC (01/11/2026, Codex do Alisson):** a pedido do Alisson, docs/ULTRA_MAX_PC.md registra o protótipo proposto de iluminação 2D, etapas, orçamento de efeitos e comparação reproduzível no PC. Somente documentação: perfil ainda não implementado, nenhum novo efeito visto e Godot não rodado neste bloco. Sem merge; implementação e desempenho dependem de PR posterior e revisão independente.
+
+## 2026-11-01: encaixe do santuário — Codex do Alisson
+
+- O salão usa encaixe contínuo da cena 960x540, independente do tamanho escolhido para a interface; menus mantêm seus passos e opções anteriores. Em janelas de outras proporções, o chão cobre a área excedente.
+- Godot 4.4.1 pela fila, com APPDATA isolada: teste integrado anterior à correção `v2_escala_ui falhas=4`; depois, `falhas=0`, incluindo resize por sinal e offsets das camadas. Regressões `v2_salao`, `v2_salao_entrada` e `v2_janela_modo`: `falhas=0`. Houve avisos de recursos/RID no encerramento; eles não foram investigados como vazamento.
+- Em captura real 1390x782, o santuário com Brendan preencheu a área sem bordas cinzas. Foto e helper ficaram fora do repositório. Não foram observados interação, redimensionamento manual, áudio ou desempenho nessa captura. Revisão independente e CI do commit final ficam no PR; sem merge pelo Codex.
+
 ## 2026-11-01: HUD da conquista cortava o progresso ("Experiente ıível") (Claude do Alisson)
 
 - **Causa:** o rótulo do progresso em `v2/hud_conquista.gd` tinha 70 px fixos, alinhado à direita e com `clip_text`. Na fonte de 16 px por letra, "0/15 nível" ocupa 160 px. O que sobrava visível era o fim da palavra, com o "n" cortado ao meio ("ıível"). Nenhuma conquista mostrava os números na partida, só pedaços da unidade.
