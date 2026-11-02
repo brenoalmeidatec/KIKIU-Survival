@@ -251,3 +251,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## LW-7: folha Blender do mecha do LightWolf, Claude do Alisson (notebook), 01/11/2026
 
 - `jogos/hordas/projeto/prototipos/cara_nova/sprites/lightwolf_mecha{.json,_albedo.png,_normal.png}`: arte PRÓPRIA, gerada por script no Blender 4.5 (`jogos/hordas/fonte_arte/blender_herois/lightwolf_mecha/`: `modelo.py` modela o robô com caixas, cones e esferas; o resto do pipeline é cópia do Nicão). Desenho inspirado na referência de 3 vistas A15 (ChatGPT, conta do Alisson, sem direitos de terceiros declarados), sem usar nenhuma imagem de terceiros. Substitui a folha provisória (recolor do Nick). Nenhuma arte de terceiros.
+
+## #587: tiros, micro-míssil e explosão do mecha, Codex do Alisson, 01/11/2026
+
+- Arte própria procedural em `jogos/hordas/projeto/v2/adagas.gd` (`_img_missil`, 24×9 px) e `v2/misseis_visual.gd` (oito quadros de explosão de 40×40 px, gerados em memória). Formas e paleta desenhadas por código neste projeto; sem imagem, textura, modelo, biblioteca de efeitos ou referência de terceiros adicionados. Não usa o pixelfx nem exige arquivo bitmap externo.
+- O ajuste de recuo dos braços em `jogos/hordas/fonte_arte/blender_herois/lightwolf_mecha/anim_combo.py` e os quadros derivados do combo continuam sobre o modelo próprio do mecha registrado acima. Não acrescenta arte de terceiros nem muda a origem das demais animações.
