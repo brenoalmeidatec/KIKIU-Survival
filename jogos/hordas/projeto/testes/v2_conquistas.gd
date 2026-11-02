@@ -144,11 +144,22 @@ func _cabe() -> void:
 		c.avancar(0.0)
 		if c.visible:
 			_confere_linha(c, "%s em andamento" % cc.id)
+			var ln: Dictionary = Conquistas.linha_da_id(Conquistas.linhas(c._vivo(), c._estado), str(cc.id))
+			var cabe: bool = _larg(c, str(ln.nome)) + c.ESPACO + _larg(c, str(ln.progresso)) <= c.LARG - 2.0 * c.MARGEM
+			var esperado := str(ln.progresso) if cabe else str(ln.contagem)
+			ok(c._progresso.text == esperado, '%s: com unidade só quando cabe junto do nome ("%s", esperado "%s")' % [cc.id, c._progresso.text, esperado])
 			ok(str(c._progresso.text).contains("/"), "%s: o progresso traz a contagem (%s)" % [cc.id, c._progresso.text])
 	for cc in Meta.conquistas():
 		c.cumprir([str(cc.id)])
 		_confere_linha(c, "%s cumprida" % cc.id)
+		var pr := Conquistas.premio(cc)
+		var cabe_pr: bool = _larg(c, str(c._nome.text)) + c.ESPACO + _larg(c, pr) <= c.LARG - 2.0 * c.MARGEM
+		ok(c._progresso.text == (pr if cabe_pr else ""), '%s cumprida: prêmio inteiro ou nenhum ("%s")' % [cc.id, c._progresso.text])
 	c.queue_free()
+
+
+func _larg(c: Control, t: String) -> float:
+	return c._largura(t)
 
 
 func _confere_linha(c: Control, onde: String) -> void:

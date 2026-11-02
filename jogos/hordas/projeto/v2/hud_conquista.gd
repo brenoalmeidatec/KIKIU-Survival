@@ -1,7 +1,7 @@
 extends Control
 ## A conquista em andamento, no canto de cima à esquerda da HUD (UI-5, pedido 6 do Alisson; decisão D13). Mostra o nome, o progresso e
 ## uma barra. A escolha é feita uma vez e fica TRAVADA até a conquista ser cumprida: o jogo não troca de conquista no meio da partida.
-## Quando cumpre, mostra CUMPRIDA, o nome e o prêmio por 2,6 s (sem piscar); depois disso escolhe a próxima, se houver.
+## Quando cumpre, mostra CUMPRIDA e o nome (e o prêmio, se couber inteiro) por 2,6 s, sem piscar; depois disso escolhe a próxima, se houver.
 ## O estado do save (Meta.estado()) é lido UMA vez por partida, na primeira quadro. Depois, o progresso vem da partida viva e as
 ## conquistas cumpridas chegam por `cumprir` (resultado_meta.gd, que já gravou no save). A HUD não grava nada.
 ## Quem anda é hud.gd (avancar), como o resto da HUD: a conquista não tem _process próprio.
@@ -47,8 +47,8 @@ func _ready() -> void:
 	_caixa.add_theme_stylebox_override("panel", estilo)
 	_caixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_caixa)
-	_nome = _rotulo(Rect2(MARGEM, 3.0, LARG - 2.0 * MARGEM - 70.0, 20.0), HORIZONTAL_ALIGNMENT_LEFT)
-	_progresso = _rotulo(Rect2(LARG - MARGEM - 70.0, 3.0, 70.0, 20.0), HORIZONTAL_ALIGNMENT_RIGHT)
+	_nome = _rotulo(Rect2(MARGEM, 3.0, LARG - 2.0 * MARGEM, 20.0), HORIZONTAL_ALIGNMENT_LEFT)  # as larguras saem de _linha_de_cima
+	_progresso = _rotulo(Rect2(LARG - MARGEM, 3.0, 0.0, 20.0), HORIZONTAL_ALIGNMENT_RIGHT)
 	_barra_fundo = ColorRect.new()
 	_barra_fundo.position = Vector2(MARGEM, BARRA_Y)
 	_barra_fundo.size = Vector2(LARG - 2.0 * MARGEM, BARRA_ALT)
@@ -156,7 +156,7 @@ func cumprir(ids: Array) -> void:
 func _linha_de_cima(nome: String, opcoes: Array) -> void:
 	_nome.text = nome
 	var util := LARG - 2.0 * MARGEM
-	var direita := str(opcoes[-1])
+	var direita := str(opcoes[-1]) if not opcoes.is_empty() else ""
 	for o in opcoes:
 		if _largura(nome) + ESPACO + _largura(str(o)) <= util:
 			direita = str(o)
