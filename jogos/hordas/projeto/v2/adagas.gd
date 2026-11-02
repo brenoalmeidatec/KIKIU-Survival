@@ -65,11 +65,13 @@ var a_cor := PackedColorArray()
 var a_visual_offset := PackedVector2Array()
 var a_visual_dist := PackedFloat32Array()
 var a_visual_t := PackedFloat32Array()
+var a_visual_compr := PackedFloat32Array()  # janela de convergência: só encurta ao prever uma colisão próxima
 var a_fonte: Array = []  # de onde a adaga veio (combate.fonte_dano no arremesso: principal, especial ou habilidade), para o dano por golpe da tela de fim
 var a_u0: Array = []  # os últimos monstros que cada adaga acertou (não repete)
 var a_u1: Array = []
 var a_u2: Array = []
 var _cand: Array = []
+var _cand_visual: Array = []  # previsão visual separada: nunca acrescenta alvos ao narrowphase físico
 var _proj_lista: Array = []  # [{nome, tex (código) ou anim (folha), compr, alt}], o índice 0 é sempre a adaga
 var _proj_nomes := {}  # nome -> índice em _proj_lista
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
@@ -110,6 +112,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_visual_offset.resize(MAX)
 	a_visual_dist.resize(MAX)
 	a_visual_t.resize(MAX)
+	a_visual_compr.resize(MAX)
+	a_visual_compr.fill(VISUAL_DIST)
 	a_fonte.resize(MAX)
 	a_u0.resize(MAX)
 	a_u1.resize(MAX)
@@ -137,6 +141,7 @@ func limpar() -> void:
 	a_visual_offset.fill(Vector2.ZERO)
 	a_visual_dist.fill(0.0)
 	a_visual_t.fill(0.0)
+	a_visual_compr.fill(VISUAL_DIST)
 	_grupo = 0
 	_pausa_recarga = 0.0
 	for i in MAX:
@@ -243,6 +248,7 @@ func _nova(
 	a_visual_offset[i] = Vector2.ZERO
 	a_visual_dist[i] = 0.0
 	a_visual_t[i] = 0.0
+	a_visual_compr[i] = VISUAL_DIST
 	a_fonte[i] = combate.fonte_dano
 	a_u0[i] = null
 	a_u1[i] = null
@@ -275,6 +281,7 @@ func atualizar(dt: float) -> void:
 		if a_rest[i] <= 0.0:
 			continue
 		var antes: Vector2 = a_pos[i]
+		_encurtar_visual(i)
 		_mover(i, dt)
 		a_visual_dist[i] += antes.distance_to(a_pos[i])
 		a_visual_t[i] = maxf(0.0, a_visual_t[i] - dt)
@@ -341,8 +348,11 @@ func _mirando(m) -> int:
 ## segmentos deste quadro e o raio de cada lâmina; o corpo do monstro usa o mesmo peito do narrowphase.
 func _selecionar_candidatos(dt: float) -> void:
 	_cand.clear()
+	_cand_visual.clear()
 	var uniao := Rect2()
+	var uniao_visual := Rect2()
 	var primeiro := true
+	var primeiro_visual := true
 	var pode_extra := false
 	var maior_raio_primario := 0.0
 	for i in MAX:
@@ -352,6 +362,12 @@ func _selecionar_candidatos(dt: float) -> void:
 		var segmento := Rect2(a_pos[i], Vector2.ZERO).expand(fim).grow(a_raio[i])
 		uniao = segmento if primeiro else uniao.merge(segmento)
 		primeiro = false
+		if _visual_em_convergencia(i):
+			var prever := minf(a_rest[i], maxf(a_visual_compr[i] - a_visual_dist[i], 0.0))
+			var fim_visual := a_pos[i] + a_dir[i] * prever
+			var segmento_visual := Rect2(a_pos[i], Vector2.ZERO).expand(fim_visual).grow(a_raio[i])
+			uniao_visual = segmento_visual if primeiro_visual else uniao_visual.merge(segmento_visual)
+			primeiro_visual = false
 		if a_extra[i] == 0:
 			pode_extra = true
 			maior_raio_primario = maxf(maior_raio_primario, a_raio[i])
@@ -373,6 +389,37 @@ func _selecionar_candidatos(dt: float) -> void:
 		var raio := Vector2.ONE * float(m.raio)
 		if uniao.intersects(Rect2(peito - raio, raio * 2.0), true):
 			_cand.append(m)
+		if not primeiro_visual and uniao_visual.intersects(Rect2(peito - raio, raio * 2.0), true):
+			_cand_visual.append(m)
+
+
+func _visual_em_convergencia(i: int) -> bool:
+	return a_visual_t[i] > 0.0 and a_visual_dist[i] < a_visual_compr[i] and a_visual_offset[i] != Vector2.ZERO and _visual_mecha(a_proj[i])
+
+
+## Antecipação apenas visual: usa a lista ampla própria, na mesma ordem do mundo, sem tocar nos candidatos físicos.
+## Entrada do raio no círculo do narrowphase, não no centro: a imagem já converge antes do primeiro contato.
+func _encurtar_visual(i: int) -> void:
+	if not _visual_em_convergencia(i):
+		return
+	var p: Vector2 = a_pos[i]
+	var dir: Vector2 = a_dir[i]
+	var prever := minf(a_rest[i], maxf(a_visual_compr[i] - a_visual_dist[i], 0.0))
+	for m in _cand_visual:
+		if not m.vivo or m.morrendo or m == a_u0[i] or m == a_u1[i] or m == a_u2[i]:
+			continue
+		var rel: Vector2 = m.pos + Vector2(0, -6) - p
+		var frente := rel.dot(dir)
+		var perpendicular2 := maxf(rel.length_squared() - frente * frente, 0.0)
+		var raio: float = float(m.raio) + a_raio[i]
+		if perpendicular2 > raio * raio:
+			continue
+		var meia := sqrt(maxf(raio * raio - perpendicular2, 0.0))
+		if frente + meia < 0.0:
+			continue  # círculo inteiramente atrás do projétil
+		var entrada := maxf(frente - meia, 0.0)
+		if entrada <= prever:
+			a_visual_compr[i] = minf(a_visual_compr[i], a_visual_dist[i] + entrada)
 
 
 func _mover(i: int, dt: float) -> void:
@@ -436,6 +483,9 @@ func _acabar(i: int) -> void:
 
 
 func _acertar(i: int, m, p: Vector2) -> void:
+	# Salvaguarda para alvo que entra no segmento neste mesmo quadro; perfuração/ricochete não reabrem o offset.
+	a_visual_offset[i] = Vector2.ZERO
+	a_visual_t[i] = 0.0
 	var h = mundo.heroi
 	var cfg: Dictionary = combate.cfg.golpe
 	acertos += 1
@@ -623,7 +673,9 @@ func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -
 
 
 func _pos_visual(i: int) -> Vector2:
-	var k := clampf(minf(1.0 - a_visual_dist[i] / VISUAL_DIST, a_visual_t[i] / VISUAL_DUR), 0.0, 1.0)
+	if a_visual_compr[i] <= 0.0:
+		return a_pos[i]
+	var k := clampf(minf(1.0 - a_visual_dist[i] / a_visual_compr[i], a_visual_t[i] / VISUAL_DUR), 0.0, 1.0)
 	k = k * k * (3.0 - 2.0 * k)
 	return a_pos[i] + a_visual_offset[i] * k
 
