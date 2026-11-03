@@ -284,3 +284,6 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Armas e projéteis em 16 direções (alisson/pixel2-armas-giro)
 
 - Nenhuma arte nova nem de terceiros, e nenhum arquivo de imagem novo. As cópias pré-giradas (22,5, 45 e 67,5 graus) dos projéteis e das folhas de voo/queda são geradas EM EXECUÇÃO por `jogos/hordas/projeto/v2/sprite_giro.gd` a partir da arte PRÓPRIA que já está registrada acima (`assets/v2/armas/`, `assets/v2/armas_anim/` e as imagens desenhadas em código de `v2/adagas.gd` e `v2/armas.gd`). Mudança: giro por vizinho mais próximo com 2x2 amostras por pixel e vence a cor mais frequente; só copia cores e alfas que já existiam (nenhuma cor nova) e gira o vetor do normal map junto. Licença: a do projeto.
+## Pixel de um tamanho só: enfeites do chefe (alisson/pixel2-coroa)
+
+- `jogos/hordas/projeto/assets/v2/chefes/coroa_rei.png` (57x45) e `coroa_rainha.png` (37x28): arte PRÓPRIA, gerada por `jogos/hordas/fonte_arte/chefes_v2/gerar_coroas.py` (Python + Pillow, pixel a pixel, sem imagem de terceiros), 03/11/2026, `Claude do Alisson (PC)`. Substituem as coroas que `v2/chefe_visual.gd` desenhava por polígonos multiplicados pela escala do chefe (pixels de 4 px no chefão); agora são desenhadas em escala 1 (1 px de arte = 1 px do mundo). Licença: nossa, uso livre no jogo.
