@@ -117,10 +117,16 @@ func _coberto(heroi, monstros: Array) -> bool:
 			for mo in lista:
 				if mo.pos.y <= heroi.pos.y:  # atrás do herói (ou na mesma linha): quem desenha por cima é o herói
 					continue
-				var inter := corpo.intersection(_corpo(mo.pos, mo.tipo, float(mo.escala)))
+				var inter := corpo.intersection(_corpo(mo.pos, mo.tipo, _esc(mo)))
 				if inter.get_area() >= minimo:
 					return true
 	return false
+
+
+## A escala do desenho da folha atual do monstro (a folha grande da elite e do chefe já vem em 1). Os testes passam monstros de mentira
+## em Dictionary, só com `escala`.
+static func _esc(mo) -> float:
+	return float(mo.get("esc", mo.get("escala", 1.0))) if mo is Dictionary else float(mo.esc)
 
 
 ## Refaz a grade de monstros por célula (px do mundo / CELULA) e guarda a maior extensão de sprite para a busca.
@@ -129,7 +135,7 @@ func _montar_grade(monstros: Array) -> void:
 	_margem = 0.0
 	for mo in monstros:
 		var t: Dictionary = mo.tipo
-		var e := float(mo.escala)
+		var e := _esc(mo)
 		_margem = maxf(_margem, maxf(maxf(float(t.w) * e, float(t.pe) * e), (float(t.h) - float(t.pe)) * e))
 		var k := _chave(floori(mo.pos.x / CELULA), floori(mo.pos.y / CELULA))
 		if not _grade.has(k):

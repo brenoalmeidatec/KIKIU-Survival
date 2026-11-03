@@ -251,7 +251,7 @@ func _anel_runas(ci: CanvasItem, u: float, raio: float, c: Color, a: float, n: i
 
 
 func _capa(ci: CanvasItem, u: float, a: float) -> void:
-	var p := float(m.tipo.pe)
+	var p: float = m.pe_logico()
 	var bal := sin(t * 2.2) * 1.6 - clampf(m.vel_v.x * 0.04, -2.5, 2.5)
 	var pts := PackedVector2Array(
 		[
@@ -300,7 +300,7 @@ func _sigilo(ci: CanvasItem, u: float, raio: float, a: float) -> void:
 
 ## O manto rasgado do Rei, atrás do corpo, com a barra em dentes.
 func _manto(ci: CanvasItem, u: float, a: float) -> void:
-	var p := float(m.tipo.pe)
+	var p: float = m.pe_logico()
 	var bal := sin(t * 1.8) * 1.4 - clampf(m.vel_v.x * 0.03, -2.0, 2.0)
 	var pts := PackedVector2Array([Vector2(-11, -0.66 * p), Vector2(11, -0.66 * p)])
 	for k in 7:  # da direita para a esquerda: os dentes da barra sobem e descem
@@ -324,7 +324,7 @@ func _desenhar_frente() -> void:
 			_ombreiras(frente, u, a)
 			_pluma(frente, u, a)
 		"teia":
-			var p := float(m.tipo.pe)
+			var p: float = m.pe_logico()
 			_coroa(frente, u, 0.0, -0.9 * p + 1.5 * sin(t * 2.0), 13.0, 6.0, Color(0.85, 1.0, 0.55), Color(0.2, 1.0, 0.35), a, 5)
 		"coroa":
 			_corvos_orbita(frente, u, a, true)
@@ -332,7 +332,7 @@ func _desenhar_frente() -> void:
 
 
 func _ombreiras(ci: CanvasItem, u: float, a: float) -> void:
-	var p := float(m.tipo.pe)
+	var p: float = m.pe_logico()
 	var ferro := Color(0.62, 0.55, 0.62, 0.95 * a)
 	for lado in [-1.0, 1.0]:
 		var pts := PackedVector2Array([Vector2(lado * 8, -0.66 * p), Vector2(lado * 15, -0.68 * p), Vector2(lado * 17, -0.82 * p)])
@@ -343,7 +343,7 @@ func _ombreiras(ci: CanvasItem, u: float, a: float) -> void:
 
 ## A pluma do elmo: uma curva grossa que sobe do topo da cabeça e tomba para trás, balançando.
 func _pluma(ci: CanvasItem, u: float, a: float) -> void:
-	var p := float(m.tipo.pe)
+	var p: float = m.pe_logico()
 	var pts := PackedVector2Array()
 	for k in 9:
 		var f := float(k)
@@ -372,7 +372,7 @@ func _coroa(ci: CanvasItem, u: float, x: float, y: float, larg: float, alto: flo
 
 ## A coroa do Rei: grande, de ouro e gemas magenta; na fúria um clarão pulsa atrás dela.
 func _coroa_rei(ci: CanvasItem, u: float, a: float) -> void:
-	var p := float(m.tipo.pe)
+	var p: float = m.pe_logico()
 	var y := -p + 4.0
 	if chefe._fase2:
 		var r := (13.0 + 2.5 * sin(t * 9.0)) * u
@@ -385,7 +385,7 @@ func _corvos_orbita(ci: CanvasItem, u: float, a: float, na_frente: bool) -> void
 	var f: Dictionary = Anim.de("corvos").get("voo", {})
 	if f.is_empty():
 		return
-	var p := float(m.tipo.pe)
+	var p: float = m.pe_logico()
 	var vel := (1.3 + 1.1 * float(m.carga)) * (1.5 if chefe._fase2 else 1.0)
 	for k in CORVOS_ORBITA:
 		var fase := t * vel + TAU * float(k) / float(CORVOS_ORBITA)
