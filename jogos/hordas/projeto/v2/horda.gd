@@ -312,7 +312,7 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		var cy := m.linha * h + m.ao.y
 		var fl := -w if m.espelha else w
 		var ox := pr.x + m.v_jx - w * 0.5 * sx
-		var oy := pr.y - pe * sy
+		var oy := pr.y - pe * sy + m.v_jy
 		buf[o] = w * sx
 		buf[o + 3] = ox
 		buf[o + 5] = h * sy

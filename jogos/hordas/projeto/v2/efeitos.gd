@@ -1067,7 +1067,6 @@ func atualizar(dt: float) -> void:
 				mat.set_shader_parameter("k", 1.0 if k < 0.65 else (1.0 - k) / 0.35)
 			1:
 				mat.set_shader_parameter("dissolver", k)
-				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k) * _fl_esc[i]
 				s.position.y -= 24.0 * dt
 				mat.set_shader_parameter("k", 1.0 - k)
 			2:

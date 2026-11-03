@@ -50,6 +50,9 @@ enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
 const VEL := 100.0  # px/s
 const AMORTECE_EMP := 11.0  # o empurrão que o herói leva perde força: emp *= exp(-AMORTECE_EMP dt) (o vigia dos segredos lê para não confundir com andar)
+const GOLPE_AFUNDA_PX := 1.0  # px que o corpo afunda no acerto do golpe
+const CARGA_AFUNDA_PX := 2.0  # px que o corpo agacha com a ruptura carregada
+const RECUO_DISPARO_PX := 2.0  # px que o corpo recua no disparo da ruptura
 const PASSO_ANIM := 0.13  # s por quadro de andar
 const MORTE_DISSOLVE := 0.3  # s de jogo (relógio do herói: hit-stop e câmera lenta esticam) que o corpo leva para se desfazer
 const MORTE_FLASH := 0.2  # fração inicial da dissolução em que o corpo fica branco (o "flash" do golpe fatal)
@@ -1397,19 +1400,19 @@ func _visual(dt: float, v: Vector2) -> void:
 	# corpo: o "soco" do golpe (esticada na direção do corte), o giro da esquiva e o pisca de quem acabou de apanhar
 	if _punch > 0.0:
 		_punch = maxf(0.0, _punch - dt / 0.16)
-	var desloca := Vector2.ZERO
-	var esc := Vector2.ONE
+	var desloca := Vector2.ZERO  # o peso do corpo é um passo de pixel inteiro (afunda, recua): o sprite nunca é escalado fora de 1x
 	if estado == Estado.GOLPE and not bool(tipo.info.get("corpo_fixo_ao_atirar", false)):
 		var corpo := CurvaGolpe.corpo(golpe_t / golpe_dur, float(golpe_cfg.acerto_em))
 		desloca = (golpe_dir * corpo.x).round()
-		esc = Vector2(1.0 + 0.1 * corpo.y, 1.0 - 0.07 * corpo.y)
-	elif estado == Estado.CARGA:  # agacha, treme um pixel na carga cheia
-		esc = Vector2(1.0 + 0.05 * rup_carga, 1.0 - 0.09 * rup_carga)
+		desloca.y += float(roundi(corpo.y * GOLPE_AFUNDA_PX))  # o acerto assenta o corpo no chão (era o achatar de 7%)
+	elif estado == Estado.CARGA:  # agacha 1-2 px, treme um pixel na carga cheia
+		desloca = Vector2(0.0, float(roundi(rup_carga * CARGA_AFUNDA_PX)))
 		if rup_carga >= 1.0:
-			desloca = Vector2(float(int(Time.get_ticks_msec() / 40.0) % 3 - 1), 0.0)
-	if _rup_punch > 0.0:  # o soco do disparo: alarga e achata um instante
+			desloca.x = float(int(Time.get_ticks_msec() / 40.0) % 3 - 1)
+	if _rup_punch > 0.0:  # o soco do disparo: o corpo recua 2 px da mira na primeira metade (era alargar e achatar)
 		_rup_punch = maxf(0.0, _rup_punch - dt / 0.12)
-		esc = Vector2(lerpf(esc.x, 1.14, _rup_punch), lerpf(esc.y, 0.88, _rup_punch))
+		if _rup_punch >= 0.5:
+			desloca -= (dir_olhar * RECUO_DISPARO_PX).round()
 	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
 		sprite.position = Vector2.ZERO  # o rolamento já está desenhado na folha: sem girar o sprite
 		sprite.offset = _off_base
@@ -1420,13 +1423,12 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.position = Vector2(0, -14)
 		sprite.offset = _off_base + Vector2(0, 14)
 		sprite.rotation = gira * TAU * minf(p * 1.15, 1.0)
-		esc = Vector2(1.0, 0.82)
 	else:
 		if sprite.rotation != 0.0:
 			sprite.rotation = 0.0
 			sprite.offset = _off_base
 		sprite.position = desloca
-	sprite.scale = esc
+	sprite.scale = Vector2.ONE
 	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:
 		sprite.modulate = Color(1, 1, 1, 0.78)
