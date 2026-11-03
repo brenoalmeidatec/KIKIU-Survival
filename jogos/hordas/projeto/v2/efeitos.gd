@@ -195,6 +195,7 @@ var p_vel := PackedVector2Array()
 var p_vida := PackedFloat32Array()
 var p_max := PackedFloat32Array()
 var p_tam := PackedFloat32Array()
+var _discos_px := {}  # lado -> disco de pixel (cache do brilho das partículas)
 var p_sobe := PackedFloat32Array()  # aceleração vertical (px/s2): faíscas caem, almas sobem
 var p_glow := PackedByteArray()  # 1 = brilho redondo, 0 = quadradinho
 var p_cor := PackedColorArray()
@@ -1094,13 +1095,14 @@ func _desenhar_add() -> void:
 		var c := p_cor[i]
 		var k := v / p_max[i]
 		c.a *= minf(1.0, k * 2.2)
-		var tam := p_tam[i]
 		var p := p_pos[i].round()
+		# pixel art: o lado é sempre inteiro (o brilho encolhe em degraus de 1 px) e o canto cai na grade; nada de textura suave esticada
+		var lado := maxi(1, roundi(p_tam[i] * ((1.6 - 0.6 * k) if p_glow[i] == 1 else 1.0)))
+		var canto := p - Vector2(floorf(lado * 0.5), floorf(lado * 0.5))
 		if p_glow[i] == 1:
-			var t2 := tam * (1.6 - 0.6 * k)
-			add.draw_texture_rect(tex_brilho, Rect2(p - Vector2(t2, t2) * 0.5, Vector2(t2, t2)), false, c)
+			add.draw_texture_rect(_disco_pixel(lado), Rect2(canto, Vector2(lado, lado)), false, c)
 		else:
-			add.draw_rect(Rect2(p - Vector2(tam, tam) * 0.5, Vector2(tam, tam)), c)
+			add.draw_rect(Rect2(canto, Vector2(lado, lado)), c)
 	for i in MAX_ONDAS:
 		if o_t[i] >= o_dur[i]:
 			continue
@@ -1109,6 +1111,23 @@ func _desenhar_add() -> void:
 		c.a *= 1.0 - k
 		var r := o_raio[i] * (1.0 - (1.0 - k) * (1.0 - k))
 		add.draw_arc(o_pos[i].round(), r, 0.0, TAU, 28, c, 2.0)
+
+
+## Disco de pixel de `lado` px (núcleo opaco, aro a meia luz, sem gradiente), em cache por lado: o brilho das partículas na grade de 1 px.
+func _disco_pixel(lado: int) -> Texture2D:
+	if _discos_px.has(lado):
+		return _discos_px[lado]
+	var im := Image.create(lado, lado, false, Image.FORMAT_RGBA8)
+	var m := float(lado) * 0.5
+	for y in lado:
+		for x in lado:
+			var d := sqrt(pow((float(x) + 0.5 - m) / m, 2.0) + pow((float(y) + 0.5 - m) / m, 2.0))
+			var a := 1.0 if d <= 0.55 else (0.5 if d <= 1.0 else 0.0)
+			if a > 0.0:
+				im.set_pixel(x, y, Color(1, 1, 1, a))
+	var t := ImageTexture.create_from_image(im)
+	_discos_px[lado] = t
+	return t
 
 
 ## A cratera e as rachaduras (camada do mundo, normal): escurecem o chão e somem no último terço.

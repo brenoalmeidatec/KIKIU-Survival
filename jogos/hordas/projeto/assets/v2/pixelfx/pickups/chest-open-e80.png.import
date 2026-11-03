@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cl1ka33dy4lk1"
-path="res://.godot/imported/level-up.png-02caab6d7c80cf97a9fb5c57da9137ec.ctex"
+uid="uid://wnjgt577nf64"
+path="res://.godot/imported/chest-open-e80.png-f43fc6b19aa86726083ba2e4a88beb12.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/pixelfx/ui/level-up.png"
-dest_files=["res://.godot/imported/level-up.png-02caab6d7c80cf97a9fb5c57da9137ec.ctex"]
+source_file="res://assets/v2/pixelfx/pickups/chest-open-e80.png"
+dest_files=["res://.godot/imported/chest-open-e80.png-f43fc6b19aa86726083ba2e4a88beb12.ctex"]
 
 [params]
 

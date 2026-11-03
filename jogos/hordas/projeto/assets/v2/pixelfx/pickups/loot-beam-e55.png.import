@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b7isbjylnlict"
-path="res://.godot/imported/loot-beam.png-f6c4c16d61d0d29dcafc3a5177b9cb06.ctex"
+uid="uid://isd758gr1acl"
+path="res://.godot/imported/loot-beam-e55.png-9a7c078165ded96d22833b98177e06c0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/pixelfx/pickups/loot-beam.png"
-dest_files=["res://.godot/imported/loot-beam.png-f6c4c16d61d0d29dcafc3a5177b9cb06.ctex"]
+source_file="res://assets/v2/pixelfx/pickups/loot-beam-e55.png"
+dest_files=["res://.godot/imported/loot-beam-e55.png-9a7c078165ded96d22833b98177e06c0.ctex"]
 
 [params]
 

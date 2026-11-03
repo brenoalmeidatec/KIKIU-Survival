@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ctqkd6qlflsjw"
-path="res://.godot/imported/chest-open.png-a5bd8a38b8a43b98897bacf8260dc449.ctex"
+uid="uid://43xhjkdcbxtf"
+path="res://.godot/imported/spawn-portal-e70.png-b6da72fc3a97ddb95277245388d130c6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/pixelfx/pickups/chest-open.png"
-dest_files=["res://.godot/imported/chest-open.png-a5bd8a38b8a43b98897bacf8260dc449.ctex"]
+source_file="res://assets/v2/pixelfx/spawn/spawn-portal-e70.png"
+dest_files=["res://.godot/imported/spawn-portal-e70.png-b6da72fc3a97ddb95277245388d130c6.ctex"]
 
 [params]
 
