@@ -2920,3 +2920,21 @@ _Claude do Alisson (notebook)_
 - Revisão independente, capturas reais antes/depois no Baixo, amostra de custo CPU e nova prévia exportada/atalho serão registrados no PR no novo SHA. Não se promete antecipação retroativa quando um alvo já surge sobreposto ao projétil; nesse caso o contato é imediato. QA fora do Git; nenhum merge pelo Codex. Mantidos o perfil privado e o executável antigo da prévia.
 
 - Revisão visual adicional encontrou um defeito na primeira correção d0c4c0b0: a convergência curta ainda podia fazer o desenho recuar. RED específico reproduziu 38 casos de recuo visível (102 falhas incluindo o contrato de curva). Acrescentados convergência curta linear e controle visual por vaga: quando a boca já passou do contato ou o alvo aparece tarde, ocultam-se sprite/rastro/sombra até haver avanço novamente, mantendo clarão e impacto. Perfuração preserva o referencial e ricochete real o reinicia; física/RNG inalterados. O novo teste exige voo visível quando há espaço, não passa escondendo todos os tiros, e confere reset das vagas. Resultados finais e ressalvas das capturas ficam no PR no novo head, substituindo a aprovação do commit anterior.
+
+## 2026-11-02 (noite): checagem de pixel art contra a lista de boas práticas (Claude do Alisson (PC))
+- **Feito:** a v2 foi conferida contra a lista de renderização de pixel art que o Alisson mandou.
+  - **Já seguíamos:**
+    - filtro Nearest como padrão;
+    - os 974 PNG sem compressão com perda e sem mipmap;
+    - bloco fixo de 960×540;
+    - câmera arredondada (`camera_mundo.gd`);
+    - Spleen e Jersey10 sem antialiasing.
+  - **PR `alisson/pixel-perfeito`:**
+    - liga o snap de transformações e vértices a pixel nos SubViewports do mundo e da UI (`v2/apresentacao.gd`);
+    - tira o antialiasing da PressStart2P.
+- **Divergências que ficam (decisão, não descuido):**
+  - **Escala:** a v2 usa sharp bilinear fracionário sem barras pretas (`apresentacao.gd`), e não escala inteira com barras. Já existe o `--escala_pura` para comparar. Mudar isso é decisão do Alisson.
+  - **Escala e rotação em tempo de execução:** usamos squash/stretch e rotação em monstros, no giro do herói, no escudo e nos efeitos.
+  - **Filtro linear** em 4 pontos: sombras, sombra da horda, ícone de 32→24 px no HUD e uma tela da apresentação.
+  - **Atkinson:** a fonte de leitura não é pixel.
+- **Pendente:** ninguém olhou em movimento se o snap fez algum sprite lento "tremer" de 1 px. As capturas paradas em 1280×720 saíram iguais.
