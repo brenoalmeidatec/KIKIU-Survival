@@ -7,13 +7,13 @@ Saída   : projeto/prototipos/piso/piso.png (o que o jogo carrega, ver v2/cenari
 
 O que o script faz (só numpy e Pillow, determinístico: a semente é fixa; tudo usa wrap, então o tile continua sem emenda):
     1. Separa o "terreno" (3 tons de musgo e 4 de terra, as manchas grandes) dos detalhes com forma (capim, pedras, raízes,
-       folhas, brasas), que não são tocados.
+       folhas, brasas); só o passo 4 mexe nas folhas, o resto desses detalhes não é tocado.
     2. Borda das manchas: onde dois tons de terreno se encostam, as duas faixas de 1 px de cada lado viram xadrez de
        1 px (a 1ª faixa, 50%; a 2ª, 25%), em vez de uma curva lisa de degraus de 2 a 5 px.
     3. Dentro das manchas: ordenado (Bayer 4x4) de baixo contraste entre tons vizinhos da mesma rampa, guiado por ruído
        periódico de baixa frequência, para o chapado de dezenas de pixels ganhar textura de 1 px sem mudar a cor média.
-    4. Folhas e brasas de 2 a 3 px: os "montinhos" de folha (musgo4/erva) que formam blocos 2x2 ou maiores perdem os pixels
-       que fecham o bloco (xadrez), ficando com 1 px de espessura.
+    4. Folhas e brasas de 2 a 3 px: os "montinhos" de folha (musgo4/erva) que formam blocos 2x2 ou maiores perdem o pixel
+       de baixo-direita de cada janela 2x2 ainda cheia (varredura sequencial), ficando com 1 px de espessura.
 
 Uso: python refinar_piso.py            (regrava o piso.png do jogo e imprime a medição antes/depois)
      python refinar_piso.py --medir    (só mede)
@@ -142,24 +142,22 @@ def refinar(base):
     fol = np.zeros((h, w), bool)
     for c in FOLHAS:
         fol |= (saida[..., :3] == np.array(c, np.uint8)).all(-1)
-    blk = fol & np.roll(fol, -1, 1) & np.roll(fol, -1, 0) & np.roll(np.roll(fol, -1, 0), -1, 1)
-    # cada janela 2x2 cheia: o pixel de baixo-direita (que "fecha" o bloco) vira o terreno em volta, se der xadrez
-    # (cobre os 4 cantos da janela de modo que sobram diagonais de 1 px)
-    fecha = np.zeros((h, w), bool)
-    fecha |= np.roll(np.roll(blk, 1, 0), 1, 1) & ((xx + yy) % 2 == 0)  # canto baixo-direita das janelas
-    fecha |= np.roll(blk, 1, 0) & ((xx + yy) % 2 == 1)  # canto baixo-esquerda
-    fecha &= fol
-    if fecha.any():
-        ref = saida.copy()
-        # cor de substituição: a do terreno mais próximo (mediana dos vizinhos de terreno, senão escurece o pixel)
-        for y, x in zip(*np.nonzero(fecha)):
+    # varredura sequencial: cada janela 2x2 de folha ainda cheia perde o pixel de baixo-direita (vira o tom de terreno
+    # mais comum em volta, incluindo diagonais); como a folha atualizada é relida, nenhum bloco 2x2 sobra
+    for y in range(h):
+        for x in range(w):
+            y1, x1 = (y + 1) % h, (x + 1) % w
+            if not (fol[y, x] and fol[y, x1] and fol[y1, x] and fol[y1, x1]):
+                continue
             viz = []
-            for dy, dx in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-                yy2, xx2 = (y + dy) % h, (x + dx) % w
-                if terreno[yy2, xx2] and not fecha[yy2, xx2]:
-                    viz.append(tuple(ref[yy2, xx2, :3]))
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    yy2, xx2 = (y1 + dy) % h, (x1 + dx) % w
+                    if terreno[yy2, xx2] and not fol[yy2, xx2]:
+                        viz.append(tuple(saida[yy2, xx2, :3]))
             if viz:
-                saida[y, x, :3] = max(set(viz), key=viz.count)
+                saida[y1, x1, :3] = max(set(viz), key=viz.count)
+                fol[y1, x1] = False
     return saida
 
 

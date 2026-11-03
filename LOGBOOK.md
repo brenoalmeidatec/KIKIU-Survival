@@ -2920,3 +2920,8 @@ _Claude do Alisson (notebook)_
 - Revisão independente, capturas reais antes/depois no Baixo, amostra de custo CPU e nova prévia exportada/atalho serão registrados no PR no novo SHA. Não se promete antecipação retroativa quando um alvo já surge sobreposto ao projétil; nesse caso o contato é imediato. QA fora do Git; nenhum merge pelo Codex. Mantidos o perfil privado e o executável antigo da prévia.
 
 - Revisão visual adicional encontrou um defeito na primeira correção d0c4c0b0: a convergência curta ainda podia fazer o desenho recuar. RED específico reproduziu 38 casos de recuo visível (102 falhas incluindo o contrato de curva). Acrescentados convergência curta linear e controle visual por vaga: quando a boca já passou do contato ou o alvo aparece tarde, ocultam-se sprite/rastro/sombra até haver avanço novamente, mantendo clarão e impacto. Perfuração preserva o referencial e ricochete real o reinicia; física/RNG inalterados. O novo teste exige voo visível quando há espaço, não passa escondendo todos os tiros, e confere reset das vagas. Resultados finais e ressalvas das capturas ficam no PR no novo head, substituindo a aprovação do commit anterior.
+
+### 2026-11-03: PR #601, piso da floresta na grade de 1 px (Claude do Alisson (PC))
+- Feito: `piso.png` da floresta refinado para 1 px (bordas e manchas com textura de 1 px, folhas sem bloco 2x2 por varredura sequencial em `fonte_arte/piso/refinar_piso.py`); fração de janelas 2x2 uniformes de 0,77 para 0,23. Teste `v2_piso_pixel`.
+- Pendente: ninguém viu em movimento numa janela real; merge depende do "pode mergear" do Alisson e do CI 7/7.
+- Próximo: escudos (2 px) e efeitos do pixelfx, em PRs próprios.
