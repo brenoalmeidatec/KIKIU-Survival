@@ -2938,3 +2938,7 @@ _Claude do Alisson (notebook)_
   - **Filtro linear** em 4 pontos: sombras, sombra da horda, ícone de 32→24 px no HUD e uma tela da apresentação.
   - **Atkinson:** a fonte de leitura não é pixel.
 - **Pendente:** ninguém olhou em movimento se o snap fez algum sprite lento "tremer" de 1 px. As capturas paradas em 1280×720 saíram iguais.
+### 2026-11-03: PR #601, piso da floresta na grade de 1 px (Claude do Alisson (PC))
+- Feito: `piso.png` da floresta refinado para 1 px (bordas e manchas com textura de 1 px, folhas sem bloco 2x2 por varredura sequencial em `fonte_arte/piso/refinar_piso.py`); fração de janelas 2x2 uniformes de 0,77 para 0,23. Teste `v2_piso_pixel`.
+- Pendente: ninguém viu em movimento numa janela real; merge depende do "pode mergear" do Alisson e do CI 7/7.
+- Próximo: escudos (2 px) e efeitos do pixelfx, em PRs próprios.
