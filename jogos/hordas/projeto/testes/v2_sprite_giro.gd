@@ -33,6 +33,7 @@ func _ready() -> void:
 	_t_direcoes()
 	_t_copias_dagas()
 	_t_copias_normal()
+	_t_sem_pixel_solto()
 	_t_normal_vetor()
 	_t_tamanhos_do_indice()
 	_t_varredura_fontes()
@@ -122,6 +123,42 @@ func _t_copias_dagas() -> void:
 			"sub %d: a massa da figura se mantém (%d -> %d px)" % [sub, antes, depois]
 		)
 	ok(SpriteGiro.variante(f.tex, q, anc, n, 0).tex == f.tex, "sub 0 é a própria folha, sem cópia")
+
+
+## O voto 2x2 do giro deixava pixel opaco sem nenhum vizinho; a arte original não tem. Nenhuma cópia pode ter.
+func _t_sem_pixel_solto() -> void:
+	var soltos := 0
+	var folhas := 0
+	for par in [
+		["meteoro_flamejante", "queda"],
+		["cometa_roxo", "queda"],
+		["perigo_chuva", "queda"],
+		["chuva_de_ferro", "queda"],
+		["kunai_heroi", "voo"],
+		["flecha_heroi", "voo"]
+	]:
+		var f := AnimGolpes.de(str(par[0])).get(str(par[1]), {}) as Dictionary
+		if f.is_empty():
+			continue
+		folhas += 1
+		for sub in range(1, 4):
+			var v := SpriteGiro.variante(f.tex, Vector2i(f.quadro as Vector2), Vector2i(f.ancora as Vector2), int(f.n), sub)
+			var im := _rgba(v.tex)
+			var qw := int((v.quadro as Vector2).x)
+			for y in im.get_height():
+				for x in im.get_width():
+					if im.get_pixel(x, y).a < 0.5:
+						continue
+					var viz := false
+					var x0 := (x / qw) * qw
+					for dy in range(maxi(y - 1, 0), mini(y + 2, im.get_height())):
+						for dx in range(maxi(x - 1, x0), mini(x + 2, x0 + qw)):
+							if (dx != x or dy != y) and im.get_pixel(dx, dy).a >= 0.5:
+								viz = true
+					if not viz:
+						soltos += 1
+	ok(folhas >= 4, "a checagem de pixel solto viu as folhas (%d)" % folhas)
+	ok(soltos == 0, "as cópias pré-giradas têm %d pixel(s) opaco(s) sem vizinho" % soltos)
 
 
 func _t_copias_normal() -> void:
@@ -250,7 +287,15 @@ func _argumentos(texto: String, ini: int) -> Array:
 
 func _t_preparo_ao_entrar() -> void:
 	# o que gira nos ataques inimigos e nos projéteis do Luke é preparado ao montar o mundo (avisos.gd, chefe_visual.gd, adagas.gd)
-	for par in [["perigo_chuva", "queda"], ["corvos", "voo"], ["shuriken_heroi", "voo"], ["kunai_heroi", "voo"], ["flecha_heroi", "voo"]]:
+	for par in [
+		["onda", "voo"],
+		["fura", "voo"],
+		["perigo_chuva", "queda"],
+		["corvos", "voo"],
+		["shuriken_heroi", "voo"],
+		["kunai_heroi", "voo"],
+		["flecha_heroi", "voo"]
+	]:
 		var fo := AnimGolpes.de(str(par[0])).get(str(par[1]), {}) as Dictionary
 		ok(not fo.is_empty() and SpriteGiro.preparada(fo.tex), "%s/%s foi preparada ao montar o mundo" % [par[0], par[1]])
 	var antes := SpriteGiro.geradas

@@ -396,7 +396,7 @@ func _corvos_orbita(ci: CanvasItem, u: float, a: float, na_frente: bool) -> void
 			continue
 		var pos := Vector2(cos(fase) * 25.0, sin(fase) * 9.0 - 0.58 * p + sin(t * 2.0 + float(k)) * 3.0) * u
 		var lado := 1.0 if -sin(fase) >= 0.0 else -1.0  # vai para a direita quando o x cresce
-		var esc := 2.0 * (0.8 + 0.2 * sin(fase))  # os de trás são um pouco menores
+		var esc := 2.0  # escala inteira (a de trás não encolhe: meio pixel não existe); a profundidade fica por conta da sombra e da ordem de desenho
 		var sombra := Color(0.75, 0.55, 1.0, a)
 		Anim.desenhar(ci, f, Anim.quadro_em(f, t + float(k) * 0.13), pos.round(), 0.0, Vector2(lado * esc, esc), sombra)
 
@@ -428,4 +428,4 @@ func _desenhar_voos() -> void:
 		no_voo.draw_circle(c, 11.0, cc)
 		var esq := dir_tela.x < 0.0
 		var ang := (-dir_tela).angle() if esq else dir_tela.angle()
-		Anim.desenhar(no_voo, f, Anim.quadro_em(f, float(v.t) + float(v.ph)), c, ang, Vector2(-1.4 if esq else 1.4, 1.4))
+		Anim.desenhar(no_voo, f, Anim.quadro_em(f, float(v.t) + float(v.ph)), c, ang, Vector2(-1.0 if esq else 1.0, 1.0))  # escala inteira: pixel de um tamanho só (a revoada era 1,4x)

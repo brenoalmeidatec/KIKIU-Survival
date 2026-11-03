@@ -92,6 +92,8 @@ func montar(c, camada: Node, sv: Node, tex: Texture2D) -> void:
 	tex_brilho = tex
 	novas = Novas.new()
 	novas.montar(self)
+	for id_onda in ["onda", "fura"]:  # o Luke e a carta abalo lançam onda sem a carta onda: as cópias pré-giradas nascem aqui, não no meio da luta
+		Novas.preparar_giros(id_onda)
 	_texturas()
 	camada.add_child(_aura_sp)
 	no_corpo = Node2D.new()

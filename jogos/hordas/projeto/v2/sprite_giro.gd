@@ -165,6 +165,22 @@ static func _gerar(tex: Texture2D, quadro: Vector2i, ancora: Vector2i, n: int, s
 				saida[o] = cor_a[melhor]
 				if imn != null:
 					saida_n[o] = _girar_normal(srcn[idx_a[melhor]], c, s)
+	# o voto 2x2 aceita pixel com 2 de 4 amostras cobertas e às vezes deixa um pixel solto; a arte original nunca tem: tira os sem vizinho
+	for f in n:
+		for j in hd:
+			for ii in wd:
+				var o2 := j * (wd * n) + f * wd + ii
+				if (saida[o2] >> 24) & 255 < 128:
+					continue
+				var vizinho := false
+				for dj in range(maxi(j - 1, 0), mini(j + 2, hd)):
+					for di in range(maxi(ii - 1, 0), mini(ii + 2, wd)):
+						if (di != ii or dj != j) and (saida[dj * (wd * n) + f * wd + di] >> 24) & 255 >= 128:
+							vizinho = true
+				if not vizinho:
+					saida[o2] = 0
+					if imn != null:
+						saida_n[o2] = 0
 	var nova := Image.create_from_data(wd * n, hd, false, Image.FORMAT_RGBA8, saida.to_byte_array())
 	var res: Texture2D = ImageTexture.create_from_image(nova)
 	if imn != null:
