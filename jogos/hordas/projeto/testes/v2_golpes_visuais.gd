@@ -44,7 +44,7 @@ func _monstros(w) -> void:
 		e._batida = par[0]
 		e.carga = par[1]
 		e._visual_no(Vector2.ZERO)
-		ok(e.sprite.scale == Vector2.ONE * e.escala, "nós: o soco e a carga não deformam o sprite (escala %s, esperado %s)" % [e.sprite.scale, e.escala])
+		ok(e.sprite.scale == Vector2.ONE * e.esc, "nós: o soco e a carga não deformam o sprite (escala %s, esperado %s)" % [e.sprite.scale, e.esc])
 		ok(
 			e.sprite.position.y == par[2] and e.sprite.position == e.sprite.position.round(),
 			"nós: afunda %s px inteiros (pos %s)" % [par[2], e.sprite.position]
