@@ -171,7 +171,7 @@ func _brasas() -> CPUParticles2D:
 	p.amount = 40
 	p.lifetime = 4.5
 	p.preprocess = 4.5
-	p.texture = _textura_pixel(3, 3)  # 3 px de lado e escala 1: o pixel é o do mundo
+	p.texture = _textura_pixel(3, 3)  # 3 px de lado e escala 1 na arte (na tela o nó _efeitos acompanha a cobertura e o zoom lento do fundo: exceção aceita, como a câmera)
 	p.position = Vector2(170, 330)
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	p.emission_rect_extents = Vector2(170, 110)

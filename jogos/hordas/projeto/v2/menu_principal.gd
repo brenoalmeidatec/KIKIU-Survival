@@ -105,7 +105,13 @@ func _montar() -> void:
 		var sombra := _texto("K.I.K.I.U", TAM_LOGO, true, cor, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, i * 2.0, LARG, 130))
 		sombra.show_behind_parent = true
 		_logo.add_child(sombra)
-	_logo.add_child(_faiscas())
+	var faiscas := _faiscas()
+	faiscas.scale = Vector2.ONE / LOGO_ESCALA  # o logo é ampliado por LOGO_ESCALA: a escala do emissor desfaz isso e a faísca sai com a escala global 1 (grade de 1 px)
+	faiscas.emission_rect_extents *= LOGO_ESCALA  # área e movimento mantêm o tamanho que tinham na tela
+	faiscas.initial_velocity_min *= LOGO_ESCALA
+	faiscas.initial_velocity_max *= LOGO_ESCALA
+	faiscas.gravity *= LOGO_ESCALA
+	_logo.add_child(faiscas)
 	_logo.pivot_offset = Vector2(LARG / 2.0, 100.0)  # o meio das letras: o logo cresce sem sair do lugar
 	_logo.scale = Vector2.ONE * LOGO_ESCALA
 	add_child(_logo)
@@ -199,9 +205,9 @@ func _faiscas() -> CPUParticles2D:
 	p.emission_rect_extents = Vector2(120, 22)
 	p.direction = Vector2(0, -1)
 	p.spread = 30.0
-	p.initial_velocity_min = 6.0
-	p.initial_velocity_max = 16.0
-	p.gravity = Vector2(0, -4)
+	p.initial_velocity_min = 8.0
+	p.initial_velocity_max = 22.0
+	p.gravity = Vector2(0, -6)
 	p.scale_amount_min = 1.0
 	p.scale_amount_max = 1.0
 	var g := Gradient.new()

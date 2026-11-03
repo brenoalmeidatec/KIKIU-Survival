@@ -52,6 +52,12 @@ func _ready() -> void:
 	_emissores(menu, lista)
 	ok(lista.size() >= 4, "título: faíscas, brasas, espíritos e folhas (%d emissores)" % lista.size())
 	_checar("título", lista)
+	# a escala GLOBAL da faísca do logo (que fica sob o _logo ampliado) tem de ser 1
+	for p in lista:
+		var pp := p as CPUParticles2D
+		if pp.get_parent() == menu._logo:
+			var gs := pp.get_global_transform().get_scale()
+			ok(is_equal_approx(gs.x, 1.0) and is_equal_approx(gs.y, 1.0), "faíscas do logo com escala global %s (esperado 1)" % gs)
 	menu.queue_free()
 
 	# 2. o salão vivo
