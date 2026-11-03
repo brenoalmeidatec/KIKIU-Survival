@@ -16,3 +16,6 @@ Formato igual ao do corte ciano (`../blender_corte/corte_hazaki_ciano.py`): rend
 | `efeito_estrela_folha.png` | A2/M3, estrela de impacto | 9 |
 | `efeito_anel_folha.png` | M2, anel duplo da magia | 18 |
 | `efeito_espiral_folha.png` | V1, espiral de vento da esquiva | 12 |
+
+## Folhas do jogo (1 px de arte = 1 px do jogo)
+O jogo usa estas folhas em vários tamanhos, geradas por `../blender_corte/folhas_1px.py`: `EFEITO_TAM=W` (e `EFEITO_ALTURA=H`, menor que W, para os efeitos de chão já saírem achatados em H/W) fazem o `efeitos_kikiu.py` renderizar direto no tamanho final, sem dobrar. Sem as variáveis o comportamento é o do estudo (64x64 dobrado). Resultado em `projeto/assets/v2/efeitos/efeito_<nome>_e<largura>.png`.

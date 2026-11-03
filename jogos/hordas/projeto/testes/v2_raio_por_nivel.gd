@@ -38,12 +38,13 @@ func acertos_a(h, passo: Dictionary, d: float) -> int:
 	return n
 
 
-## A escala do desenho do corte que o golpe acabou de criar (fx.corte guarda um Sprite2D por corte, no índice `_ci`).
-func escala_do_corte(h, passo: Dictionary) -> float:
+## A largura (px) do desenho do corte que o golpe acabou de criar (fx.corte guarda um Sprite2D por corte, no índice `_ci`). O corte de folha tem
+## escala 1 e o quad do tamanho do quadro da folha escolhida (a mais perto de 2 x alcance x 1,45; nada de ampliar por fator fracionário).
+func largura_do_corte(h, passo: Dictionary) -> float:
 	var fx = w.combate.fx
 	var i: int = fx._ci
 	w.combate.golpe_comecou(h, passo, Vector2(1, 0), 0.26)
-	return fx._cortes[i].scale.x
+	return fx._cortes[i].texture.get_size().x * fx._cortes[i].scale.x
 
 
 func _ready() -> void:
@@ -116,14 +117,16 @@ func _ready() -> void:
 	h.nivel = 20
 	ok(acertos_a(h, corte, float(corte.alcance) + 10.0) == 1, "nível 20: o mesmo monstro (dentro do alcance crescido) é acertado")
 
-	# 8. desenho: a escala do corte cresce na mesma proporção que o alcance (o visual bate com a área de acerto)
+	# 8. desenho: o corte cresce com o alcance (o visual acompanha a área de acerto) na folha de tamanho mais perto, a ~13% do desenho exato
 	h.nivel = 1
-	var e1 := escala_do_corte(h, corte)
+	var l1 := largura_do_corte(h, corte)
 	var alc1: float = c.alcance_do_passo(corte)
 	h.nivel = 20
-	var e20 := escala_do_corte(h, corte)
+	var l20 := largura_do_corte(h, corte)
 	var alc20: float = c.alcance_do_passo(corte)
-	ok(e1 > 0.0 and perto(e20 / e1, alc20 / alc1), "o desenho do corte cresce como o alcance (razão %.4f e %.4f)" % [e20 / e1, alc20 / alc1])
+	ok(l1 > 0.0 and l20 > l1, "o desenho do corte cresce com o alcance (largura %s e %s)" % [l1, l20])
+	ok(absf(l1 / (2.0 * alc1 * 1.45) - 1.0) < 0.13, "nível 1: a folha escolhida (%s px) fica a ~13%% do desenho exato (%.0f)" % [l1, 2.0 * alc1 * 1.45])
+	ok(absf(l20 / (2.0 * alc20 * 1.45) - 1.0) < 0.13, "nível 20: a folha escolhida (%s px) fica a ~13%% do desenho exato (%.0f)" % [l20, 2.0 * alc20 * 1.45])
 
 	# 9. escudo, o raio: o do dado no nível 1 (IGUAL ao de antes, mesmo com área de cartas), cresce por nível, para no teto, e NÃO usa h.m_area
 	var raio0: float = float(esc.cfg.raio)

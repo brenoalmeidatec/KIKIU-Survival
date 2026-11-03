@@ -17,3 +17,14 @@ Só o **corte** usa a folha; a **estocada** continua no shader procedural antigo
 ## Variantes guardadas (não usadas no jogo por padrão)
 - `corte_hazaki_ciano.py`: só a energia, arco ciano em pixel art grosso (o jogo já tem a folha, opção `variante = "ciano"` em `v2/efeitos.gd`).
 - `corte_hazaki_simples.py`: arco fino e afiado com flash branco, 10 quadros. Guardada porque parece magia; o corte da katana segue com `corte_hazaki.py` (katana + linha de anime).
+
+## Folhas do jogo: uma por tamanho, 1 px de arte = 1 px do jogo (`folhas_1px.py`)
+O jogo NÃO usa mais `corte_hazaki_folha.png` (128 px) esticada: ela e as folhas de efeito eram desenhadas com escala fracionária (alcance 46 pede 133 px) e pixel
+de 2 px na ciano. Agora cada tamanho é renderizado de novo no Blender no tamanho final e o jogo escolhe o mais perto, com escala 1 (`v2/efeitos.gd`).
+```
+python folhas_1px.py [corte corte_ciano cristal estrela anel espiral]   # ~1 min; chama o Blender 4.5 ou 5.2 (variável BLENDER)
+```
+- Os scripts do Blender aceitam o tamanho por variável de ambiente: `CORTE_TAM=N` (quadro de N px; o corte ciano passa a sair em 1 px em vez de 64x64 dobrado) e `CORTE_GIROS=1` (a folha sai com 4 linhas: a cena girada 0, 22,5, 45 e 67,5 graus, desenhada pela câmera, sem RotSprite). Sem as variáveis o comportamento é o de antes (o mestre de 128 px).
+- A lista de tamanhos fica em `folhas_1px.py` (`TAMANHOS`) e vai para `projeto/dados/v2_folhas_fx.json`, que o jogo lê. Para mudar um tamanho: edite a lista, rode o script e rode `godot --headless --import`.
+- Os outros 12 dos 16 ângulos do corte são quartos de volta: o shader troca o UV, exato (o quadro é quadrado e par).
+- Memória de vídeo: as 7 folhas do corte somam ~28 MB (RGBA sem compressão; a ciano, ~21 MB, só carrega com o Rastro de katana).

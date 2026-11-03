@@ -22,13 +22,17 @@ import corte_hazaki as b  # noqa: E402  (blocos de geometria/material compartilh
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SAIDA = os.path.abspath(ARGS[0]) if ARGS else AQUI
-N2, T2, ESC = 12, 64, 2
+# sem CORTE_TAM: o estudo antigo (64x64 dobrado, pixel de 2 px). Com CORTE_TAM=N: quadro de N px desenhado direto, 1 px de arte = 1 px do jogo.
+N2 = 12
+T2, ESC = (b.TAM, 1) if os.environ.get("CORTE_TAM") else (64, 2)
 R2 = 0.82
 
 
 def material_ciano(nome):
     """Corpo cheio de bordas nitidas; calor alto na borda INTERNA (branco azulado), baixo na externa (turquesa)."""
     m = bpy.data.materials.new(nome)
+    if m.node_tree is None:  # Blender 4.5 precisa ligar os nos; no 5.x a arvore ja existe
+        m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
     uvn = nt.nodes.new("ShaderNodeUVMap")
@@ -125,9 +129,22 @@ def monta():
             b.keyar(o, f, loc=(x0 + math.cos(d) * vel * t, y0 + math.sin(d) * vel * t - 0.006 * t * t, 0.2), esc=(s, s, 1))
 
 
+def quantiza_ciano(q):
+    a, rgb = q[..., 3], q[..., :3].mean(axis=2)
+    a = np.where(a < 0.14, 0.0, np.round(a * 4.0) / 4.0)             # pixel art: 4 degraus de transparencia
+    h = np.where(a > 0, np.round(np.clip(rgb, 0, 1) * 3.0) / 3.0, 0.0)
+    o = np.zeros_like(q)
+    o[..., 0] = o[..., 1] = o[..., 2] = h
+    o[..., 3] = a
+    return o
+
+
 def renderiza():
     cena = bpy.context.scene
     os.makedirs(os.path.join(SAIDA, "saida_ciano"), exist_ok=True)
+    if len(b.GIROS) > 1:
+        b.folha_giros(os.path.join(SAIDA, "saida_ciano"), N2, quantiza_ciano, os.path.join(SAIDA, "corte_hazaki_ciano_giros.png"), T2)
+        return
     cena.render.filepath = os.path.join(SAIDA, "saida_ciano", "quadro_")
     bpy.ops.render.render(animation=True)
     quadros = []
@@ -137,12 +154,7 @@ def renderiza():
         img.alpha_mode = "STRAIGHT"
         q = np.array(img.pixels[:], dtype=np.float32).reshape(T2, T2, 4)
         bpy.data.images.remove(img)
-        a, rgb = q[..., 3], q[..., :3].mean(axis=2)
-        a = np.where(a < 0.14, 0.0, np.round(a * 4.0) / 4.0)             # pixel art: 4 degraus de transparencia
-        h = np.where(a > 0, np.round(np.clip(rgb, 0, 1) * 3.0) / 3.0, 0.0)
-        o = np.zeros_like(q)
-        o[..., 0] = o[..., 1] = o[..., 2] = h
-        o[..., 3] = a
+        o = quantiza_ciano(q)
         quadros.append(np.repeat(np.repeat(o, ESC, axis=0), ESC, axis=1))      # dobra com pixel nitido
     folha = np.concatenate(quadros, axis=1)
     img = bpy.data.images.new("folha", T2 * ESC * N2, T2 * ESC, alpha=True)

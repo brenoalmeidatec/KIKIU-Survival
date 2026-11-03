@@ -1,0 +1,195 @@
+{
+ "_ajuda": "Folhas de efeito em 1 px de arte = 1 px do jogo, UMA POR TAMANHO (gerado por fonte_arte/blender_corte/folhas_1px.py; nao editar a mao). Por folha: quadros (por linha), linhas (4 no corte: 0, 22,5, 45 e 67,5 graus) e tam = lista de [largura, altura] do quadro em px; o arquivo de cada tamanho e assets/v2/efeitos/<corte_hazaki|corte_hazaki_ciano|efeito_<nome>>_e<largura>.png. v2/efeitos.gd escolhe o tamanho mais perto do pedido e desenha com escala 1 (sem ampliar nada); o corte (e o ciano) tem quadro quadrado, os efeitos de chao (cristal, anel, espiral) vem achatados a 0,62 no Y.",
+ "corte": {
+  "quadros": 16,
+  "linhas": 4,
+  "tam": [
+   [
+    56,
+    56
+   ],
+   [
+    72,
+    72
+   ],
+   [
+    92,
+    92
+   ],
+   [
+    112,
+    112
+   ],
+   [
+    134,
+    134
+   ],
+   [
+    160,
+    160
+   ],
+   [
+    192,
+    192
+   ]
+  ]
+ },
+ "corte_ciano": {
+  "quadros": 12,
+  "linhas": 4,
+  "tam": [
+   [
+    56,
+    56
+   ],
+   [
+    72,
+    72
+   ],
+   [
+    92,
+    92
+   ],
+   [
+    112,
+    112
+   ],
+   [
+    134,
+    134
+   ],
+   [
+    160,
+    160
+   ],
+   [
+    192,
+    192
+   ]
+  ]
+ },
+ "cristal": {
+  "quadros": 14,
+  "linhas": 1,
+  "tam": [
+   [
+    44,
+    28
+   ],
+   [
+    60,
+    38
+   ],
+   [
+    80,
+    50
+   ],
+   [
+    104,
+    64
+   ],
+   [
+    136,
+    84
+   ],
+   [
+    176,
+    110
+   ],
+   [
+    232,
+    144
+   ],
+   [
+    304,
+    188
+   ]
+  ]
+ },
+ "estrela": {
+  "quadros": 9,
+  "linhas": 1,
+  "tam": [
+   [
+    22,
+    22
+   ],
+   [
+    30,
+    30
+   ],
+   [
+    40,
+    40
+   ],
+   [
+    56,
+    56
+   ],
+   [
+    76,
+    76
+   ],
+   [
+    104,
+    104
+   ]
+  ]
+ },
+ "anel": {
+  "quadros": 18,
+  "linhas": 1,
+  "tam": [
+   [
+    64,
+    40
+   ],
+   [
+    88,
+    54
+   ],
+   [
+    116,
+    72
+   ],
+   [
+    152,
+    94
+   ],
+   [
+    200,
+    124
+   ],
+   [
+    260,
+    162
+   ]
+  ]
+ },
+ "espiral": {
+  "quadros": 12,
+  "linhas": 1,
+  "tam": [
+   [
+    40,
+    24
+   ],
+   [
+    56,
+    34
+   ],
+   [
+    76,
+    48
+   ],
+   [
+    100,
+    62
+   ],
+   [
+    132,
+    82
+   ]
+  ]
+ }
+}

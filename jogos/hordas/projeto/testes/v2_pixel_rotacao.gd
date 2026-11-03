@@ -1,9 +1,10 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste automático da regra "pixel art não gira livre" da v2 (v2/pixel_rot.gd, v2/efeitos.gd, v2/heroi.gd, frente ROTAÇÃO do PIXEL-1):
 #  - PixelRot arredonda a múltiplos de 90 graus;
-#  - o corte da katana (e o eco dele) não gira o sprite: a folha sai pré-girada (RotSprite) em 16 direções e o resto é calculado no shader;
-#  - as folhas pré-giradas só têm cores e alfas que já existem na folha original (sem suavização) e a troca de direção do corte (inclusive
-#    com o corte espelhado) leva o miolo do desenho à direção certa na tela;
+#  - o corte da katana (e o eco dele) não gira o sprite: a folha traz o desenho girado 0, 22,5, 45 e 67,5 graus (desenhado no Blender, uma linha cada)
+#    em 16 direções e o resto é calculado no shader;
+#  - as folhas só têm os tons de alfa e de calor da quantização (sem suavização) e a troca de direção do corte (inclusive
+#    com o corte espelhado) leva o miolo do desenho à direção certa na tela, em todos os tamanhos de folha;
 #  - os pedaços do monstro que voam giram em passos de 90 graus;
 #  - o giro da esquiva e a queda do herói (o caminho de reserva, sem o rolamento desenhado) usam só múltiplos de 90 graus.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pixel_rotacao.tscn  (imprime "v2_pixel_rotacao falhas=0")
@@ -13,18 +14,8 @@ const Efeitos := preload("res://v2/efeitos.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const PASSO := 1.0 / 60.0
-const FOLHA_FONTE := "res://assets/v2/efeitos/corte_hazaki.png"
-const FOLHAS_R := [
-	"res://assets/v2/efeitos/corte_hazaki_r1.png",
-	"res://assets/v2/efeitos/corte_hazaki_r2.png",
-	"res://assets/v2/efeitos/corte_hazaki_r3.png",
-]
-const FOLHA_FONTE_CIANO := "res://assets/v2/efeitos/corte_hazaki_ciano.png"
-const FOLHAS_R_CIANO := [
-	"res://assets/v2/efeitos/corte_hazaki_ciano_r1.png",
-	"res://assets/v2/efeitos/corte_hazaki_ciano_r2.png",
-	"res://assets/v2/efeitos/corte_hazaki_ciano_r3.png",
-]
+const FOLHAS := {"corte": 7, "corte_ciano": 5}  # variante -> quantos tons de alfa a quantização deixa (com o zero)
+const ARQ := {"corte": "res://assets/v2/efeitos/corte_hazaki_e%d.png", "corte_ciano": "res://assets/v2/efeitos/corte_hazaki_ciano_e%d.png"}
 
 var falhas := 0
 var w
@@ -44,8 +35,8 @@ func _ready() -> void:
 	w.set_process(false)
 	w.combate.audio.mudo = true
 	_t_pixel_rot()
-	_t_folhas("corte", FOLHA_FONTE, FOLHAS_R)
-	_t_folhas("corte ciano", FOLHA_FONTE_CIANO, FOLHAS_R_CIANO)
+	for nome in FOLHAS:
+		_t_folhas(nome)
 	_t_cortes()
 	_t_fragmentos()
 	_t_heroi()
@@ -61,39 +52,27 @@ func _t_pixel_rot() -> void:
 	ok(PixelRot.e_quarto(PI) and PixelRot.e_quarto(0.0) and not PixelRot.e_quarto(0.5), "e_quarto separa os múltiplos de 90 graus")
 
 
-## As cores (RGBA) de uma imagem, como texto, num dicionário.
-func _cores(im: Image, regiao: Rect2i) -> Dictionary:
-	var d := {}
-	for y in range(regiao.position.y, regiao.end.y):
-		for x in range(regiao.position.x, regiao.end.x):
-			var c := im.get_pixel(x, y)
-			if c.a > 0.0:
-				d[c.to_html(true)] = true
-	return d
-
-
-## A posição do miolo (centro de massa do alfa) do quadro `q` da imagem, em relação ao centro do quadro de 128 px.
-func _miolo(im: Image, q: int) -> Vector2:
+## A posição do miolo (centro de massa do alfa) do quadro `q` da linha `linha` da folha, em relação ao centro do quadro de `lado` px.
+func _miolo(im: Image, q: int, linha: int, lado: int) -> Vector2:
 	var soma := Vector2.ZERO
 	var peso := 0.0
-	for y in 128:
-		for x in 128:
-			var a := im.get_pixel(q * 128 + x, y).a
+	for y in lado:
+		for x in lado:
+			var a := im.get_pixel(q * lado + x, linha * lado + y).a
 			if a > 0.0:
-				soma += Vector2(x + 0.5 - 64.0, y + 0.5 - 64.0) * a
+				soma += Vector2(x + 0.5 - lado / 2.0, y + 0.5 - lado / 2.0) * a
 				peso += a
 	return soma / peso if peso > 0.0 else Vector2.ZERO
 
 
 ## Mesma troca de UV do shader do corte (modo 2) aplicada ao quadro `q`: devolve o miolo do quadro como o corte o desenha na tela.
-func _miolo_na_tela(folhas: Array, q: int, dir: Vector2i, lado: float) -> Vector2:
-	var im: Image = folhas[dir.x]
+func _miolo_na_tela(im: Image, q: int, lado: int, dir: Vector2i, esp: float) -> Vector2:
 	var soma := Vector2.ZERO
 	var peso := 0.0
-	for y in 128:
-		for x in 128:
-			var d := Vector2(x + 0.5 - 64.0, y + 0.5 - 64.0)  # posição na tela, em relação ao centro
-			if lado < 0.0:
+	for y in lado:
+		for x in lado:
+			var d := Vector2(x + 0.5 - lado / 2.0, y + 0.5 - lado / 2.0)  # posição na tela, em relação ao centro
+			if esp < 0.0:
 				d.y = -d.y
 			var giros := dir.y
 			if giros == 3:
@@ -102,47 +81,63 @@ func _miolo_na_tela(folhas: Array, q: int, dir: Vector2i, lado: float) -> Vector
 				d = -d
 			elif giros == 1:
 				d = Vector2(d.y, -d.x)
-			var a := im.get_pixel(q * 128 + clampi(int(floorf(d.x + 64.0)), 0, 127), clampi(int(floorf(d.y + 64.0)), 0, 127)).a
+			var a := (
+				im.get_pixel(q * lado + clampi(int(floorf(d.x + lado / 2.0)), 0, lado - 1), dir.x * lado + clampi(int(floorf(d.y + lado / 2.0)), 0, lado - 1)).a
+			)
 			if a > 0.0:
-				soma += Vector2(x + 0.5 - 64.0, y + 0.5 - 64.0) * a
+				soma += Vector2(x + 0.5 - lado / 2.0, y + 0.5 - lado / 2.0) * a
 				peso += a
 	return soma / peso if peso > 0.0 else Vector2.ZERO
 
 
-func _t_folhas(nome: String, fonte: String, giradas: Array) -> void:
-	var fi := (load(fonte) as Texture2D).get_image()
-	var cores_fonte := _cores(fi, Rect2i(0, 0, fi.get_width(), fi.get_height()))
-	var folhas: Array = [fi]
-	for caminho in giradas:
-		var tex := load(caminho) as Texture2D
-		ok(tex != null, "%s: a folha %s existe" % [nome, caminho])
-		if tex == null:
-			return
-		var im := tex.get_image()
-		ok(im.get_size() == fi.get_size(), "%s: %s tem o mesmo tamanho da folha original" % [nome, caminho.get_file()])
-		var novas := 0
-		for c in _cores(im, Rect2i(0, 0, im.get_width(), im.get_height())):
-			if not cores_fonte.has(c):
-				novas += 1
-		ok(novas == 0, "%s: %s só usa cores da folha original (sem suavização), %d cores novas" % [nome, caminho.get_file(), novas])
-		folhas.append(im)
-	# o quadro mais cheio do desenho: o crescente
-	var q := 6
-	var base := _miolo(fi, q)
-	ok(base.length() > 5.0, "%s: o quadro de teste tem miolo fora do centro (%s)" % [nome, base])
-	var fx = w.combate.fx
-	if not fx.has_method("corte_direcao"):
-		ok(false, "%s: sem corte_direcao não dá para conferir as direções" % nome)
+func _t_folhas(nome: String) -> void:
+	var def: Dictionary = Dados.json("v2_folhas_fx").get(nome, {})
+	ok(not def.is_empty(), "%s: está no dados/v2_folhas_fx.json" % nome)
+	if def.is_empty():
 		return
+	var fx = w.combate.fx
+	ok(fx.has_method("corte_direcao"), "%s: o Efeitos escolhe a linha da folha (corte_direcao)" % nome)
+	ok(int(def.linhas) == 4, "%s: 4 linhas (0, 22,5, 45 e 67,5 graus)" % nome)
+	var niveis := float(FOLHAS[nome] - 1)
+	var grade: Array = []
+	for par in def.tam:
+		var lado := int(par[0])
+		ok(int(par[1]) == lado and lado % 2 == 0, "%s %d: quadro quadrado e par (a troca de quartos de volta e o sprite centrado precisam)" % [nome, lado])
+		var tex := load(ARQ[nome] % lado) as Texture2D
+		ok(tex != null, "%s %d: a folha existe" % [nome, lado])
+		if tex == null:
+			continue
+		var im := tex.get_image()
+		ok(im.get_size() == Vector2i(lado * int(def.quadros), lado * 4), "%s %d: tamanho da folha %s" % [nome, lado, im.get_size()])
+		# só tons da quantização (sem suavização): alfa em passos de 1/níveis e calor em passos de 1/3
+		var ruim := 0
+		for y in range(0, im.get_height(), 1):
+			for x in range(0, im.get_width(), 1):
+				var c := im.get_pixel(x, y)
+				if c.a > 0.0 and (absf(c.a * niveis - roundf(c.a * niveis)) > 0.02 or absf(c.r * 3.0 - roundf(c.r * 3.0)) > 0.02):
+					ruim += 1
+		ok(ruim == 0, "%s %d: %d pixels fora dos tons da quantização" % [nome, lado, ruim])
+		grade.append([lado, im])
+	if grade.is_empty():
+		return
+	# o quadro do crescente cheio: a direção do miolo (quatro linhas, 16 direções, os dois lados) bate com o pedido
+	var q := 6
+	var lado: int = grade[grade.size() / 2][0]
+	var im: Image = grade[grade.size() / 2][1]
+	var base := _miolo(im, q, 0, lado)
+	ok(base.length() > 5.0, "%s: o quadro de teste tem miolo fora do centro (%s)" % [nome, base])
 	var pior := 0.0
 	for k in 16:
-		for lado in [1.0, -1.0]:
+		for esp in [1.0, -1.0]:
 			var ang := deg_to_rad(22.5 * k)
-			var quer: Vector2i = fx.call("corte_direcao", ang, lado)  # a folha e os giros que o corte usa para esse ângulo e esse lado
-			var alvo := Vector2(base.x, base.y * (-1.0 if lado < 0.0 else 1.0)).rotated(ang)  # onde o miolo deve cair: espelha (lado) e depois gira
-			var tela := _miolo_na_tela(folhas, q, quer, lado)
+			var quer: Vector2i = fx.call("corte_direcao", ang, esp)  # a linha e os giros que o corte usa para esse ângulo e esse lado
+			var alvo := Vector2(base.x, base.y * (-1.0 if esp < 0.0 else 1.0)).rotated(ang)  # onde o miolo deve cair: espelha (lado) e depois gira
+			var tela := _miolo_na_tela(im, q, lado, quer, esp)
 			pior = maxf(pior, absf(wrapf(tela.angle() - alvo.angle(), -PI, PI)))
-	ok(rad_to_deg(pior) < 10.0, "%s: o miolo do corte cai na direção pedida nas 16 direções e nos dois lados (pior erro %.1f graus)" % [nome, rad_to_deg(pior)])
+	ok(
+		rad_to_deg(pior) < 10.0,
+		"%s %d: o miolo do corte cai na direção pedida nas 16 direções e nos dois lados (pior erro %.1f graus)" % [nome, lado, rad_to_deg(pior)]
+	)
 
 
 func _t_cortes() -> void:
@@ -174,19 +169,6 @@ func _t_cortes() -> void:
 	# (até 1,05) aparece inteira nas diagonais
 	var codigo: String = Efeitos.SHADER_CORTE
 	ok(codigo.contains("if (abs(p.x) > 1.0 || abs(p.y) > 1.0) discard;"), "o shader do corte recorta a forma girada no quadrado do golpe")
-
-	# a folha ciano é desenhada numa grade 2x2: as giradas também têm de ser (nada de pixel de 1 px misturado)
-	for arq in FOLHAS_R_CIANO:
-		var im: Image = load(arq).get_image()
-		var puro := true
-		for y in range(0, im.get_height(), 2):
-			for x in range(0, im.get_width(), 2):
-				var c := im.get_pixel(x, y)
-				for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)]:
-					var o := im.get_pixel(x + d.x, y + d.y)
-					if o.a != c.a or (c.a > 0.0 and o != c):  # o RGB de pixel transparente não conta (o importador mexe nele)
-						puro = false
-		ok(puro, "%s: grade 2x2 pura" % arq)
 
 
 func _t_fragmentos() -> void:

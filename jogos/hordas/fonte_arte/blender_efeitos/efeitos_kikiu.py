@@ -25,7 +25,14 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SAIDA = os.path.abspath(ARGS[0]) if ARGS else AQUI
 PEDIDOS = ARGS[1:]
-T, ESC = 64, 2
+# sem EFEITO_TAM: o estudo antigo (64x64 dobrado, pixel de 2 px). Com EFEITO_TAM=W [EFEITO_ALTURA=H]: quadro de W x H px desenhado direto, 1 px de
+# arte = 1 px do jogo (jogo: uma folha por tamanho, ver blender_corte/folhas_1px.py). H < W achata o desenho em H/W (os efeitos de chao: o jogo os
+# desenhava com o Y a 0,62; agora o achatamento ja vem na folha, em escala 1).
+if os.environ.get("EFEITO_TAM"):
+    T, ESC = int(os.environ["EFEITO_TAM"]), 1
+else:
+    T, ESC = 64, 2
+TH = int(os.environ.get("EFEITO_ALTURA", T))
 
 cena = None
 
@@ -44,7 +51,7 @@ def base(n):
     cena = bpy.context.scene
     bpy.context.preferences.edit.keyframe_new_interpolation_type = "LINEAR"
     cena.frame_start, cena.frame_end = 1, n
-    cena.render.resolution_x = cena.render.resolution_y = T
+    cena.render.resolution_x, cena.render.resolution_y = T, TH
     cena.render.resolution_percentage = 100
     cena.render.film_transparent = True
     cena.render.engine = "CYCLES"
@@ -68,6 +75,8 @@ def base(n):
 def material(nome, calor):
     """Emissivo cinza (calor 0..1) com alfa animavel; devolve (material, socket do alfa)."""
     m = bpy.data.materials.new(nome)
+    if m.node_tree is None:  # Blender 4.5 precisa ligar os nos; no 5.x a arvore ja existe
+        m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
     em = nt.nodes.new("ShaderNodeEmission")
@@ -318,6 +327,18 @@ def espiral():
 EFEITOS = {"cristal": cristal, "estrela": estrela, "anel": anel_duplo, "espiral": espiral}
 
 
+def achata():
+    """Com EFEITO_ALTURA < EFEITO_TAM: poe tudo sob um vazio com o Y a H/W (a camera ortografica cobre 2,0 na largura, entao cabe em H px)."""
+    if TH == T:
+        return
+    vazio = bpy.data.objects.new("achata", None)
+    vazio.scale = (1.0, TH / T, 1.0)
+    cena.collection.objects.link(vazio)
+    for ob in list(bpy.data.objects):
+        if ob is not vazio and ob.type != "CAMERA" and ob.parent is None:
+            ob.parent = vazio
+
+
 # ------------------------------------------------------------------ render + folha
 def renderiza(nome, n):
     pasta = os.path.join(SAIDA, "quadros_" + nome)
@@ -329,7 +350,7 @@ def renderiza(nome, n):
         img = bpy.data.images.load(os.path.join(pasta, "q_%04d.png" % f))
         img.colorspace_settings.name = "Non-Color"
         img.alpha_mode = "STRAIGHT"
-        q = np.array(img.pixels[:], dtype=np.float32).reshape(T, T, 4)
+        q = np.array(img.pixels[:], dtype=np.float32).reshape(TH, T, 4)
         bpy.data.images.remove(img)
         a, rgb = q[..., 3], q[..., :3].mean(axis=2)
         a = np.where(a < 0.14, 0.0, np.round(a * 4.0) / 4.0)             # 4 degraus de transparencia
@@ -339,7 +360,7 @@ def renderiza(nome, n):
         o[..., 3] = a
         quadros.append(np.repeat(np.repeat(o, ESC, axis=0), ESC, axis=1))
     folha = np.concatenate(quadros, axis=1)
-    img = bpy.data.images.new("folha_" + nome, T * ESC * n, T * ESC, alpha=True)
+    img = bpy.data.images.new("folha_" + nome, T * ESC * n, TH * ESC, alpha=True)
     img.colorspace_settings.name = "Non-Color"
     img.alpha_mode = "STRAIGHT"
     img.pixels = folha.reshape(-1).tolist()
@@ -354,5 +375,6 @@ if __name__ == "__main__" and bpy.app.background:
         bpy.ops.wm.read_factory_settings(use_empty=True)
         limpa()
         n = EFEITOS[nome]()
+        achata()
         bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SAIDA, "efeito_%s.blend" % nome), copy=True)
         renderiza(nome, n)
