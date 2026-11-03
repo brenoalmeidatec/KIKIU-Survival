@@ -38,10 +38,13 @@ void fragment() {
 """
 ## Silhueta preta que esmaece ao longo do sprite (a mesma de sombras.gd): `cor.r` = a linha dos pés / 128 (altura do pé no quadro) e
 ## `cor.a` = o alfa da instância.
-const SHADER_SOMBRA := """shader_type canvas_item;
+const SHADER_SOMBRA := (
+	"""shader_type canvas_item;
 render_mode unshaded;
 uniform float fade_len = 140.0;
-varying flat vec4 reg;
+"""
+	+ Sombras.GLSL_DEGRAUS
+	+ """varying flat vec4 reg;
 varying flat vec4 cor;
 void vertex() { reg = INSTANCE_CUSTOM; cor = COLOR; }
 void fragment() {
@@ -49,9 +52,10 @@ void fragment() {
 	if (reg.z < 0.0) { u.x = 1.0 - u.x; }
 	vec2 uv = (reg.xy + u * vec2(abs(reg.z), reg.w)) / vec2(textureSize(TEXTURE, 0));
 	float up = cor.r * 128.0 - UV.y * reg.w;
-	COLOR = vec4(0.0, 0.0, 0.0, texture(TEXTURE, uv).a * cor.a * clamp(1.0 - up / fade_len, 0.12, 1.0));
+	COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, uv).a) * cor.a * banda(1.0 - up / fade_len));
 }
 """
+)
 const SHADER_OLHO := """shader_type canvas_item;
 render_mode blend_add, unshaded;
 varying flat vec4 reg;
@@ -170,7 +174,7 @@ func montar(m) -> void:
 	lote_sombra = Lote.new()
 	lote_sombra.montar(_quad, atlas.blur, _material(SHADER_SOMBRA), sombras.raiz_sombras)
 	lote_sombra.mmi.light_mask = 0
-	lote_sombra.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	lote_sombra.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	lote_olhos = Lote.new()
 	lote_olhos.montar(_quad, atlas.emissao, _material(SHADER_OLHO), m.glow)
 	lote_olhos.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
