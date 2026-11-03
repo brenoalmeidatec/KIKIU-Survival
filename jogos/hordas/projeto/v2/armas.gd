@@ -12,6 +12,8 @@ const Colisao := preload("res://v2/colisao.gd")
 const Novas := preload("res://v2/armas_novas.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a luz do fogo da aura fica com energia fixa
 const Anim := preload("res://v2/anim_golpes.gd")
+const PixelRot := preload("res://v2/pixel_rot.gd")
+const SpriteGiro := preload("res://v2/sprite_giro.gd")  # sprite que aponta para uma direção, em 16 passos e sem girar pixel
 const MAX_CORVOS := 16
 const MAX_RUNAS := 14
 const MAX_ONDAS := 8
@@ -231,6 +233,7 @@ func definir_golpe(id: String, nivel: int, bonus: float, apice := false) -> void
 	if a.is_empty():
 		a = _nova(id, str(d.tipo), Color(d.cor[0], d.cor[1], d.cor[2]))
 		ativas[id] = a
+		Novas.preparar_giros(id)  # as cópias pré-giradas da arte nascem agora, na escolha da carta, e não no meio do voo
 	a.nivel = nivel
 	a.bonus = bonus
 	a.apice = apice
@@ -271,6 +274,7 @@ func adicionar_evoluida(ev: Dictionary, bonus: float) -> void:
 		st.aura_dano = float(st.aura_dano) * (1.0 + bonus)
 	a.st = st
 	ativas[str(ev.id)] = a
+	Novas.preparar_giros(str(ev.id))
 
 
 func remover(id: String) -> void:
@@ -291,12 +295,16 @@ func remover(id: String) -> void:
 
 func definir_modificador(mod: String, soma: float) -> void:
 	mods[mod] = soma
+	if soma > 0.0 and (mod == "onda" or mod == "fura"):  # a onda e a lança de luz da katana: a folha `voo` delas aponta para onde vão
+		Novas.preparar_giros(mod)
 
 
 func definir_evolucao_katana(ev: Dictionary) -> void:
 	ventania = ev
 	mods["onda"] = maxf(float(mods["onda"]), 1.0)
 	mods["fura"] = maxf(float(mods["fura"]), 1.0)
+	for id_w in ["onda", "fura", "ventania"]:  # as três folhas de onda que a katana evoluída lança
+		Novas.preparar_giros(id_w)
 
 
 func tem(id: String) -> bool:
@@ -1056,6 +1064,7 @@ var _aura_sp: Sprite2D
 
 func _texturas() -> void:
 	_tex_lamina = _img_lamina()
+	SpriteGiro.preparar(_tex_lamina, Vector2i(26, 11), Vector2i(13, 5))
 	_tex_corvo = _img_corvo()
 	_tex_anel = _img_anel()
 	_tex_glifo = _img_glifo()
@@ -1225,7 +1234,7 @@ func _desenhar_corpo_i() -> void:
 			Anim.desenhar_suave(no_corpo, f, Anim.quadro_em_f(f, c_fase[i] / 17.0), c, 0.0, Vector2(lado, 1.0))
 		elif not sp.is_empty():
 			# O loader entrega CanvasTexture com normal map; o corpo recebe a luz do mundo.
-			_sprite_antigo(no_corpo, sp, c, 0.0, Vector2(lado, 1.0 + 0.035 * sin(c_fase[i])))
+			_sprite_antigo(no_corpo, sp, c, 0.0, Vector2(lado, 1.0))  # escala 1: sem esticar o desenho em fração de pixel
 		else:
 			var quadro: int = [0, 1, 2, 1][int(c_fase[i] / 1.57) & 3]
 			var r := Rect2(c + Vector2(-16.5 * lado, -13.5), Vector2(33.0 * lado, 27.0))
@@ -1291,9 +1300,7 @@ func _desenhar_brilho_i() -> void:
 		if not sp.is_empty() and pts.size() > 1 and not Anim.de("raio").has("impacto"):  # com a folha, o estalo em cada alvo substitui o carimbo esticado
 			var fim := pts[mini(8, pts.size() - 1)]
 			var trecho := fim - pts[0]
-			var original: Vector2 = sp.tam
-			var tam := Vector2(trecho.length(), minf(12.0, trecho.length() * original.y / maxf(original.x, 1.0)))
-			_sprite_antigo(no_brilho, sp, (fim + pts[0]) * 0.5, trecho.angle(), Vector2.ONE, 0.15 * k, tam)
+			_sprite_antigo(no_brilho, sp, ((fim + pts[0]) * 0.5).round(), trecho.angle(), Vector2.ONE, 0.15 * k)  # na direção do trecho, no tamanho do desenho (sem esticar)
 	for i in MAX_ONDAS:
 		if w_dist[i] <= 0.0:
 			continue
@@ -1304,7 +1311,7 @@ func _desenhar_brilho_i() -> void:
 		var id_w := "fura" if w_tipo[i] == 1 else ("ventania" if not ventania.is_empty() else "onda")
 		var fw: Dictionary = Anim.de(id_w).get("voo", {})
 		if not fw.is_empty():  # a folha (docs/combate_v2): o arco de vento ou a lança de luz em loop, girado para o voo
-			var esc_w := maxf(1.0, w_larg[i] / (fw.quadro as Vector2).y) if w_tipo[i] == 0 else 1.0
+			var esc_w := maxf(1.0, roundf(w_larg[i] / (fw.quadro as Vector2).y)) if w_tipo[i] == 0 else 1.0  # escala inteira: pixel de um tamanho só
 			Anim.desenhar_suave(no_brilho, fw, Anim.quadro_em_f(fw, w_t[i]), p, dir.angle(), Vector2(esc_w, esc_w), Color(1, 1, 1, fade), true)
 			continue
 		var sp := Novas.sprite_de("ventania") if not ventania.is_empty() else {}
@@ -1353,9 +1360,7 @@ func _desenhar_laminas(a: Dictionary) -> void:
 		else:
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.42))
 		if Novas.sprite_de(str(a.id)).is_empty():  # arte nova está no passe de corpo, com luz; o rastro permanece aqui
-			no_brilho.draw_set_transform(p, tang.angle(), Vector2(1.15, 1.15))
-			no_brilho.draw_texture(_tex_lamina, Vector2(-13, -5.5), tinta)
-			no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			SpriteGiro.desenhar(no_brilho, _tex_lamina, Vector2i(26, 11), Vector2i(13, 5), 1, 0, p, tang.angle(), Vector2.ONE, tinta)  # 16 direções, escala 1
 
 
 ## Brilho do glifo da runa armada: pulsa ~1 Hz (0,7 a 1,0); com "Reduzir piscadas" fica parado. Público para o teste.
@@ -1393,7 +1398,7 @@ func _desenhar_runa(i: int) -> void:
 		_sprite_antigo(no_brilho, sp, p.round(), 0.0, Vector2.ONE, 0.3 * al, tam)
 		return
 	var esc := raio * surge / 29.5
-	var rot := _fase * 1.3
+	var rot := PixelRot.quarto(_fase * 1.3)  # pixel art não gira livre: o glifo de reserva gira em passos de 90 graus
 	# a runa está no chão: roda no plano e depois achata o y (matriz: gira, depois ACHATA)
 	no_brilho.draw_set_transform_matrix(Transform2D(Vector2(cos(rot), sin(rot) * ACHATA) * esc, Vector2(-sin(rot), cos(rot) * ACHATA) * esc, p.round()))
 	no_brilho.draw_texture(_tex_glifo, Vector2(-31.5, -31.5), Color(1, 1, 1, 0.6 * al))
@@ -1403,8 +1408,17 @@ func _desenhar_runa(i: int) -> void:
 
 
 ## Desenho apenas: usa a textura (inclusive normal map) do índice, sem nós nem alteração dos pools.
+## Com ângulo (`angulo`) o desenho aponta para uma das 16 direções (sprite_giro.gd) e o `tamanho` esticado vira ESCALA INTEIRA (>= 1) do desenho:
+## nada de pixel girado em ângulo livre nem esticado em fração. Sem ângulo (chão, corvo) segue como antes.
 func _sprite_antigo(ci: CanvasItem, sp: Dictionary, centro: Vector2, angulo: float, escala := Vector2.ONE, alfa := 1.0, tamanho := Vector2.ZERO) -> void:
+	if PixelRot.direcao16(angulo) != Vector2i.ZERO:
+		var base := Vector2i(sp.tam as Vector2)
+		var esc := escala
+		if tamanho != Vector2.ZERO:
+			esc *= maxf(1.0, roundf(tamanho.y / maxf((sp.tam as Vector2).y, 1.0)))
+		SpriteGiro.desenhar(ci, sp.tex, base, base / 2, 1, 0, centro, angulo, esc, Color(1, 1, 1, alfa))
+		return
 	var tam: Vector2 = sp.tam if tamanho == Vector2.ZERO else tamanho
-	ci.draw_set_transform(centro.round(), angulo, escala)
+	ci.draw_set_transform(centro.round(), 0.0, escala)
 	ci.draw_texture_rect(sp.tex, Rect2(-tam * 0.5, tam), false, Color(1, 1, 1, alfa))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

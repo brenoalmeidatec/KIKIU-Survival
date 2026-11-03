@@ -6,6 +6,8 @@ extends RefCounted
 ## da fase (`quadro_frac`) e desenha a região da tira (`desenhar`), sem nó nem alocação por quadro.
 ## Arma sem folha devolve {} e o golpe segue com o desenho antigo (armas_novas.gd).
 
+const PixelRot := preload("res://v2/pixel_rot.gd")
+const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const PASTA := "res://assets/v2/armas_anim/"
 const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "evo_met_aneis", "evo_nuvens", "magias", "martelo", "perigo"]  # os índices lidos (lista fixa: listar res:// não serve no jogo exportado)
 
@@ -76,10 +78,22 @@ static func quadro_frac(f: Dictionary, k: float) -> int:
 	return clampi(int(clampf(k, 0.0, 0.9999) * float(f.n)), 0, int(f.n) - 1)
 
 
-## Desenha o quadro `i` com a âncora em `pos`, girado `ang` e com `escala` (a folha de área estica até o raio real do golpe).
+## Gera as cópias pré-giradas da folha `f` (22,5, 45 e 67,5 graus; ver sprite_giro.gd) para o `desenhar` com ângulo achar tudo pronto.
+## Chame ao carregar a arma, não no meio da partida. Sem efeito se já gerou.
+static func preparar_giro(f: Dictionary) -> void:
+	var q: Vector2 = f.quadro
+	SpriteGiro.preparar(f.tex, Vector2i(q), Vector2i(f.ancora as Vector2), int(f.n))
+
+
+## Desenha o quadro `i` com a âncora em `pos`, apontando para `ang` e com `escala` (a folha de área estica até o raio real do golpe).
+## Pixel art não gira livre (pixel_rot.gd): `ang` vira uma das 16 direções, a mais próxima: múltiplos de 90 graus por transformação exata e os
+## outros por cópia pré-girada da folha (sprite_giro.gd). Com `escala` diferente de 1, só escala uniforme pode acompanhar um ângulo.
 static func desenhar(ci: CanvasItem, f: Dictionary, i: int, pos: Vector2, ang := 0.0, escala := Vector2.ONE, cor := Color.WHITE) -> void:
 	var q: Vector2 = f.quadro
-	ci.draw_set_transform(pos.round(), ang, escala)
+	if PixelRot.direcao16(ang) != Vector2i.ZERO:
+		SpriteGiro.desenhar(ci, f.tex, Vector2i(q), Vector2i(f.ancora as Vector2), int(f.n), i, pos, ang, escala, cor)
+		return
+	ci.draw_set_transform(pos.round(), 0.0, escala)
 	ci.draw_texture_rect_region(f.tex, Rect2(-(f.ancora as Vector2), q), Rect2(Vector2(q.x * float(i), 0.0), q), cor)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

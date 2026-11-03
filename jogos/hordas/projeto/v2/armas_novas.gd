@@ -49,6 +49,8 @@ const PASTA_FUSOES := "res://assets/v2/fusoes/"
 const Golem := preload("res://v2/golem.gd")  # o Golem de Barro e o Colosso: andar, ataque e as 8 direções
 const Andante := preload("res://v2/andante.gd")  # as outras invocações que andam de verdade (Espírito do Urso...): folha de 8 direções, andar e ataque
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": brasas e marcas com alfa parado, sem clarão de tela
+const PixelRot := preload("res://v2/pixel_rot.gd")  # pixel art não gira livre: 16 direções, quartos de volta
+const SpriteGiro := preload("res://v2/sprite_giro.gd")  # o sprite que aponta para uma direção (cópias pré-giradas, normal map junto)
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas animadas de projétil, meteoro, anel e nuvem (docs/combate_v2/SPEC_ARTE.md)
 ## Fases dos golpes com folha (docs/combate_v2/ENTREGA.md): no PREPARO não há hitbox (o tiro carrega na boca, o anel junta força, a nuvem se
 ## forma); no ATIVO a colisão vale e cada monstro é atingido uma vez por item; o IMPACTO e a marca no chão são só efeito (pool `x_*`), tocados no
@@ -244,6 +246,21 @@ static func _ler_indice(pasta: String) -> void:
 static func sprite_de(id: String) -> Dictionary:
 	carregar_sprites()
 	return _sprites.get(id, {})
+
+
+## Gera as cópias pré-giradas (22,5, 45 e 67,5 graus; sprite_giro.gd) de toda a arte do golpe `id` que aponta para uma direção: o sprite de
+## projétil, a folha `voo` (o projétil) e a folha `queda` (o meteoro). Roda quando o golpe entra no jogo (a escolha da carta), nunca no meio
+## do voo: a geração custa de 5 a ~100 ms por folha. Sem efeito para a arte que já foi preparada.
+static func preparar_giros(id: String) -> void:
+	var sp := sprite_de(id)
+	if not sp.is_empty() and (str(sp.tipo) == "projetil" or id == "ventania"):
+		var tam := Vector2i(sp.tam as Vector2)
+		SpriteGiro.preparar(sp.tex, tam, tam / 2)
+	var folhas := Anim.de(id)
+	for nome in ["voo", "queda"]:
+		var f: Dictionary = folhas.get(nome, {})
+		if not f.is_empty() and not bool(f.gira):  # a folha que já gira nos quadros leva ângulo 0 (ver `giro` no desenho do projétil)
+			Anim.preparar_giro(f)
 
 
 # ------------------------------------------------------------------ o timer de recarga (chamado por golpe, como as outras famílias)
@@ -1579,7 +1596,7 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 				if Anim.suave:  # o rastro de movimento: duas cópias fracas e menores, um pouco para trás no voo
 					for c in range(2, 0, -1):
 						var atras := ((it.p as Vector2) - (it.v as Vector2) * 0.018 * float(c)).round()
-						Anim.desenhar(ci, voo, int(qv), atras, giro, Vector2.ONE * (1.0 - 0.1 * float(c)), Color(1, 1, 1, al_v * (0.34 - 0.12 * float(c))))
+						Anim.desenhar(ci, voo, int(qv), atras, giro, Vector2.ONE, Color(1, 1, 1, al_v * (0.34 - 0.12 * float(c))))  # escala 1: o rastro só some pelo alfa
 				Anim.desenhar_suave(ci, voo, qv, p, giro, Vector2.ONE, Color(1, 1, 1, al_v))
 			continue
 		if str(it.k) == "meteoro" and fa.has("queda"):
@@ -1643,12 +1660,11 @@ func _marca_amigo(ci: CanvasItem, it: Dictionary, p: Vector2, topo: float, raio:
 	ci.draw_rect(Rect2(o, Vector2(maxf(1.0, roundf(18.0 * frac)), 3)), Color(0.4, 1.0, 0.45, pisca))
 
 
-## O sprite centrado em `c`, girado `ang` (o projétil aponta para a direção do voo).
+## O sprite centrado em `c`, apontando para `ang` (o projétil aponta para a direção do voo): uma das 16 direções, a mais próxima, sem girar
+## pixel por ângulo livre (sprite_giro.gd).
 func _sprite(ci: CanvasItem, sp: Dictionary, c: Vector2, ang: float, cor: Color = Color.WHITE) -> void:
-	var tam: Vector2 = sp.tam
-	ci.draw_set_transform(c, ang, Vector2.ONE)
-	ci.draw_texture_rect(sp.tex, Rect2(-(tam * 0.5).floor(), tam), false, cor)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var tam := Vector2i(sp.tam as Vector2)
+	SpriteGiro.desenhar(ci, sp.tex, tam, tam / 2, 1, 0, c, ang, Vector2.ONE, cor)
 
 
 ## Área com sprite (nuvem e anel): ocupa o diâmetro 2r do golpe; a altura segue a proporção do sprite.
@@ -1712,10 +1728,8 @@ func _desenhar_queda(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		if ec <= 0.0:
 			continue
 		var t := float(c) / float(n_r)
-		var s := 1.0 - 0.24 * t
-		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2(s, s), Color(1, 1, 1, 0.55 - 0.42 * t))
-	var estica := 1.0 + 0.18 * e if Anim.suave else 1.0  # estica um pouco no sentido da queda conforme acelera
-	Anim.desenhar_suave(ci, f, qf, _queda_em(it, e), ang, Vector2(estica, 1.0 / sqrt(estica)))
+		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2.ONE, Color(1, 1, 1, 0.55 - 0.42 * t))  # as cópias do rastro: escala 1, só o alfa diminui
+	Anim.desenhar_suave(ci, f, qf, _queda_em(it, e), ang)  # sem esticar na descida: o estiramento era escala fracionária
 
 
 ## O brilho da queda (camada aditiva): no alto, a cintilada que avisa de onde ele vem; descendo, o calor em volta da cabeça.
@@ -1813,15 +1827,12 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		ci.draw_rect(Rect2(topo + Vector2(x - 1, -16 - k % 2), Vector2(2, 2)), Color(0.45, 0.95, 0.55, alfa))
 	# a balestra: sobe com um estalo depois de armada, recua ao atirar
 	var pivo := topo + Vector2(0, TORRE_PIVO - TORRE_TOPO + (1.0 - abre) * 6.0)
-	var pop := 1.0
-	if age >= ARMA_T:
-		pop = 1.0 + 0.2 * maxf(0.0, 1.0 - (age - ARMA_T) * 10.0)
-	var ang := float(it.r)
+	var ang := PixelRot.angulo16(PixelRot.direcao16(float(it.r)))  # aponta para uma das 16 direções (22,5 graus), sem ângulo livre
 	var aux := float(it.aux)
 	pivo -= Vector2.from_angle(ang) * aux * 4.0
 	var corda_arco := Color(0.98, 0.94, 0.82, 0.9 * alfa)
 	var recuo := 1.0 + aux * 2.5  # a corda estica para trás ao armar e solta no tiro
-	ci.draw_set_transform(pivo.round(), ang, Vector2(pop, pop))
+	ci.draw_set_transform(pivo.round(), ang, Vector2.ONE)  # sem o "pop" de escala 1,2 que decaía depois de armar
 	for passo in 2:
 		var cont := passo == 0
 		_lc(ci, Vector2(-9, 0), Vector2(12, 0), 3.0, escuro, cont, alfa)  # a coronha e o trilho
@@ -1914,7 +1925,7 @@ func _brilho_torre(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -
 
 
 ## O corpo da cabaça (camada normal): a sombra no chão (mais escura, e o arco dela marcado em pontinhos), a cabaça girando com contorno e luz
-## (achata no quique) e o branco que pisca no fim do pavio, cada vez mais rápido.
+## (sem achatar no quique) e o branco que pisca no fim do pavio, cada vez mais rápido.
 func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	var est := int(it.est)
 	if est >= 3 or float(it.age) < 0.0:
@@ -1935,8 +1946,7 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	ci.draw_circle(Vector2.ZERO, 11.0 - 2.0 * alta, Color(0, 0, 0, 0.3))
 	ci.draw_circle(Vector2.ZERO, 8.0 - 1.5 * alta, Color(0, 0, 0, 0.75))
 	var c := (p + Vector2(0, -z - 6.0)).round()
-	var achata := Vector2(1.5, 0.85) if float(it.aux) > 0.0 else Vector2(1.2, 1.2)
-	ci.draw_set_transform(c, float(it.r), achata)
+	ci.draw_set_transform(c, PixelRot.quarto(float(it.r)), Vector2(1.2, 1.2))  # a cabaça gira em passos de 90 graus (pixel_rot.gd) e não achata no quique
 	var contorno := Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, 0.95)
 	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), contorno, 3.0)  # o pavio (contorno)
 	ci.draw_circle(Vector2(0, 2.0), 6.6, contorno)
