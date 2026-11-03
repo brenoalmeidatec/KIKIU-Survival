@@ -23,6 +23,48 @@ func passos(n: int) -> void:
 		w.avancar(PASSO)
 
 
+## O Colosso de Pedra tem folha própria (1,3 vez o golem, já no tamanho final): o jogo a desenha em 1x. A folha e o .json batem com as constantes, o quadro é o do golem
+## x 1,3 (o tamanho lógico não muda) e a passada medida é a do código x 1,3, então o pé não escorrega. Nenhum golem é desenhado com escala quebrada.
+func checar_colosso() -> void:
+	var t := Golem.tex_colosso()
+	ok(t != null, "colosso: a folha grande carrega")
+	if t == null:
+		return
+	var colunas := Golem.COL_ANDAR + Golem.COL_ATAQUE
+	var esperado := Vector2(Golem.QUADRO_COLOSSO.x * colunas, Golem.QUADRO_COLOSSO.y * Golem.LINHAS)
+	ok(
+		t.get_size() == esperado,
+		"colosso: a folha tem %d x %d quadros de %s (esperado %s, tem %s)" % [colunas, Golem.LINHAS, Golem.QUADRO_COLOSSO, esperado, t.get_size()]
+	)
+	var e := Golem.escala(Golem.COLOSSO)
+	ok(
+		absf(Golem.QUADRO_COLOSSO.x - Golem.QUADRO.x * e) <= 2.0 and absf(Golem.QUADRO_COLOSSO.y - Golem.QUADRO.y * e) <= 2.0,
+		"colosso: o quadro grande é o do golem x %.1f (%s)" % [e, Golem.QUADRO_COLOSSO]
+	)
+	ok(
+		absf(Golem.PE_COLOSSO.x - Golem.PE.x * e) <= 2.5 and absf(Golem.PE_COLOSSO.y - Golem.PE.y * e) <= 2.5,
+		"colosso: o pé grande é o do golem x %.1f (%s)" % [e, Golem.PE_COLOSSO]
+	)
+	var d = JSON.parse_string(FileAccess.get_file_as_string("res://assets/v2/armas/colosso_de_pedra_dir.json"))
+	ok(d is Dictionary, "colosso: o .json da folha lê")
+	if d is Dictionary:
+		ok(Vector2(float(d.quadro[0]), float(d.quadro[1])) == Golem.QUADRO_COLOSSO, "colosso: o quadro do .json é o do código")
+		ok(Vector2(float(d.pe_x), float(d.pe_y)) == Golem.PE_COLOSSO, "colosso: o pé do .json é o do código")
+		for v in Golem.LINHAS:
+			ok(
+				absf(float(d.ciclo_linha[v]) - float(Golem.CICLO_LINHA[v]) * e) <= 1.5,
+				"colosso vista %d: a passada do código x %.1f é a da arte (%.1f)" % [v, e, float(d.ciclo_linha[v])]
+			)
+	# o desenho: 1x com a folha própria; sem ela, a pequena ampliada por inteiro. Nunca um fator quebrado.
+	var g := Golem.folha_de(Golem.COLOSSO)
+	ok(float(g.esc) == 1.0 and g.q == Golem.QUADRO_COLOSSO and g.pe == Golem.PE_COLOSSO and g.t == t, "colosso: desenhado em 1x com a folha própria")
+	var c := Golem.folha_de("golem_barro")
+	ok(float(c.esc) == 1.0 and c.q == Golem.QUADRO and c.pe == Golem.PE, "golem comum: 1x com a folha dele")
+	for id in ["golem_barro", Golem.COLOSSO]:
+		var esc := float(Golem.folha_de(id).esc)
+		ok(esc == floorf(esc) and esc >= 1.0, "%s: escala do desenho inteira (%.2f)" % [id, esc])
+
+
 ## A folha e o .json do gerador (fonte_arte/blender_golem/gerar_golem.py) batem com as constantes: regerar a arte com outro tamanho de quadro não desalinha em silêncio.
 func checar_folha() -> void:
 	var t := Golem.tex()
@@ -630,6 +672,7 @@ func _ready() -> void:
 	w.set_process(false)
 	w.combate.audio.mudo = true
 	checar_folha()
+	checar_colosso()
 	checar_funcoes()
 	checar_partida()
 	checar_passada()

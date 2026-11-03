@@ -14,6 +14,11 @@ extends RefCounted
 ## O dano cai quando a animação cruza o quadro do impacto (não quando o ataque começa), em área no ponto `ip` guardado no início do golpe.
 
 const FOLHA := "res://assets/v2/armas/golem_barro_dir.png"
+## O Colosso de Pedra (1,3 vez o golem) tem folha PRÓPRIA, o mesmo modelo 1,3 vez maior renderizado já no tamanho final (gerar_golem.py com GOLEM_ESCALA=1.3):
+## o jogo a desenha em 1x, pixel do mesmo tamanho do resto, em vez de ampliar a pequena por um fator quebrado. Sem a folha grande, amplia a pequena por inteiro.
+const FOLHA_COLOSSO := "res://assets/v2/armas/colosso_de_pedra_dir.png"
+const QUADRO_COLOSSO := Vector2(112, 134)  # o teste confere com o png e o .json
+const PE_COLOSSO := Vector2(52, 106)
 const QUADRO := Vector2(86, 104)  # tamanho de cada quadro da folha (o teste confere com o png e o .json)
 const PE := Vector2(40, 83)  # ponto do quadro que fica no chão (it.p)
 const COL_ANDAR := 8
@@ -51,6 +56,8 @@ const T_RACHA := 1.8  # duração (s) das rachaduras que a pancada deixa no chã
 
 static var _tex: Texture2D
 static var _lida := false
+static var _tex_colosso: Texture2D
+static var _lida_colosso := false
 
 
 ## A folha do golem (carrega uma vez; null se faltar o arquivo, e o aliado volta ao desenho antigo).
@@ -59,6 +66,28 @@ static func tex() -> Texture2D:
 		_lida = true
 		_tex = load(FOLHA) as Texture2D
 	return _tex
+
+
+## A folha grande do Colosso (carrega uma vez; null se faltar o arquivo, e ele usa a pequena com escala inteira).
+static func tex_colosso() -> Texture2D:
+	if not _lida_colosso:
+		_lida_colosso = true
+		if ResourceLoader.exists(FOLHA_COLOSSO):
+			_tex_colosso = load(FOLHA_COLOSSO) as Texture2D
+	return _tex_colosso
+
+
+static func lida_colosso() -> bool:
+	return _lida_colosso
+
+
+## Como desenhar o golem `id`: a textura, o tamanho do quadro, o ponto do pé e a escala do desenho (sempre inteira: 1 com a folha própria).
+static func folha_de(id: String) -> Dictionary:
+	if id == COLOSSO:
+		var g := tex_colosso()
+		if g != null:
+			return {"t": g, "q": QUADRO_COLOSSO, "pe": PE_COLOSSO, "esc": 1.0}
+	return {"t": tex(), "q": QUADRO, "pe": PE, "esc": maxf(1.0, roundf(escala(id)))}
 
 
 ## A folha já foi lida (ou tentada)? armas_novas.pedir_aquecer pula o golem quando sim.
@@ -439,29 +468,34 @@ static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		return
 	var id := str(it.a.id)
 	var esc := escala(id)
+	var g := folha_de(id)
+	var gq: Vector2 = g.q
+	var gpe: Vector2 = g.pe
+	var gesc: float = g.esc
+	t = g.t
 	var lado := -1.0 if float(it.r) < 0.0 else 1.0
 	var k := 1.0
 	if int(it.e) == SURGINDO:
 		k = clampf(float(it.et) / SURGIR_T, 0.0, 1.0)
 	elif float(it.vida) < SUMIR_T:
 		k = clampf(float(it.vida) / SUMIR_T, 0.0, 1.0)
-	ci.draw_set_transform(p, 0.0, Vector2(esc, esc * ACHATA))
-	ci.draw_circle(Vector2.ZERO, 22.0 * (0.4 + 0.6 * k), Color(0.0, 0.0, 0.0, 0.3 * k))
+	ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
+	ci.draw_circle(Vector2.ZERO, 22.0 * esc * (0.4 + 0.6 * k), Color(0.0, 0.0, 0.0, 0.3 * k))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_desenhar_rachaduras(ci, it, false)
 	_desenhar_entulho(ci, it, false)
 	var q := quadro_de(it)
-	var hv := QUADRO.y
-	var topo := -PE.y
+	var hv := gq.y
+	var topo := -gpe.y
 	if k < 1.0:
 		var ease := 1.0 - (1.0 - k) * (1.0 - k)
-		var fundo := (QUADRO.y - PE.y) * pow(ease, 3.0)  # quanto da fatia passa da linha do chão (só no fim, para o pé aparecer inteiro)
-		hv = ease * PE.y + fundo
+		var fundo := (gq.y - gpe.y) * pow(ease, 3.0)  # quanto da fatia passa da linha do chão (só no fim, para o pé aparecer inteiro)
+		hv = ease * gpe.y + fundo
 		topo = fundo - hv
-	ci.draw_set_transform(p, 0.0, Vector2(lado * esc, esc))
-	var origem := Vector2(q.x * QUADRO.x, q.y * QUADRO.y)
+	ci.draw_set_transform(p, 0.0, Vector2(lado * gesc, gesc))
+	var origem := Vector2(q.x * gq.x, q.y * gq.y)
 	var cor := Color(0.8, 0.82, 0.95) if id == COLOSSO else Color.WHITE
-	ci.draw_texture_rect_region(t, Rect2(Vector2(-PE.x, topo), Vector2(QUADRO.x, hv)), Rect2(origem, Vector2(QUADRO.x, hv)), cor)
+	ci.draw_texture_rect_region(t, Rect2(Vector2(-gpe.x, topo), Vector2(gq.x, hv)), Rect2(origem, Vector2(gq.x, hv)), cor)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_desenhar_entulho(ci, it, true)
 
