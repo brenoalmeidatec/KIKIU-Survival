@@ -23,7 +23,14 @@ def mais(c, k):
 
 
 def achatar(im):
-    return im.resize((im.width, max(2, int(round(im.height * ACHATA)))), Image.BOX)
+    """Achata na vertical por sen(45). A media de caixa de um fator fracionario deixa pixel de meia transparencia onde o alfa da fonte e
+    binario (borda de faixa, seta, furo): a cobertura vira 0 ou 255 (maioria, >= 128), sem pixel borrado. Alfa de fonte gradual (manchas
+    com borda em degraus de proposito) fica como a media de caixa deu."""
+    out = im.resize((im.width, max(2, int(round(im.height * ACHATA)))), Image.BOX)
+    if np.isin(np.asarray(im.getchannel("A")), (0, 255)).all():
+        a = np.asarray(out.getchannel("A"))
+        out.putalpha(Image.fromarray(np.where(a >= 128, 255, 0).astype(np.uint8), "L"))
+    return out
 
 
 def _mascara(w, h, rng, n=7, espalha=0.34, rugosidade=0.5):

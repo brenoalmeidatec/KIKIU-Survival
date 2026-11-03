@@ -65,6 +65,30 @@ def quantizar_alfa(alfa: np.ndarray, degraus: int = DEGRAUS, minimo: float = MOD
     return np.rint(n * 255.0 / degraus).astype(np.uint8)
 
 
+def _vizinhos(visivel: np.ndarray) -> np.ndarray:
+    """Quantos dos 8 vizinhos de cada pixel sao visiveis (borda da imagem conta como vazia)."""
+    p = np.pad(visivel.astype(np.uint8), 1)
+    h, w = visivel.shape
+    n = np.zeros((h, w), dtype=np.uint8)
+    for dy in (0, 1, 2):
+        for dx in (0, 1, 2):
+            if dy != 1 or dx != 1:
+                n += p[dy : dy + h, dx : dx + w]
+    return n
+
+
+def _tirar_soltos_criados(alfa_antes: np.ndarray, alfa_novo: np.ndarray) -> None:
+    """O corte da neblina fraca (modo > 0) pode deixar um pixel opaco sem nenhum vizinho: era a ponta de uma nuvem e vira um ponto de luz solto.
+    Tira, no lugar, so os pixels que FICARAM soltos por causa do corte (tinham vizinho antes). Os que ja eram soltos no desenho (faiscas de
+    1 px de proposito) ficam. Repete ate estabilizar, porque tirar um pode soltar o vizinho."""
+    com_vizinho_antes = _vizinhos(alfa_antes > 0) > 0
+    while True:
+        solto = (alfa_novo > 0) & (_vizinhos(alfa_novo > 0) == 0) & com_vizinho_antes
+        if not solto.any():
+            return
+        alfa_novo[solto] = 0
+
+
 def reduzir_paleta(rgb: np.ndarray, cores: int) -> np.ndarray:
     """rgb (N,3) uint8 -> o mesmo vetor com no maximo `cores` cores (median cut, sem dither)."""
     if rgb.shape[0] == 0 or len(np.unique(rgb, axis=0)) <= cores:
@@ -79,6 +103,8 @@ def quantizar_array(a: np.ndarray, degraus: int = DEGRAUS, cores: int = CORES, m
     """a (h,w,4) uint8 -> (h,w,4) uint8 com alfa em degraus e paleta enxuta."""
     out = a.copy()
     out[..., 3] = quantizar_alfa(a[..., 3], degraus, modo)
+    if modo > 0:
+        _tirar_soltos_criados(a[..., 3], out[..., 3])
     vis = out[..., 3] > 0
     out[~vis] = 0
     if cores > 0 and vis.any():
