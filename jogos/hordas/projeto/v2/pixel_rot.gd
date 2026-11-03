@@ -4,6 +4,8 @@ extends RefCounted
 ##   - passos de 90 graus (a grade se mantém: é só trocar linha por coluna), com `quarto`;
 ##   - versões pré-giradas e desenhadas na hora de fazer a arte (o corte da katana, ver Efeitos.corte_direcao);
 ##   - formas calculadas por pixel do mundo no shader (o crescente do eco), que não têm texel para girar.
+## Ainda NÃO coberto (pendente, fica para outro PR porque exige folhas pré-giradas por sprite): projéteis do Luke (adagas.gd: folha animada,
+## míssil e adaga procedural), lâminas e trechos de armas.gd e armas_novas.gd, e o escudo.gd. Esta regra vale para o que já passou por ela.
 ## Luzes (PointLight2D) e polígonos de UI ficam de fora: não são pixel art.
 
 const QUARTO := PI / 2.0

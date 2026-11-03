@@ -87,6 +87,7 @@ void fragment() {
 	} else {
 	vec2 p = (UV - 0.5) * 2.0;
 	p = vec2(cos(ang) * p.x + sin(ang) * p.y, -sin(ang) * p.x + cos(ang) * p.y);
+	if (abs(p.x) > 1.0 || abs(p.y) > 1.0) discard;  // o recorte do quad girado de antes: sem isto a ponta da estocada (até 1,05) aparece inteira nas diagonais
 	p.y *= lado;
 	float r = length(p);
 	float a = atan(p.y, p.x);

@@ -170,6 +170,23 @@ func _t_cortes() -> void:
 						ok(is_zero_approx(s.rotation), "eco do corte a %.1f rad: o sprite não gira (rotação %.3f)" % [ang, s.rotation])
 				ok(visiveis >= 1, "o corte %s nasceu" % tipo)
 	fx.limpar()
+	# a forma girada no shader mantém o recorte do quad girado de antes (|x| e |y| <= 1 no referencial do golpe): senão a ponta da estocada
+	# (até 1,05) aparece inteira nas diagonais
+	var codigo: String = Efeitos.SHADER_CORTE
+	ok(codigo.contains("if (abs(p.x) > 1.0 || abs(p.y) > 1.0) discard;"), "o shader do corte recorta a forma girada no quadrado do golpe")
+
+	# a folha ciano é desenhada numa grade 2x2: as giradas também têm de ser (nada de pixel de 1 px misturado)
+	for arq in FOLHAS_R_CIANO:
+		var im: Image = load(arq).get_image()
+		var puro := true
+		for y in range(0, im.get_height(), 2):
+			for x in range(0, im.get_width(), 2):
+				var c := im.get_pixel(x, y)
+				for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)]:
+					var o := im.get_pixel(x + d.x, y + d.y)
+					if o.a != c.a or (c.a > 0.0 and o != c):  # o RGB de pixel transparente não conta (o importador mexe nele)
+						puro = false
+		ok(puro, "%s: grade 2x2 pura" % arq)
 
 
 func _t_fragmentos() -> void:

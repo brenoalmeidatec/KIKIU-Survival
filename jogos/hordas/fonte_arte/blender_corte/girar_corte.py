@@ -5,6 +5,10 @@ mistura pixels de tamanhos diferentes. Agora o jogo escolhe uma de 16 direcoes (
 graus saem de uma troca exata de UV no shader (efeitos.gd), sem reamostrar. Estes tres arquivos por variante sao os unicos que precisam de
 reamostragem; o 0 grau e a folha original (corte_hazaki_folha.png, a mesma de assets/v2/efeitos/).
 
+Limite conhecido: o quad do corte tem o tamanho do quadro, entao o que o giro leva para fora do quadro (a folha tem conteudo ate ~83 px do
+centro, fora do circulo inscrito de raio 64) e cortado nos giros de 22,5, 45 e 67,5 graus; antes, com o no girado, o quad inteiro girava e
+nada se perdia. O AVISO abaixo lista os quadros afetados. Aceito: a perda e so nos cantos extremos do arco e nao muda o alcance do golpe.
+
 Algoritmo (RotSprite de Xenowhirl): ampliar 8x com Scale2x tres vezes (EPX, so cria cor onde ja existe), girar por vizinho mais proximo
 no quadro ampliado em volta do centro (64, 64), reduzir pegando o pixel do meio de cada bloco 8x8. Sem media, entao as cores e os alfas
 de saida sao um subconjunto dos de entrada.
@@ -27,7 +31,9 @@ SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "v2
 QUADRO = 128
 FATOR = 8  # 3 passadas de Scale2x
 PASSOS = (1, 2, 3)  # x 22,5 graus
-VARIANTES = {"corte_hazaki": "corte_hazaki_folha.png", "corte_hazaki_ciano": "corte_hazaki_ciano_folha.png"}
+# (arquivo-fonte, lado do pixel da arte). A ciano e desenhada numa grade 2x2 (cada pixel da arte = bloco 2x2): gira-se a versao reduzida
+# (64x64 por quadro) e amplia-se de volta por repeticao, senao o RotSprite giraria a grade de 2 px como se fosse de 1 px e sairia pixel misto.
+VARIANTES = {"corte_hazaki": ("corte_hazaki_folha.png", 1), "corte_hazaki_ciano": ("corte_hazaki_ciano_folha.png", 2)}
 
 
 def codificar(rgba: np.ndarray) -> np.ndarray:
@@ -76,30 +82,36 @@ def girar_quadro(q: np.ndarray, graus: float) -> np.ndarray:
     return rot[FATOR // 2 :: FATOR, FATOR // 2 :: FATOR]  # o pixel do meio de cada bloco 8x8
 
 
-def processar(nome: str, arq: str) -> None:
+def processar(nome: str, arq: str, bloco: int) -> None:
     im = np.array(Image.open(os.path.join(AQUI, arq)).convert("RGBA"))
     assert im.shape[0] == QUADRO and im.shape[1] % QUADRO == 0, im.shape
     n = im.shape[1] // QUADRO
     cod = codificar(im)
+    quadro = QUADRO // bloco
+    if bloco > 1:
+        peq = cod[::bloco, ::bloco]
+        assert np.array_equal(np.repeat(np.repeat(peq, bloco, axis=0), bloco, axis=1), cod), "a fonte nao e uma grade %dx%d pura" % (bloco, bloco)
+        cod = peq
     # o conteudo precisa caber no circulo inscrito (raio 64): fora dele um giro cortaria o canto
-    ys, xs = np.mgrid[0:QUADRO, 0:QUADRO]
-    fora_circ = ((xs + 0.5 - 64) ** 2 + (ys + 0.5 - 64) ** 2) > 64 * 64
+    ys, xs = np.mgrid[0:quadro, 0:quadro]
+    fora_circ = ((xs + 0.5 - quadro / 2) ** 2 + (ys + 0.5 - quadro / 2) ** 2) > (quadro / 2) ** 2
     for k in range(n):
-        q = cod[:, k * QUADRO : (k + 1) * QUADRO]
+        q = cod[:, k * quadro : (k + 1) * quadro]
         if np.any(q[fora_circ] != 0):
             print("  AVISO: %s quadro %d tem conteudo fora do circulo inscrito (%d px)" % (nome, k, int(np.count_nonzero(q[fora_circ]))))
     cores_ent = set(np.unique(cod).tolist())
     for passo in PASSOS:
         saida = np.zeros_like(cod)
         for k in range(n):
-            saida[:, k * QUADRO : (k + 1) * QUADRO] = girar_quadro(cod[:, k * QUADRO : (k + 1) * QUADRO], passo * 22.5)
+            saida[:, k * quadro : (k + 1) * quadro] = girar_quadro(cod[:, k * quadro : (k + 1) * quadro], passo * 22.5)
         assert set(np.unique(saida).tolist()) <= cores_ent, "cor nova: houve suavizacao"
+        saida = np.repeat(np.repeat(saida, bloco, axis=0), bloco, axis=1)
         destino = os.path.join(SAIDA, "%s_r%d.png" % (nome, passo))
         Image.fromarray(decodificar(saida), "RGBA").save(destino, optimize=True)
-        print("%s: %s (%d quadros, %d cores de entrada, alfa total %d -> %d)" % (nome, os.path.basename(destino), n, len(cores_ent), int((cod & 255).sum()), int((saida & 255).sum())))
+        print("%s: %s (%d quadros, %d cores de entrada, alfa total %d -> %d)" % (nome, os.path.basename(destino), n, len(cores_ent), int((cod & 255).sum()), int((saida & 255).sum()) // (bloco * bloco)))
 
 
 if __name__ == "__main__":
-    for nome, arq in VARIANTES.items():
-        processar(nome, arq)
+    for nome, (arq, bloco) in VARIANTES.items():
+        processar(nome, arq, bloco)
     sys.exit(0)
