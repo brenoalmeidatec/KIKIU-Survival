@@ -77,7 +77,10 @@ func _mapa_no_alto(id: String) -> void:
 			ok(det.amount == int(cfg.n), "%s alto: %d detritos (json n=%d)" % [id, det.amount, int(cfg.n)])
 			ok(det.emitting and det.visible and det.process_mode == Node.PROCESS_MODE_INHERIT, "%s alto: emitindo e processando" % id)
 			ok(not det.local_coords and det.get_parent() == w.glow, "%s alto: no mundo (não segue o nó) e na camada do brilho" % id)
-			ok(det.material == null, "%s alto: sem brilho aditivo (é terra, não luz)" % id)
+			ok(
+				det.material == null or (det.material as CanvasItemMaterial).blend_mode == CanvasItemMaterial.BLEND_MODE_MIX,
+				"%s alto: sem brilho aditivo (é terra, não luz)" % id
+			)
 	else:
 		ok(det == null, "%s alto: sem emissor de detritos (mapa sem a chave)" % id)
 		ok(not _tem_detrito_registrado(w), "%s alto: nada registrado como detrito" % id)

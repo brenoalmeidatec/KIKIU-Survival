@@ -44,6 +44,9 @@ func montar(janela: Window, escala_pura := false) -> SubViewport:
 	sv.transparent_bg = false
 	sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sv.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+	# Grade de pixel: todo sprite, partícula e polígono cai no pixel inteiro do bloco (a câmera já é inteira, ver camera_mundo.gd).
+	sv.snap_2d_transforms_to_pixel = true
+	sv.snap_2d_vertices_to_pixel = true
 	add_child(sv)
 	# O passe fixa sublayer -1 na camada 3: depois de mundo/glow e antes da vinheta e da UI.
 	pos_visual = PosVisual.new()
@@ -65,6 +68,8 @@ func montar(janela: Window, escala_pura := false) -> SubViewport:
 	ui.transparent_bg = true
 	ui.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	ui.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+	ui.snap_2d_transforms_to_pixel = true
+	ui.snap_2d_vertices_to_pixel = true
 	add_child(ui)
 	ui.child_entered_tree.connect(_ui_entrou)
 	tela_ui = TextureRect.new()

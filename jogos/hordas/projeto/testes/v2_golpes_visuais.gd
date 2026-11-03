@@ -23,6 +23,36 @@ func ok(c: bool, msg: String) -> void:
 		print("FALHOU: ", msg)
 
 
+## O soco do monstro que apanha: nenhum fator de escala fracionário, só 2, 1 e 0 px de afundar (o mesmo no lote da horda e no elite com nós).
+func _monstros(w) -> void:
+	var m = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(60, 0), true)
+	ok(m != null and m.lote, "o comum nasce no lote")
+	if m == null:
+		return
+	for par in [[0.14, 2.0], [0.07, 1.0], [0.0, 0.0]]:
+		m._batida = par[0]
+		m.visual()
+		ok(m.v_sx == m.escala and m.v_sy == m.escala, "lote: o soco não deforma o desenho (%s x %s, escala %s)" % [m.v_sx, m.v_sy, m.escala])
+		ok(m.get("v_jy") == par[1], "lote: batida %s afunda %s px (deu %s)" % [par[0], par[1], m.get("v_jy")])
+	var cfg: Dictionary = w.combate.elites.cfg
+	var e = w.combate.elites.nascer(str(cfg.tipos[0].sprite), str(cfg.modificadores[0].id), w.heroi.pos + Vector2(90, 0))
+	ok(e != null, "o elite nasce")
+	if e == null:
+		return
+	e.virar_no()
+	for par in [[0.14, 0.0, 2.0], [0.0, 1.0, 0.0]]:  # [batida, carga, y esperado]
+		e._batida = par[0]
+		e.carga = par[1]
+		e._visual_no(Vector2.ZERO)
+		ok(e.sprite.scale == Vector2.ONE * e.escala, "nós: o soco e a carga não deformam o sprite (escala %s, esperado %s)" % [e.sprite.scale, e.escala])
+		ok(
+			e.sprite.position.y == par[2] and e.sprite.position == e.sprite.position.round(),
+			"nós: afunda %s px inteiros (pos %s)" % [par[2], e.sprite.position]
+		)
+		if par[1] > 0.0:
+			ok(absf(e.sprite.position.x) <= 1.0, "nós: a carga cheia treme no máximo 1 px (pos %s)" % e.sprite.position)
+
+
 func _ready() -> void:
 	print("ISOLAMENTO_USERDIR ", OS.get_user_data_dir())
 	for acerto in [0.25, 0.42, 0.5]:
@@ -102,7 +132,28 @@ func _ready() -> void:
 		h.golpe_t = h.golpe_dur * float(h.golpe_cfg.acerto_em)
 		h._visual(0, Vector2.ZERO)
 		ok(h.sprite.position == h.sprite.position.round(), nome + " posição inteira diagonal")
-		ok(h.sprite.scale.is_equal_approx(Vector2(1.1, 0.93)), nome + " pico preservado")
+		ok(h.sprite.scale == Vector2.ONE, nome + " o golpe não escala o sprite (escala %s)" % h.sprite.scale)
+		ok(h.sprite.position == Vector2(2, 3), nome + " pico: recuo diagonal de pixels inteiros e 1 px afundado (pos %s)" % h.sprite.position)
+		# a ruptura carregada agacha 2 px e treme na carga cheia; o disparo recua 2 px da mira: tudo em pixel inteiro, sempre no 1x
+		h.estado = Heroi.Estado.CARGA
+		h.rup_carga = 1.0
+		h._visual(0, Vector2.ZERO)
+		ok(
+			h.sprite.scale == Vector2.ONE and h.sprite.position.y == 2.0 and h.sprite.position == h.sprite.position.round(),
+			nome + " a carga agacha 2 px sem escalar (pos %s, escala %s)" % [h.sprite.position, h.sprite.scale]
+		)
+		h.estado = Heroi.Estado.LIVRE
+		h.rup_carga = 0.0
+		h.dir_olhar = Vector2(1, 0)
+		h._rup_punch = 1.0
+		h._visual(0, Vector2.ZERO)
+		ok(
+			h.sprite.scale == Vector2.ONE and h.sprite.position == Vector2(-2, 0),
+			nome + " o disparo recua 2 px sem escalar (pos %s, escala %s)" % [h.sprite.position, h.sprite.scale]
+		)
+		h._rup_punch = 0.0
+		if nome == "Breno":
+			_monstros(w)
 		# O visual usa só a fase atual: interromper não pode carregar o deslocamento do golpe.
 		for estado in [Heroi.Estado.LIVRE, Heroi.Estado.CARGA, Heroi.Estado.HABILIDADE, Heroi.Estado.ESPECIAL]:
 			h.estado = estado
