@@ -36,6 +36,9 @@ func montar(ctrl, c) -> void:
 	chefe = ctrl
 	combate = c
 	mundo = c.mundo
+	var corvo: Dictionary = Anim.de("corvos").get("voo", {})
+	if not corvo.is_empty():  # a revoada voa apontando para onde vai: as cópias pré-giradas nascem ao montar, não no meio da luta
+		Anim.preparar_giro(corvo)
 	var mat := CanvasItemMaterial.new()
 	mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	atras = Node2D.new()

@@ -34,6 +34,7 @@ func _ready() -> void:
 	_t_copias_dagas()
 	_t_copias_normal()
 	_t_normal_vetor()
+	_t_tamanhos_do_indice()
 	_t_varredura_fontes()
 	w = Mundo.instantiate()
 	w.modo_teste = true
@@ -155,6 +156,33 @@ func _t_copias_normal() -> void:
 		ok(estranho == 0, "sub %d: %d pixel(s) onde a difusa e o normal discordam no alfa" % [sub, estranho])
 
 
+## O sprite que o golpe gira vem do `tamanho` do índice: o PNG tem de ter exatamente esse tamanho (a cópia pré-girada recorta por ele; o código antigo
+## esticava a textura até `tamanho`, e uma divergência cortaria o projétil). Vale para todo projétil e para as duas entradas `ventania`.
+func _t_tamanhos_do_indice() -> void:
+	var visto := 0
+	for pasta in ["res://assets/v2/armas/", "res://assets/v2/fusoes/"]:
+		var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(pasta + "indice.json"))
+		for nome in d.sprites:
+			var e: Dictionary = d.sprites[nome]
+			if str(e.tipo) != "projetil" and nome != "ventania":
+				continue
+			var tam := Vector2i(int(e.tamanho[0]), int(e.tamanho[1]))
+			var dif := load(pasta + str(e.arquivo)) as Texture2D
+			ok(
+				dif != null and Vector2i(dif.get_size()) == tam,
+				"%s%s: o PNG (%s) não tem o tamanho do índice (%s)" % [pasta, nome, dif.get_size() if dif != null else "?", tam]
+			)
+			if e.get("normal") != null:
+				var nor := load(pasta + str(e.normal)) as Texture2D
+				ok(nor != null and Vector2i(nor.get_size()) == tam, "%s%s: o normal não tem o tamanho do índice" % [pasta, nome])
+			visto += 1
+	ok(visto >= 28, "o laço viu os projéteis e a ventania (%d)" % visto)
+	# a `ventania` que o jogo usa (a das fusões, lida por último) é a que `preparar_giros` prepara
+	Novas.carregar_sprites()
+	var sp := Novas.sprite_de("ventania")
+	ok(not sp.is_empty() and Vector2i(sp.tam as Vector2) == Vector2i(64, 32), "a ventania do jogo é a das fusões (64x32)")
+
+
 ## Um normal uniforme (1, 0) girado em 45 graus vira (cos, -sen) = (0,707, -0,707) no que está gravado (verde para cima, tela para baixo),
 ## que é o que o motor faz ao girar o desenho (medido numa janela real: ver NORMAL_SINAL em sprite_giro.gd).
 func _t_normal_vetor() -> void:
@@ -221,6 +249,10 @@ func _argumentos(texto: String, ini: int) -> Array:
 
 
 func _t_preparo_ao_entrar() -> void:
+	# o que gira nos ataques inimigos e nos projéteis do Luke é preparado ao montar o mundo (avisos.gd, chefe_visual.gd, adagas.gd)
+	for par in [["perigo_chuva", "queda"], ["corvos", "voo"], ["shuriken_heroi", "voo"], ["kunai_heroi", "voo"], ["flecha_heroi", "voo"]]:
+		var fo := AnimGolpes.de(str(par[0])).get(str(par[1]), {}) as Dictionary
+		ok(not fo.is_empty() and SpriteGiro.preparada(fo.tex), "%s/%s foi preparada ao montar o mundo" % [par[0], par[1]])
 	var antes := SpriteGiro.geradas
 	w.combate.armas.definir_golpe("meteoro_flamejante", 1, 0.0)
 	var f := AnimGolpes.de("meteoro_flamejante").get("queda", {}) as Dictionary

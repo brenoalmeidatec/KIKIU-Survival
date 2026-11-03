@@ -93,6 +93,10 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_registrar("bala", _img_bala(), 7.0, 3.0)
 	_registrar("plasma", _img_plasma(), 11.0, 7.0)
 	_registrar("missil", _img_missil(), 24.0, 9.0)
+	for nome in ["shuriken", "kunai", "flecha"]:  # as folhas `<nome>_heroi`: as cópias pré-giradas nascem ao montar, não no primeiro arremesso
+		var voo: Dictionary = AnimGolpes.de(nome + "_heroi").get("voo", {})
+		if not voo.is_empty():
+			AnimGolpes.preparar_giro(voo)
 	misseis_visual.montar()
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)

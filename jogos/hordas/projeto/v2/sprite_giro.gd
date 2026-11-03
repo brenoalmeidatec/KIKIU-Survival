@@ -46,10 +46,13 @@ static func variante(tex: Texture2D, quadro: Vector2i, ancora: Vector2i, n: int,
 	return (_cache[id].var as Array)[sub]
 
 
-## Desenha o quadro `i` de `tex` na direção `ang` (rad), com o pivô em `pos` (arredondado). `escala` só pode ser inteira (>= 1) ou espelho (-1).
+## Desenha o quadro `i` de `tex` na direção `ang` (rad), com o pivô em `pos` (arredondado). `escala` deve ser inteira (>= 1) ou o espelho
+## horizontal (x negativo): ela age nos eixos do mundo depois do giro, como no código antigo.
 static func desenhar(
 	ci: CanvasItem, tex: Texture2D, quadro: Vector2i, ancora: Vector2i, n: int, i: int, pos: Vector2, ang: float, escala := Vector2.ONE, cor := Color.WHITE
 ) -> void:
+	# O draw_set_transform aplica a escala nos eixos do MUNDO, depois da rotação (confirmado em janela real com o espelho): o espelho (x negativo)
+	# vira o desenho já apontado para `ang`, igual ao código antigo, e a cópia escolhida é a mesma do desenho sem espelho.
 	var d := PixelRot.direcao16(ang)
 	var v := variante(tex, quadro, ancora, n, d.x)
 	var q: Vector2 = v.quadro

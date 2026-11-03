@@ -44,6 +44,9 @@ var ret_raio := 0.0
 func montar(c, camada: Node) -> void:
 	combate = c
 	mundo = c.mundo
+	var queda: Dictionary = Anim.de("perigo_chuva").get("queda", {})
+	if not queda.is_empty():  # a pedra que cai gira para a diagonal da queda: as cópias pré-giradas nascem ao montar, não no meio da luta
+		Anim.preparar_giro(queda)
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	no = Node2D.new()
@@ -408,5 +411,5 @@ func _desenhar_quedas() -> void:
 		var ang := (-QUEDA_DE).angle()
 		var q := Anim.quadro_em(f, t[i] + float(i) * 0.1)
 		var e_r := maxf(e - 0.1 * (0.35 + e), 0.0)
-		Anim.desenhar(no_corpo, f, (q + int(f.n) - 1) % int(f.n), p + QUEDA_DE * (1.0 - e_r), ang, Vector2(0.85, 0.85), Color(1, 1, 1, 0.4))
+		Anim.desenhar(no_corpo, f, (q + int(f.n) - 1) % int(f.n), p + QUEDA_DE * (1.0 - e_r), ang, Vector2.ONE, Color(1, 1, 1, 0.4))  # a cópia do rastro em escala 1, só o alfa diminui
 		Anim.desenhar(no_corpo, f, q, p + QUEDA_DE * (1.0 - e), ang)
