@@ -474,11 +474,16 @@ func _folha_coroa(ci: CanvasItem, tex: Texture2D, gemas: Array, base: Vector2, a
 			ci.draw_rect(Rect2(g + o, Vector2.ONE), Color(br.r, br.g, br.b, br.a * 0.7))
 
 
+## Onde a base da coroa da Rainha pousa: no eixo do corpo (x = 0 do pivô, como sempre foi) e na altura do topo do desenho. O topo da aranha de 3/4 e de perfil
+## é a ponta de uma perna, até 36 px fora do corpo, então o x da cabeça medida não serve aqui.
+func _base_coroa_rainha() -> Vector2:
+	var sobe := 4.0 + roundf(1.5 * sin(t * 2.0))
+	return Vector2(0.0, _cabeca().y - sobe)
+
+
 ## A coroa da Rainha: flutua um pouco acima do topo do corpo, subindo e descendo em passos de 1 px.
 func _coroa_rainha(ci: CanvasItem, a: float) -> void:
-	var cab := _cabeca()
-	var sobe := 4.0 + roundf(1.5 * sin(t * 2.0))
-	_folha_coroa(ci, COROA_RAINHA, GEMAS_RAINHA, cab - Vector2(0, sobe), a)
+	_folha_coroa(ci, COROA_RAINHA, GEMAS_RAINHA, _base_coroa_rainha(), a)
 
 
 ## A coroa do Rei: de ouro e gemas magenta, sobre o ápice do chapéu; na fúria um clarão em dois degraus pulsa atrás dela.

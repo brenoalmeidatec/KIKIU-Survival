@@ -251,6 +251,13 @@ func identidade_dos_chefes() -> void:
 		var cab: Vector2 = vis._cabeca()
 		ok(cab == cab.round(), "%s: a cabeça é medida em px inteiros do mundo (%s)" % [marcas[i].nome, cab])
 		ok(cab.y < -m.alt * 0.6 and cab.y > -m.alt * 1.1, "%s: a cabeça (%s) fica no alto do desenho (alt %.0f)" % [marcas[i].nome, cab, m.alt])
+		if vis.adorno == "teia":
+			# a coroa da Rainha fica no eixo do corpo em todas as vistas: o topo da aranha de 3/4 e de perfil é a ponta de uma perna, fora do corpo
+			var eixo := true
+			for lin in 5:
+				m.linha = lin
+				eixo = eixo and vis._base_coroa_rainha().x == 0.0
+			ok(eixo, "%s: a coroa fica no eixo do corpo (x = 0) nas cinco vistas" % marcas[i].nome)
 		w.combate.ferir(m, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 		w.combate.processar_mortes()
 		ok(not vis.atras.visible and not vis.frente.visible and vis.adorno == "", "%s: o adorno some com o chefe" % marcas[i].nome)
