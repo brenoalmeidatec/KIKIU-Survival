@@ -1038,8 +1038,8 @@ func _desenhar_autodestruicao(_h) -> void:
 	if not _g_tipo.is_empty():
 		var t: Dictionary = _g_tipo
 		var tom := cor.lerp(Color.WHITE, 0.2 + 0.6 * e)
-		var cresce := 1.0 + 0.1 * e
-		no.draw_set_transform(_origem, 0.0, Vector2(_g_esc.x * cresce * (-1.0 if _g_flip else 1.0), _g_esc.y * cresce))
+		var sobe := roundf(2.0 * e)  # em vez de aumentar até 1,1x (fração que borra o pixel), o mecha sobe até 2 px, em passos inteiros
+		no.draw_set_transform(_origem + Vector2(0.0, -sobe), 0.0, Vector2(_g_esc.x * (-1.0 if _g_flip else 1.0), _g_esc.y))
 		no.draw_texture_rect_region(t.alb, Rect2(-float(t.w) * 0.5, -float(t.pe), float(t.w), float(t.h)), _g_regiao, Color(tom.r, tom.g, tom.b, 0.3 + 0.6 * e))
 		no.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var alvo := float(_c.explosao.raio)

@@ -722,7 +722,7 @@ func _emissor(pos: Vector2, n: int, vida: float, rampa: Gradient, aditivo := tru
 	p.texture = _tex_ponto
 	p.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	p.scale_amount_min = 2.0
-	p.scale_amount_max = 3.0
+	p.scale_amount_max = 2.0
 	p.color_ramp = rampa
 	p.position = pos.round()
 	if aditivo:

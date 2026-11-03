@@ -202,7 +202,7 @@ func _faiscas() -> CPUParticles2D:
 	p.initial_velocity_min = 6.0
 	p.initial_velocity_max = 16.0
 	p.gravity = Vector2(0, -4)
-	p.scale_amount_min = 0.5
+	p.scale_amount_min = 1.0
 	p.scale_amount_max = 1.0
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.15, 0.7, 1.0])
