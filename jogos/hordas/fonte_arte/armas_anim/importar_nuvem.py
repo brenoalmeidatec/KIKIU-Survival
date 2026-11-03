@@ -21,15 +21,20 @@ nuvens de gerar_nuvens.py.
 Sem ChatGPT: o plano previa a folha do loop gerada no ChatGPT (A01). Aqui o loop sai do próprio cartão, por
 decisão do PR PER-5 (registrada no corpo do PR); se uma folha gerada chegar, basta trocar FONTE_LOOP por ela.
 
+Pixel art: toda saida passa por fonte_arte/quantizar_alfa.py (alfa em 6 degraus, 48 cores); o cartao parado ja esta assim.
+
 Rodar: python -I importar_nuvem.py  (sem semente aleatória, sem rede; rodar de novo dá os mesmos arquivos)
 """
 import math
 import os
+import sys
 
 import numpy as np
 from PIL import Image
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(AQUI, ".."))
+from quantizar_alfa import quantizar_imagem  # noqa: E402  (pixel art: alfa em 6 degraus e 48 cores, fonte_arte/quantizar_alfa.py)
 RAIZ = os.path.normpath(os.path.join(AQUI, "..", "..", "..", ".."))
 PROJETO = os.path.join(RAIZ, "jogos", "hordas", "projeto")
 ASSETS = os.path.join(PROJETO, "assets", "v2")
@@ -103,7 +108,7 @@ def dissolve(f, limiar):
 
 def salvar_tira(quadros, caminho):
     tira = np.concatenate(quadros, axis=1)
-    Image.fromarray(tira, "RGBA").save(caminho)
+    quantizar_imagem(Image.fromarray(tira, "RGBA"), cores=48).save(caminho)
 
 
 def main():
@@ -120,7 +125,7 @@ def main():
     salvar_tira(saida, os.path.join(pasta_anim, "nuvem_esporos_saida.png"))
 
     # ícone: recorte 1:1 do pod central (sem reescala, o pixel fica nítido)
-    icone = Image.fromarray(base, "RGBA").crop(ICONE_CAIXA)
+    icone = quantizar_imagem(Image.fromarray(base, "RGBA").crop(ICONE_CAIXA), cores=48)
     pasta_icone = os.path.join(ASSETS, "icones_cartas")
     icone.save(os.path.join(pasta_icone, "nuvem_espora.png"))
     icone.resize((16, 16), Image.NEAREST).save(os.path.join(pasta_icone, "16", "nuvem_espora.png"))

@@ -13,6 +13,9 @@ from pathlib import Path
 
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from quantizar_alfa import MODO_BRILHO, quantizar_imagem  # noqa: E402  (pixel art: alfa em 6 degraus, fonte_arte/quantizar_alfa.py)
+
 
 def quadros(folha, w, h, cols, n):
     for i in range(n):
@@ -92,11 +95,11 @@ def main():
     saida.mkdir(parents=True, exist_ok=True)
     lento = Image.open(ent / "status/slowed/slowed.png").convert("RGBA")
     qs = [reduzir(q, (4, 0, 60, 54)) for q in quadros(lento, 64, 76, 10, 72)]
-    montar(qs, 10).save(saida / "slowed.png")
+    quantizar_imagem(montar(qs, 10), cores=32, modo=MODO_BRILHO).save(saida / "slowed.png")
     print("slowed", qs[0].size, len(qs))
     atord = Image.open(ent / "status/stunned/stunned.png").convert("RGBA")
     qs = [recortar(q, (4, 0, 56, 42)) for q in quadros(atord, 60, 64, 8, 60)]
-    montar(qs, 8).save(saida / "stunned.png")
+    quantizar_imagem(montar(qs, 8), cores=32, modo=MODO_BRILHO).save(saida / "stunned.png")  # alfa em 6 degraus
     print("stunned", qs[0].size, len(qs))
     qs = chama()
     montar(qs, 6).save(saida / "burning.png")
