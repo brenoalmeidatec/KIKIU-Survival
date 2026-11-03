@@ -49,6 +49,11 @@ SUAVIZA = 1                # passes de suavização 3x3 na normal (tira o ar de 
 OLHO_ESCALA = 1.25         # os olhos/chamas são engrossados no modelo (a 17 px/u um olho de 0.05 u some)
 ANDAR_HEROI = (0, 2, 4, 6)             # quadros do ciclo de 8 do hazaki.py que entram na folha (além do parado)
 QUADROS_MONSTRO = 4
+# Versão grande (elite e chefes): CARA_NOVA_MULT=N renderiza o mesmo modelo com N vezes mais pixels por unidade, no tamanho final.
+# A arte sai em 1x (1 px de arte = 1 px do mundo) em vez do sprite pequeno ampliado N vezes: o contorno continua de 1 px.
+MULT = int(os.environ.get("CARA_NOVA_MULT", "1"))
+PPU *= MULT
+BISEL_PX *= MULT
 
 MODO = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "heroi"
 ARGS = sys.argv[sys.argv.index("--") + 2:] if "--" in sys.argv else []
@@ -85,7 +90,7 @@ def _albedo(nome, cor_base, ruido=0.0, escala_ruido=6.0):
     if ruido > 0:
         tex = nt.nodes.new("ShaderNodeTexNoise")
         tex.inputs["Scale"].default_value = escala_ruido
-        tex.inputs["Detail"].default_value = 2.0
+        tex.inputs["Detail"].default_value = 2.0 if MULT == 1 else 0.0  # na versão grande as oitavas finas viram chuvisco de pixel solto
         rampa = nt.nodes.new("ShaderNodeValToRGB")
         rampa.color_ramp.interpolation = "CONSTANT"
         els = rampa.color_ramp.elements
@@ -197,7 +202,22 @@ def _contorno(cheio):
 
 def pos_albedo(px, pal, espelha):
     out = px3.pixelar(px, contorno=True, paleta=pal, luz_borda=False)
+    if MULT > 1:
+        out = _sem_pixel_solto(out)
     return out[:, ::-1] if espelha else out
+
+
+def _sem_pixel_solto(out):
+    """Versão grande: pixel isolado (os 4 vizinhos opacos e da mesma cor, diferente da dele) vira a cor dos vizinhos. Tira o chuvisco
+    que a resolução maior deixa na borda das manchas, sem mexer no contorno (que tem vizinho vazio)."""
+    rgb, a = out[:, :, :3], out[:, :, 3] > 0.5
+    c, v = rgb[1:-1, 1:-1], [rgb[:-2, 1:-1], rgb[2:, 1:-1], rgb[1:-1, :-2], rgb[1:-1, 2:]]
+    iguais = np.all([np.all(np.abs(x - v[0]) < 1e-4, axis=2) for x in v[1:]], axis=0)
+    opacos = a[1:-1, 1:-1] & a[:-2, 1:-1] & a[2:, 1:-1] & a[1:-1, :-2] & a[1:-1, 2:]
+    solto = iguais & opacos & ~np.all(np.abs(c - v[0]) < 1e-4, axis=2)
+    novo = out.copy()
+    novo[1:-1, 1:-1, :3][solto] = v[0][solto]
+    return novo
 
 
 def pos_normal(px, espelha):
@@ -434,7 +454,7 @@ def gerar_monstro(modulo, nome):
     mod = __import__(modulo)
     tabela = mod.INIMIGOS if hasattr(mod, "INIMIGOS") else mod.MONSTROS
     modelo, W, H, giro, ramps = tabela[nome]
-    W, H = max(16, int(round(W * ESCALA_MONSTRO))), max(16, int(round(H * ESCALA_MONSTRO)))
+    W, H = max(16, int(round(W * ESCALA_MONSTRO))) * MULT, max(16, int(round(H * ESCALA_MONSTRO))) * MULT
     N = QUADROS_MONSTRO
     fases = [2.0 * math.pi * k / N for k in range(N)]
     px3.limpar_cena()
@@ -485,7 +505,7 @@ def gerar_monstro(modulo, nome):
             passo_legivel(pose, corpo, p, ang, fase, q)
             quadros[(v, q)] = render_tres(pal, True)     # o bicho olha pra esquerda no render: espelha pra olhar pra direita
     folhas = montar_folha(nome, quadros, len(vistas), N, W, H)
-    gravar("inimigo_" + nome, folhas, W, H, {"linhas": LINHAS_MONSTRO, "colunas": ["andar%d" % k for k in range(N)],
+    gravar("inimigo_" + nome + ("_x%d" % MULT if MULT > 1 else ""), folhas, W, H, {"linhas": LINHAS_MONSTRO, "colunas": ["andar%d" % k for k in range(N)],
                                            "pe_y": H - 2})
 
 

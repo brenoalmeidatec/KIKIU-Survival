@@ -99,6 +99,7 @@ var fw := 40.0  # tamanho do quadro e linha dos pés (px), e o canto da folha no
 var fh := 42.0
 var fpe := 40.0
 var ao := Vector2.ZERO
+var _tipo_base := {}  # a folha do lote (1x); elite e chefe com nó trocam por a folha grande do tamanho deles (definir_escala)
 var chave_y := 0.0  # onde a fatia do lote em que ele está fica na ordem de y do mundo (horda.gd; os testes conferem)
 var sid := 0  # número de série (a horda espalha a conta da luz entre os quadros)
 var _ponto = null  # a `raiz` do monstro em lote (um Ponto de ator.gd)
@@ -122,6 +123,7 @@ func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumb
 	fh = float(t.h)
 	fpe = float(t.pe)
 	ao = t.get("atlas_o", Vector2.ZERO)
+	_tipo_base = t
 	sid = m.horda.novo_id()
 	montar_lote(t, p, 0, rng.randi() % 4, false)
 	_ponto = raiz
@@ -319,7 +321,7 @@ func _linha_de(v: Vector2) -> int:
 ## O desenho do monstro com nós (elite e chefe): sprite, olho e contorno.
 func _visual_no(v: Vector2) -> void:
 	var k := clampf(_batida / 0.14, 0.0, 1.0)
-	sprite.scale = Vector2.ONE * escala
+	sprite.scale = Vector2.ONE * esc  # escala do desenho da folha atual (a grande da elite e do chefe vem em 1)
 	var tremor := 0.0
 	if atordoa_t > 0.0 and k > 0.0:
 		tremor = float(rng.randi_range(-1, 1))
@@ -363,7 +365,7 @@ func virar_no() -> void:
 	raiz = _no_raiz
 	_no_raiz.visible = true
 	sprite.visible = true
-	sprite.scale = Vector2.ONE * escala
+	sprite.scale = Vector2.ONE * esc  # escala do desenho da folha atual (a grande da elite e do chefe vem em 1)
 	sprite.position = Vector2.ZERO
 	sprite.modulate = Color.WHITE
 	sprite.flip_h = espelha
@@ -517,19 +519,55 @@ func _rumo_livre(rumo: Vector2) -> float:
 ## Tamanho do monstro (elite e chefe): o sprite, o corpo, o olho, a sombra e o flash crescem juntos, a partir dos pés.
 ## O desenho só cresce em passos inteiros (1x, 2x, 3x...): escala quebrada mistura pixels de tamanhos diferentes na tela. O corpo (`raio`)
 ## segue o `e` exato, então o acerto e o empurrão não mudam.
+## Com nó e com a folha `_xN` gerada, o desenho troca para ela em escala 1 (sprite maior desenhado em 1x, decisão do Alisson de 03/11): `escala`
+## continua o tamanho lógico (N) e `esc` vira a escala do desenho da folha atual (1). Sem a folha, o sprite pequeno amplia N vezes, como antes.
 func definir_escala(e: float) -> void:
 	var v := escala_px(e)
 	escala = v
 	raio = _base_raio * e
 	if tipo.is_empty():
 		return
-	esc = v
-	alt = float(tipo.pe) * v
-	larg_blob = tipo.w * 0.75 * v
+	var t := _tipo_base if not _tipo_base.is_empty() else tipo
+	var d := v
+	if v > 1.0 and not lote and mundo != null and mundo.sprites != null:
+		var g: Dictionary = mundo.sprites.tipo_grande(chave, int(v))
+		if not g.is_empty():
+			t = g
+			d = 1.0
+	_trocar_folha(t)
+	esc = d
+	alt = float(tipo.pe) * d
+	larg_blob = tipo.w * 0.75 * d
 	if sprite != null:  # com nós (elite, chefe); o monstro em lote é desenhado a partir de `escala`
-		sprite.scale = Vector2.ONE * v
+		sprite.scale = Vector2.ONE * d
 		if olho != null:
 			olho.scale = sprite.scale
+
+
+## Troca a folha desenhada (a do lote ou a grande) mantendo o quadro: corpo, olhos, contorno e as duas sombras passam a ler dela.
+func _trocar_folha(t: Dictionary) -> void:
+	if is_same(tipo, t):
+		return
+	tipo = t
+	tex_n = t.alb
+	tex_b = t.blur
+	offset = Vector2(-t.w / 2.0, -t.pe)
+	regiao = Rect2(coluna * t.w, linha * t.h, t.w, t.h)
+	if sprite == null:
+		return
+	sprite.texture = t.tex
+	sprite.offset = offset
+	sprite.region_rect = regiao
+	if olho != null:
+		olho.texture = t.emissao
+		olho.offset = offset
+		olho.region_rect = regiao
+	if sh1 != null:
+		var media: bool = mundo.sombras.modo == mundo.sombras.MEDIA
+		for s in [sh1, sh2]:
+			s.texture = tex_b if media else tex_n
+			s.offset = offset
+			s.region_rect = regiao
 
 
 ## A escala do desenho para a escala pedida: o inteiro mais próximo, no mínimo 1 (pixel art só amplia por inteiro).
