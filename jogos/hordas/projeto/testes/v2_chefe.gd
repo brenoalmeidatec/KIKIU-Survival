@@ -354,6 +354,7 @@ func _ready() -> void:
 
 	var ch = w.combate.chefes.atual
 	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 4000.0, "o chefão é grande e tem muita vida (%s)" % ch.vida_max)
+	ok(ch.escala == floorf(ch.escala) and ch.sprite.scale.x == ch.escala, "o desenho do chefão amplia por inteiro (%.2f)" % ch.escala)
 	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
 	ok(
 		str(sinais.get("anuncio_texto", "")).contains("CHEFE") and not str(sinais.get("anuncio_texto", "")).contains("MINI"),
