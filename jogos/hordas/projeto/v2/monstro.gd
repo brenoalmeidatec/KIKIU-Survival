@@ -500,18 +500,26 @@ func _rumo_livre(rumo: Vector2) -> float:
 
 
 ## Tamanho do monstro (elite e chefe): o sprite, o corpo, o olho, a sombra e o flash crescem juntos, a partir dos pés.
+## O desenho só cresce em passos inteiros (1x, 2x, 3x...): escala quebrada mistura pixels de tamanhos diferentes na tela. O corpo (`raio`)
+## segue o `e` exato, então o acerto e o empurrão não mudam.
 func definir_escala(e: float) -> void:
-	escala = e
+	var v := escala_px(e)
+	escala = v
 	raio = _base_raio * e
 	if tipo.is_empty():
 		return
-	esc = e
-	alt = float(tipo.pe) * e
-	larg_blob = tipo.w * 0.75 * e
+	esc = v
+	alt = float(tipo.pe) * v
+	larg_blob = tipo.w * 0.75 * v
 	if sprite != null:  # com nós (elite, chefe); o monstro em lote é desenhado a partir de `escala`
-		sprite.scale = Vector2.ONE * e
+		sprite.scale = Vector2.ONE * v
 		if olho != null:
 			olho.scale = sprite.scale
+
+
+## A escala do desenho para a escala pedida: o inteiro mais próximo, no mínimo 1 (pixel art só amplia por inteiro).
+static func escala_px(e: float) -> float:
+	return maxf(1.0, roundf(e))
 
 
 ## Fogo: derrete `dps` de vida por segundo durante `t` s (reaplicar só renova; vale o maior).
