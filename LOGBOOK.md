@@ -2947,3 +2947,9 @@ _Claude do Alisson (notebook)_
 - **Feito:** os 8 PRs de pixel art (#599 snap, #600 escala inteira, #601 piso, #603 escudos, #602 efeitos, #604 squash, #605 rotação, #606 filtros/UI) mesclados numa branch só, `alisson/pixel-integrado`, com o "integra tudo" do Alisson. Conflitos: `escudo.gd` ficou com a versão do #603 (o #604 fazia a mesma troca de escala por deslocamento); `heroi.gd` ficou com a rotação em quartos do #605 sem o achatamento (tirado pelo #604); `efeitos.gd` com as duas funções; `LICENCAS_ARTE.md` com as entradas dos dois lados. Os 14 testes tocados deram falhas=0 no PC.
 - **Não visto:** ninguém jogou em movimento. Risco maior: o piso em xadrez de 1 px sob o ganho 3,6 pode piscar com a câmera andando (baixar `AMP` em `fonte_arte/piso/refinar_piso.py`).
 - **Pendente (varredura final):** golem colosso em 1,3x; cortes da katana em `raio/32` (~2,1x); folhas cristal/estrela/anel/espiral em 2 px; HUD do Q e E em 1,5x; armas com alfa gradual; partículas de título/menu/salão com escala fracionária e giro; menus com `content_scale_factor` fracionário. Decisão do Alisson: elites e chefes ampliados por inteiro (2x a 4x) ou sprite maior em 1x; e a janela com sharp bilinear ou escala inteira com barras.
+
+## 2026-11-03: decisões de pixel art do Alisson (Claude do Alisson (PC))
+- A grade de pixel (#599 a #606, integrada no #607) está na main. Build: `build-2026-11-03-9fa47db`.
+- **Decisão 1:** elites, chefes, aliado grande e baú deixam de ser o sprite normal ampliado 2x a 4x. Eles **ganham sprite maior desenhado em 1x**, no tamanho final (pipeline do Blender), e a escala do desenho volta a 1.
+- **Decisão 2:** a janela **continua com o filtro sharp bilinear e sem barras pretas** (`v2/apresentacao.gd`). A escala inteira com barras está descartada.
+- **Próximo:** os sprites maiores (decisão 1) e a 2ª rodada da varredura (golem 1,3x, corte da katana, Q e E do HUD em 1,5x, alfa das armas, partículas de título e menu).
