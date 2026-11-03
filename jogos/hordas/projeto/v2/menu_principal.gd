@@ -23,10 +23,10 @@ const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
 const COR_APAGADO := Paleta.TEXTO_APAGADO
 const COR_FOCO := Paleta.FOCO  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
-const TAM_LOGO := 2 * Paleta.TITULO_GRANDE  # 2 x 56: múltiplo da grade da Jersey 10 (ver v2/LEIA-ME.md)
+const TAM_LOGO := 3 * Paleta.TITULO_GRANDE  # 3 x 56 = 168: múltiplo da grade da Jersey 10 (ver v2/LEIA-ME.md), desenhado direto no tamanho final, sem `scale`
 const TAM_BOTAO := Paleta.TITULO_MEDIO
 const TAM_DICA := Paleta.TEXTO_TAMANHO  # grade da Spleen 8x16
-const LOGO_Y := 44.0
+const LOGO_Y := 6.0  # com a fonte de 168 px a caixa começa mais acima: as letras ficam onde estavam (centro em y 134)
 const BOTAO_LARG := 260.0
 const BOTAO_ALT := 44.0
 const BOTAO_Y0 := 300.0
@@ -35,7 +35,8 @@ const ORNAMENTO_Y := 206.0  # a linha dourada entre o logo e os botões
 const SUBTITULO := "Knights In Kaos, Infinite Upgrades"  # o acrônimo por extenso, entre o logo e a linha dourada (#134: o acrônimo vira subtítulo)
 const SUBTITULO_Y := 150.0
 const TAM_SUBTITULO := Paleta.TITULO_MEDIO
-const LOGO_ESCALA := 1.4  # o logo é desenhado na fonte do título (TAM_LOGO) e ampliado: marca de jogo, não só um texto
+const LOGO_ALTURA := 260.0  # a caixa do texto do logo: a linha da fonte de 168 px é mais alta que a de antes e o Label corta o que passa da caixa
+const LOGO_RELEVO := 3.0  # o passo do relevo (três cópias mais escuras logo abaixo), px inteiros
 const INTRO_T := 1.4  # s da entrada: a tela sai do preto, o logo desce e os botões sobem um a um
 const Glifos := preload("res://v2/glifos.gd")
 const CodigoSecreto := preload("res://v2/codigo_secreto.gd")  # Konami ou IDKFA: liga o "tudo liberado" (Progressao)
@@ -96,18 +97,16 @@ func _ajustar_janela() -> void:
 
 func _montar() -> void:
 	add_child(TituloVivo.new())  # cobre o canvas inteiro, não só o bloco 960x540
-	_logo = _texto("K.I.K.I.U", TAM_LOGO, true, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, LOGO_Y, LARG, 130))
+	_logo = _texto("K.I.K.I.U", TAM_LOGO, true, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, LOGO_Y, LARG, LOGO_ALTURA))
 	var mat := ShaderMaterial.new()
 	mat.shader = SHADER_LOGO
 	_logo.material = mat  # ouro em degradê com um brilho que corre pelas letras (v2/titulo_logo.gdshader)
 	for i in [3, 2, 1]:  # relevo: três cópias mais escuras logo abaixo, do bronze ao quase preto
 		var cor: Color = [Color(0.6, 0.26, 0.06), Color(0.34, 0.12, 0.04), Color(0.13, 0.04, 0.02)][i - 1]
-		var sombra := _texto("K.I.K.I.U", TAM_LOGO, true, cor, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, i * 2.0, LARG, 130))
+		var sombra := _texto("K.I.K.I.U", TAM_LOGO, true, cor, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, i * LOGO_RELEVO, LARG, LOGO_ALTURA))
 		sombra.show_behind_parent = true
 		_logo.add_child(sombra)
 	_logo.add_child(_faiscas())
-	_logo.pivot_offset = Vector2(LARG / 2.0, 100.0)  # o meio das letras: o logo cresce sem sair do lugar
-	_logo.scale = Vector2.ONE * LOGO_ESCALA
 	add_child(_logo)
 	var ornamento := Control.new()
 	ornamento.position = Vector2(0, ORNAMENTO_Y)
@@ -194,15 +193,15 @@ func _faiscas() -> CPUParticles2D:
 	p.amount = 14
 	p.lifetime = 2.6
 	p.preprocess = 2.6
-	p.position = Vector2(LARG / 2.0, 98)
+	p.position = Vector2(LARG / 2.0, 133)
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents = Vector2(120, 22)
+	p.emission_rect_extents = Vector2(168, 31)
 	p.direction = Vector2(0, -1)
 	p.spread = 30.0
-	p.initial_velocity_min = 6.0
-	p.initial_velocity_max = 16.0
-	p.gravity = Vector2(0, -4)
-	p.scale_amount_min = 0.5
+	p.initial_velocity_min = 8.0
+	p.initial_velocity_max = 22.0
+	p.gravity = Vector2(0, -6)
+	p.scale_amount_min = 1.0  # a faísca é um quadrado de 2 px, sempre do mesmo tamanho
 	p.scale_amount_max = 1.0
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.15, 0.7, 1.0])
