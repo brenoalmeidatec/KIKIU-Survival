@@ -359,6 +359,15 @@ func _ready() -> void:
 	fx_passos(4)
 	ve = esc.visual_estado()
 	ok(ve.celula == 2 and ve.pos.y < h.pos.y, "mira para cima: as costas do escudo, atrás do herói no y-sort (%s)" % ve)
+	# as faíscas do acerto e o arco do aparo ficam na grade de 1 px (sem coordenada fracionária)
+	h.dir_olhar = Vector2(0.8137, 0.5812).normalized()
+	esc.bloquear(h, 1.0, h.pos + Vector2(37.3, -11.7), null)
+	ok(esc._impacto == esc._impacto.round(), "a origem das faíscas do acerto cai em px inteiros (%s)" % esc._impacto)
+	var arco_g: PackedVector2Array = esc.pontos_na_grade(esc.pontos_arco(h, 140.0, 26.0))
+	var arco_na_grade: bool = arco_g.size() > 2
+	for p in arco_g:
+		arco_na_grade = arco_na_grade and p == p.round()
+	ok(arco_na_grade, "o arco do aparo, mesmo seguindo a mira, é desenhado em px inteiros")
 	# soltar de propósito: some sem quebrar
 	h.escudo_forcado = false
 	fx_passos(12)

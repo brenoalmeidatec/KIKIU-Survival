@@ -221,6 +221,14 @@ func pontos_arco(h, graus: float, r: float) -> PackedVector2Array:
 	return pts
 
 
+## Os pontos de um arco desenhado, arredondados para px inteiros: o traço do aparo (que segue a mira) cai na grade de 1 px do mundo; a geometria do bloqueio (`pontos_arco`) fica exata.
+func pontos_na_grade(pts: PackedVector2Array) -> PackedVector2Array:
+	var r := PackedVector2Array()
+	for p in pts:
+		r.append(p.round())
+	return r
+
+
 ## O dano que vem de `de` (posição no mundo) cai dentro do arco do escudo? A conta é no chão (y dividido pela achatada), a mesma da ruptura e dos avisos.
 func cobre(h, de: Vector2) -> bool:
 	return cobre_arco(h, de, arco(h))
@@ -298,7 +306,7 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	if entrada.length_squared() < 0.1:
 		entrada = Vector2(h.dir_olhar.x, h.dir_olhar.y / ACHATA).normalized()
 	var para := Vector2(entrada.x, entrada.y * ACHATA)
-	_impacto = _deslocamento(h) + para * 6.0 + Vector2(0, float(visual.get("centro_y", -15.0)))  # na superfície do escudo, do lado de quem bateu
+	_impacto = (_deslocamento(h) + para * 6.0 + Vector2(0, float(visual.get("centro_y", -15.0)))).round()  # em px inteiros, na grade; na superfície do escudo, do lado de quem bateu
 	_treme_dur = 0.24 if perfeito else 0.16
 	_treme_t = _treme_dur
 	if perfeito:
@@ -702,12 +710,12 @@ func _desenhar() -> void:
 		var perfeito := _perf_t > 0.0
 		var t := _perf_t / 0.22 if perfeito else _flash_t / 0.14
 		var c2 := COR_OURO if perfeito else Color.WHITE
-		var impacto: Vector2 = h.pos + _impacto
+		var impacto: Vector2 = (h.pos + _impacto).round()
 		var tamanho := (1.0 - t) * 16.0 + 5.0
 		for i in 8 if perfeito else 4:
 			var d := Vector2.from_angle(TAU * float(i) / (8.0 if perfeito else 4.0))
-			no.draw_line(impacto + d * tamanho * 0.4, impacto + d * tamanho, Color(c2.r, c2.g, c2.b, t), 2.0)
-		no.draw_circle(impacto, 3.0 * t, Color(1.0, 0.97, 0.8, t))
+			no.draw_line((impacto + d * tamanho * 0.4).round(), (impacto + d * tamanho).round(), Color(c2.r, c2.g, c2.b, t), 2.0)  # pontas em px inteiros
+		no.draw_circle(impacto, maxf(roundf(3.0 * t), 1.0), Color(1.0, 0.97, 0.8, t))
 
 
 ## O arco de lâmina do aparo no chão (140 graus, na direção da mira) enquanto a janela está aberta: dois traços que esmaecem com o tempo; dourado depois de aparar.
@@ -719,7 +727,7 @@ func _desenhar_arco_aparo(h) -> void:
 	var cor := COR_OURO if h.aparo_acertou else Color(0.85, 0.95, 1.0)
 	var r := float(v.get("raio", 26.0))
 	var largura := float(v.get("largura", 2.0))
-	var fora := pontos_arco(h, float(cfg_aparo.arco), r)
-	var dentro := pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8)
+	var fora := pontos_na_grade(pontos_arco(h, float(cfg_aparo.arco), r))
+	var dentro := pontos_na_grade(pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8))
 	no.draw_polyline(fora, Color(cor.r, cor.g, cor.b, 0.95 * (1.0 - 0.6 * t)), largura)
 	no.draw_polyline(dentro, Color(cor.r, cor.g, cor.b, 0.5 * (1.0 - 0.6 * t)), maxf(largura * 0.5, 1.0))
