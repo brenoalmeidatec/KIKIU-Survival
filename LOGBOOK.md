@@ -2942,3 +2942,8 @@ _Claude do Alisson (notebook)_
 - Feito: `piso.png` da floresta refinado para 1 px (bordas e manchas com textura de 1 px, folhas sem bloco 2x2 por varredura sequencial em `fonte_arte/piso/refinar_piso.py`); fração de janelas 2x2 uniformes de 0,77 para 0,23. Teste `v2_piso_pixel`.
 - Pendente: ninguém viu em movimento numa janela real; merge depende do "pode mergear" do Alisson e do CI 7/7.
 - Próximo: escudos (2 px) e efeitos do pixelfx, em PRs próprios.
+
+## 2026-11-03: integração da grade de pixel (Claude do Alisson (PC))
+- **Feito:** os 8 PRs de pixel art (#599 snap, #600 escala inteira, #601 piso, #603 escudos, #602 efeitos, #604 squash, #605 rotação, #606 filtros/UI) mesclados numa branch só, `alisson/pixel-integrado`, com o "integra tudo" do Alisson. Conflitos: `escudo.gd` ficou com a versão do #603 (o #604 fazia a mesma troca de escala por deslocamento); `heroi.gd` ficou com a rotação em quartos do #605 sem o achatamento (tirado pelo #604); `efeitos.gd` com as duas funções; `LICENCAS_ARTE.md` com as entradas dos dois lados. Os 14 testes tocados deram falhas=0 no PC.
+- **Não visto:** ninguém jogou em movimento. Risco maior: o piso em xadrez de 1 px sob o ganho 3,6 pode piscar com a câmera andando (baixar `AMP` em `fonte_arte/piso/refinar_piso.py`).
+- **Pendente (varredura final):** golem colosso em 1,3x; cortes da katana em `raio/32` (~2,1x); folhas cristal/estrela/anel/espiral em 2 px; HUD do Q e E em 1,5x; armas com alfa gradual; partículas de título/menu/salão com escala fracionária e giro; menus com `content_scale_factor` fracionário. Decisão do Alisson: elites e chefes ampliados por inteiro (2x a 4x) ou sprite maior em 1x; e a janela com sharp bilinear ou escala inteira com barras.
