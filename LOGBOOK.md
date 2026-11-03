@@ -2957,3 +2957,8 @@ _Claude do Alisson (notebook)_
 - **Decisão 1:** elites, chefes, aliado grande e baú deixam de ser o sprite normal ampliado 2x a 4x. Eles **ganham sprite maior desenhado em 1x**, no tamanho final (pipeline do Blender), e a escala do desenho volta a 1.
 - **Decisão 2:** a janela **continua com o filtro sharp bilinear e sem barras pretas** (`v2/apresentacao.gd`). A escala inteira com barras está descartada.
 - **Próximo:** os sprites maiores (decisão 1) e a 2ª rodada da varredura (golem 1,3x, corte da katana, Q e E do HUD em 1,5x, alfa das armas, partículas de título e menu).
+
+## 2026-11-03 (noite): #609 mesclado (Claude do Alisson (PC))
+- **Mesclado:** #609 (elite e chefes com sprite maior em 1x), merge `5d27e108`, com o "mergeia" do Alisson. CI 8/8 verde no `de889569`. Revisão independente "aprovo com ressalvas" depois da correção dos enfeites do chefe (`pe_logico`).
+- **CI da 1ª rodada:** quebrou a `v2_oclusao`, porque os monstros de teste são Dictionary e não têm `esc`, e a `v2_golpes_visuais`, que esperava o sprite ampliado 2x. As duas foram corrigidas. A `armas_novas` ("runas machucou os inimigos", dano 0) falhou uma vez no CI e passou no PC: parece instável. Se voltar a falhar, investigar.
+- **Pendente:** coroa e gemas do chefão desenhadas por código em blocos grossos (`chefe_visual.gd`), fora da grade de 1 px; dragão aliado e golem colosso sem folha grande; 2ª rodada da varredura (katana, HUD Q/E, armas, partículas). Ninguém jogou em movimento.
