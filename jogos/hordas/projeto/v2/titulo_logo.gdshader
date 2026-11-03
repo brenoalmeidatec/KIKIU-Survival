@@ -1,10 +1,10 @@
 shader_type canvas_item;
 // Logo K.I.K.I.U da tela de título (v2/titulo_vivo.gd): ouro em degradê (claro em cima, âmbar embaixo) e um brilho que corre
 // pelas letras de tempos em tempos. A cor da fonte é branca; o contorno preto continua preto (a conta multiplica a cor).
-// `topo` e `altura` são a faixa das letras dentro do Label, em pixels locais.
+// `topo` e `altura` são a faixa das letras dentro do Label, em pixels locais, para a fonte de 168 px (TAM_LOGO): maiúsculas em y 45 a 135, mais 16 px de folga em cima e embaixo.
 
-uniform float topo = 14.0;
-uniform float altura = 92.0;
+uniform float topo = 29.0;
+uniform float altura = 122.0;
 uniform float periodo = 6.5;  // s entre duas passadas do brilho
 uniform float largura_logo = 960.0;
 

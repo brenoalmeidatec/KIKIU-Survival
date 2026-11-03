@@ -117,7 +117,7 @@ func _tamanhos() -> void:
 		ok(t in [16, 32], "tamanho %d da Spleen na grade (16, 32)" % t)
 	for t in [Telas.TAM_TITULO, Telas.TAM_NOME, Telas.TAM_CONTAGEM, Status.TAM_CAB, Status.TAM_NOME_PEQ, ResultadoMeta.TAM_TITULO, MenuPrincipal.TAM_BOTAO]:
 		ok(t in [19, 37, 56], "tamanho %d da Jersey 10 na grade (19, 37, 56)" % t)
-	ok(MenuPrincipal.TAM_LOGO == 2 * 56, "o logo usa a exceção documentada de 2 x 56")
+	ok(MenuPrincipal.TAM_LOGO == 3 * 56, "o logo usa a exceção documentada de 3 x 56 (desenhado no tamanho final, sem `scale`)")
 	ok(MenuPrincipal.TAM_SUBTITULO in [19, 37, 56], "o subtítulo do logo na grade da Jersey 10")
 	for t in [Status.TAM_NUM, Status.TAM_GRANDE]:
 		ok(t > 0 and t % 8 == 0, "números na grade de 8 px")
@@ -228,7 +228,7 @@ func _rotulos_na_grade(no: Node) -> void:
 		if fonte == Dados.fonte_texto:
 			ok(tam in [16, 32], "Label %s: Spleen na grade (%d)" % [str(rot.get("text")), tam])
 		elif fonte == Dados.fonte_titulo:
-			ok(tam in [19, 37, 56] or (tam == 112 and str(rot.get("text")) == "K.I.K.I.U"), "Label %s: Jersey na grade (%d)" % [str(rot.get("text")), tam])
+			ok(tam in [19, 37, 56] or (tam == 168 and str(rot.get("text")) == "K.I.K.I.U"), "Label %s: Jersey na grade (%d)" % [str(rot.get("text")), tam])
 		elif fonte == Dados.fonte:
 			ok(tam > 0 and tam % 8 == 0, "Label %s: Press Start na grade (%d)" % [str(rot.get("text")), tam])
 	for filho in no.get_children():

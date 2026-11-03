@@ -386,7 +386,7 @@ func _criar_selo_pesadelo() -> void:
 	_selo_pesadelo.text = "PESADELO"
 	_selo_pesadelo.position = PESADELO_POS
 	_selo_pesadelo.add_theme_font_override("font", Dados.fonte_titulo)
-	_selo_pesadelo.add_theme_font_size_override("font_size", 20)
+	_selo_pesadelo.add_theme_font_size_override("font_size", 19)  # a grade da Jersey 10 (19, 37, 56)
 	_selo_pesadelo.add_theme_color_override("font_color", VERMELHO_VINHETA)
 	_selo_pesadelo.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
 	_selo_pesadelo.add_theme_constant_override("outline_size", 4)
