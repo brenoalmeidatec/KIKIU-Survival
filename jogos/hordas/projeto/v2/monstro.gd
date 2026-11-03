@@ -15,6 +15,8 @@ const FOLGA_CORPO := 1.5  # px entre o corpo do monstro e o do herói quando ele
 const CERCO_ENTRA := 70.0  # a esta distância do herói o monstro deixa de ir ao centro e vai ao seu ponto do anel em volta dele
 const CERCO_SAI := 110.0
 const PASSO_ANIM := 0.16
+const AFUNDA_PX := 2.0  # px que o bicho afunda no chão no instante em que apanha (era o achatar de 16%: sem escala fracionária, o "peso" do golpe é um passo de pixel)
+const CARGA_TREMOR := 0.75  # a partir desta carga (0 a 1) o elite/chefe treme um pixel (era o inchar de 6%)
 const AMORTECE_EMP := 9.0  # o empurrão perde força: emp *= exp(-9 dt)
 const LINHAS_DIRECOES := 5  # folha com 5 linhas: frente, 3/4 baixo, perfil, 3/4 costas, costas (vistas de 0, 45, 90, 135 e 180 graus)
 const PASSO_LINHA := 45.0  # graus entre uma linha e a próxima
@@ -82,9 +84,10 @@ var _desvio_sem := 99.0  # s desde o fim do último desvio
 var _anim := 0.0
 var _batida := 0.0  # s do "soco" visual (encolhe na vertical) depois de apanhar
 var vel_v := Vector2.ZERO  # a velocidade que a IA quis no último quadro (escolhe a linha e o espelho da folha)
-var v_sx := 1.0  # escala do desenho (tamanho x "soco") e tremida de x do atordoado, para o lote
+var v_sx := 1.0  # escala do desenho (só o tamanho do bicho: o "soco" não deforma mais), a tremida de x do atordoado e o afundar de y, para o lote
 var v_sy := 1.0
 var v_jx := 0.0
+var v_jy := 0.0
 var v_cor := Color.WHITE  # cor do desenho (tinta, fogo, lentidão), para o lote
 var heroi_raio_atual := 6.0  # o raio do corpo do herói no último quadro (para a IA)
 var ang_cerco := 0.0  # onde, no anel em volta do herói, este monstro quer ficar (rad): eles cercam em vez de empilhar
@@ -180,6 +183,7 @@ func reviver(p: Vector2) -> void:
 	v_sx = 1.0
 	v_sy = 1.0
 	v_jx = 0.0
+	v_jy = 0.0
 	invoca_t = 0.0
 	if not lote:
 		_voltar_lote()
@@ -256,12 +260,18 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 		_visual_no(v)  # fora da tela não troca quadro nem olho: só a conta de andar
 
 
+## Quantos pixels inteiros o bicho afunda no chão a `k` (1 no instante da pancada, 0 no fim dos 0,14 s): 2, 1 e 0, nunca meio pixel.
+static func afundar_px(k: float) -> float:
+	return float(roundi(k * AFUNDA_PX))
+
+
 ## O quadro, o tamanho e a cor do monstro em lote (a horda chama só para quem está na tela). Mexe nos números, nunca em nó.
 func visual() -> void:
 	var k := clampf(_batida / 0.14, 0.0, 1.0)
-	v_sx = (1.0 + 0.2 * k) * escala
-	v_sy = (1.0 - 0.16 * k) * escala
+	v_sx = escala
+	v_sy = escala
 	v_jx = float(rng.randi_range(-1, 1)) if (atordoa_t > 0.0 and k > 0.0) else 0.0
+	v_jy = afundar_px(k)
 	_escolher_quadro(vel_v)
 	var queimando := queima_t > 0.0
 	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
@@ -309,8 +319,13 @@ func _linha_de(v: Vector2) -> int:
 ## O desenho do monstro com nós (elite e chefe): sprite, olho e contorno.
 func _visual_no(v: Vector2) -> void:
 	var k := clampf(_batida / 0.14, 0.0, 1.0)
-	sprite.scale = Vector2(1.0 + 0.2 * k, 1.0 - 0.16 * k) * escala * (1.0 + 0.06 * carga)
-	sprite.position = (Vector2(float(rng.randi_range(-1, 1)), 0.0) if (atordoa_t > 0.0 and k > 0.0) else Vector2.ZERO)
+	sprite.scale = Vector2.ONE * escala
+	var tremor := 0.0
+	if atordoa_t > 0.0 and k > 0.0:
+		tremor = float(rng.randi_range(-1, 1))
+	elif carga >= CARGA_TREMOR:  # a carga cheia treme um pixel (no lugar do inchar 6%, que era meio pixel)
+		tremor = float(int(Time.get_ticks_msec() / 40.0) % 3 - 1)
+	sprite.position = Vector2(tremor, afundar_px(k))
 	_escolher_quadro(v)
 	if olho != null:
 		olho.position = raiz.position + sprite.position
