@@ -247,12 +247,33 @@ func identidade_dos_chefes() -> void:
 			"%s: o adorno aparece e a parte de trás é desenhada antes do sprite" % marcas[i].nome
 		)
 		passos(5)
+		# a cabeça (onde a coroa e a pluma pousam) vem do topo do desenho de verdade, em px inteiros do mundo, perto do alto do corpo
+		var cab: Vector2 = vis._cabeca()
+		ok(cab == cab.round(), "%s: a cabeça é medida em px inteiros do mundo (%s)" % [marcas[i].nome, cab])
+		ok(cab.y < -m.alt * 0.6 and cab.y > -m.alt * 1.1, "%s: a cabeça (%s) fica no alto do desenho (alt %.0f)" % [marcas[i].nome, cab, m.alt])
 		w.combate.ferir(m, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 		w.combate.processar_mortes()
 		ok(not vis.atras.visible and not vis.frente.visible and vis.adorno == "", "%s: o adorno some com o chefe" % marcas[i].nome)
 		w.combate.jogo = "jogando"
 	ok(float(marcas[2].visual.get("luz", 1.0)) > 1.0, "o chefão brilha mais que os mini-chefes")
 	h.imortal = true
+	enfeites_na_grade_de_1px()
+
+
+## Os enfeites do chefe (v2/chefe_visual.gd) seguem a grade de 1 px: coroas em folhas pequenas já no tamanho final e com as gemas onde o brilho
+## de 1 px espera, e nada de círculo, escala quebrada nem ângulo livre no código de desenho.
+func enfeites_na_grade_de_1px() -> void:
+	var V = preload("res://v2/chefe_visual.gd")
+	ok(V.COROA_REI.get_size() == Vector2(57, 45) and V.COROA_RAINHA.get_size() == Vector2(37, 28), "as coroas são folhas pequenas no tamanho final")
+	for par in [[V.COROA_REI, V.GEMAS_REI], [V.COROA_RAINHA, V.GEMAS_RAINHA]]:
+		var im: Image = (par[0] as Texture2D).get_image()
+		for g in par[1]:
+			var px: Color = im.get_pixelv(Vector2i(g) + Vector2i(0, 1))
+			ok(px.a > 0.99 and (px.r > px.g * 2.0 or px.g > px.r * 2.0), "a gema em %s é um pixel magenta ou verde de verdade da folha (%s)" % [g, px])
+	var fonte := FileAccess.get_file_as_string("res://v2/chefe_visual.gd")
+	ok(not fonte.contains(".draw_circle("), "o chefe não desenha círculo liso: usa a elipse em degraus de 1 px")
+	ok(not fonte.contains("0.8 + 0.2 * sin"), "os corvos do Rei não mudam de tamanho por fator quebrado")
+	ok(not fonte.contains("u * 5.5") and not fonte.contains("maxf(2.0, u") and not fonte.contains("maxf(1.0, u"), "nenhum traço cresce com a escala do chefe")
 
 
 ## Sair do mapa libera os controladores e os nós do visual do chefe (a referência cruzada chefe <-> visual não pode segurá-los), com e sem chefe.
