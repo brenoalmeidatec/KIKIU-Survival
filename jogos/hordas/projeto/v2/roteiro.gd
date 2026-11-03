@@ -1723,7 +1723,7 @@ func _pt_apagar_save() -> void:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
 
 
-## Close de uma invocação para o GIF: só a invocação de --so=ID (no nível 5), o herói parado e as fotos 02 a 17, a cada 0,1 s.
+## Close de uma invocação para o GIF: só a invocação (ou a fusão de aliados) de --so=ID (no nível 5), o herói parado e as fotos 02 a 17, a cada 0,1 s.
 ## Uso: --roteiro=close --so=espirito_raposa --fotos=PASTA
 func _r_close() -> void:
 	match passo:
@@ -1733,6 +1733,9 @@ func _r_close() -> void:
 			for g in mundo.combate.cartas.cfg.golpes:
 				if str(g.get("id", "")) == so:
 					mundo.combate.armas.definir_golpe(so, 5, 0.0)
+			for ev in mundo.combate.cartas.cfg.evolucoes:  # a fusão do tipo aliado (colosso_de_pedra, dragao_de_brasa...) também vale em --so
+				if str(ev.get("id", "")) == so:
+					mundo.combate.armas.adicionar_evoluida(ev, 0.0)
 			var alvo = mundo.nascer_monstro("inimigo_cao_ossos", mundo.heroi.pos + Vector2(150, 0), true)  # um alvo parado para o aliado atacar
 			alvo.vida = alvo.vida_max * 50.0
 			alvo.vida_max = alvo.vida

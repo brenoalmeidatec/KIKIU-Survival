@@ -11,7 +11,12 @@ extends "res://testes/isolamento_v2.gd"
 const Armas := preload("res://v2/armas_novas.gd")
 const Andante := preload("res://v2/andante.gd")
 const Paleta := preload("res://v2/paleta.gd")
-const SPRITES_ALIADOS := ["res://assets/v2/armas/dragao_filhote_dir.png", "res://assets/v2/armas/golem_barro_dir.png"]
+const SPRITES_ALIADOS := [
+	"res://assets/v2/armas/dragao_filhote_dir.png",
+	"res://assets/v2/armas/golem_barro_dir.png",
+	"res://assets/v2/armas/dragao_de_brasa_dir.png",
+	"res://assets/v2/armas/colosso_de_pedra_dir.png",
+]
 
 var falhas := 0
 

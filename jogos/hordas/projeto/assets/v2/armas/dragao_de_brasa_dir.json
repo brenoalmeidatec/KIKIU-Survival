@@ -1,0 +1,22 @@
+{
+ "quadro": [
+  89,
+  90
+ ],
+ "pe_x": 44,
+ "pe_y": 49,
+ "andar": 8,
+ "ataque": 8,
+ "impacto": 4,
+ "ciclo_s": 0.5,
+ "alcance_boca_px": 24.1,
+ "sopro_px": 21.0,
+ "alcance_pata_px": 45.1,
+ "linhas": [
+  "frente",
+  "tres_quartos_frente",
+  "lado",
+  "tres_quartos_costas",
+  "costas"
+ ]
+}

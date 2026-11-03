@@ -35,17 +35,38 @@ SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "v2
 
 ELEVACAO = 45.0
 PPU = 24.5               # igual aos monstros v2 e ao herói
-ESCALA = 0.76            # escala geral do modelo (o golem tem de ficar um bom pedaço maior que o herói)
+# GOLEM_ESCALA=1.3 GOLEM_NOME=colosso_de_pedra_dir: a versão GRANDE (o Colosso de Pedra), o mesmo modelo 1,3 vez maior, renderizado já no tamanho final
+# com os mesmos 24,5 px por unidade: o jogo desenha essa folha em 1x (pixel do tamanho do resto) em vez de ampliar a pequena por um fator quebrado.
+MULT = float(os.environ.get("GOLEM_ESCALA", "1.0"))
+NOME = os.environ.get("GOLEM_NOME", "golem_barro_dir")
+ESCALA = 0.76 * MULT     # escala geral do modelo (o golem tem de ficar um bom pedaço maior que o herói)
 VISTAS = (0.0, 45.0, 90.0, 135.0, 180.0)
 ANDAR = 8
 ATAQUE = 8
-W0, H0 = 64, 72          # ponto de partida; o quadro cresce até caber
+W0, H0 = int(math.ceil(64 * MULT)), int(math.ceil(72 * MULT))  # ponto de partida; o quadro cresce até caber
 CONT = np.array([0x24, 0x12, 0x0e]) / 255.0
 
 FAIXAS = (0.35, 0.62, 1.0)
 BASES = {
     "barro": "b8653d", "barro_e": "824630", "terra": "d9a36e", "pedra": "9a8f86",
 }
+
+
+def recolorir(folha, limite, novo_matiz):
+    """Vermelho só para o que machuca o jogador (v2/DESIGN.md, seção 2): todo pixel com matiz abaixo de `limite` graus ganha o matiz `novo_matiz`
+    (saturação e brilho ficam). É a mesma troca que o PNG já tinha (o teste v2_cores_perigo confere que não sobra pixel vermelho nem terracota)."""
+    import colorsys
+    cheio = folha[:, :, 3] > 0.5
+    orig = np.round(folha[:, :, :3] * 255.0).astype(np.int32)  # as cores de antes da troca (a troca não pode casar com cor já trocada)
+    cores = np.unique(orig[cheio], axis=0)
+    for c in cores:
+        h, s, v = colorsys.rgb_to_hsv(*(c / 255.0))
+        if h * 360.0 >= limite:
+            continue
+        n = np.round(np.array(colorsys.hsv_to_rgb(novo_matiz / 360.0, s, v)) * 255.0).astype(np.int32)
+        casa = cheio & np.all(orig == c, axis=2)
+        folha[:, :, :3][casa] = n / 255.0
+    return folha
 
 
 def _srgb(v):
@@ -341,11 +362,12 @@ def main():
         print("GOLEM PREVIA", W, H, pe_x, pe_y)
         return
     os.makedirs(SAIDA, exist_ok=True)
-    px3.salvar_png(folha, os.path.join(SAIDA, "golem_barro_dir.png"))
+    folha = recolorir(folha, 33.0, 40.0)  # terracota -> ocre (o golem não é vermelho)
+    px3.salvar_png(folha, os.path.join(SAIDA, NOME + ".png"))
     info = {"quadro": [W, H], "pe_x": pe_x, "pe_y": pe_y, "andar": ANDAR, "ataque": ATAQUE, "impacto": 4, "ciclo_px": ciclo,
             "ciclo_linha": ciclo_linha, "deslize_px": deslize, "pe_apoio": pes_apoio,
             "linhas": ["frente", "tres_quartos_frente", "lado", "tres_quartos_costas", "costas"]}
-    for destino in (os.path.join(AQUI, "golem_barro_dir.json"), os.path.join(SAIDA, "golem_barro_dir.json")):
+    for destino in (os.path.join(AQUI, NOME + ".json"), os.path.join(SAIDA, NOME + ".json")):
         with open(destino, "w", encoding="utf-8") as f:
             json.dump(info, f, indent=1)
             f.write("\n")

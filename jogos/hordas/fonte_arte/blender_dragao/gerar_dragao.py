@@ -36,25 +36,45 @@ from pixel3d import caixa, esfera  # noqa: E402
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 PREVIA = ARGS[1] if len(ARGS) >= 2 and ARGS[0] == "previa" else None
 SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "v2", "armas"))
-NOME = "dragao_filhote_dir"
+# DRAGAO_ESCALA=1.5 DRAGAO_NOME=dragao_de_brasa_dir: a versão GRANDE (o Dragão de Brasa), o mesmo modelo 1,5 vez maior, renderizado já no tamanho final com os
+# mesmos 24,5 px por unidade: o jogo desenha essa folha em 1x (pixel do tamanho do resto) em vez de ampliar a pequena por um fator quebrado.
+MULT = float(os.environ.get("DRAGAO_ESCALA", "1.0"))
+NOME = os.environ.get("DRAGAO_NOME", "dragao_filhote_dir")
 
 ELEVACAO = 45.0
 PPU = 24.5               # igual aos monstros v2, ao herói e ao Golem
-ESCALA = 1.1             # escala geral do modelo (envergadura de ~58 px)
+ESCALA = 1.1 * MULT     # escala geral do modelo (envergadura de ~58 px)
 CABECA_ESC = 1.25        # a cabeça maior que o natural, para ler bem em tamanho de jogo
 VISTAS = (0.0, 45.0, 90.0, 135.0, 180.0)
 ANDAR = 8
 ATAQUE = 8
 IMPACTO = 4
-W0, H0 = 52, 60          # ponto de partida; o quadro cresce até caber
+W0, H0 = int(math.ceil(52 * MULT)), int(math.ceil(60 * MULT))  # ponto de partida; o quadro cresce até caber
 CICLO_S = 0.5            # segundos por ciclo de bater de asas (o jogo conta no relógio)
-SOPRO_PX = 14.0          # o leque de fogo passa da ponta do focinho (em px): entra no alcance do golpe
+SOPRO_PX = 14.0 * MULT          # o leque de fogo passa da ponta do focinho (em px): entra no alcance do golpe
 CONT = np.array([0x2a, 0x0e, 0x0e]) / 255.0
 
 FAIXAS = (0.35, 0.62, 1.0)
 BASES = {
     "verm": "d23a30", "verm_e": "8a2222", "barriga": "f0b646", "membrana": "dc5a3a", "osso": "efe3c5", "espinho": "5e1717",
 }
+
+
+def recolorir(folha, limite, novo_matiz):
+    """Vermelho só para o que machuca o jogador (v2/DESIGN.md, seção 2): todo pixel com matiz abaixo de `limite` graus ganha o matiz `novo_matiz`
+    (saturação e brilho ficam). É a mesma troca que o PNG já tinha (o teste v2_cores_perigo confere que não sobra pixel vermelho nem terracota)."""
+    import colorsys
+    cheio = folha[:, :, 3] > 0.5
+    orig = np.round(folha[:, :, :3] * 255.0).astype(np.int32)  # as cores de antes da troca (a troca não pode casar com cor já trocada)
+    cores = np.unique(orig[cheio], axis=0)
+    for c in cores:
+        h, s, v = colorsys.rgb_to_hsv(*(c / 255.0))
+        if h * 360.0 >= limite:
+            continue
+        n = np.round(np.array(colorsys.hsv_to_rgb(novo_matiz / 360.0, s, v)) * 255.0).astype(np.int32)
+        casa = cheio & np.all(orig == c, axis=2)
+        folha[:, :, :3][casa] = n / 255.0
+    return folha
 
 
 def _srgb(v):
@@ -288,6 +308,7 @@ def main():
         return
     boca = alcance_boca(J) * ESCALA * PPU
     os.makedirs(SAIDA, exist_ok=True)
+    folha = recolorir(folha, 25.0, 120.0)  # vermelho -> verde (o dragãozinho aliado não é vermelho)
     px3.salvar_png(folha, os.path.join(SAIDA, NOME + ".png"))
     info = {"quadro": [W, H], "pe_x": pe_x, "pe_y": pe_y, "andar": ANDAR, "ataque": ATAQUE, "impacto": IMPACTO, "ciclo_s": CICLO_S,
             "alcance_boca_px": round(boca, 1), "sopro_px": SOPRO_PX, "alcance_pata_px": round(boca + SOPRO_PX, 1),

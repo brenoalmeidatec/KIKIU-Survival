@@ -825,6 +825,8 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 ## versão cinza das fusões) no quadro em que nasce, no meio do combate: de 2 a 8 ms aqui, num quadro só.
 func pedir_aquecer(id: String) -> void:
 	var pend: Array = ["golem"] if Golem.eh_golem(id) and not Golem.lida() else Andante.folhas_pendentes(id)
+	if id == Golem.COLOSSO and not Golem.lida_colosso():
+		pend = pend + ["colosso"]  # a folha grande do Colosso (a do golem comum, "golem", vai junto se ainda não foi lida)
 	for item in pend:
 		if not fila_aquecer.has(item):
 			fila_aquecer.append(item)
@@ -837,6 +839,8 @@ func aquecer_um() -> void:
 	var item: String = fila_aquecer.pop_front()
 	if item == "golem":
 		Golem.tex()
+	elif item == "colosso":
+		Golem.tex_colosso()
 	else:
 		Andante.aquecer(item)
 
