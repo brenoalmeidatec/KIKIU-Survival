@@ -356,9 +356,10 @@ func fragmentar(m, fora: Vector2) -> void:
 		s.texture = m.tipo.alb
 		s.region_rect = Rect2(reg.position + Vector2(reg.size.x * 0.25 * parte, reg.size.y * 0.2), reg.size * Vector2(0.5, 0.6))
 		s.flip_h = m.espelha
-		s.scale = Vector2.ONE * m.escala
+		var esc_px := _esc_px(m.escala)
+		s.scale = Vector2.ONE * esc_px
 		s.modulate = m.tinta
-		s.position = m.raiz.position + m.offset * m.escala
+		s.position = m.raiz.position + m.offset * esc_px
 		s.rotation = 0.0
 		s.visible = true
 		_frag_t[i] = 0.6
@@ -513,6 +514,11 @@ func _montar_flashes() -> void:
 
 
 # ------------------------------------------------------------------ pedidos
+
+
+## Escala do ator na grade de 1 px: inteira, no mínimo 1 (igual a Monstro.escala_px).
+static func _esc_px(e: float) -> float:
+	return maxf(1.0, roundf(e))
 
 
 ## O rastro da katana. `ang` = direção do golpe (rad), `lado` = sentido do corte (1 ou -1), `tipo` = "corte" ou "estocada".
@@ -746,8 +752,9 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	s.region_rect = a.regiao
 	s.flip_h = a.espelha
 	s.position = a.raiz.position
-	_fl_esc[i] = a.escala
-	s.scale = Vector2.ONE * a.escala
+	var esc_px := _esc_px(a.escala)
+	_fl_esc[i] = esc_px
+	s.scale = Vector2.ONE * esc_px
 	s.rotation = 0.0
 	s.visible = true
 	var mat := s.material as ShaderMaterial

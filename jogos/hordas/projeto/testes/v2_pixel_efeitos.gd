@@ -108,5 +108,13 @@ func _ready() -> void:
 	var d1: Texture2D = ef._disco_pixel(9)
 	ok(d1.get_width() == 9 and d1.get_height() == 9, "disco de pixel de 9 px (%dx%d)" % [d1.get_width(), d1.get_height()])
 	ok(ef._disco_pixel(9) == d1, "disco de pixel em cache por lado")
+
+	# 6. efeitos de inimigo (piscada, fragmentos, dissolução) usam escala inteira: elite 1,5x e marcas 2,3x/3,2x/4,4x
+	ok(ef.has_method("_esc_px"), "Efeitos tem _esc_px")
+	if ef.has_method("_esc_px"):
+		for par in [[0.6, 1.0], [1.0, 1.0], [1.5, 2.0], [2.3, 2.0], [3.2, 3.0], [4.4, 4.0]]:
+			ok(is_equal_approx(float(ef.call("_esc_px", par[0])), float(par[1])), "_esc_px(%s) = %s" % [par[0], par[1]])
+	var fonte := FileAccess.get_file_as_string("res://v2/efeitos.gd")
+	ok(not ("= Vector2.ONE * a.escala" in fonte) and not ("= Vector2.ONE * m.escala" in fonte), "piscada e fragmentos não usam a escala crua do ator")
 	print("v2_pixel_efeitos falhas=", falhas)
 	get_tree().quit(1 if falhas else 0)
