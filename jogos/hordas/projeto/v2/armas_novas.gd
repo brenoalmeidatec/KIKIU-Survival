@@ -1712,10 +1712,9 @@ func _desenhar_queda(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		if ec <= 0.0:
 			continue
 		var t := float(c) / float(n_r)
-		var s := 1.0 - 0.24 * t
-		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2(s, s), Color(1, 1, 1, 0.55 - 0.42 * t))
-	var estica := 1.0 + 0.18 * e if Anim.suave else 1.0  # estica um pouco no sentido da queda conforme acelera
-	Anim.desenhar_suave(ci, f, qf, _queda_em(it, e), ang, Vector2(estica, 1.0 / sqrt(estica)))
+		# as cópias do rastro só apagam (antes também encolhiam até 0,76x, fração que borra o pixel)
+		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2.ONE, Color(1, 1, 1, 0.55 - 0.42 * t))
+	Anim.desenhar_suave(ci, f, qf, _queda_em(it, e), ang)  # sem esticar no sentido da queda (era até 1,18x): o rastro já dá a velocidade
 
 
 ## O brilho da queda (camada aditiva): no alto, a cintilada que avisa de onde ele vem; descendo, o calor em volta da cabeça.
@@ -1813,15 +1812,16 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		ci.draw_rect(Rect2(topo + Vector2(x - 1, -16 - k % 2), Vector2(2, 2)), Color(0.45, 0.95, 0.55, alfa))
 	# a balestra: sobe com um estalo depois de armada, recua ao atirar
 	var pivo := topo + Vector2(0, TORRE_PIVO - TORRE_TOPO + (1.0 - abre) * 6.0)
-	var pop := 1.0
+	var pop := 0.0  # o estalo ao armar: a balestra sobe até 2 px e volta em ~0,1 s (antes crescia até 1,2x, fração que borra o pixel)
 	if age >= ARMA_T:
-		pop = 1.0 + 0.2 * maxf(0.0, 1.0 - (age - ARMA_T) * 10.0)
+		pop = roundf(2.0 * maxf(0.0, 1.0 - (age - ARMA_T) * 10.0))
+	pivo.y -= pop
 	var ang := float(it.r)
 	var aux := float(it.aux)
 	pivo -= Vector2.from_angle(ang) * aux * 4.0
 	var corda_arco := Color(0.98, 0.94, 0.82, 0.9 * alfa)
 	var recuo := 1.0 + aux * 2.5  # a corda estica para trás ao armar e solta no tiro
-	ci.draw_set_transform(pivo.round(), ang, Vector2(pop, pop))
+	ci.draw_set_transform(pivo.round(), ang, Vector2.ONE)
 	for passo in 2:
 		var cont := passo == 0
 		_lc(ci, Vector2(-9, 0), Vector2(12, 0), 3.0, escuro, cont, alfa)  # a coronha e o trilho
@@ -1935,24 +1935,25 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	ci.draw_circle(Vector2.ZERO, 11.0 - 2.0 * alta, Color(0, 0, 0, 0.3))
 	ci.draw_circle(Vector2.ZERO, 8.0 - 1.5 * alta, Color(0, 0, 0, 0.75))
 	var c := (p + Vector2(0, -z - 6.0)).round()
-	var achata := Vector2(1.5, 0.85) if float(it.aux) > 0.0 else Vector2(1.2, 1.2)
-	ci.draw_set_transform(c, float(it.r), achata)
+	if float(it.aux) > 0.0:  # o quique: a cabaça afunda 2 px no chão (antes achatava com escala 1,5 x 0,85, fração que borra o pixel)
+		c.y += 2.0
+	ci.draw_set_transform(c, float(it.r), Vector2.ONE)  # os tamanhos abaixo já levam o 1,2 que era a escala
 	var contorno := Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, 0.95)
-	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), contorno, 3.0)  # o pavio (contorno)
-	ci.draw_circle(Vector2(0, 2.0), 6.6, contorno)
-	ci.draw_circle(Vector2(0, -4.2), 4.8, contorno)
-	ci.draw_circle(Vector2(0, 2.0), 5.6, COR_CABACA)
-	ci.draw_circle(Vector2(0, -4.2), 3.8, COR_CABACA.darkened(0.08))
-	ci.draw_circle(Vector2(1.8, 3.4), 3.0, COR_CABACA.darkened(0.35))  # o lado sem luz
-	ci.draw_circle(Vector2(-1.9, 0.8), 1.9, COR_CABACA.lightened(0.5))  # o brilho
-	ci.draw_line(Vector2(-4.2, -1.0), Vector2(4.2, -1.0), Color(0.3, 0.16, 0.06), 1.5)  # a corda do gargalo
-	ci.draw_rect(Rect2(Vector2(-0.8, -1.8), Vector2(1.6, 1.6)), Color(1.0, 0.86, 0.42))  # o nó dourado
-	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), Color(0.92, 0.85, 0.62), 1.2)  # o pavio
+	ci.draw_line(Vector2(0, -9.0), Vector2(3.6, -13.2), contorno, 3.6)  # o pavio (contorno)
+	ci.draw_circle(Vector2(0, 2.4), 7.9, contorno)
+	ci.draw_circle(Vector2(0, -5.0), 5.8, contorno)
+	ci.draw_circle(Vector2(0, 2.4), 6.7, COR_CABACA)
+	ci.draw_circle(Vector2(0, -5.0), 4.6, COR_CABACA.darkened(0.08))
+	ci.draw_circle(Vector2(2.2, 4.1), 3.6, COR_CABACA.darkened(0.35))  # o lado sem luz
+	ci.draw_circle(Vector2(-2.3, 1.0), 2.3, COR_CABACA.lightened(0.5))  # o brilho
+	ci.draw_line(Vector2(-5.0, -1.2), Vector2(5.0, -1.2), Color(0.3, 0.16, 0.06), 1.8)  # a corda do gargalo
+	ci.draw_rect(Rect2(Vector2(-1.0, -2.2), Vector2(1.9, 1.9)), Color(1.0, 0.86, 0.42))  # o nó dourado
+	ci.draw_line(Vector2(0, -9.0), Vector2(3.6, -13.2), Color(0.92, 0.85, 0.62), 1.4)  # o pavio
 	if est == 2:
 		var f := clampf(float(it.age) / float(st.get("pavio", 0.5)), 0.0, 1.0)
 		var a_est := alfa_pavio_estourando(float(it.age), f)
 		if a_est > 0.0:
-			ci.draw_circle(Vector2(0, 0), 6.2, Color(1, 1, 1, a_est))
+			ci.draw_circle(Vector2(0, 0), 7.4, Color(1, 1, 1, a_est))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 

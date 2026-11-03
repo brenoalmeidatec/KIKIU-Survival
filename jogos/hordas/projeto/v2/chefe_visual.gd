@@ -10,6 +10,8 @@ extends RefCounted
 ## aparece aos poucos na entrada (ENTRADA_S). As medidas são em "pixels do sprite" (multiplicadas pela escala do chefe, como o próprio sprite).
 
 const Anim := preload("res://v2/anim_golpes.gd")  # a folha dos corvos (assets/v2/armas_anim, a mesma do golpe de corvos do herói)
+const PixelRot := preload("res://v2/pixel_rot.gd")  # o corvo da revoada gira só em passos de 90 graus
+const ESC_VOO := 1.0  # escala inteira do corvo em voo (era 1,4)
 const ACHATA := 0.62  # o chão é uma elipse (igual a v2/avisos.gd)
 const ENTRADA_S := 0.9  # s para o adorno aparecer por inteiro quando o chefe nasce
 const VOO_S := 0.15  # s que a revoada leva para varrer a faixa: o dano sai no disparo, então os corvos têm de passar junto com ele
@@ -393,7 +395,7 @@ func _corvos_orbita(ci: CanvasItem, u: float, a: float, na_frente: bool) -> void
 			continue
 		var pos := Vector2(cos(fase) * 25.0, sin(fase) * 9.0 - 0.58 * p + sin(t * 2.0 + float(k)) * 3.0) * u
 		var lado := 1.0 if -sin(fase) >= 0.0 else -1.0  # vai para a direita quando o x cresce
-		var esc := 2.0 * (0.8 + 0.2 * sin(fase))  # os de trás são um pouco menores
+		var esc := 2.0 if na_frente else 1.0  # os de trás são menores (escala inteira: antes 1,2 a 2,0 contínua)
 		var sombra := Color(0.75, 0.55, 1.0, a)
 		Anim.desenhar(ci, f, Anim.quadro_em(f, t + float(k) * 0.13), pos.round(), 0.0, Vector2(lado * esc, esc), sombra)
 
@@ -424,5 +426,5 @@ func _desenhar_voos() -> void:
 		var cc := Color(cor.r, cor.g, cor.b, 0.22)
 		no_voo.draw_circle(c, 11.0, cc)
 		var esq := dir_tela.x < 0.0
-		var ang := (-dir_tela).angle() if esq else dir_tela.angle()
-		Anim.desenhar(no_voo, f, Anim.quadro_em(f, float(v.t) + float(v.ph)), c, ang, Vector2(-1.4 if esq else 1.4, 1.4))
+		var ang := PixelRot.quarto((-dir_tela).angle() if esq else dir_tela.angle())  # o corvo gira só em passos de 90 graus
+		Anim.desenhar(no_voo, f, Anim.quadro_em(f, float(v.t) + float(v.ph)), c, ang, Vector2(-1.0 if esq else 1.0, 1.0) * ESC_VOO)
