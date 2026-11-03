@@ -30,6 +30,7 @@ func _ready() -> void:
 	_t_corte(fx, "katana")
 	_t_corte(fx, "ciano")
 	_t_folhas(fx)
+	_t_ciano_png()
 	print("v2_pixel_folhas falhas=%d" % falhas)
 	get_tree().quit(1 if falhas else 0)
 
@@ -52,7 +53,8 @@ func _t_corte(fx, variante: String) -> void:
 	var def: Dictionary = Dados.json("v2_folhas_fx")[nome]
 	var menor := float(def.tam[0][0])
 	var maior := float(def.tam[def.tam.size() - 1][0])
-	for alc in [20.0, 30.0, 40.0, 46.0, 48.0, 55.0, 64.0, 74.0, 90.0, 140.0]:
+	ok(maior * 1.05 >= 2.0 * 108.0 * 1.45, "%s: a maior folha (%.0f) cobre o leque do chefe (alcance 108, pedido 313)" % [variante, maior])
+	for alc in [20.0, 30.0, 40.0, 46.0, 48.0, 55.0, 64.0, 74.0, 90.0, 95.0, 108.0, 140.0]:  # 95: cruz do Q do Hazaki; 108: leque do chefe
 		for lado in [1.0, -1.0]:
 			fx.limpar()
 			fx.corte(Vector2(100.4, 100.6), 0.7, alc, 125.0, lado, "corte", Color.WHITE, 0.3)
@@ -70,7 +72,7 @@ func _t_corte(fx, variante: String) -> void:
 			)
 			ok(folha != null and is_equal_approx(folha.get_height(), 4.0 * quad.y), "%s: as 4 linhas (giros) do tamanho do quad" % rot)
 			var pedido: float = 2.0 * alc * 1.45
-			if pedido >= menor and pedido <= maior:
+			if pedido >= menor and pedido <= maior * 1.05:  # acima da maior folha o desenho trava nela (o Joao no nível 15 e o leque do chefe pedem ~260 a ~313 px)
 				ok(absf(quad.x / pedido - 1.0) < 0.13, "%s: o quadro %s fica a ~12%% do pedido %.0f" % [rot, quad.x, pedido])
 			# nada cresce no meio do golpe: a escala segue 1 durante todo o rastro (Anim.suave ligado ou não)
 			for i in 12:
@@ -82,6 +84,44 @@ func _t_corte(fx, variante: String) -> void:
 	ok(_ultimo_corte(fx).texture.get_size() == Vector2(64, 64), "a estocada segue com o quad de 64 px")
 	fx.variante = "katana"
 	fx.limpar()
+
+
+## As folhas do rastro ciano: o contorno não é cortado pela borda do quadro e não há pixel solto (ruído da amostragem do Blender).
+func _t_ciano_png() -> void:
+	var def: Dictionary = Dados.json("v2_folhas_fx")["corte_ciano"]
+	var quadros := int(def.quadros)
+	var linhas := int(def.linhas)
+	for par in def.tam:
+		var lar := int(par[0])
+		var tex := load("res://assets/v2/efeitos/corte_hazaki_ciano_e%d.png" % lar) as Texture2D
+		var im := tex.get_image() if tex != null else null
+		ok(im != null and im.get_width() == quadros * lar and im.get_height() == linhas * lar, "ciano %d: a folha tem %d x %d quadros" % [lar, quadros, linhas])
+		if im == null:
+			continue
+		var presos := 0
+		var soltos := 0
+		for l in linhas:
+			for q in quadros:
+				var ox := q * lar
+				var oy := l * lar
+				for y in lar:
+					for x in lar:
+						if im.get_pixel(ox + x, oy + y).a <= 0.0:
+							continue
+						if x == 0 or y == 0 or x == lar - 1 or y == lar - 1:
+							if im.get_pixel(ox + x, oy + y).a >= 0.99:
+								presos += 1
+						var viz := false
+						for dy in range(-1, 2):
+							for dx in range(-1, 2):
+								var xx := x + dx
+								var yy := y + dy
+								if (dx != 0 or dy != 0) and xx >= 0 and yy >= 0 and xx < lar and yy < lar and im.get_pixel(ox + xx, oy + yy).a > 0.0:
+									viz = true
+						if not viz:
+							soltos += 1
+		ok(presos == 0, "ciano %d: nenhum pixel opaco na borda do quadro (%d)" % [lar, presos])
+		ok(soltos == 0, "ciano %d: nenhum pixel solto (%d)" % [lar, soltos])
 
 
 func _t_folhas(fx) -> void:

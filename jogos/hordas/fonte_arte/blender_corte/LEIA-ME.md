@@ -27,4 +27,4 @@ python folhas_1px.py [corte corte_ciano cristal estrela anel espiral]   # ~1 min
 - Os scripts do Blender aceitam o tamanho por variável de ambiente: `CORTE_TAM=N` (quadro de N px; o corte ciano passa a sair em 1 px em vez de 64x64 dobrado) e `CORTE_GIROS=1` (a folha sai com 4 linhas: a cena girada 0, 22,5, 45 e 67,5 graus, desenhada pela câmera, sem RotSprite). Sem as variáveis o comportamento é o de antes (o mestre de 128 px).
 - A lista de tamanhos fica em `folhas_1px.py` (`TAMANHOS`) e vai para `projeto/dados/v2_folhas_fx.json`, que o jogo lê. Para mudar um tamanho: edite a lista, rode o script e rode `godot --headless --import`.
 - Os outros 12 dos 16 ângulos do corte são quartos de volta: o shader troca o UV, exato (o quadro é quadrado e par).
-- Memória de vídeo: as 7 folhas do corte somam ~28 MB (RGBA sem compressão; a ciano, ~21 MB, só carrega com o Rastro de katana).
+- Memória de vídeo: as 10 folhas do corte somam ~85 MB (RGBA sem compressão; a ciano, ~62 MB, só carrega com o Rastro de katana). Os 3 maiores tamanhos (224, 264, 312) servem o leque do chefe e a cruz do Q; se a memória apertar no i5, cortar o 312 e deixar o leque do chefe travar no 264.

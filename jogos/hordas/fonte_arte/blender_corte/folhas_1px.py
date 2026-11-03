@@ -38,8 +38,8 @@ CHAO = 0.62  # o achatamento em Y dos efeitos de chao (era a escala do Y no codi
 # Larguras do quadro (px do jogo). Passos de ~15 a 25%: o jogo escolhe a mais perto do tamanho pedido (erro de no maximo ~10%).
 # O corte tem o quadro quadrado (a troca de quartos de volta no shader so e exata assim) e e 2 x alcance x 1,45: o alcance 46 do Hazaki pede 133.
 TAMANHOS = {
-    "corte": [56, 72, 92, 112, 134, 160, 192],
-    "corte_ciano": [56, 72, 92, 112, 134, 160, 192],
+    "corte": [56, 72, 92, 112, 134, 160, 192, 224, 264, 312],
+    "corte_ciano": [56, 72, 92, 112, 134, 160, 192, 224, 264, 312],
     "cristal": [44, 60, 80, 104, 136, 176, 232, 304],
     "estrela": [22, 30, 40, 56, 76, 104],
     "anel": [64, 88, 116, 152, 200, 260],
@@ -92,6 +92,15 @@ def confere(nome: str, largura: int, im: Image.Image) -> None:
     assert im.size == (n * largura, h * linhas), (nome, largura, im.size, (n * largura, h * linhas))
     a = np.array(im.convert("RGBA"))
     assert len(set(np.unique(a[..., 3]).tolist())) <= NIVEIS_ALFA[nome], (nome, largura, "mais tons de alfa que o esperado")
+    if nome == "corte_ciano":  # o contorno nao pode sair reto na borda do PNG (cortado) nem ter pixel solto (ruido da amostragem)
+        for lin in range(linhas):
+            for q in range(n):
+                f = a[lin * h : (lin + 1) * h, q * largura : (q + 1) * largura, 3]
+                borda = np.concatenate([f[0], f[-1], f[:, 0], f[:, -1]])
+                assert borda.max() < 255, (nome, largura, "linha", lin, "quadro", q, "o desenho encosta na borda do quadro")
+                vis = np.pad(f > 0, 1)
+                viz = sum(vis[1 + dy : 1 + dy + h, 1 + dx : 1 + dx + largura] for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy, dx) != (0, 0))
+                assert not np.any((f > 0) & (viz == 0)), (nome, largura, "linha", lin, "quadro", q, "pixel solto")
     if linhas > 1:  # o giro k tem de levar o miolo do desenho k x 22,5 graus no sentido horario da tela
         q = 6  # o quadro do crescente cheio
         base = a[0:h, q * largura : (q + 1) * largura]
