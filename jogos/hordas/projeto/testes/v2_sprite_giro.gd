@@ -286,16 +286,8 @@ func _argumentos(texto: String, ini: int) -> Array:
 
 
 func _t_preparo_ao_entrar() -> void:
-	# o que gira nos ataques inimigos e nos projéteis do Luke é preparado ao montar o mundo (avisos.gd, chefe_visual.gd, adagas.gd)
-	for par in [
-		["onda", "voo"],
-		["fura", "voo"],
-		["perigo_chuva", "queda"],
-		["corvos", "voo"],
-		["shuriken_heroi", "voo"],
-		["kunai_heroi", "voo"],
-		["flecha_heroi", "voo"]
-	]:
+	# o que gira nos ataques inimigos e nos projéteis do Luke é preparado ao montar o mundo (adagas.gd e afins); a pedra da chuva e a revoada giram só em passos de 90 graus (PixelRot.quarto) e não precisam de cópia
+	for par in [["onda", "voo"], ["fura", "voo"], ["shuriken_heroi", "voo"], ["kunai_heroi", "voo"], ["flecha_heroi", "voo"]]:
 		var fo := AnimGolpes.de(str(par[0])).get(str(par[1]), {}) as Dictionary
 		ok(not fo.is_empty() and SpriteGiro.preparada(fo.tex), "%s/%s foi preparada ao montar o mundo" % [par[0], par[1]])
 	var antes := SpriteGiro.geradas
