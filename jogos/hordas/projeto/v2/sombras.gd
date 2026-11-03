@@ -151,10 +151,10 @@ func _material_sombra() -> ShaderMaterial:
 	var sh := Shader.new()
 	sh.code = (
 		(
-			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\n"
+			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
 			+ GLSL_DEGRAUS
-			+ "void vertex(){ up = -VERTEX.y; }\n"
-			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(COLOR.a) * banda(1.0 - up / fade_len)); }\n"
+			+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
+			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
 		)
 		% SOMBRA_FADE
 	)

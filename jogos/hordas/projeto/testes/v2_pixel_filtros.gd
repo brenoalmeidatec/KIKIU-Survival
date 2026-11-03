@@ -62,6 +62,14 @@ func _sombras() -> void:
 	ok(mat.shader.code.contains("cobertura(") and mat.shader.code.contains("banda("), "o shader da sombra de sprite usa os degraus")
 	ok(Horda.SHADER_SOMBRA.contains("cobertura(") and Horda.SHADER_SOMBRA.contains("banda("), "o shader da sombra do lote usa os degraus")
 	ok(not mat.shader.code.contains("clamp(1.0 - up"), "sem o esmaecimento contínuo antigo (sprite)")
+	ok(
+		not mat.shader.code.contains("cobertura(COLOR"),
+		"a silhueta não quantiza o COLOR (que já leva a luz do modulate): senão a sombra some e pisca com a luz"
+	)
+	ok(
+		mat.shader.code.contains("cobertura(texture(TEXTURE") and mat.shader.code.contains("luz = COLOR.a"),
+		"a silhueta vem da textura e a luz (modulate) multiplica contínua"
+	)
 	ok(not Horda.SHADER_SOMBRA.contains("clamp(1.0 - up"), "sem o esmaecimento contínuo antigo (lote)")
 	# o sprite de sombra e o lote da horda desenham em nearest
 	var ator := preload("res://v2/ator.gd").new()
