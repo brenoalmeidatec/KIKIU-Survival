@@ -494,7 +494,7 @@ func _quebrar(_h) -> void:
 	var centro: Vector2 = _raiz.position + Vector2(0, cy)
 	for i in 4:
 		var meio := float(_cel) / 2.0
-		var c := Vector2(float(cents[i][0]), float(cents[i][1])) if i < cents.size() else Vector2(meio, meio)
+		var c := Vector2(float(cents[i][0]), float(cents[i][1])).round() if i < cents.size() else Vector2(meio, meio).round()  # centro em px inteiros: o pedaço nasce na grade, no lugar da frente
 		var fora := c - Vector2(meio, meio)
 		fora = fora.normalized() if fora.length() > 0.1 else Vector2.RIGHT
 		var f: Sprite2D = _frags[i]
@@ -570,19 +570,16 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 		_celula = quadro
 		_spr.region_rect = _quadro(quadro)
 	var leve := _leve()
-	var esc := 1.0
 	var alfa := 1.0
-	var dy := 0.0
+	var dy := 0.0  # pixel art numa grade só: subir e descer só deslocam em px inteiros (o `.round()` da posição) e esmaecem; o sprite nunca é escalado
 	if descendo and not ativo:
 		var p := _desce_t / dur_desce
-		esc = 1.0 - 0.3 * p
 		alfa = 1.0 - p
 		dy = 5.0 * p
 	elif _sobe_t < _sobe_dur and not leve:
 		var p := _sobe_t / _sobe_dur
 		var k := _ease_back(p)
-		esc = 0.55 + 0.45 * k
-		dy = 7.0 * (1.0 - minf(k, 1.0))
+		dy = 7.0 * (1.0 - k)  # com o pulo: passa 1 px do lugar e volta
 		alfa = minf(p * 3.0, 1.0)
 	if cel == COSTAS:
 		dy += float(visual.get("costas_dy", 0.0))  # de costas o escudo sobe um pouco: sem isso o corpo do herói o esconde por inteiro
@@ -597,7 +594,6 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	chao.y += 0.6  # empate de y-sort: de lado, o escudo fica na frente do herói
 	_raiz.position = chao.round()
 	_spr.position = (Vector2(0, float(visual.get("centro_y", -15.0)) + dy) + desl).round()
-	_spr.scale = Vector2(esc, esc)
 	_spr.flip_h = flip
 	var tom := Color(1, 1, 1, alfa)
 	if baixo and not rachado_visivel:  # de lado ou de costas não há quadro rachado: o aviso é o escudo avermelhado, pulsando
@@ -611,7 +607,6 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	if _bri.visible:
 		_bri.region_rect = _spr.region_rect
 		_bri.position = _spr.position
-		_bri.scale = _spr.scale
 		_bri.flip_h = flip
 		_bri.modulate = b
 	_flip = flip
@@ -628,7 +623,6 @@ func _atualizar_casca(h, cel: int, flip: bool, tom: Color) -> void:
 	var lado := int(visual.casca.celula)
 	_cam.region_rect = Rect2(celc * lado, 0, lado, lado)
 	_cam.position = _spr.position
-	_cam.scale = _spr.scale
 	_cam.flip_h = flip
 	_cam.modulate = Color(1, 1, 1, tom.a * (0.7 + 0.3 * sin(_relogio * 3.0)))
 	_cam.visible = true
@@ -654,7 +648,7 @@ func _atualizar_pedacos(dt: float) -> void:
 		v.rot += v.vrot * dt
 		var f: Sprite2D = _frags[i]
 		f.position = Vector2(v.x, v.gy - v.z).round()
-		f.rotation = v.rot
+		f.rotation = snappedf(v.rot, PI / 2.0)  # só em passos de 90 graus: girar em ângulo qualquer reamostra o pixel art
 		f.modulate.a = clampf((fim - v.t) / 0.3, 0.0, 1.0)
 		if v.t >= fim:
 			f.visible = false
