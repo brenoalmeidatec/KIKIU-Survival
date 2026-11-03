@@ -49,11 +49,12 @@ func _sombras() -> void:
 	s.montar(raiz)
 	var im := s.textura_blob().get_image()
 	ok(im.get_size() == Vector2i(64, 32), "a mancha tem 64x32 (%s)" % im.get_size())
+	var graus: Array = (s.get_script() as GDScript).get_script_constant_map().get("BLOB_DEGRAUS", [])  # pelo mapa de constantes: no código antigo falha o teste, não o parse
 	var niveis := {}
 	for y in im.get_height():
 		for x in im.get_width():
 			niveis[roundi(im.get_pixel(x, y).a * 255.0)] = true
-	ok(niveis.size() == Sombras.BLOB_DEGRAUS.size() + 1, "a mancha tem só os degraus + transparente (%d níveis: %s)" % [niveis.size(), niveis.keys()])
+	ok(graus.size() > 0 and niveis.size() == graus.size() + 1, "a mancha tem só os degraus + transparente (%d níveis: %s)" % [niveis.size(), niveis.keys()])
 	ok(im.get_pixel(32, 16).a > im.get_pixel(32, 2).a and im.get_pixel(32, 2).a > 0.0, "a mancha é mais forte no miolo que na borda")
 	ok(im.get_pixel(0, 0).a == 0.0, "o canto da mancha é transparente")
 	# a silhueta: os dois shaders (sprite e lote da horda) quantizam o alfa por fragmento

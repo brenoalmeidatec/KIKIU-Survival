@@ -256,3 +256,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - Arte própria procedural em `jogos/hordas/projeto/v2/adagas.gd` (`_img_missil`, 24×9 px) e `v2/misseis_visual.gd` (oito quadros de explosão de 40×40 px, gerados em memória). Formas e paleta desenhadas por código neste projeto; sem imagem, textura, modelo, biblioteca de efeitos ou referência de terceiros adicionados. Não usa o pixelfx nem exige arquivo bitmap externo.
 - O ajuste de recuo dos braços em `jogos/hordas/fonte_arte/blender_herois/lightwolf_mecha/anim_combo.py` e os quadros derivados do combo continuam sobre o modelo próprio do mecha registrado acima. Não acrescenta arte de terceiros nem muda a origem das demais animações.
+
+## Pixel de um tamanho só: filtros e escala (alisson/pixel-filtros-ui)
+
+- Nenhuma arte nova nem de terceiros. O coração do curandeiro (`jogos/hordas/projeto/v2/ritmo.gd`) passa a usar `jogos/hordas/projeto/assets/v2/icones_cartas/16/vida.png`, que já estava no repositório (derivado de `icones_cartas/vida.png`, folhas próprias de ícones registradas acima), em 1:1, em vez de `icones_cartas/vida.png` (32x32) a escala 0,5. A mancha dos pés das sombras (`v2/sombras.gd`) é gerada por código (3 degraus de alfa), sem arquivo. Licença: a do projeto.
