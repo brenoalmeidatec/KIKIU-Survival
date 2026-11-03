@@ -570,19 +570,16 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 		_celula = quadro
 		_spr.region_rect = _quadro(quadro)
 	var leve := _leve()
-	var esc := 1.0
 	var alfa := 1.0
 	var dy := 0.0
 	if descendo and not ativo:
 		var p := _desce_t / dur_desce
-		esc = 1.0 - 0.3 * p
 		alfa = 1.0 - p
-		dy = 5.0 * p
+		dy = 8.0 * p  # afunda em passos de pixel inteiro (a posição é arredondada): sem encolher o sprite
 	elif _sobe_t < _sobe_dur and not leve:
 		var p := _sobe_t / _sobe_dur
 		var k := _ease_back(p)
-		esc = 0.55 + 0.45 * k
-		dy = 7.0 * (1.0 - minf(k, 1.0))
+		dy = 13.0 * (1.0 - minf(k, 1.0))  # sobe em passos de pixel inteiro: sem crescer o sprite (escala sempre 1)
 		alfa = minf(p * 3.0, 1.0)
 	if cel == COSTAS:
 		dy += float(visual.get("costas_dy", 0.0))  # de costas o escudo sobe um pouco: sem isso o corpo do herói o esconde por inteiro
@@ -597,7 +594,7 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	chao.y += 0.6  # empate de y-sort: de lado, o escudo fica na frente do herói
 	_raiz.position = chao.round()
 	_spr.position = (Vector2(0, float(visual.get("centro_y", -15.0)) + dy) + desl).round()
-	_spr.scale = Vector2(esc, esc)
+	_spr.scale = Vector2.ONE  # escala inteira: pixel do escudo sempre do tamanho do pixel do mundo
 	_spr.flip_h = flip
 	var tom := Color(1, 1, 1, alfa)
 	if baixo and not rachado_visivel:  # de lado ou de costas não há quadro rachado: o aviso é o escudo avermelhado, pulsando

@@ -445,6 +445,12 @@ func _ready() -> void:
 	fx_passos(2)
 	ve = esc.visual_estado()
 	ok(str(ve.estilo) == "nicao" and esc._spr.texture.get_width() == 576 and ve.celula < 8, "o Nick no nível 5 usa a faixa M de 48 px, camada 0 (%s)" % ve)
+	esc.ergueu(h)  # recomeça a subida e olha o meio dela (o escudo já estava erguido aqui)
+	fx_passos(2)
+	ok(
+		esc._spr.scale == Vector2.ONE and esc._bri.scale == Vector2.ONE,
+		"subida do escudo: escala do sprite fica em 1, sem ampliar o pixel (veio %s)" % esc._spr.scale
+	)
 	h.nivel = 6
 	fx_passos(2)
 	ve = esc.visual_estado()
