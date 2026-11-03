@@ -43,6 +43,7 @@ extends "res://v2/ator.gd"
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 const Foguinho := preload("res://v2/foguinho.gd")
+const PixelRot := preload("res://v2/pixel_rot.gd")  # pixel art só gira em passos de 90 graus
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a invencibilidade vira tom fixo
 const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a defesa do escudo recarrega sozinha?
 
@@ -1419,7 +1420,7 @@ func _visual(dt: float, v: Vector2) -> void:
 		var gira := signf(esq_dir.x) if absf(esq_dir.x) > 0.1 else 1.0
 		sprite.position = Vector2(0, -14)
 		sprite.offset = _off_base + Vector2(0, 14)
-		sprite.rotation = gira * TAU * minf(p * 1.15, 1.0)
+		sprite.rotation = PixelRot.quarto(gira * TAU * minf(p * 1.15, 1.0))  # pixel art só gira em passos de 90 graus (a folha de hoje tem o rolamento desenhado: isto é o reserva)
 		esc = Vector2(1.0, 0.82)
 	else:
 		if sprite.rotation != 0.0:
@@ -1498,7 +1499,7 @@ func _visual_morto(dt: float) -> void:
 		return
 	sprite.position = Vector2(0, -14)
 	sprite.offset = _off_base + Vector2(0, 14)
-	sprite.rotation = lerpf(sprite.rotation, 1.45 * (1.0 if dir_olhar.x >= 0 else -1.0), 1.0 - exp(-9.0 * dt))
+	sprite.rotation = PixelRot.quarto(1.45 * (1.0 if dir_olhar.x >= 0 else -1.0) * (1.0 - exp(-9.0 * morte_t)))  # a queda do lerp em forma fechada, em passos de 90 graus (de pé e depois deitado)
 	sprite.scale = Vector2.ONE
 	sprite.modulate = Color(1, 0.8, 0.8, 0.85)
 
