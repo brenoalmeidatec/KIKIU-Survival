@@ -11,7 +11,7 @@ extends Control
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": os quadros que pulsam ficam num tom fixo
-const TAM_CARD := Vector2(130.0, 111.0)  # decisão do Alisson (#368): o HUD da partida é 1,5x. O desenho é em pixel nativo (sem `scale`): 130x111 por card, 261x111 os dois
+const TAM_CARD := Vector2(130.0, 112.0)  # decisão do Alisson (#368): o HUD da partida é 1,5x. O desenho é em pixel nativo (sem `scale`): 130x112 por card (112 = 22 de margem da moldura + 15 x 6 do miolo da arte, todo inteiro), 261x112 os dois
 const ESPACO_CARD := 1.0
 const TAM_ICON := Vector2(68.0, 68.0)  # o quadro do ícone: o ícone de 32 px a 2x (64) com 2 px de folga
 const ESCALA_ICONE := 2  # os ícones (32x32, 1 px de arte) são desenhados em 2x inteiro: o pixel do ícone é do tamanho dos outros

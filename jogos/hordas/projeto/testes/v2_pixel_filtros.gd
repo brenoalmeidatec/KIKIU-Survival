@@ -117,7 +117,7 @@ func _sem_escala_fracionaria() -> void:
 				ok(false, "%s:%d anima `scale`: %s" % [arq, i + 1, l])
 
 
-## O Q (círculo de 96 px) e o E/secundário (dois cards, 261x111) são desenhados no tamanho final: nada de `scale` no nó (era 1,5x, pixel de 1,5 px), filtro
+## O Q (círculo de 96 px) e o E/secundário (dois cards, 261x112) são desenhados no tamanho final: nada de `scale` no nó (era 1,5x, pixel de 1,5 px), filtro
 ## nearest e o ícone de 32 px em 2x inteiro.
 func _hud_em_pixel_nativo() -> void:
 	var raiz := Control.new()
@@ -135,7 +135,7 @@ func _hud_em_pixel_nativo() -> void:
 		ok(no.scale == Vector2.ONE, "%s não é escalado (%s): desenha em pixel nativo" % [no.name, no.scale])
 		ok(no.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "%s desenha em nearest" % no.name)
 	ok(ultimate.size == Vector2(96, 96), "o círculo do Q mede 96 px no próprio nó (%s)" % ultimate.size)
-	ok(habilidades.size == Vector2(261, 111), "E e secundário medem 261x111 no próprio nó (%s)" % habilidades.size)
+	ok(habilidades.size == Vector2(261, 112), "E e secundário medem 261x112 no próprio nó (%s)" % habilidades.size)
 	var ic_q: Variant = (HudUltimate as GDScript).get_script_constant_map().get("ESCALA_ICONE", 0)  # pelo mapa: no código antigo falha o teste, não o parse
 	var ic_e: Variant = (HudHabilidades as GDScript).get_script_constant_map().get("ESCALA_ICONE", 0)
 	ok(ic_q is int and ic_q >= 1, "o ícone do Q usa escala inteira (%s)" % ic_q)
@@ -153,6 +153,19 @@ func _hud_em_pixel_nativo() -> void:
 		topo + quadro.y + 8.0 <= base + 1.0 and base <= card.y - Glifos.ALTURA_SELO + 1.0,
 		"quadro do ícone, rótulo de 8 px e selo da tecla cabem um sob o outro no card (%s, %s, %s)" % [topo, base, card]
 	)
+	# o Q não suaviza borda (alfa intermediário fora da grade de 1 px): nenhum draw_circle/draw_arc termina em `antialiased = true`
+	for linha in _fonte("hud_ultimate.gd").split("\n"):
+		if linha.contains("draw_circle(") or linha.contains("draw_arc("):
+			var codigo: String = linha.split("#")[0].strip_edges()
+			ok(not codigo.ends_with(", true)"), "o Q desenha sem antialias: %s" % codigo)
+	# a moldura de pedra (9-slice esticado) só cai em pixel inteiro se o miolo do card for múltiplo do miolo da arte, nos dois eixos
+	var arte: Texture2D = ch.get("MOLDURA")
+	var margem: Vector2 = ch.get("MOLDURA_MARGEM", Vector2.ZERO)
+	var miolo_arte := Vector2(arte.get_size()) - margem * 2.0
+	var miolo_card := card - margem * 2.0
+	ok(miolo_arte.x > 0.0 and miolo_arte.y > 0.0, "a moldura tem miolo (%s)" % miolo_arte)
+	ok(fposmod(miolo_card.x, miolo_arte.x) == 0.0, "o miolo horizontal do card (%s) é múltiplo inteiro do da arte (%s)" % [miolo_card.x, miolo_arte.x])
+	ok(fposmod(miolo_card.y, miolo_arte.y) == 0.0, "o miolo vertical do card (%s) é múltiplo inteiro do da arte (%s)" % [miolo_card.y, miolo_arte.y])
 	raiz.queue_free()
 
 

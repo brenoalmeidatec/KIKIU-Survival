@@ -454,7 +454,7 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 		"recarga acabou: o secundário volta pronto, sem cortina, com o nome do aparo"
 	)
 	var area := Rect2(slots.position, slots.size * slots.scale)
-	ok(area.position == Vector2(693, 423) and area.size == Vector2(261, 111), "E e secundário ocupam o canto de baixo à direita")
+	ok(area.position == Vector2(693, 422) and area.size == Vector2(261, 112), "E e secundário ocupam o canto de baixo à direita")
 	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")
 	ok(not area.intersects(ZONA_MINIMAPA), "E e secundário não cobrem o minimapa")
 	var xp = hud.get_node("Raiz/Xp")

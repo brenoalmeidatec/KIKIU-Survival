@@ -66,16 +66,16 @@ func _draw() -> void:
 		cor = cor_heroi.lerp(Paleta.BRANCO, 0.45 * pulso)
 	# o halo de quando está pronta: um círculo suave atrás que respira
 	if pronta:
-		draw_circle(c, RAIO_FUNDO + 4.0, Color(cor_heroi, 0.12 + 0.2 * pulso), true, -1.0, true)
-	draw_circle(c, RAIO_FUNDO, FUNDO, true, -1.0, true)
+		draw_circle(c, RAIO_FUNDO + 4.0, Color(cor_heroi, 0.12 + 0.2 * pulso), true, -1.0, false)
+	draw_circle(c, RAIO_FUNDO, FUNDO, true, -1.0, false)
 	if pronta:  # cheia (100%): um aro de luz por fora e o miolo tingido; nunca mais apagado do que a 99%
-		draw_arc(c, RAIO_FUNDO + 2.0, 0.0, TAU, PONTOS, Color(cor_heroi.lerp(Paleta.BRANCO, 0.5), 0.35 + 0.55 * pulso), 3.0, true)
-		draw_circle(c, RAIO_ANEL - LARG_ANEL * 0.5, Color(cor_heroi, 0.14 + 0.18 * pulso), true, -1.0, true)
-	draw_arc(c, RAIO_ANEL, 0.0, TAU, PONTOS, TRILHO, LARG_ANEL, true)
+		draw_arc(c, RAIO_FUNDO + 2.0, 0.0, TAU, PONTOS, Color(cor_heroi.lerp(Paleta.BRANCO, 0.5), 0.35 + 0.55 * pulso), 3.0, false)
+		draw_circle(c, RAIO_ANEL - LARG_ANEL * 0.5, Color(cor_heroi, 0.14 + 0.18 * pulso), true, -1.0, false)
+	draw_arc(c, RAIO_ANEL, 0.0, TAU, PONTOS, TRILHO, LARG_ANEL, false)
 	if f > 0.0:
-		draw_arc(c, RAIO_ANEL, -PI * 0.5, -PI * 0.5 + TAU * f, PONTOS, cor if tem else Paleta.HABILIDADE_DESATIVADA, LARG_ANEL, true)
-	draw_arc(c, RAIO_FUNDO, 0.0, TAU, PONTOS, Color(EstiloPremium.OURO, 0.9 if pronta else 0.45), 2.0, true)  # o filete dourado do visual premium
-	draw_arc(c, RAIO_ANEL - LARG_ANEL * 0.5 - 1.0, 0.0, TAU, PONTOS, Color(Paleta.PRETO, 0.5), 2.0, true)
+		draw_arc(c, RAIO_ANEL, -PI * 0.5, -PI * 0.5 + TAU * f, PONTOS, cor if tem else Paleta.HABILIDADE_DESATIVADA, LARG_ANEL, false)
+	draw_arc(c, RAIO_FUNDO, 0.0, TAU, PONTOS, Color(EstiloPremium.OURO, 0.9 if pronta else 0.45), 2.0, false)  # o filete dourado do visual premium
+	draw_arc(c, RAIO_ANEL - LARG_ANEL * 0.5 - 1.0, 0.0, TAU, PONTOS, Color(Paleta.PRETO, 0.5), 2.0, false)
 	var arte := _arte()
 	if arte != null and tem:
 		var alfa := 1.0 if pronta else 0.32
