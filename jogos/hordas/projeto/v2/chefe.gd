@@ -56,6 +56,8 @@ func montar(c) -> void:
 	combate = c
 	mundo = c.mundo
 	cfg = c.cartas.cfg.chefes
+	for mk in cfg.marcas:  # as folhas grandes dos chefes carregam na abertura, não quando o chefe chega
+		mundo.sprites.tipo_grande(str(mk.tipo), int(maxf(1.0, roundf(float(mk.escala)))))
 	visual = Visual.new()
 	visual.montar(self, c)
 	luz = PointLight2D.new()  # o chefe é escuro: uma luz da cor dele em volta o deixa legível na floresta

@@ -544,6 +544,12 @@ func definir_escala(e: float) -> void:
 			olho.scale = sprite.scale
 
 
+## A linha dos pés em px da folha do lote (1x), para quem posiciona coisas por `pe * escala` (os enfeites de chefe_visual.gd): com a folha
+## grande em escala 1, `tipo.pe` já vem N vezes maior e multiplicar de novo por `escala` jogaria tudo N vezes mais alto.
+func pe_logico() -> float:
+	return float(tipo.pe) * esc / maxf(escala, 1.0)
+
+
 ## Troca a folha desenhada (a do lote ou a grande) mantendo o quadro: corpo, olhos, contorno e as duas sombras passam a ler dela.
 func _trocar_folha(t: Dictionary) -> void:
 	if is_same(tipo, t):
