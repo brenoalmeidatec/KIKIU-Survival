@@ -45,6 +45,9 @@ var ret_raio := 0.0
 func montar(c, camada: Node) -> void:
 	combate = c
 	mundo = c.mundo
+	var queda: Dictionary = Anim.de("perigo_chuva").get("queda", {})
+	if not queda.is_empty():  # a pedra que cai gira para a diagonal da queda: as cópias pré-giradas nascem ao montar, não no meio da luta
+		Anim.preparar_giro(queda)
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	no = Node2D.new()

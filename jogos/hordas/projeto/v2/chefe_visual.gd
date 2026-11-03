@@ -38,6 +38,9 @@ func montar(ctrl, c) -> void:
 	chefe = ctrl
 	combate = c
 	mundo = c.mundo
+	var corvo: Dictionary = Anim.de("corvos").get("voo", {})
+	if not corvo.is_empty():  # a revoada voa apontando para onde vai: as cópias pré-giradas nascem ao montar, não no meio da luta
+		Anim.preparar_giro(corvo)
 	var mat := CanvasItemMaterial.new()
 	mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	atras = Node2D.new()
@@ -395,7 +398,7 @@ func _corvos_orbita(ci: CanvasItem, u: float, a: float, na_frente: bool) -> void
 			continue
 		var pos := Vector2(cos(fase) * 25.0, sin(fase) * 9.0 - 0.58 * p + sin(t * 2.0 + float(k)) * 3.0) * u
 		var lado := 1.0 if -sin(fase) >= 0.0 else -1.0  # vai para a direita quando o x cresce
-		var esc := 2.0 if na_frente else 1.0  # os de trás são menores (escala inteira: antes 1,2 a 2,0 contínua)
+		var esc := 2.0  # escala inteira (a de trás não encolhe: meio pixel não existe); a profundidade fica por conta da sombra e da ordem de desenho
 		var sombra := Color(0.75, 0.55, 1.0, a)
 		Anim.desenhar(ci, f, Anim.quadro_em(f, t + float(k) * 0.13), pos.round(), 0.0, Vector2(lado * esc, esc), sombra)
 

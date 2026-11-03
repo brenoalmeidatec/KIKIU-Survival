@@ -22,6 +22,7 @@ extends RefCounted
 ## vale no quadro seguinte, porque a lista de candidatos deste quadro foi montada com a direção antiga.
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
+const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
@@ -92,6 +93,10 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_registrar("bala", _img_bala(), 7.0, 3.0)
 	_registrar("plasma", _img_plasma(), 11.0, 7.0)
 	_registrar("missil", _img_missil(), 24.0, 9.0)
+	for nome in ["shuriken", "kunai", "flecha"]:  # as folhas `<nome>_heroi`: as cópias pré-giradas nascem ao montar, não no primeiro arremesso
+		var voo: Dictionary = AnimGolpes.de(nome + "_heroi").get("voo", {})
+		if not voo.is_empty():
+			AnimGolpes.preparar_giro(voo)
 	misseis_visual.montar()
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
@@ -578,9 +583,8 @@ func _desenhar_corpo() -> void:
 			var f: Dictionary = e.anim
 			AnimGolpes.desenhar(no_corpo, f, AnimGolpes.quadro_em(f, _relogio), p, (a_dir[i] as Vector2).angle(), Vector2.ONE, Color(1, 1, 1, fade))
 			continue
-		no_corpo.draw_set_transform(p.round(), (a_dir[i] as Vector2).angle(), Vector2.ONE)
-		no_corpo.draw_texture(e.tex, Vector2(-float(e.compr) * 0.5, -float(e.alt) * 0.5), Color(1, 1, 1, fade))
-	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var tam := Vector2i((e.tex as Texture2D).get_size())  # a imagem do código aponta para a direção do voo em 16 passos, sem girar pixel (sprite_giro.gd)
+		SpriteGiro.desenhar(no_corpo, e.tex, tam, tam / 2, 1, 0, p, (a_dir[i] as Vector2).angle(), Vector2.ONE, Color(1, 1, 1, fade))
 
 
 func _desenhar_brilho() -> void:
@@ -740,6 +744,8 @@ func _img_plasma() -> Texture2D:
 func _registrar(nome: String, tex: Texture2D, compr: float, alt: float) -> int:
 	_proj_lista.append({"nome": nome, "tex": tex, "compr": compr, "alt": alt})
 	_proj_nomes[nome] = _proj_lista.size() - 1
+	var tam := Vector2i(tex.get_size())
+	SpriteGiro.preparar(tex, tam, tam / 2)  # as cópias pré-giradas nascem aqui, ao montar, e não no meio da partida
 	return _proj_lista.size() - 1
 
 
@@ -749,6 +755,7 @@ func _indice_proj(nome: String) -> int:
 		return _proj_nomes[nome]
 	var folhas := AnimGolpes.de(nome + "_heroi")
 	if folhas.has("voo"):
+		AnimGolpes.preparar_giro(folhas.voo)
 		_proj_lista.append({"nome": nome, "anim": folhas.voo})
 		_proj_nomes[nome] = _proj_lista.size() - 1
 	else:
