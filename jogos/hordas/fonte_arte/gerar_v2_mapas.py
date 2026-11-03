@@ -30,6 +30,8 @@ HORDAS = AQUI.parent
 PROJ = HORDAS / "projeto"
 BRUTOS = AQUI / "mapas_v2" / "brutos"
 sys.path.insert(0, str(AQUI / "mapas_v2"))
+sys.path.insert(0, str(AQUI))
+from quantizar_alfa import quantizar_imagem  # noqa: E402
 ACHATA = 0.7071067811865476  # sen 45: o piso e os decalques vistos de cima ficam achatados na câmera 3/4
 COR_CONTORNO = (13, 15, 20)
 CORES_OBJETO = 40
@@ -219,6 +221,7 @@ def montar_decalques(defs, saida, rng):
     for (x, y), im, nome in zip(pos, imgs, nomes):
         folha.paste(im, (x, y))
         itens.append({"nome": nome, "regiao": [x, y, im.width, im.height], "centro": [im.width // 2, im.height // 2]})
+    folha = quantizar_imagem(folha, cores=48)  # pixel art: alfa em 6 degraus e 48 cores (fonte_arte/quantizar_alfa.py)
     folha.save(saida / "decalques.png")
     (saida / "decalques.json").write_text(json.dumps({"_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
                                                       "itens": itens}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

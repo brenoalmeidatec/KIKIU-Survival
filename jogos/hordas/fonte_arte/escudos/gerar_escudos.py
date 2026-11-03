@@ -22,6 +22,9 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from quantizar_alfa import quantizar_imagem  # noqa: E402  (pixel art: alfa em 6 degraus, fonte_arte/quantizar_alfa.py)
+
 C = 32  # celula em px (muda por faixa, em ESCUDOS, com usar())
 F = 1.0  # zoom: uma unidade de desenho (celula de 32) vira F px; a celula de 32 usa F = 1, entao o desenho e o mesmo de antes
 SS = 4  # supersampling das formas (so para curvas boas; o resultado e binario)
@@ -545,7 +548,7 @@ def main():
         fx.save(saida / f"{cfg['arquivo']}.png")
         centroides[estilo] = cent
         todas.append(fx)
-    faixa_casca().save(saida / "camadas.png")
+    quantizar_imagem(faixa_casca(), cores=32).save(saida / "camadas.png")  # o aro translucido em 6 degraus de alfa
     print(json.dumps(centroides))
     if previa is not None:
         esc = 5

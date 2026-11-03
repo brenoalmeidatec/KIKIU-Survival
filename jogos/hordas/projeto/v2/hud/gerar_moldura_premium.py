@@ -11,8 +11,12 @@ Uso: python -I gerar_moldura_premium.py  (grava ao lado deste arquivo)
 """
 
 import os
+import sys
 
 from PIL import Image
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "fonte_arte"))
+from quantizar_alfa import quantizar_imagem  # noqa: E402  (pixel art: alfa em 6 degraus, fonte_arte/quantizar_alfa.py)
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
@@ -109,5 +113,5 @@ def foco_premium() -> Image.Image:
 if __name__ == "__main__":
     moldura_premium().save(os.path.join(AQUI, "moldura_premium.png"))
     moldura_premium_fina().save(os.path.join(AQUI, "moldura_premium_fina.png"))
-    foco_premium().save(os.path.join(AQUI, "foco_premium.png"))
+    quantizar_imagem(foco_premium(), cores=32).save(os.path.join(AQUI, "foco_premium.png"))
     print("moldura_premium.png, moldura_premium_fina.png e foco_premium.png gravadas em", AQUI)
