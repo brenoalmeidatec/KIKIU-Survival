@@ -1,7 +1,7 @@
 extends Control
 ## Faixa de GOLPES do HUD da v2: um quadradinho fixo por golpe automático que o herói tem (bola de fogo, lâminas rodopiantes, corvos, raio,
 ## runa, aura, golem, lobo...), no canto inferior esquerdo, acima do retrato e das barras de vida e fôlego. Antes isto só aparecia na pausa ("GOLPES AUTOMÁTICOS").
-## Quadradinhos pequenos (caixa de 26 px, ícone da carta reduzido de 32 para 24) para não poluir com 10 golpes: parada, a faixa fica
+## Quadradinhos pequenos (caixa de 38 px, ícone da carta em 32 px, 1:1: sem escala fracionária nem filtro linear) para não poluir com 10 golpes: parada, a faixa fica
 ## translúcida; ao ganhar golpe, subir de nível ou fundir, ela fica opaca por ~1,5 s e volta a esmaecer.
 ## Cada quadradinho tem só três leituras: o ícone próprio da carta, os pips de nível embaixo e UMA linha fina de recarga no pé do ícone (só
 ## enquanto recarrega, nos golpes que têm recarga: corvos, raio, runa, projétil, nuvem, anel, meteoro, aliado e torre; lâmina e aura batem sem
@@ -22,23 +22,22 @@ extends Control
 
 const Paleta := preload("res://v2/paleta.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o losango de fusão quase pronta não pisca
-const ICONE := 24  # lado do ícone desenhado (a arte da carta tem 32 e é reduzida a 0,75)
-const CAIXA := 26  # lado da caixa do ícone: moldura de 1 px em volta
-const ALTURA := 32  # caixa (26) + pips (3) + folgas
-const ESPACO := 3
-const POR_LINHA := 8  # 8 por linha: a faixa (1,5x na tela) acaba em x 354, antes do Q (x 432)
+const ICONE := 32  # lado do ícone desenhado: o da carta (32x32), na escala 1:1 (nada de reduzir, que borra o pixel)
+const CAIXA := 38  # lado da caixa do ícone: moldura de 1 px e 2 px de folga em volta
+const ALTURA := 48  # caixa (38) + pips (4) + folgas
+const ESPACO := 4
+const POR_LINHA := 8  # 8 por linha: a faixa acaba em x 342, antes do Q (x 432)
 const LINHAS_MAX := 3  # 24 golpes; passou disso, o excedente vira um "+N"
 const CAPACIDADE := POR_LINHA * LINHAS_MAX
 const MARGEM := 6.0  # folga até a borda esquerda do pai
-const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó é escalado (`scale`); o desenho e `size` ficam no espaço de 26x32 por golpe
 const MARGEM_BAIXO := 118.0  # até a borda de baixo (na tela): 6 de folga, 108 do retrato e 4 de respiro (a faixa fica acima do bloco do herói)
 const LEITURA_S := 0.05  # lê o combate a 20 Hz
 const ANIM_S := 0.5  # duração do pop/pulso
 const DESTAQUE_S := 1.5  # quanto tempo a faixa fica opaca depois de uma mudança
 const ALFA_PARADA := 0.72  # opacidade da faixa quando nada muda
 const FAISCAS := 6
-const PIP_L := 4
-const PIP_A := 3
+const PIP_L := 6
+const PIP_A := 4
 const FUNDO := Color(Paleta.PAINEL, 0.88)
 const TRILHO := Color(Paleta.BARRA_BORDA, 0.6)
 const TIPOS_RECARGA := ["corvos", "raio", "runa", "projetil", "nuvem", "anel", "meteoro", "aliado", "torre"]
@@ -68,12 +67,11 @@ func _ready() -> void:
 	anchor_bottom = 1.0
 	offset_left = MARGEM
 	offset_right = MARGEM + tam.x
-	scale = Vector2(ESCALA, ESCALA)
-	offset_top = -MARGEM_BAIXO - tam.y * ESCALA  # o nó mede tam.y e aparece com tam.y * ESCALA: a base dele fica em -MARGEM_BAIXO
+	offset_top = -MARGEM_BAIXO - tam.y  # a base do nó fica em -MARGEM_BAIXO; o desenho é nativo no tamanho de tela (sem `scale`)
 	offset_bottom = offset_top + tam.y
 	light_mask = 0
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # o ícone de 32 px é reduzido a 24: com nearest sairia serrilhado
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # ícone 1:1, filtro nearest: um tamanho de pixel só
 	modulate.a = ALFA_PARADA
 	visible = false
 	_hud = _achar_hud()
@@ -137,7 +135,7 @@ func area_ocupada() -> Rect2:
 		return Rect2()
 	var colunas := mini(n, POR_LINHA)
 	var linhas := ceili(float(n) / POR_LINHA)
-	return Rect2(position.x, position.y + (size.y - linhas * ALTURA) * ESCALA, (colunas * (CAIXA + ESPACO) - ESPACO) * ESCALA, linhas * ALTURA * ESCALA)
+	return Rect2(position.x, position.y + size.y - linhas * ALTURA, colunas * (CAIXA + ESPACO) - ESPACO, linhas * ALTURA)
 
 
 ## Lê o combate e monta `itens`; dispara as animações do que chegou ou subiu. Devolve true se a chave visível mudou.
@@ -260,12 +258,12 @@ func _draw() -> void:
 			_desenhar_slot(i, itens[i])
 	if itens.size() > CAPACIDADE:
 		var f := get_theme_font("font")
-		draw_string(f, pos_excedente(), "+%d" % (itens.size() - CAPACIDADE), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Paleta.TEXTO_SECUNDARIO)
+		draw_string(f, pos_excedente(), "+%d" % (itens.size() - CAPACIDADE), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Paleta.TEXTO_SECUNDARIO)
 
 
 ## Onde o "+N" fica: à direita da linha de baixo, na folga antes do Q (x 432), sem cobrir nenhum quadradinho.
 func pos_excedente() -> Vector2:
-	return Vector2(POR_LINHA * (CAIXA + ESPACO) + 2.0, size.y - ALTURA + 12.0)
+	return Vector2(POR_LINHA * (CAIXA + ESPACO) + 2.0, size.y - ALTURA + 14.0)
 
 
 func _origem(i: int) -> Vector2:
@@ -279,55 +277,56 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 	var tipo: String = an.get("tipo", "")
 	var cor: Color = it.cor
 	var cor_an: Color = Paleta.FUSAO if tipo == "fusao" else Paleta.OURO
-	# o pop é curto para não invadir o vizinho (folga de 3 px entre caixas): golpe novo parte de 0,6 e passa a 1,10; nível e fusão dão um pulso
-	var escala := 1.0
+	# o pop NUNCA escala o desenho (fração de pixel borra a grade): golpe novo parte de 3 px de moldura a mais e assenta, com o ícone surgindo do escuro;
+	# nível e fusão dão um pulso de até 2 px de moldura. Tudo em pixel inteiro e a folga entre as caixas é de 4 px: o pop não invade o vizinho.
+	var crescer := 0
+	var vis := 1.0
 	match tipo:
 		"novo":
-			escala = lerpf(0.6, 1.1, u / 0.4) if u < 0.4 else lerpf(1.1, 1.0, (u - 0.4) / 0.6)
+			crescer = roundi(3.0 * (1.0 - u))
+			vis = clampf(u / 0.3, 0.35, 1.0)
 		"nivel", "fusao", "apice":
-			escala = 1.0 + (0.1 if tipo != "nivel" else 0.07) * sin(u * PI)
+			crescer = roundi((1.0 if tipo == "nivel" else 2.0) * sin(u * PI))
 	var brilho := (1.0 - u) * (1.0 - u) if tipo != "" else 0.0
 	var centro := o + Vector2(CAIXA, CAIXA) * 0.5
-	draw_set_transform(centro, 0.0, Vector2(escala, escala))
-	var c0 := -Vector2(CAIXA, CAIXA) * 0.5  # canto da caixa no espaço escalado
-	var caixa := Rect2(c0, Vector2(CAIXA, CAIXA))
+	var c0 := o  # canto da caixa
+	var caixa := Rect2(c0, Vector2(CAIXA, CAIXA)).grow(crescer)
 	draw_rect(caixa, FUNDO)
 	var dourado: bool = it.evo or it.apice
-	if it.apice:  # o halo fino na cor do golpe, por fora da moldura dourada (cabe na folga de 3 px entre as caixas)
+	if it.apice:  # o halo fino na cor do golpe, por fora da moldura dourada (cabe na folga de 4 px entre as caixas)
 		_moldura(caixa.grow(1.0), Color(cor, 0.5))
 	var borda: Color = Paleta.OURO if dourado else Color(cor.lerp(Color.WHITE, 0.2), 0.95)
 	if tipo != "":
 		borda = borda.lerp(cor_an.lerp(Color.WHITE, 0.4), brilho)
 	_moldura(caixa, borda)
-	var pos_icone := c0 + Vector2(1.0, 1.0)
+	var pos_icone := c0 + Vector2(3.0, 3.0)  # moldura de 1 px + 2 px de folga: o ícone de 32 fica no meio da caixa de 38
 	var area_icone := Rect2(pos_icone, Vector2(ICONE, ICONE))
 	var tex: Texture2D = Dados.icone_carta(it.id)
 	if tex != null:
 		# no pulso o ícone CLAREIA (multiplicador acima de 1, o 2D satura em branco), nunca escurece
 		var f := 1.0 + 0.9 * brilho
-		draw_texture_rect(tex, area_icone, false, Color(f, f, f, 1.0))
+		draw_texture_rect(tex, area_icone, false, Color(f, f, f, vis))
 	else:
 		draw_rect(area_icone, Color(cor, 0.5))
 	if it.rec >= 0 and it.rec < ICONE:  # recarga: UMA linha fina no pé do ícone, só enquanto recarrega
-		var y := pos_icone.y + ICONE - 2.0
-		draw_rect(Rect2(pos_icone.x, y, ICONE, 2.0), TRILHO)
+		var y := pos_icone.y + ICONE - 3.0
+		draw_rect(Rect2(pos_icone.x, y, ICONE, 3.0), TRILHO)
 		if it.rec > 0:
-			draw_rect(Rect2(pos_icone.x, y, it.rec, 2.0), cor.lerp(Color.WHITE, 0.35))
+			draw_rect(Rect2(pos_icone.x, y, it.rec, 3.0), cor.lerp(Color.WHITE, 0.35))
 	if tipo != "":
 		draw_rect(area_icone, Color(cor_an.lerp(Color.WHITE, 0.7), 0.4 * brilho))
 	if it.apice:  # a estrela dourada do ÁPICE no canto de cima, à esquerda do ícone
-		var pe := pos_icone + Vector2(4.0, 4.0)
-		draw_rect(Rect2(pe + Vector2(-1.0, 0.0), Vector2(3.0, 1.0)), Paleta.OURO)
-		draw_rect(Rect2(pe + Vector2(0.0, -1.0), Vector2(1.0, 3.0)), Paleta.OURO)
+		var pe := pos_icone + Vector2(6.0, 6.0)
+		draw_rect(Rect2(pe + Vector2(-2.0, 0.0), Vector2(5.0, 1.0)), Paleta.OURO)
+		draw_rect(Rect2(pe + Vector2(0.0, -2.0), Vector2(1.0, 5.0)), Paleta.OURO)
 	if it.quase:  # falta um nível para fundir: losango magenta que pisca no canto de cima do ícone
-		var pc := pos_icone + Vector2(ICONE - 4.0, 3.0)
+		var pc := pos_icone + Vector2(ICONE - 6.0, 5.0)
 		var cor_f: Color = Paleta.FUSAO.lerp(Color.WHITE, 0.7 if _fase_quase == 1 else 0.0)
-		draw_rect(Rect2(pc + Vector2(-1.0, 0.0), Vector2(3.0, 1.0)), cor_f)
-		draw_rect(Rect2(pc + Vector2(-2.0, 1.0), Vector2(5.0, 1.0)), cor_f)
-		draw_rect(Rect2(pc + Vector2(-1.0, 2.0), Vector2(3.0, 1.0)), cor_f)
-		draw_rect(Rect2(pc + Vector2(0.0, -1.0), Vector2(1.0, 5.0)), cor_f)
+		for dy in range(-3, 4):  # losango de 7x7: larguras 1, 3, 5, 7, 5, 3, 1
+			var meia := 3 - absi(dy)
+			draw_rect(Rect2(pc + Vector2(-meia, dy), Vector2(2 * meia + 1, 1.0)), cor_f)
 	# os pips de nível ficam logo abaixo da caixa
-	var y_pip := c0.y + CAIXA + 2.0
+	var y_pip := c0.y + CAIXA + 3.0
 	var x_pip := c0.x + floorf((CAIXA - (it.max * (PIP_L + 1) - 1)) * 0.5)
 	for k in int(it.max):
 		var cheio: bool = k < int(it.nivel) or bool(it.evo)
@@ -340,7 +339,6 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 			r = r.grow(1.0)
 			cor_pip = Color.WHITE
 		draw_rect(r, cor_pip)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if tipo == "novo" or tipo == "fusao" or tipo == "apice":
 		_anel_e_faiscas(centro, u, cor_an, str(it.id), tipo != "novo")
 	elif tipo == "nivel":
@@ -350,15 +348,15 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 ## O anel que sai da caixa e as faíscas que voam para fora e esmaecem (posições determinísticas pelo id: sem sorteio por quadro).
 func _anel_e_faiscas(centro: Vector2, u: float, cor: Color, id: String, grande: bool, quantas := FAISCAS) -> void:
 	var alfa := 1.0 - u
-	var meio := CAIXA * 0.5 + u * (4.0 if grande else 2.0)  # o anel cresce pouco: fica na folga entre as caixas
+	var meio := CAIXA * 0.5 + roundf(u * (4.0 if grande else 2.0))  # o anel cresce pouco, de px em px: fica na folga entre as caixas
 	_moldura(Rect2(centro - Vector2(meio, meio), Vector2(meio, meio) * 2.0), Color(cor, alfa * 0.8))
 	var semente := float(id.hash() % 360) / 360.0 * TAU
 	for k in quantas:
 		var ang := semente + TAU * float(k) / float(quantas)
-		var dist := CAIXA * 0.5 + 2.0 + u * (10.0 if grande else 7.0)
+		var dist := CAIXA * 0.5 + 3.0 + u * (15.0 if grande else 10.0)
 		var p := centro + Vector2(cos(ang), sin(ang)) * dist
-		var lado := 2.0
-		draw_rect(Rect2(p.round() - Vector2(lado, lado) * 0.5, Vector2(lado, lado)), Color(cor.lerp(Color.WHITE, 0.4), alfa))
+		var lado := 3.0
+		draw_rect(Rect2(p.round() - Vector2(1.0, 1.0), Vector2(lado, lado)), Color(cor.lerp(Color.WHITE, 0.4), alfa))
 
 
 ## Moldura de 1 px feita de quatro retângulos (pixel inteiro, sem a linha centrada do draw_rect vazado).

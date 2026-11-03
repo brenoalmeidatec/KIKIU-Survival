@@ -19,6 +19,16 @@ const SUAVIZA := 12.0  # vetor = lerp(alvo, 1 - exp(-12 dt))
 const LUZ_REF := 1.2  # intensidade da luz a partir da qual a sombra tem força total
 const GRAD_OFF := [0.0, 0.22, 0.55, 1.0]  # queda das luzes (a mesma da textura das PointLight2D, em luzes.gd)
 const GRAD_VAL := [1.0, 0.5, 0.1, 0.0]
+## Sombra em degraus de 1 px (nada de borrão linear): o fragmento do SubViewport do mundo já é 1 px do mundo, então quantizar o alfa POR FRAGMENTO
+## garante a grade mesmo com o cisalhamento e a escala fracionária da sombra. `cobertura` vira a silhueta (borrada ou nítida) em 2 níveis: miolo
+## e penumbra de 1 degrau; `banda` troca o esmaecimento contínuo ao longo do comprimento por 3 degraus. O alfa da instância (a luz) segue contínuo.
+## Bandas fixas, não dither de tela: o dither fica preso à tela e "anda" quando a câmera mexe.
+const GLSL_DEGRAUS := (
+	"float cobertura(float a) { return step(0.25, a) * (0.55 + 0.45 * step(0.75, a)); }\n"
+	+ "float banda(float d) { return d > 0.66 ? 1.0 : (d > 0.33 ? 0.6 : 0.3); }\n"
+)
+## A mancha oval dos pés (64x32): três degraus de alfa por distância ao centro, em pixel (sem gradiente).
+const BLOB_DEGRAUS := [[0.55, 0.65], [0.8, 0.4], [1.0, 0.2]]  # [até que fração do raio, alfa]
 
 var modo := MEDIA
 var luzes  # luzes.gd: dpos, dr, de, dh (as luzes ativas) e dn
@@ -26,7 +36,7 @@ var raiz_sombras: Node2D
 var raiz_blobs: Node2D
 var us_script := 0  # tempo de script (só para a medição)
 var _mat: ShaderMaterial
-var _tex_blob: GradientTexture2D
+var _tex_blob: Texture2D
 var _todos: Array[Ator] = []
 var amb_e := 0.0  # luz de AMBIENTE (mapa.sombra_ambiente no json): uma luz virtual, paralela e sem fim, que dá sombra base a todo objeto, mesmo longe de qualquer luz
 var amb_dir := Vector2.ZERO  # vetor (mundo) para onde a sombra ambiente aponta, já com o y achatado
@@ -141,9 +151,10 @@ func _material_sombra() -> ShaderMaterial:
 	var sh := Shader.new()
 	sh.code = (
 		(
-			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\n"
-			+ "void vertex(){ up = -VERTEX.y; }\n"
-			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, COLOR.a * clamp(1.0 - up / fade_len, 0.12, 1.0)); }\n"
+			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
+			+ GLSL_DEGRAUS
+			+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
+			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
 		)
 		% SOMBRA_FADE
 	)
@@ -152,18 +163,16 @@ func _material_sombra() -> ShaderMaterial:
 	return m
 
 
-func _textura_blob() -> GradientTexture2D:
-	var g := Gradient.new()
-	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
-	g.colors = PackedColorArray([Color(0, 0, 0, 0.7), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0)])
-	var t := GradientTexture2D.new()
-	t.gradient = g
-	t.fill = GradientTexture2D.FILL_RADIAL
-	t.fill_from = Vector2(0.5, 0.5)
-	t.fill_to = Vector2(1.0, 0.5)
-	t.width = 64
-	t.height = 32
-	return t
+func _textura_blob() -> Texture2D:
+	var im := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	for y in 32:
+		for x in 64:
+			var d := Vector2((x + 0.5 - 32.0) / 32.0, (y + 0.5 - 16.0) / 16.0).length()
+			for g in BLOB_DEGRAUS:
+				if d < g[0]:
+					im.set_pixel(x, y, Color(0, 0, 0, g[1]))
+					break
+	return ImageTexture.create_from_image(im)
 
 
 ## A textura da mancha dos pés (a horda desenha as manchas dos monstros em lote com ela).
@@ -179,7 +188,7 @@ func _sprite_sombra(a: Ator) -> Sprite2D:
 	sp.material = _mat
 	sp.light_mask = 0
 	sp.centered = false
-	sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sp.offset = a.offset
 	if a.regiao != Rect2():
 		sp.region_enabled = true
