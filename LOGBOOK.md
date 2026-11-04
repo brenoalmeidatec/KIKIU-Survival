@@ -3059,3 +3059,24 @@ Pendente:
   Pendente: captura com janela de verdade do clarão andando e virando com o cano; commit e push; os testes da frente PAREDE.
 - 2026-11-04, Claude do Alisson (notebook), PR #620 (branch alisson/lw-canhao-matriz), frente PAREDE da Matriz, sem commit. A parede que segura a horda (`v2/matriz.gd`, `atualizar`) era uma caixa com a meia-largura cheia da moldura da frente. Por isso, mirando de lado, ela segurava o cão a 35° parado no ar, ~30 px fora da moldura e da marca. Com a Matriz Ampla no máximo, segurava no flanco a ~154 px e no canto a ~180 px, além dos 170 do canhão, com degrau de 58 px. Agora a casca é o fecho do círculo (casca+raio) com uma parede que só existe onde o desenho mostra a moldura. Duas funções novas cuidam disso: `meia_parede` (a meia-largura no chão, com o mesmo encolhimento lateral do `_plano`) e `segura` (cone da parede, depois a reta tangente até o círculo, depois o raio), e não há degrau. A Ampla abre o arco e o desenho, não a parede: o canto máximo agora fica a ~116 px. Efeito colateral a conferir com janela de verdade: com Ampla alta, mirando de frente, o monstro entre ~38° e ~60° para no raio, atrás da parte larga do painel. Testes novos: v2_matriz 8b (de lado) e 8c (forma da parede), e v2_matriz_visual 9 (de lado, perto do desenho). Todos falharam no código antigo. O 8b antigo, que cobrava o defeito mirando para a direita, passou a mirar para baixo com as mesmas checagens. Os 13 testes vizinhos estão verdes. Pendente: captura visual da Ampla alta e commit/push pelo integrador.
 - **Ajuda da Matriz:** o `_ajuda` de `dados/v2_secundario.json` agora descreve a parede nova (cone da moldura desenhada, reta tangente, raio; a Ampla alarga o desenho e não a parede). **Decisão do Alisson pendente:** com a Ampla alta, o monstro entre ~38 e 60 graus para no raio, atrás da parte larga do painel; a parede da largura ampla seguraria além dos 170 px do canhão.
+- **04/11/2026 (noite), Claude do Alisson (notebook), PR #620 (branch alisson/lw-canhao-matriz, head 3af1acac + este registro):** o estado e a lista de pedidos para continuar no PC de casa.
+  - **Estado:**
+    - O CI está 8/8 verde no 3af1acac, que já tem a main com o #619 (pixelfx).
+    - A prévia "KIKIU - Previa LightWolf 620" (no notebook, `qa20261104/previa-lw620`) foi exportada desse commit e conferida com o roteiro lightwolf: 14 fotos, sem erro.
+    - Sem merge: o PR espera o ok visual do Alisson.
+    - A análise em vídeo (Movie Maker) foi interrompida no meio e descartada. Ela fica para refazer: memória `verificar-com-video`, com `--write-movie <dir>/q.png --fixed-fps 60` e o roteiro andar_seq.
+  - **Pedidos novos do Alisson (todos para este PR):**
+    1. **Andar atirando:** faltam quadros de animação andando e atirando ao mesmo tempo. Hoje as pernas congelam na pose de mira e o mecha desliza. Precisa de folha nova no Blender, em `fonte_arte/blender_herois/lightwolf_mecha`.
+    2. **Tiro de escopeta:** "ficou bom, mas ainda falta algo, acho que rastros talvez". A ideia é a D.Va, só como referência. Um caminho é um rastro/traçante mais longo nas bolinhas a 840 px/s.
+    3. **Explosão do mecha (Q, Autodestruição):** animação bem maior, tremor de tela leve e sensação de impacto. Deixa uma **cratera** no chão por alguns segundos.
+    4. **Lobo solto:** cadência de tiro muito mais rápida, porque ele tem pouquíssima vida.
+    5. **Carga do ult como no OW:** acertar alvo pequeno enche mais rápido, e alvo grande (fácil de acertar) enche mais devagar.
+    6. **Shift (correr) do mecha** vira um especial ao lado do E na HUD, como os boosters da D.Va:
+       - flutua e atravessa obstáculos pequenos;
+       - passa por cima de todos os monstros dando dano, sem matar;
+       - dura ~3 s e recarrega em 5 s.
+    7. **Mísseis do E:** passam a ficar atirando por **3 s**.
+  - **Decisões ainda abertas:**
+    - Matriz Ampla: a parede não alarga com o desenho.
+    - Teto de 2 Hz no clarão de boca no modo normal.
+    - Densidade dos estalos (2/s por lugar).
