@@ -33,7 +33,12 @@ FATOR = 8  # 3 passadas de Scale2x
 PASSOS = (1, 2, 3)  # x 22,5 graus
 # (arquivo-fonte, lado do pixel da arte). A ciano e desenhada numa grade 2x2 (cada pixel da arte = bloco 2x2): gira-se a versao reduzida
 # (64x64 por quadro) e amplia-se de volta por repeticao, senao o RotSprite giraria a grade de 2 px como se fosse de 1 px e sairia pixel misto.
-VARIANTES = {"corte_hazaki": ("corte_hazaki_folha.png", 1), "corte_hazaki_ciano": ("corte_hazaki_ciano_folha.png", 2)}
+VARIANTES = {
+    "corte_hazaki": ("corte_hazaki_folha.png", 1),
+    "corte_hazaki_ciano": ("corte_hazaki_ciano_folha.png", 2),
+    "corte_pfx": ("corte_pfx_folha.png", 1),
+    "corte_pfx_ciano": ("corte_pfx_ciano_folha.png", 2),
+}
 
 
 def codificar(rgba: np.ndarray) -> np.ndarray:
