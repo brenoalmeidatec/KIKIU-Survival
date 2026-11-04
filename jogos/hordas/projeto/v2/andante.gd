@@ -307,7 +307,7 @@ static func resolver(chave: String) -> Dictionary:
 	if partes.size() > 1 and FICHAS.has(str(partes[0])):
 		var al: Dictionary = FICHAS[str(partes[0])]
 		var e := float(al.get("escala", 1.0))
-		r.esc = e
+		r.esc = maxf(1.0, roundf(e))  # o desenho só amplia por inteiro (pixel art); alcance e corpo seguem o `e` exato
 		for k in ["alcance", "frente", "raio", "sombra", "altura", "balanco", "peito", "boca"]:
 			if r.has(k):
 				r[k] = float(r[k]) * e

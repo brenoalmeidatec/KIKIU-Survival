@@ -54,6 +54,15 @@ func tipo(nome: String) -> Dictionary:
 	return d
 
 
+## A folha grande do tipo `nome` desenhada em `n`x (elite e chefe: `inimigo_X_xN`, gerada por gerar_cara_nova.py com CARA_NOVA_MULT=N), ou {} se
+## não existe. É a mesma arte renderizada com N vezes mais pixels: entra no lugar do sprite pequeno ampliado, sempre em escala 1.
+func tipo_grande(nome: String, n: int) -> Dictionary:
+	var g := "%s_x%d" % [nome, n]
+	if not _tipos.has(g) and not ResourceLoader.exists(_caminho(g + "_albedo.png")):
+		_tipos[g] = {}
+	return tipo(g) if not _tipos.has(g) or not _tipos[g].is_empty() else {}
+
+
 ## Por linha da folha de emissão: tem algum pixel aceso? Quem desenha pula os olhos das linhas vazias (de costas, por exemplo).
 static func _linhas_com_emissao(im: Image, alt_quadro: int) -> Array:
 	var r: Array = []

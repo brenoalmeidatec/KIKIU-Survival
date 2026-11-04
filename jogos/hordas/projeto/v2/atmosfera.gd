@@ -46,6 +46,79 @@ func _textura_brilho() -> GradientTexture2D:
 	return t
 
 
+## ---- partículas na grade de 1 px (pixel art: um tamanho de pixel só) ----
+## Nada de brilho suave amostrado em escala fracionária: cada emissor usa uma folha de formas de pixel (discos de 2 degraus de alfa ou
+## retângulos cheios) JÁ no tamanho final, escolhidas ao acaso por partícula (anim_offset aleatório com velocidade 0), e `scale_amount` 1. Assim
+## todo pixel desenhado tem 1 px do mundo. Sem rotação em tempo de execução (angular_velocity 0).
+
+
+## Tamanho em pixels inteiros (nunca menos de 1): `base` px vezes o multiplicador de tamanho do mapa/fogo.
+static func px(base: float, mult := 1.0) -> int:
+	return maxi(1, roundi(base * mult))
+
+
+## Folha de formas de pixel numa fileira de células iguais. `formas`: [{"w": int, "h": int, "disco": bool}]; cada forma vai centrada na
+## célula (que tem o tamanho da maior). Disco: núcleo opaco e aro a meia luz, sem gradiente.
+static func folha_formas(formas: Array) -> ImageTexture:
+	var cw := 1
+	var ch := 1
+	for f in formas:
+		cw = maxi(cw, int(f.w))
+		ch = maxi(ch, int(f.h))
+	var im := Image.create(cw * formas.size(), ch, false, Image.FORMAT_RGBA8)
+	for k in formas.size():
+		var w := int(formas[k].w)
+		var h := int(formas[k].h)
+		var ox := k * cw + floori(float(cw - w) * 0.5)
+		var oy := floori(float(ch - h) * 0.5)
+		for y in h:
+			for x in w:
+				var a := 1.0
+				if bool(formas[k].get("disco", false)):
+					var dx := (float(x) + 0.5 - float(w) * 0.5) / (float(w) * 0.5)
+					var dy := (float(y) + 0.5 - float(h) * 0.5) / (float(h) * 0.5)
+					var d := sqrt(dx * dx + dy * dy)
+					a = 1.0 if d <= 0.55 else (0.5 if d <= 1.0 else 0.0)
+				if a > 0.0:
+					im.set_pixel(ox + x, oy + y, Color(1, 1, 1, a))
+	return ImageTexture.create_from_image(im)
+
+
+## Liga a folha de formas no emissor: textura, escala 1 e uma forma sorteada por partícula (precisa do material com animação de partículas).
+func _formas(p: CPUParticles2D, formas: Array, aditivo: bool) -> void:
+	p.texture = folha_formas(formas)
+	p.scale_amount_min = 1.0
+	p.scale_amount_max = 1.0
+	p.anim_speed_min = 0.0
+	p.anim_speed_max = 0.0
+	p.anim_offset_min = 0.0
+	p.anim_offset_max = 0.999
+	var mat := CanvasItemMaterial.new()
+	if aditivo:
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	mat.particles_animation = true
+	mat.particles_anim_h_frames = formas.size()
+	mat.particles_anim_v_frames = 1
+	mat.particles_anim_loop = false
+	p.material = mat
+
+
+static func _discos(diams: Array, mult := 1.0) -> Array:
+	var o := []
+	for d in diams:
+		var n := px(float(d), mult)
+		o.append({"w": n, "h": n, "disco": true})
+	return o
+
+
+static func _quadrados(lados: Array, mult := 1.0) -> Array:
+	var o := []
+	for d in lados:
+		var n := px(float(d), mult)
+		o.append({"w": n, "h": n})
+	return o
+
+
 func _rampa_alfa(offs: Array, alfas: Array) -> Gradient:
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array(offs)
@@ -54,12 +127,6 @@ func _rampa_alfa(offs: Array, alfas: Array) -> Gradient:
 		cs.append(Color(1, 1, 1, a))
 	g.colors = cs
 	return g
-
-
-func _aditivo() -> CanvasItemMaterial:
-	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	return mat
 
 
 func _registrar(p: CPUParticles2D, base: int, tipo: String) -> void:
@@ -125,10 +192,7 @@ func ambiente(centro: Vector2) -> void:
 	f.damping_max = 1.5
 	f.color = _cor(cv.get("cor", [0.78, 1.0, 0.42]))
 	f.color_ramp = _rampa_alfa([0.0, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0], [0.0, 1.0, 0.25, 1.0, 0.3, 1.0, 0.6, 0.0])
-	f.texture = tex_brilho
-	f.scale_amount_min = 0.03 * float(cv.get("tam", 1.0))
-	f.scale_amount_max = 0.07 * float(cv.get("tam", 1.0))
-	f.material = _aditivo()
+	_formas(f, _discos([3, 5, 7], float(cv.get("tam", 1.0))), true)
 	_vaga = f
 	_registrar(f, nv, "amb")
 	var cf: Dictionary = config.get("folhas", {})
@@ -146,16 +210,13 @@ func ambiente(centro: Vector2) -> void:
 	fo.gravity = Vector2.ZERO
 	fo.initial_velocity_min = 16.0 * float(cf.get("vel", 1.0))
 	fo.initial_velocity_max = 28.0 * float(cf.get("vel", 1.0))
-	fo.angular_velocity_min = -90.0
-	fo.angular_velocity_max = 90.0
+	fo.angular_velocity_min = 0.0  # sem rotação em tempo de execução (pixel art)
+	fo.angular_velocity_max = 0.0
 	fo.tangential_accel_min = -4.0
 	fo.tangential_accel_max = 4.0
 	fo.color = _cor(cf.get("cor", [0.85, 0.1, 0.07, 0.95]))
-	var im := Image.create(4, 3, false, Image.FORMAT_RGBA8)
-	im.fill(Color.WHITE)
-	fo.texture = ImageTexture.create_from_image(im)
-	fo.scale_amount_min = 0.8 * float(cf.get("tam", 1.0))
-	fo.scale_amount_max = 1.4 * float(cf.get("tam", 1.0))
+	var tf := float(cf.get("tam", 1.0))
+	_formas(fo, [{"w": px(3, tf), "h": px(2, tf)}, {"w": px(4, tf), "h": px(3, tf)}, {"w": px(5, tf), "h": px(4, tf)}], false)
 	_folhas = fo
 	_registrar(fo, nf, "amb")
 	if fator_det > 0.0:
@@ -164,7 +225,7 @@ func ambiente(centro: Vector2) -> void:
 
 ## Detritos flutuantes (ideia do Isac: terra e pedaços subindo, como se algo tivesse abstraído a matéria). Do json do mapa ("detritos"):
 ## {n, cor [r,g,b(,a)], cor2 (opcional: cada pedaço sorteia uma cor entre cor e cor2), tam, vel}. Sem a chave, ou com n = 0, não cria nada.
-## Pedacinhos opacos de 3 a 9 px, sem brilho aditivo (é terra, não luz), que nascem em toda a tela, sobem devagar, giram e somem.
+## Pedacinhos opacos de 3 a 9 px (lados inteiros, sorteados entre 4 tamanhos), sem brilho aditivo (é terra, não luz), que nascem em toda a tela, sobem devagar e somem.
 func _criar_detritos() -> void:
 	var cd: Dictionary = config.get("detritos", {})
 	var nd := int(cd.get("n", 0))
@@ -183,8 +244,8 @@ func _criar_detritos() -> void:
 	d.gravity = Vector2.ZERO
 	d.initial_velocity_min = 5.0 * float(cd.get("vel", 1.0))
 	d.initial_velocity_max = 14.0 * float(cd.get("vel", 1.0))
-	d.angular_velocity_min = -40.0
-	d.angular_velocity_max = 40.0
+	d.angular_velocity_min = 0.0  # sem rotação em tempo de execução (pixel art)
+	d.angular_velocity_max = 0.0
 	d.tangential_accel_min = -3.0
 	d.tangential_accel_max = 3.0
 	var c1 := _cor(cd.get("cor", [0.35, 0.28, 0.2, 0.85]))
@@ -194,11 +255,7 @@ func _criar_detritos() -> void:
 	gi.colors = PackedColorArray([c1, c2])
 	d.color_initial_ramp = gi
 	d.color_ramp = _rampa_alfa([0.0, 0.15, 0.75, 1.0], [0.0, 1.0, 0.8, 0.0])
-	var im := Image.create(4, 4, false, Image.FORMAT_RGBA8)
-	im.fill(Color.WHITE)
-	d.texture = ImageTexture.create_from_image(im)
-	d.scale_amount_min = 0.8 * float(cd.get("tam", 1.0))
-	d.scale_amount_max = 2.2 * float(cd.get("tam", 1.0))
+	_formas(d, _quadrados([3, 5, 7, 9], float(cd.get("tam", 1.0))), false)
 	_detritos = d
 	_registrar(d, nd, "det")
 
@@ -219,7 +276,6 @@ func seguir(centro: Vector2) -> void:
 
 ## Fogo de verdade: chama (laranja para amarelo, de baixo para cima), brasas subindo e um pouco de fumaça escura.
 func fogo(pos: Vector2, esc: float) -> Array[CPUParticles2D]:
-	var add := _aditivo()
 	var chama := CPUParticles2D.new()
 	chama.amount = 36
 	chama.lifetime = 0.7
@@ -232,16 +288,13 @@ func fogo(pos: Vector2, esc: float) -> Array[CPUParticles2D]:
 	chama.gravity = Vector2(0, -18)
 	chama.initial_velocity_min = 16.0 * esc
 	chama.initial_velocity_max = 30.0 * esc
-	chama.scale_amount_min = 0.08 * esc
-	chama.scale_amount_max = 0.17 * esc
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.15, 0.5, 0.8, 1.0])
 	g.colors = PackedColorArray(
 		[Color(1, 0.95, 0.6, 0.0), Color(1, 0.85, 0.35, 1.0), Color(1, 0.5, 0.1, 0.85), Color(0.8, 0.15, 0.05, 0.45), Color(0.3, 0.05, 0.02, 0.0)]
 	)
 	chama.color_ramp = g
-	chama.texture = tex_brilho
-	chama.material = add
+	_formas(chama, _discos([11, 15, 19], esc), true)
 	chama.position = pos
 	_registrar(chama, 36, "efe")
 	var brasas := CPUParticles2D.new()
@@ -256,12 +309,9 @@ func fogo(pos: Vector2, esc: float) -> Array[CPUParticles2D]:
 	brasas.gravity = Vector2(0, -6)
 	brasas.initial_velocity_min = 22.0
 	brasas.initial_velocity_max = 50.0
-	brasas.scale_amount_min = 0.012
-	brasas.scale_amount_max = 0.026
 	brasas.color = Color(1.0, 0.6, 0.2)
 	brasas.color_ramp = _rampa_alfa([0.0, 0.15, 0.7, 1.0], [0.0, 1.0, 0.7, 0.0])
-	brasas.texture = tex_brilho
-	brasas.material = add
+	_formas(brasas, _quadrados([2, 3]), true)
 	brasas.position = pos
 	_registrar(brasas, 10, "efe")
 	var fumaca := CPUParticles2D.new()
@@ -274,11 +324,9 @@ func fogo(pos: Vector2, esc: float) -> Array[CPUParticles2D]:
 	fumaca.gravity = Vector2(0, -3)
 	fumaca.initial_velocity_min = 8.0
 	fumaca.initial_velocity_max = 16.0
-	fumaca.scale_amount_min = 0.1 * esc
-	fumaca.scale_amount_max = 0.2 * esc
 	fumaca.color = Color(0.07, 0.07, 0.08)
 	fumaca.color_ramp = _rampa_alfa([0.0, 0.25, 1.0], [0.0, 0.4, 0.0])
-	fumaca.texture = tex_brilho
+	_formas(fumaca, _discos([13, 19, 25], esc), false)
 	fumaca.position = pos + Vector2(0, -8 * esc)
 	_registrar(fumaca, 8, "efe")
 	return [chama, brasas, fumaca]
@@ -300,10 +348,7 @@ func faiscas(cor: Color, pos: Vector2) -> CPUParticles2D:
 	p.initial_velocity_max = 20.0
 	p.color = cor.lerp(Color.WHITE, 0.3)
 	p.color_ramp = _rampa_alfa([0.0, 0.2, 1.0], [0.0, 1.0, 0.0])
-	p.texture = tex_brilho
-	p.scale_amount_min = 0.02
-	p.scale_amount_max = 0.05
-	p.material = _aditivo()
+	_formas(p, _discos([3, 5]), true)
 	p.position = pos
 	_registrar(p, 10, "efe")
 	return p

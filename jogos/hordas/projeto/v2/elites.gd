@@ -39,6 +39,8 @@ func montar(c) -> void:
 	combate = c
 	mundo = c.mundo
 	cfg = c.cartas.cfg.elites
+	for info in cfg.tipos:  # as folhas grandes (sprite maior em 1x) carregam na abertura, não quando a primeira elite nasce (engasgo no i5); a conta é a de Monstro.escala_px
+		mundo.sprites.tipo_grande(str(info.sprite), int(maxf(1.0, roundf(float(cfg.escala)))))
 	_shader = Shader.new()
 	_shader.code = SHADER_CONTORNO
 	zerar()

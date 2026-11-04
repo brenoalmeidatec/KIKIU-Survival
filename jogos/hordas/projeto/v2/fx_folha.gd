@@ -71,6 +71,15 @@ func montar(camada: Node, camada_mundo: Node = null) -> void:
 		registrar(str(id), efeitos[id])
 
 
+## Pixel art: um tamanho de pixel só. A folha só se desenha em escala INTEIRA (1, 2...): fração mistura pixels de tamanhos diferentes. Quem
+## precisa de outro tamanho gera uma folha nova já nesse tamanho (fonte_arte/pixelfx/gerar_folhas.py) e a registra com outro id.
+func _escala_inteira(id: String, e: float) -> float:
+	var r := maxf(1.0, roundf(e))
+	if not is_equal_approx(e, r):
+		push_warning("pixelfx '%s': escala %s não é inteira, usando %s (gere uma folha no tamanho certo)" % [id, e, r])
+	return r
+
+
 ## Lê uma entrada do registro (o formato do dados/v2_pixelfx.json). Dá para registrar depois da montagem. false se a entrada estiver incompleta
 ## ou a folha não existir.
 func registrar(id: String, e: Dictionary) -> bool:
@@ -94,7 +103,7 @@ func registrar(id: String, e: Dictionary) -> bool:
 		"fps": maxf(float(e.fps), 1.0),
 		"loop": bool(e.get("loop", false)),
 		"pivo": Vector2(float(e.pivo[0]), float(e.pivo[1])),
-		"escala": maxf(float(e.get("escala", 1.0)), 0.1),
+		"escala": _escala_inteira(id, float(e.get("escala", 1.0))),
 		"cor": _ler_cor(e.get("cor", null)),
 		"passo": passo,
 		"ticks": ceili(float(quadros) / float(passo)),  # quadros mostrados numa volta
@@ -118,7 +127,7 @@ func tem(id: String) -> bool:
 	return _ids.has(id)
 
 
-## Efeito único em `pos` (coordenada do mundo; o `pivo` da folha cai nela). opcoes: "escala" (troca a do registro) e "cor" (idem).
+## Efeito único em `pos` (coordenada do mundo; o `pivo` da folha cai nela). opcoes: "escala" (inteira; troca a do registro) e "cor" (idem).
 func tocar(id: String, pos: Vector2, opcoes := {}) -> bool:
 	var s := _alocar(id, UNICO, opcoes)
 	if s < 0:
@@ -206,7 +215,7 @@ func _alocar(id: String, modo: int, opcoes: Dictionary) -> int:
 	_modo[s] = modo
 	_def[s] = idx
 	_t[s] = 0.0
-	_esc[s] = float(opcoes.get("escala", d.escala))
+	_esc[s] = d.escala if not opcoes.has("escala") else _escala_inteira(id, float(opcoes.escala))
 	_cor[s] = cor
 	_lz[s] = d.lz
 	_gen[s] = ((_gen[s] + 1) & 0xFFFFF) | 1  # nunca 0, para a alça 0 significar "nada"
