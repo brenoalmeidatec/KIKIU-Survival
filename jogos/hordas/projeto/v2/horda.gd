@@ -14,6 +14,7 @@ extends RefCounted
 
 const Sombras := preload("res://v2/sombras.gd")
 const Monstro := preload("res://v2/monstro.gd")
+const StatusCorpo := preload("res://v2/status_corpo.gd")
 const MARGEM_TELA := 96.0  # só monstro a até 96 px da tela é desenhado (e tem sombra)
 const CAP_INI := 16  # instâncias de cada MultiMesh no começo (dobra quando falta)
 const DECIMA := 3  # a conta da luz sobre a sombra de cada monstro roda a cada N quadros (o deslize suavizado esconde o degrau)
@@ -22,20 +23,47 @@ const Y_MIN := 0.2  # espessura vertical mínima da sombra (a mesma de sombras.g
 
 ## Lê o recorte (x, y, largura, altura em px do atlas; largura negativa = espelhado) do custom data de cada instância e a cor (modulate)
 ## do COLOR. NORMAL_MAP do mesmo recorte: a luz 2D age como em qualquer Sprite2D com CanvasTexture.
-const SHADER_SPRITE := """shader_type canvas_item;
+## O alfa traz o status do corpo e a semente (v2/status_corpo.gd). Com status, o quadrado ganha folga para a chama passar do contorno.
+const SHADER_SPRITE := (
+	"""shader_type canvas_item;
 varying flat vec4 reg;
 varying flat vec4 cor;
-void vertex() { reg = INSTANCE_CUSTOM; cor = COLOR; }
+varying flat vec2 st;
+void vertex() {
+	reg = INSTANCE_CUSTOM;
+	cor = COLOR;
+	float n = round((1.0 - cor.a) * 256.0);  // o alfa do lote leva o status: o custom data é float16 e não guarda mais nada
+	float est = mod(n, 6.0);
+	st = vec2(est, floor(n / 6.0));
+	if (est > 0.5) {
+		cor.a = 1.0;
+		vec2 f = vec2(4.0, 9.0) / vec2(abs(reg.z), reg.w);
+		VERTEX = vec2(mix(-f.x, 1.0 + f.x, VERTEX.x), mix(-f.y, 1.0, VERTEX.y));
+		UV = VERTEX;
+	}
+}
 void fragment() {
 	vec2 u = UV;
 	if (reg.z < 0.0) { u.x = 1.0 - u.x; }
-	vec2 uv = (reg.xy + u * vec2(abs(reg.z), reg.w)) / vec2(textureSize(TEXTURE, 0));
-	COLOR = texture(TEXTURE, uv) * cor;
+	vec2 tam = vec2(abs(reg.z), reg.w);
+	vec2 uc = clamp(u, vec2(0.0), vec2(0.9999));
+	vec2 uv = (reg.xy + uc * tam) / vec2(textureSize(TEXTURE, 0));
+	vec4 c = texture(TEXTURE, uv) * cor;
+	if (st.x > 0.5) {
+		vec2 p = floor(u * tam);
+		vec2 base = reg.xy;
+		float est = st.x;
+		float sem = st.y;
+"""
+	+ StatusCorpo.GLSL
+	+ """	}
+	COLOR = c;
 	vec3 n = texture(NORMAL_TEXTURE, uv).rgb;
 	if (reg.z < 0.0) { n.r = 1.0 - n.r; }  // Sprite2D com flip_h também espelha o x do normal
 	NORMAL_MAP = n;
 }
 """
+)
 ## Silhueta preta que esmaece ao longo do sprite (a mesma de sombras.gd): `cor.r` = a linha dos pés / 128 (altura do pé no quadro) e
 ## `cor.a` = o alfa da instância.
 const SHADER_SOMBRA := (
@@ -324,7 +352,7 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		buf[o + 8] = cor.r
 		buf[o + 9] = cor.g
 		buf[o + 10] = cor.b
-		buf[o + 11] = cor.a
+		buf[o + 11] = cor.a if m.v_estado == 0 else 1.0 - float(m.v_estado + 6 * (m.sid & 15)) / 256.0
 		buf[o + 12] = cx
 		buf[o + 13] = cy
 		buf[o + 14] = fl
