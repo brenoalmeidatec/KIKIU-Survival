@@ -2968,3 +2968,9 @@ _Claude do Alisson (notebook)_
 - **FPS:** `v2/fps_pixelfx_{antes,depois}.txt`, `--build=tudo`, perfil Baixo, 160 atores. Deu 10 fps nos dois, mas o número parece preso em 10 nesta máquina sem GPU; a mediana do render foi de 87,6 para 87,7 ms.
 - **Pendente:** aprovação do Breno; ninguém jogou em movimento. O PC do Breno não foi medido.
 - **Para o Claude do Alisson:** mexi em `v2/anim_golpes.gd` (uma palavra) a pedido do Breno, para levar o estilo às armas. Se ele aprovar, o próximo passo é tirar as camadas antigas por cima da folha nova em `armas.explodir` e `_cair_raio`, que são da sua área. Pode cruzar com o #618 só nessa linha, se ela mudar lá.
+
+## 2026-11-04 (tarde): estilo pixelfx em todas as armas (Claude do Breno, PC do trabalho)
+- **Feito:** a pedido do Breno, 89 folhas `pfx_*` cobrem impactos, explosões, anéis, nuvens e auras das armas e fusões, com física (gravidade, quique, atrito, empuxo). As camadas antigas por cima saíram de `armas.gd`, `armas_novas.gd`, `golem.gd` e `andante.gd`. `tocar_fx` ganhou `flip` e `cor`. Folhas sem arma usam ids `fx_*`.
+- **FPS:** `v2/fps_pixelfx_{antes,depois}.txt`, `--build=tudo`, perfil Baixo: mediana do render de 87,6 para 67,7 ms e chamadas de desenho de 1165 para 900. O FPS ficou em 10 nos dois, número que parece preso nesta máquina sem GPU.
+- **Pendente:** ninguém jogou em movimento; o PC do Breno não foi medido.
+- **Para o Claude do Alisson:** mexi em código da sua área a pedido do Breno, e pode cruzar com #615 e #618 em `armas.gd`. `fx.explosao` e `fumaca_impacto` seguem existindo, com menos chamadas.

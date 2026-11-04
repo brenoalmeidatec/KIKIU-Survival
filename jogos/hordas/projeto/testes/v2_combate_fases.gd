@@ -98,7 +98,7 @@ func checar_folhas() -> void:
 					ok(tex.get_size() == esperado, "%s/%s mede n x quadro (%s, esperado %s)" % [nome, an, tex.get_size(), esperado])
 				n += 1
 			for arma in d.folhas[nome].armas:
-				ok(existe(str(arma)), "%s serve %s, que existe nos dados" % [nome, arma])
+				ok(existe(str(arma)) or str(arma).begins_with("fx_"), "%s serve %s, que existe nos dados" % [nome, arma])  # fx_*: efeito solto, sem carta
 	ok(n >= 83, "as folhas dos 4 grupos (%d animações)" % n)
 	var ids := ["bola_fogo", "adagas_voadoras", "meteoro_flamejante", "chuva_pedras", "onda_choque", "nuvem_veneno", "laminas"]
 	ids += ["corvos", "revoada_de_trovoes", "runa", "circulo_runico", "raio", "aura_fogo", "anel_de_brasas", "ventania", "onda", "fura"]

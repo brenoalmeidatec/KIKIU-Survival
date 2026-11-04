@@ -21,31 +21,46 @@ Guia para repetir, nas armas, o estilo de https://patch-gg.github.io/pixelfx/. C
 |---|---|
 | Node e célula grande | `gerar_pixelfx.py`, em Python, sem rede e sem clone |
 | Efeito longo (até 5 s) | Até 0,6 s: a horda dispara muitos ao mesmo tempo |
-| 30 quadros ou mais | 5 a 13 quadros, a 24 ou 30 fps |
+| 30 quadros ou mais | 5 a 13 quadros nos impactos, a 24 ou 30 fps |
 | Alfa livre e halo suave | Alfa em 6 degraus; luz fraca é cortada para não virar pixel solto |
 | Paleta livre | 10 a 19 cores por folha |
 | Escala à vontade | 1 px do mundo: a folha já nasce do tamanho da área da arma |
 
-## Os efeitos desta prova
-| Arma | Folha | Célula | Animação | O que acontece |
-|---|---|---|---|---|
-| Bola de Fogo | `pfx_bola_fogo_impacto.png` | 112x96 | 13 quadros, 24 fps | clarão, onda no chão, chamas que esfriam em fumaça, faíscas e brasas |
-| Raio em Cadeia | `pfx_raio_impacto.png` | 64x56 | 10 quadros, 30 fps | nó de ziguezagues, queimadura em samambaia, faíscas que mudam de rumo |
-| Adagas Voadoras | `pfx_adaga_aco_impacto.png` | 48x40 | 5 quadros, 30 fps | cruz torta com losango branco e lascas quentes |
-| Cometa Gelado | `pfx_cometa_gelo_impacto.png` | 128x104 | 12 quadros, 24 fps | pontas de gelo que brotam e quebram, geada e vapor frio |
-| Chuva de Pedras | `pfx_pedra_cinza_impacto.png` | 72x64 | 9 quadros, 24 fps | rachadura, terra jogada para cima e poeira rente ao chão, sem luz |
+## As famílias
+Tudo sai de `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`. Cada arma é uma linha numa tabela: família, tema de cor e tamanho.
+
+| Família | Quem usa | O que acontece |
+|---|---|---|
+| `acerto` | projéteis (adagas, flechas, lanças, dardos, discos) | cruz com losango branco e cone de faíscas e lascas para o lado do golpe |
+| `explosao` | bolas, meteoros de fogo, runas, crítico explosivo, cabaça | clarão, frente de choque, chamas que esfriam, fumaça, faíscas e lascas |
+| `eletrico` | Raio, Raio Meteórico | nó de ziguezagues, samambaia queimada, faíscas em trancos |
+| `pontas` | Cometa Gelado, Cometa Duplo, Chuva de Espinhos | pontas que brotam e quebram em cacos, vapor rente ao chão |
+| `terra` | Chuva de Pedras, pancada do golem | rachadura, torrões, poeira, sem luz |
+| `anel` | anéis de choque e fusões | frente no chão que levanta poeira, faíscas, pontas ou rachaduras |
+| `nuvem` | nuvens, fusões e auras | puffs em ciclo, com gotas, flocos, bolhas ou cinzas |
+
+## A física
+- **Gravidade e inércia:** faíscas e lascas seguem trajetória balística, a 950 px/s², com arrasto do ar.
+- **Quique e atrito:** cada peça perde energia ao bater, freia no chão e assenta (`Cacos`).
+- **Profundidade:** cada peça cai no seu lugar do chão, então a de trás bate mais alto na tela.
+- **Direção do golpe:** as folhas de acerto apontam para a direita e o jogo espelha pelo lado do golpe, sem girar pixel. Só há esquerda e direita.
+- **Fumaça e fogo:** sobem por empuxo, incham e se dissipam.
+- **Luz:** apaga em decaimento exponencial.
+- **Gotas e flocos:** a gota acelera e respinga; o floco cai devagar e balança.
 
 ## Como fazer outro
-1. Em `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`, escreva uma função que devolve `(ps, quadro)`: as partículas e o desenho do tempo `t`. Use `bola_fogo` como modelo. Tudo tem que sumir antes do último quadro.
-2. Acrescente a arma em `EFEITOS` e `ANTIGOS`. A chave é o nome da folha no índice antigo.
-3. Meteoro: a célula precisa ter a largura do diâmetro da área, senão o código amplia a folha (`armas_novas.gd`, a conta de `tocar_fx`).
-4. Rode `python jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py --previa docs/combate_v2/previas`, olhe os GIFs, conserte o pior e repita pelo menos três vezes.
+1. Acrescente a folha em `IMPACTOS`, `ANEIS` ou `NUVENS`. A chave é o nome da folha no índice antigo. Efeito sem arma vai em `SOLTOS`, com id `fx_*`.
+2. Meteoro: use `_meteoro`, que faz a célula do tamanho da área para o jogo não ampliar.
+3. Tudo tem que sumir antes do último quadro, e a nuvem precisa de ciclos inteiros para não ter emenda.
+4. Rode `python jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py --previa docs/combate_v2/previas`, olhe os GIFs, conserte o pior e repita.
 5. Rode `godot --headless --import` e o teste `testes/v2_fx_armas_pixelfx.tscn`. Confira no jogo com `testes/fotos/golpes_gif.tscn`, porque o fundo do mapa muda a leitura.
 
 ## Como funciona no jogo
-`indice_pixelfx.json` é lido por último em `Anim.GRUPOS` e troca só o `impacto` das cinco armas, repetindo as outras animações. As folhas antigas continuam no lugar. **Para voltar atrás, basta tirar `"pixelfx"` de `GRUPOS`.**
+`indice_pixelfx.json` é lido por último em `Anim.GRUPOS` e troca só as animações refeitas, repetindo as outras. As folhas antigas continuam no lugar. O código tocava camadas por cima (estouro "cristal", ondas, explosão de shader, fumaça); elas saíram de `armas.explodir`, `_cair_raio`, `_explodir_runa`, dos anéis, dos meteoros, da cabaça, do golem e dos aliados. A luz, o tremor, o som e a marca no chão ficaram.
 
-## Limites conhecidos
-- As camadas antigas continuam por cima da folha nova: em `armas.explodir`, o estouro "cristal", a onda e a fumaça; em `_cair_raio`, a onda e a explosão. Elas abafam parte do estilo. Tirá-las é o próximo passo natural, e mexe em código do Claude do Alisson.
-- O traço do raio que cai do céu continua sendo o de `_raio_visual`. Só o estalo no alvo mudou.
+## O que ficou de fora
+- Trilhas de voo, quedas e marcas no chão continuam as antigas.
+- O corte e o acerto da katana são do herói e não mudaram.
+- O traço do raio que cai do céu continua sendo o de `_raio_visual`.
+- Os perigos dos chefes e dos inimigos (`perigo_*`) não são armas.
 - O crítico de projétil toca o impacto em escala 2, como antes, então tem pixel dobrado.

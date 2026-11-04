@@ -61,4 +61,4 @@ O script que gera as folhas fica em `jogos/hordas/fonte_arte/armas_anim/gerar_<g
 as mesmas folhas (semente fixa).
 
 ## Impactos no estilo do pixelfx
-As folhas `pfx_*_impacto.png` fogem dos tamanhos da tabela de propósito: já nascem do tamanho da área da arma, em 1 px do mundo. Guia em `docs/visual_2_5d/estilo_pixelfx.md`.
+As folhas `pfx_*` fogem dos tamanhos da tabela de propósito: já nascem do tamanho da área da arma, em 1 px do mundo. Guia em `docs/visual_2_5d/estilo_pixelfx.md`.
