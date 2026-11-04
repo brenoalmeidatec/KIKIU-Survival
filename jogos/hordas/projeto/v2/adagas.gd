@@ -20,6 +20,10 @@ extends RefCounted
 ## Ricochete: o campo `ricochete` do passo (n) vale só no golpe principal (`cresce_com_nivel`); o Q, a E e a chuva usam o projétil sem ricochetear.
 ## No acerto, uma varredura acha o monstro vivo mais perto (até RIC_ALCANCE px) que a lâmina ainda não acertou e a vira para ele; a direção nova
 ## vale no quadro seguinte, porque a lista de candidatos deste quadro foi montada com a direção antiga.
+## Rajada (o canhão do LightWolf, um leque de projéteis pequenos por braço, como uma escopeta automática): o passo `numero_rajada` (true) faz
+## só o PRIMEIRO acerto de cada rajada (um `lancar`) mostrar o número e tocar o som de impacto; os outros projéteis da mesma rajada ferem, empurram
+## e acendem o flash do monstro, mas sem número nem som (cinco números e cinco sons a cada disparo poluíam a tela). O crítico sempre mostra o
+## número, para o jogador ver o crítico. A memória é um anel fixo de NUM_RAJADAS rajadas recentes, sem alocar nem consumir sorteio.
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
@@ -32,6 +36,8 @@ const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px,
 const PROJ_PADRAO := "adaga"
 const VISUAL_DIST := 60.0  # deslocamento da boca projetada converge para a trajetória lógica
 const VISUAL_DUR := 0.2
+const RASTRO_BOLINHA := [0.9, 0.65, 0.4, 0.2]  # alfa de cada pixel do rastro da bolinha do mecha, do mais perto ao mais longe
+const NUM_RAJADAS := 16  # rajadas com número já mostrado lembradas ao mesmo tempo (no máximo ~9 rajadas/s x ~0,6 s de voo em voo juntas)
 
 var combate
 var mundo
@@ -59,7 +65,10 @@ var a_alvo: Array = []  # o monstro que o míssil busca (null = reto)
 var a_extra := PackedByteArray()  # 1 = veio do modificador "chuva" (não solta outra)
 var a_grupo := PackedInt64Array()  # arremesso principal; tamanho fixo MAX, sem histórico crescente
 var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina desse grupo
+var a_rajada := PackedInt64Array()  # o lancar da rajada com `numero_rajada` (0 = cada acerto mostra o seu número, o normal)
 var _grupo := 0
+var _num_rajadas := PackedInt64Array()  # anel das rajadas que já mostraram o número (veja o cabeçalho)
+var _num_i := 0
 var _pausa_recarga := 0.0
 var a_cor := PackedColorArray()
 var a_visual_offset := PackedVector2Array()
@@ -89,7 +98,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_proj_lista.clear()
 	_proj_nomes.clear()
 	_registrar("adaga", _img_adaga(), COMPR, 5.0)
-	_registrar("bala", _img_bala(), 7.0, 3.0)
+	_registrar("bala", _img_bala(), 5.0, 5.0)
 	_registrar("plasma", _img_plasma(), 11.0, 7.0)
 	_registrar("missil", _img_missil(), 24.0, 9.0)
 	misseis_visual.montar()
@@ -110,6 +119,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_alvo.resize(MAX)
 	a_extra.resize(MAX)
 	a_grupo.resize(MAX)
+	a_rajada.resize(MAX)
+	_num_rajadas.resize(NUM_RAJADAS)
 	a_pausa.resize(MAX)
 	a_cor.resize(MAX)
 	a_visual_offset.resize(MAX)
@@ -139,6 +150,9 @@ func limpar() -> void:
 	misseis_visual.limpar()
 	a_rest.fill(0.0)
 	a_grupo.fill(0)
+	a_rajada.fill(0)
+	_num_rajadas.fill(0)
+	_num_i = 0
 	a_pausa.fill(0)
 	a_ric.fill(0)
 	a_proj.fill(0)
@@ -192,6 +206,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 	var proj := _indice_proj(str(passo.get("proj", PROJ_PADRAO)))
 	var ric := maxi(0, int(passo.get("ricochete", 0))) if cresce_com_nivel else 0
 	_grupo += 1
+	var rajada: int = _grupo if bool(passo.get("numero_rajada", false)) else 0
 	for k in n:
 		var ang := 0.0 if n == 1 else leque * (float(k) / float(n - 1) - 0.5)
 		ang += randf_range(-0.025, 0.025)
@@ -211,6 +226,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 		a_proj[i] = proj
 		_boca_visual(i, h, origem, dir, passo)
 		a_ric[i] = ric
+		a_rajada[i] = rajada
 		if float(passo.get("giro", 0.0)) > 0.0:
 			_mirar(i, h, passo, dir)
 		a_expl[i] = float(passo.get("expl_raio", 0.0))
@@ -252,6 +268,7 @@ func _nova(
 	a_expl_d[i] = 0.0
 	a_alvo[i] = null
 	a_grupo[i] = 0
+	a_rajada[i] = 0
 	a_pausa[i] = 0
 	a_cor[i] = cor
 	a_visual_offset[i] = Vector2.ZERO
@@ -513,12 +530,18 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	var dir: Vector2 = a_dir[i]
 	var cor: Color = a_cor[i]
 	combate.fonte_dano = str(a_fonte[i])
-	combate.ferir(m, d, dir, a_emp[i] * (1.25 if crit else 1.0), a_atord[i] * (1.3 if crit else 1.0), cor.lerp(Color.WHITE, 0.45), true, crit)
+	var mostra := crit or _primeiro_da_rajada(i)
+	var vivo: bool = m.vivo and not m.morrendo
+	combate.ferir(m, d, dir, a_emp[i] * (1.25 if crit else 1.0), a_atord[i] * (1.3 if crit else 1.0), cor.lerp(Color.WHITE, 0.45), mostra, crit)
+	if not mostra and vivo:
+		combate.fx.flash(m, 0.08)  # sem número, o flash do acerto continua (o mesmo que ferir acende junto com o número)
 	_pausar_grupo(i)
 	if a_expl[i] > 0.0:
 		_explodir(i, m)
 	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0, not _visual_mecha(a_proj[i]))
-	combate.audio.tocar("critico" if crit else "impacto", randf_range(1.25, 1.5), -7.0, 0.05)
+	var tom := randf_range(1.25, 1.5)  # sorteado sempre, com ou sem som: a rajada não muda a sequência de sorteios
+	if mostra:
+		combate.audio.tocar("critico" if crit else "impacto", tom, -7.0, 0.05)
 	if crit and float(combate.armas.mods.explode) > 0.0:
 		var raio_e: float = float(combate.cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
 		combate.armas.explodir(m.pos, d * float(combate.armas.mods.explode) / 100.0, raio_e, Color(1.0, 0.74, 0.2), m)
@@ -527,6 +550,19 @@ func _acertar(i: int, m, p: Vector2) -> void:
 		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], ALCANCE_EXTRA, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
 		a_proj[j] = a_proj[i]
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
+
+
+## true se o acerto do projétil `i` é o primeiro da rajada dele (ou se ele não é de rajada): esse mostra o número e toca o som.
+func _primeiro_da_rajada(i: int) -> bool:
+	var r: int = a_rajada[i]
+	if r == 0:
+		return true
+	for k in NUM_RAJADAS:
+		if _num_rajadas[k] == r:
+			return false
+	_num_rajadas[_num_i] = r
+	_num_i = (_num_i + 1) % NUM_RAJADAS
+	return true
 
 
 ## A explosão pequena do míssil `i` em volta do monstro acertado: dano em área pelo mesmo caminho das armas (elipse do chão), sem repetir o monstro `m` que ele já feriu.
@@ -571,8 +607,18 @@ func _desenhar_corpo() -> void:
 			continue
 		var p: Vector2 = a_pos[i]
 		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
-		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		var e: Dictionary = _proj_lista[a_proj[i]]
+		if _bolinha(a_proj[i]):  # ponto simétrico na grade de 1 px, sem giro (girar borraria a bolinha); a direção fica no rastro
+			no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)  # o giro do projétil anterior não vale aqui
+			no_corpo.draw_rect(Rect2((p + Vector2(-2, 6)).round(), Vector2(5, 1)), Color(0, 0, 0, 0.3 * fade))  # sombra da largura da bolinha
+			var pv := _pos_visual(i).round()
+			var cor: Color = a_cor[i]
+			for k in RASTRO_BOLINHA.size():  # o rastro: um pixel inteiro por passo atrás da bolinha, apagando (a direção sem girar nada)
+				var q := (pv - (a_dir[i] as Vector2) * float(k + 3)).round()  # começa fora do contorno (raio 2 do losango)
+				no_corpo.draw_rect(Rect2(q, Vector2.ONE), Color(cor.r, cor.g, cor.b, RASTRO_BOLINHA[k] * fade))
+			no_corpo.draw_texture(e.tex, pv - Vector2(2, 2), Color(1, 1, 1, fade))
+			continue
+		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		p = _pos_visual(i)  # a sombra acima permanece na trajetória lógica do chão
 		if e.has("anim"):
 			var f: Dictionary = e.anim
@@ -594,9 +640,7 @@ func _desenhar_brilho() -> void:
 		if _visual_mecha(a_proj[i]):
 			if str(_proj_lista[a_proj[i]].nome) == "missil":
 				no_brilho.draw_line((p - dir * 19.0).round(), (p - dir * 10.0).round(), Color(1.0, 0.55, 0.14, 0.65 * fade), 2.0)
-			else:
-				no_brilho.draw_line((p - dir * 7.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.65 * fade), 1.0)
-			continue
+			continue  # a bolinha da rajada leva o rastro no corpo (_desenhar_corpo), pixel a pixel
 		no_brilho.draw_line((p - dir * 16.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.4 * fade), 3.0)
 		no_brilho.draw_line((p - dir * 9.0).round(), (p + dir * 4.0).round(), Color(1, 1, 1, 0.8 * fade), 1.0)
 		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.3 * fade))
@@ -621,21 +665,19 @@ func _img_adaga() -> Texture2D:
 	return ImageTexture.create_from_image(im)
 
 
-## A bala do canhão do LightWolf: 7x3 px, ponta clara e corpo âmbar.
+## A bolinha da rajada do canhão do LightWolf: losango 5x5 px, miolo branco puro, cruz âmbar e contorno marrom quase preto de 1 px.
+## O contorno é o que a separa do chão de pedra iluminado de laranja (âmbar sobre âmbar sumia na captura da rodada 2); a cor de arma do
+## herói continua âmbar, como pede o DESIGN. Simétrica de propósito: é desenhada sem giro (`_bolinha`), então fica sempre na grade de 1 px;
+## o rastro (RASTRO_BOLINHA) mostra a direção.
 func _img_bala() -> Texture2D:
-	var im := Image.create(7, 3, false, Image.FORMAT_RGBA8)
-	var corpo := Color(1.0, 0.72, 0.25)
-	var ponta := Color(1.0, 0.96, 0.8)
-	var cauda := Color(0.8, 0.4, 0.15)
-	for x in 7:
-		for y in 3:
-			im.set_pixel(x, y, corpo)
-	for y in 3:
-		im.set_pixel(0, y, cauda)
-		im.set_pixel(6, y, ponta if y == 1 else corpo)
-	im.set_pixel(0, 0, Color(0, 0, 0, 0))
-	im.set_pixel(0, 2, Color(0, 0, 0, 0))
-	im.set_pixel(5, 1, ponta)
+	var im := Image.create(5, 5, false, Image.FORMAT_RGBA8)
+	var contorno := Color(0.16, 0.08, 0.03)
+	var corpo := Color(1.0, 0.7, 0.22)
+	for k in [Vector2i(2, 0), Vector2i(1, 1), Vector2i(3, 1), Vector2i(0, 2), Vector2i(4, 2), Vector2i(1, 3), Vector2i(3, 3), Vector2i(2, 4)]:
+		im.set_pixelv(k, contorno)
+	for k in [Vector2i(2, 1), Vector2i(1, 2), Vector2i(3, 2), Vector2i(2, 3)]:
+		im.set_pixelv(k, corpo)
+	im.set_pixel(2, 2, Color.WHITE)
 	return ImageTexture.create_from_image(im)
 
 
@@ -659,6 +701,11 @@ func _img_missil() -> Texture2D:
 		for y in range(3 if x < 2 else 2, 6 if x < 2 else 7):
 			im.set_pixel(x, y, Color(1.0, 0.85, 0.4) if y == 4 else Color(0.95, 0.35, 0.08))
 	return ImageTexture.create_from_image(im)
+
+
+## A bala do mecha (a bolinha da rajada): desenhada sem giro, centrada no pixel da posição.
+func _bolinha(proj: int) -> bool:
+	return str(_proj_lista[proj].nome) == "bala" and _visual_mecha(proj)
 
 
 func _visual_mecha(proj: int) -> bool:

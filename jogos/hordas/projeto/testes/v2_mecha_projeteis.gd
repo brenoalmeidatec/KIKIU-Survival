@@ -63,7 +63,12 @@ func comparar_rng() -> void:
 		seed(781923)
 		c.fx.faiscas(h.pos, Vector2.RIGHT, 6, Color.WHITE, 110.0, desenhar)
 		c.fx.estouro(h.pos, Color.WHITE, 3, desenhar)
-		ad.lancar(h, h.pos, Vector2.RIGHT, c.cfg.golpe.passos[0])
+		# fixture congelada no canhão de 1 bala de 4,8 do baseline ad0f315: a rajada nova (n, leque, dano) sortearia outra sequência
+		var passo_base: Dictionary = c.cfg.golpe.passos[0].duplicate(true)
+		passo_base.n = 1
+		passo_base.leque = 0
+		passo_base.dano = 4.8
+		ad.lancar(h, h.pos, Vector2.RIGHT, passo_base)
 		ad._acertar(0, m, m.pos)
 		var obtido: Array = [ad.a_dir[0], m.vida, c.criticos, randi(), randi(), randi()]
 		var esperado: Array = RNG_BASELINE[c.fx.fator_part]
@@ -156,22 +161,51 @@ func _ready() -> void:
 	ok(missil.tex.get_width() == 24 and missil.tex.get_height() == 9, "míssil tem corpo/ogiva/aletas maiores que uma bala")
 	ok(visual.quadros.size() == 8 and visual.tempo.size() == 16, "oito quadros e dezesseis vagas preparados uma vez")
 	ok(visual.quadros[0].get_image().get_data() != visual.quadros[4].get_image().get_data(), "a explosão tem quadros diferentes")
+	var bolinha: Dictionary = ad._proj_lista[ad._indice_proj("bala")]
+	ok(bolinha.tex.get_width() == 5 and bolinha.tex.get_height() == 5, "a bala do mecha é uma bolinha 5x5 na grade de 1 px")
+	var img_b: Image = bolinha.tex.get_image()
+	ok(
+		img_b.get_pixel(2, 2) == Color.WHITE and img_b.get_pixel(2, 0).get_luminance() < 0.15 and img_b.get_pixel(0, 0).a == 0.0,
+		"a bolinha tem miolo branco, contorno escuro (destaca do chão quente) e cantos vazios (losango)"
+	)
+	ok(ad._bolinha(ad._indice_proj("bala")) and not ad._bolinha(ad._indice_proj("missil")), "só a bala do mecha é desenhada sem giro")
+	# a RAJADA (pedido do Alisson: vários projéteis por braço): cada evento de cada braço solta n bolinhas em leque curto, todas do lado dele
 	for idx in 2:
 		var antes: int = ad.lancadas
 		var part: int = c.fx.usados.particulas
 		var passo: Dictionary = c.cfg.golpe.passos[idx]
+		var vivas := {}
+		for j in ad.MAX:
+			if ad.a_rest[j] > 0.0:
+				vivas[j] = true
 		c.golpear(h, h.pos + h.ORIGEM_GOLPE, Vector2.RIGHT, passo, idx)
-		ok(ad.lancadas - antes == 1, "cada evento de cada braço lança exatamente uma bala")
+		var novas := []
+		for j in ad.MAX:
+			if ad.a_rest[j] > 0.0 and not vivas.has(j):
+				novas.append(j)
+		ok(int(passo.n) >= 4 and ad.lancadas - antes == int(passo.n) and novas.size() == int(passo.n), "cada evento de cada braço solta a rajada inteira")
 		ok(c.fx.usados.particulas == part, "bala não espalha faíscas extras parecendo outros tiros")
-		var i: int = ad.lancadas - 1
-		ok(
-			is_equal_approx(ad.a_vel[i], float(passo.vel)) and is_equal_approx(ad.a_dano[i], float(passo.dano) * h.m_dano),
-			"velocidade e dano da bala preservados"
-		)
-		ok(
-			is_equal_approx(ad.a_rest[i], float(passo.alcance) * (1.0 + c.bonus_nivel_golpe(h))) and is_equal_approx(ad.a_raio[i], 4.0 * sqrt(h.m_area)),
-			"alcance e raio de colisão não crescem com a imagem"
-		)
+		var a_min := INF
+		var a_max := -INF
+		var lado_ok := true
+		for i in novas:
+			ok(
+				is_equal_approx(ad.a_vel[i], float(passo.vel)) and is_equal_approx(ad.a_dano[i], float(passo.dano) * h.m_dano),
+				"velocidade e dano de cada bolinha preservados"
+			)
+			ok(
+				is_equal_approx(ad.a_rest[i], float(passo.alcance) * (1.0 + c.bonus_nivel_golpe(h))) and is_equal_approx(ad.a_raio[i], 4.0 * sqrt(h.m_area)),
+				"alcance e raio de colisão não crescem com a imagem"
+			)
+			var ang: float = rad_to_deg((ad.a_dir[i] as Vector2).angle())
+			a_min = minf(a_min, ang)
+			a_max = maxf(a_max, ang)
+			# a boca do braço: combate.golpear desloca a origem `lateral` px para Vector2.RIGHT.orthogonal() = (0, -1)
+			var lateral: float = (ad.a_pos[i] - (h.pos + h.ORIGEM_GOLPE)).dot(Vector2.RIGHT.orthogonal())
+			lado_ok = lado_ok and signf(lateral) == signf(float(passo.lateral))
+		var leque: float = float(passo.leque) * (1.0 + (h.m_area - 1.0) * 0.5)
+		ok(a_max - a_min >= leque - 3.0 and a_max - a_min <= leque + 3.0, "leque curto da rajada (%.1f graus, dado %.0f)" % [a_max - a_min, leque])
+		ok(lado_ok, "todas as bolinhas do braço %d saem do lado dele" % idx)
 	zerar()
 	var hab: Dictionary = Dados.json("v2_habilidade").misseis
 	ok(int(hab.n) == 12 and is_equal_approx(float(hab.dur), 0.9), "a E mantém doze mísseis em 0,9 s")

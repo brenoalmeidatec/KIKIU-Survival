@@ -2962,3 +2962,16 @@ _Claude do Alisson (notebook)_
 - **Mesclado:** #609 (elite e chefes com sprite maior em 1x), merge `5d27e108`, com o "mergeia" do Alisson. CI 8/8 verde no `de889569`. Revisão independente "aprovo com ressalvas" depois da correção dos enfeites do chefe (`pe_logico`).
 - **CI da 1ª rodada:** quebrou a `v2_oclusao`, porque os monstros de teste são Dictionary e não têm `esc`, e a `v2_golpes_visuais`, que esperava o sprite ampliado 2x. As duas foram corrigidas. A `armas_novas` ("runas machucou os inimigos", dano 0) falhou uma vez no CI e passou no PC: parece instável. Se voltar a falhar, investigar.
 - **Pendente:** coroa e gemas do chefão desenhadas por código em blocos grossos (`chefe_visual.gd`), fora da grade de 1 px; dragão aliado e golem colosso sem folha grande; 2ª rodada da varredura (katana, HUD Q/E, armas, partículas). Ninguém jogou em movimento.
+
+**LightWolf: canhão em rajada e Matriz de Defesa em pé (04/11/2026, Claude do Alisson, notebook, branch alisson/lw-canhao-matriz):** feito por workflow (2 frentes, 2 revisores independentes por frente e uma rodada de correção), a pedido do Alisson ("vários projéteis por braço, como a D.Va"; "a matriz são 3 quadrados, literalmente um defense matrix").
+- **Canhão:** cada braço solta uma rajada de 5 bolinhas em leque de 14°, com alcance 170, dano 2 por bolinha e ~5,7 rajadas/s, alternando os braços. DPS sem crítico: 56,7 encostado, 45 a 80 px, ~30 a 150 px e 56,7 numa horda de 8 (antes ~48 em qualquer distância). Campo novo `numero_rajada` (`v2/adagas.gd`): só o 1º acerto de cada rajada mostra número e toca o impacto, o crítico sempre mostra, e a sequência do RNG não muda. A bolinha virou um losango 5x5 âmbar com contorno escuro e miolo branco, sem giro, na grade de 1 px. A foto lw_1 do roteiro agora é tirada atirando. Pool: o pior caso dá 37 de 96.
+- **Matriz:** sai a faixa em arco no chão e entra um campo EM PÉ na direção da mira, com 3 molduras hexagonais encaixadas em degraus, preenchimento translúcido e contorno de 2 px, na grade de 1 px. Mantém a entrada, o pulso (≤2 Hz), o laranja com a barra baixa, o clarão de absorção e a varredura (nada disso no perfil Baixo). A regra (cobre, absorve, empurra, casca, cartas) não mudou. Parâmetros novos em `dados/v2_secundario.json > matriz > visual`, com o `_ajuda`. Teste novo `v2_matriz_visual`, e o roteiro ganhou as fotos lw_2b (mira para baixo) e lw_2c (direita).
+- **Testes** pela fila, todos com falhas=0: v2_lightwolf, v2_mecha_projeteis, v2_mecha_contato, v2_lightwolf_q, v2_lightwolf_formas, v2_mecha_animacao, armas_novas, v2_adagas_impacto, v2_misseis, v2_lw_cartas, v2_lightwolf_roteiro, v2_pixel_filtros, v2_herois, v2_matriz, v2_matriz_visual, v2_mare_matriz, v2_piscadas e v2_pixel_efeitos. Os testes novos do canhão falham com a config antiga.
+- **Pendente:**
+  - o Alisson ver em movimento (é visual: sem merge automático);
+  - a rajada sai ~20 px abaixo dos canos (convergência VISUAL_DIST/ORIGEM_GOLPE);
+  - clarão de boca, se ele pedir;
+  - de lado, o mecha aparece translúcido na lw_2c (investigar);
+  - o ícone do slot S da HUD ainda é o arco antigo;
+  - bug antigo: a sombra do projétil usa o transform do anterior em `_desenhar_corpo`;
+  - comentário velho em `v2/combate.gd:635`.

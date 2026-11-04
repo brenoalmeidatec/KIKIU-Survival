@@ -36,7 +36,7 @@ extends RefCounted
 ##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
 ##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
 ##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
-##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 2_matriz (a matriz erguida), 3_misseis (a E no disparo),
+##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mira travada), 3_misseis (a E no disparo),
 ##                         4_salto, 5_aceso e 6_explosao (o Q, Autodestruição: o piloto salta, o mecha acende, o estouro), 7_lobo (o Lobo livre), 8_chamado
 ##                         (o CHAMAR apertado) e 9_volta (o mecha de volta), e 10_carta (escolha com uma carta só dele). Usar com --fotos=PASTA --nome=prefixo.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
@@ -66,6 +66,7 @@ var pt_disparos := 0  # quantos avisos já tinham disparado quando o chefe nasce
 var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do disparo sai 0,12 s depois)
 const LW_CARTAS := ["sifao", "ampla", "cabo"]  # as cartas só do LightWolf (dados/v2_cartas.json, herois: lightwolf)
 var lw_expl0 := 0  # o roteiro do LightWolf: quantas explosões já tinham saído antes do Q
+var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da matriz de frente e de lado (volta depois)
 var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
 
 
@@ -202,7 +203,8 @@ func _r_cores() -> void:
 
 
 ## Uma foto de cada estado do LightWolf (LW-2 a LW-6), com `--heroi=lightwolf` (o beta só entra por esse argumento). Herói imortal e parado,
-## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia), 2_matriz (a matriz erguida), 3_misseis (a E no meio do disparo),
+## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia, atirando as rajadas pelo vão do anel, à direita), 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mesma
+## matriz com a mira travada para baixo e para a direita: as molduras de frente e de lado), 3_misseis (a E no meio do disparo),
 ## 4_salto (o Q: o piloto já saltou para trás da mira e o mecha segue no lugar), 5_aceso (o mecha aceso perto de explodir), 6_explosao (0,12 s
 ## depois do estouro: onda e tela limpa), 7_lobo (o Lobo livre), 8_chamado (o CHAMAR apertado, com o aviso sobre os pés), 9_volta (o mecha de
 ## volta) e 10_carta (escolha com uma carta só do LightWolf). Um passo que espera um estado até o prazo e segue sem ele soma em lw_atrasos.
@@ -214,23 +216,53 @@ func _r_lightwolf() -> void:
 		0:
 			_preparar()
 			_cercar_lightwolf(14)
+			# 1_mecha atirando: as rajadas dos dois braços (vários projéteis em leque) pelo vão entre dois monstros do anel, à direita,
+			# para as bolinhas aparecerem voando inteiras em vez de sumirem no primeiro monstro
+			mundo.mouse_forcado = h.centro() + Vector2.from_angle(TAU / 28.0) * 200.0
+			h.ataque_forcado = true
 			passo = 1
 			t_passo = 0.0
-		1:
-			if t_passo > 0.4:
+		1:  # a foto pega uma rajada recém-saída de um braço (golpe_t ~0,08 s) e a anterior, do outro braço, já longe
+			if t_passo > 0.4 and (h.estado == h.Estado.GOLPE and h.golpe_t >= 0.08 or t_passo > 1.0):
 				_foto("1_mecha")
 				passo = 2
 				t_passo = 0.0
 		2:  # a matriz (LW-3): segurar o secundário ergue a barra de defesa
+			h.ataque_forcado = false  # o tiro da 1_mecha para aqui, no quadro depois da foto (ela sai no fim do quadro)
+			mundo.mouse_forcado = null
 			h.escudo_forcado = true
 			passo = 3
 			t_passo = 0.0
 		3:
 			if t_passo > 0.4:
 				_foto("2_matriz")
-				h.escudo_forcado = false
-				passo = 4
+				passo = 29
 				t_passo = 0.0
+		29:  # a foto sai no fim do quadro: a mira só muda no passo seguinte (senão a foto anterior já pega a mira nova)
+			lw_fonte = h.fonte  # as duas fotos a seguir travam a mira (a fonte do analógico não lê o mouse da janela)
+			h.fonte = h.Fonte.STICK
+			h.dir_olhar = Vector2.DOWN
+			passo = 30
+			t_passo = 0.0
+		30:  # a matriz mirando para baixo (para a câmera): as molduras de frente, largas, na frente do mecha
+			if t_passo > 0.3:
+				_foto("2b_matriz_baixo")
+				passo = 31
+				t_passo = 0.0
+		31:
+			h.dir_olhar = Vector2.RIGHT
+			passo = 32
+			t_passo = 0.0
+		32:  # a matriz mirando para a direita: as molduras de lado, estreitas
+			if t_passo > 0.3:
+				_foto("2c_matriz_direita")
+				passo = 33
+				t_passo = 0.0
+		33:
+			h.escudo_forcado = false
+			h.fonte = lw_fonte
+			passo = 4
+			t_passo = 0.0
 		4:  # a E Mísseis (LW-4) com a recarga zerada
 			h.hab_recarga = 0.0
 			h.hab_nega_t = 0.0
