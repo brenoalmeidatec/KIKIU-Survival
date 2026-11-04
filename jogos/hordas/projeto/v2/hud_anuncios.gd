@@ -2,8 +2,8 @@ extends Control
 ## Faixa de anúncio do HUD da v2: fica no centro alto da tela, abaixo do bloco de tempo e combo. Um anúncio por vez na tela; os
 ## outros esperam numa fila (até CAPACIDADE, depois sai o mais antigo). Sem nó novo por anúncio: a moldura e o texto são os desta
 ## cena, e só mudam de texto, cor e tamanho. O HUD chama `anunciar` e `avancar`.
-## Entrada: escala de 1,4 (mais com a intensidade) até 1,0, com brilho; segura ~1,2 s (mais 0,1 s por intensidade); sai esmaecendo.
-## A intensidade vai de 0 a 4 e é o marco de combo (SEQUÊNCIA a LENDÁRIO): cresce a escala, o tempo na tela e o tremor.
+## Entrada: com brilho (sem escala); segura ~1,2 s (mais 0,1 s por intensidade); sai esmaecendo.
+## A intensidade vai de 0 a 4 e é o marco de combo (SEQUÊNCIA a LENDÁRIO): cresce o brilho, o tempo na tela e o tremor.
 ## Visual premium (#152): uma faixa de cinema desenhada em `_draw` (escura, some nas pontas, com filetes e losangos na cor do
 ## anúncio) no lugar da caixa; o NinePatch `Moldura` fica escondido.
 
@@ -239,12 +239,9 @@ func _losango(p: Vector2, r: float, cor: Color) -> void:
 
 func _quadro() -> void:
 	var p := clampf(_t / ENTRADA_T, 0.0, 1.0)
-	var pousa := 1.0 - (1.0 - p) * (1.0 - p)  # sai rápido e assenta devagar
-	var escala_inicial := 1.4 + 0.15 * _intensidade
-	var escala := roundf(lerpf(escala_inicial, 1.0, pousa) * 20.0) / 20.0  # degraus de 0,05, sem escala suave
-	scale = Vector2.ONE * escala
+	scale = Vector2.ONE  # nunca escala (a entrada de 1,4x e as frações de pixel saíram): o anúncio chega aceso e assenta
 	var saida := clampf((_t - ENTRADA_T - _segura) / SAIDA_T, 0.0, 1.0)
-	var brilho := 1.0 + 0.8 * (1.0 - p)  # no começo o anúncio acende e assenta na cor do tipo
+	var brilho := 1.0 + (0.8 + 0.15 * _intensidade) * (1.0 - p)  # no começo (mais forte nos marcos altos, no lugar do tamanho) o anúncio acende e assenta na cor do tipo
 	modulate = Color(brilho, brilho, brilho, 1.0 - saida)
 	_moldura.modulate = _cor
 	var tremor := 0.0

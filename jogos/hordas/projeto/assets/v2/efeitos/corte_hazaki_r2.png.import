@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://wcvk2xbbv1sx"
-path="res://.godot/imported/summon-rise.png-875871143bb202d92ac0fd52fad9b91f.ctex"
+uid="uid://dlo8noq7oape2"
+path="res://.godot/imported/corte_hazaki_r2.png-654f550e9556a7011c9071ccc2d5abaf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/pixelfx/spawn/summon-rise.png"
-dest_files=["res://.godot/imported/summon-rise.png-875871143bb202d92ac0fd52fad9b91f.ctex"]
+source_file="res://assets/v2/efeitos/corte_hazaki_r2.png"
+dest_files=["res://.godot/imported/corte_hazaki_r2.png-654f550e9556a7011c9071ccc2d5abaf.ctex"]
 
 [params]
 

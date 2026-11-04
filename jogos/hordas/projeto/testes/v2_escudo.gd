@@ -359,11 +359,41 @@ func _ready() -> void:
 	fx_passos(4)
 	ve = esc.visual_estado()
 	ok(ve.celula == 2 and ve.pos.y < h.pos.y, "mira para cima: as costas do escudo, atrás do herói no y-sort (%s)" % ve)
+	# as faíscas do acerto e o arco do aparo ficam na grade de 1 px (sem coordenada fracionária)
+	h.dir_olhar = Vector2(0.8137, 0.5812).normalized()
+	esc.bloquear(h, 1.0, h.pos + Vector2(37.3, -11.7), null)
+	ok(esc._impacto == esc._impacto.round(), "a origem das faíscas do acerto cai em px inteiros (%s)" % esc._impacto)
+	var arco_g: PackedVector2Array = esc.pontos_na_grade(esc.pontos_arco(h, 140.0, 26.0))
+	var arco_na_grade: bool = arco_g.size() > 2
+	for p in arco_g:
+		arco_na_grade = arco_na_grade and p == p.round()
+	ok(arco_na_grade, "o arco do aparo, mesmo seguindo a mira, é desenhado em px inteiros")
 	# soltar de propósito: some sem quebrar
 	h.escudo_forcado = false
 	fx_passos(12)
 	ve = esc.visual_estado()
 	ok(not ve.visivel and not ve.quebrado and ve.pedacos == 0, "soltar o botão: o escudo desce e some, sem quebrar")
+	# pixel art numa grade só: a subida e a descida NÃO escalam o sprite (escala fracionária mistura pixels de tamanhos diferentes); só deslocam em px inteiros
+	zerar()
+	h.escudo_forcado = true
+	var sobe_vistos := 0
+	var sobe_na_grade := true
+	for i in 9:
+		fx_passos(1)
+		if esc._raiz.visible:
+			sobe_vistos += 1
+			sobe_na_grade = sobe_na_grade and esc._spr.scale == Vector2.ONE and esc._bri.scale == Vector2.ONE
+			sobe_na_grade = sobe_na_grade and esc._spr.position == esc._spr.position.round() and esc._raiz.position == esc._raiz.position.round()
+	ok(sobe_vistos >= 6 and sobe_na_grade, "na subida o escudo não escala (escala 1) e fica em px inteiros (%d quadros vistos)" % sobe_vistos)
+	h.escudo_forcado = false
+	var desce_vistos := 0
+	var desce_na_grade := true
+	for i in 7:
+		fx_passos(1)
+		if esc._raiz.visible:
+			desce_vistos += 1
+			desce_na_grade = desce_na_grade and esc._spr.scale == Vector2.ONE and esc._spr.position == esc._spr.position.round()
+	ok(desce_vistos >= 3 and desce_na_grade, "na descida o escudo não escala (escala 1) e fica em px inteiros (%d quadros vistos)" % desce_vistos)
 	# fôlego baixo: o quadro racha
 	zerar()
 	w.mouse_forcado = h.centro() + Vector2(0, 100)
@@ -388,7 +418,18 @@ func _ready() -> void:
 	fx_passos(2)
 	ve = esc.visual_estado()
 	ok(h.def_quebrado and not h.escudo_ativo and not ve.visivel and ve.quebrado and ve.pedacos == 4, "defesa zerou: o escudo quebra e 4 pedaços caem (%s)" % ve)
-	fx_passos(80)
+	# os pedaços da quebra ficam na grade de 1 px: só giram em múltiplos de 90 graus e têm origem e posição em px inteiros
+	var frag_na_grade := true
+	var frag_vistos := 0
+	for i in 40:
+		fx_passos(1)
+		for f in esc._frags:
+			if f.visible:
+				frag_vistos += 1
+				var rot90: float = absf(f.rotation - snappedf(f.rotation, PI / 2.0))
+				frag_na_grade = frag_na_grade and rot90 < 0.001 and f.offset == f.offset.round() and f.position == f.position.round()
+	ok(frag_vistos > 40 and frag_na_grade, "os pedaços da quebra giram só em passos de 90 graus, com origem e posição em px inteiros (%d vistos)" % frag_vistos)
+	fx_passos(40)
 	ve = esc.visual_estado()
 	ok(ve.pedacos == 0 and ve.quebrado, "os pedaços caem, ficam no chão e se apagam; ainda falta reforjar")
 	h.def_quebrado = false
@@ -445,6 +486,12 @@ func _ready() -> void:
 	fx_passos(2)
 	ve = esc.visual_estado()
 	ok(str(ve.estilo) == "nicao" and esc._spr.texture.get_width() == 576 and ve.celula < 8, "o Nick no nível 5 usa a faixa M de 48 px, camada 0 (%s)" % ve)
+	esc.ergueu(h)  # recomeça a subida e olha o meio dela (o escudo já estava erguido aqui)
+	fx_passos(2)
+	ok(
+		esc._spr.scale == Vector2.ONE and esc._bri.scale == Vector2.ONE,
+		"subida do escudo: escala do sprite fica em 1, sem ampliar o pixel (veio %s)" % esc._spr.scale
+	)
 	h.nivel = 6
 	fx_passos(2)
 	ve = esc.visual_estado()

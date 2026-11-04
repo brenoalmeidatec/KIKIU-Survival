@@ -1,0 +1,22 @@
+{
+ "quadro": [
+  106,
+  101
+ ],
+ "elevacao": 45.0,
+ "ppu": 49.0,
+ "linhas": [
+  "frente",
+  "tres_quartos",
+  "perfil",
+  "tres_quartos_costas",
+  "costas"
+ ],
+ "colunas": [
+  "andar0",
+  "andar1",
+  "andar2",
+  "andar3"
+ ],
+ "pe_y": 99
+}

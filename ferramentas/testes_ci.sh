@@ -12,6 +12,9 @@
 # Uma cena passa apenas com codigo 0, "falhas=0" e sem "SCRIPT ERROR".
 # Timeout (124), crash (sinal) e falha comum ficam distintos no resultado e no log.
 # Limite: 120 s por cena; regras_armas, que e lenta, tem 300 s.
+# Se TERM nao encerrar o processo, KILL e enviado apos mais 5 s.
+# Cada cena informa inicio, fim e duracao; a cada 30 s avisa que continua em
+# execucao. O log recebe a saida durante o teste, sem esperar sua conclusao.
 # bench_* ficam de fora. criacao e criacao2 gravam o mesmo arquivo de heroi
 # (user://teste_heroi_criado.json e user://teste_criacao2.json), por isso rodam
 # em sequencia dentro da mesma unidade, nunca em paralelo.
@@ -27,17 +30,57 @@ set -u
 # Modo interno, chamado pelo xargs: roda as cenas da unidade, uma apos a outra.
 # Recebe GODOT, LOGS (exportados) e o diretorio atual = jogos/hordas/projeto.
 rodar_uma() {
-  local n="$1" saida codigo limite=120 resultado
+  local n="$1" saida codigo limite=120 resultado inicio_cena=$SECONDS monitor='' executor=''
+  limpar_execucao() {
+    if [ -n "$monitor" ]; then
+      kill "$monitor" 2>/dev/null || :
+      wait "$monitor" 2>/dev/null || :
+      monitor=''
+    fi
+    if [ -n "$executor" ]; then
+      kill "$executor" 2>/dev/null || :
+      wait "$executor" 2>/dev/null || :
+      executor=''
+    fi
+  }
+  trap limpar_execucao EXIT
+  trap 'exit 143' TERM
+  trap 'exit 130' INT
   # regras_armas (v1) leva de 100 a 290 s: passa ou estoura os 120 s conforme a carga da maquina, e bloqueava todo PR.
   [ "$n" = "regras_armas" ] && limite=300
-  if saida=$(timeout "$limite" "$GODOT" --headless --path . "res://testes/$n.tscn" 2>&1); then
+  printf 'INICIO %s; limite=%ss; log=%s\n' "$n" "$limite" "$LOGS/$n.log"
+  # O monitor so informa espera; nao conclui que a cena travou nem altera o timeout.
+  (
+    espera=''
+    trap 'exit 0' TERM
+    trap '[ -z "$espera" ] || { kill "$espera" 2>/dev/null; wait "$espera" 2>/dev/null; }' EXIT
+    while :; do
+      sleep 30 & espera=$!
+      wait "$espera" || exit 0
+      espera=''
+      printf 'EM EXECUCAO %s; decorrido=%ss; limite=%ss; consulte %s\n' "$n" "$((SECONDS - inicio_cena))" "$limite" "$LOGS/$n.log"
+    done
+  ) &
+  monitor=$!
+  # O Bash junta apenas a saida do filho; diagnostico do timeout fica separado,
+  # para distinguir KILL por limite de um crash SIGKILL do proprio teste.
+  LC_ALL=C timeout --verbose --kill-after=5 "$limite" bash -c 'exec "$@" 2>&1' bash \
+    "$GODOT" --headless --path . "res://testes/$n.tscn" > "$LOGS/$n.log" 2> "$LOGS/$n.timeout" &
+  executor=$!
+  if wait "$executor"; then
     codigo=0
   else
     codigo=$?
   fi
-  printf '%s\n' "$saida" > "$LOGS/$n.log"
+  executor=''
+  limpar_execucao
+  trap - EXIT TERM INT
+  cat "$LOGS/$n.timeout" >> "$LOGS/$n.log"
+  saida=$(cat "$LOGS/$n.log")
   if [ "$codigo" -eq 124 ]; then
     resultado="timeout (codigo 124, limite ${limite}s)"
+  elif [ "$codigo" -eq 137 ] && grep -q 'sending signal KILL to command' "$LOGS/$n.timeout"; then
+    resultado="timeout forcado (codigo 137, limite ${limite}s, KILL apos 5s)"
   elif [ "$codigo" -gt 128 ]; then
     resultado="crash/sinal (codigo $codigo, sinal $((codigo - 128)))"
   elif [ "$codigo" -ne 0 ]; then
@@ -50,7 +93,8 @@ rodar_uma() {
     resultado="sem 'falhas=0' (codigo 0, saida incompleta)"
   fi
   printf '%s\n' "$resultado" > "$LOGS/$n.res"
-  printf '\nEXECUTOR: %s; codigo=%s; limite=%ss\n' "$resultado" "$codigo" "$limite" >> "$LOGS/$n.log"
+  printf '\nEXECUTOR: %s; codigo=%s; limite=%ss; duracao=%ss\n' "$resultado" "$codigo" "$limite" "$((SECONDS - inicio_cena))" >> "$LOGS/$n.log"
+  printf 'FIM %s; %s; duracao=%ss\n' "$n" "$resultado" "$((SECONDS - inicio_cena))"
 }
 
 if [ "${1:-}" = "--uma" ]; then
