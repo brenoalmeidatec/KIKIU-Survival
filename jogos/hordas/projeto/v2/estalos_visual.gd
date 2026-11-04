@@ -10,6 +10,13 @@ extends RefCounted
 ##  - pool cheio: o impacto novo é descartado (não rouba a vaga de quem está tocando nem a memória de lugar).
 ## Perfil Baixo (efe_impactos < 0,5) e partículas "nenhuma" (0): nada (é efeito extra; o monstro continua piscando no acerto).
 ## "Reduzir piscadas": sem o miolo branco; mostra só o último quadro (faíscas âmbar) apagando em alfa, e o lugar espera 1,0 s.
+## CLARÃO DE BOCA (BOCA, o tiro do canhão saindo): um clarão âmbar-branco no cano de cada braço quando a rajada sai (`emitir_boca`, chamada uma vez por
+## rajada pelo `lancar` de v2/adagas.gd, na boca medida da folha). 13x13, 3 quadros em 0,1 s, mesma grade de 1 px e mesmo contorno. Conta como partícula extra:
+## perfil Baixo (efe_impactos < 0,5) e "nenhuma" não desenham. Vagas PRÓPRIAS (BOCA_VAGAS, fora do pool dos impactos: o clarão nunca tira lugar de um estalo e
+## os contadores dos estalos não mudam). Cada braço atira ~2,9 vezes por segundo no mesmo lugar: no modo normal cada tiro reinicia o clarão (o mesmo que a folha faz
+## com o clarão dela); com "Reduzir piscadas" não há flash nem miolo branco: UM brilho âmbar parado por boca, que cada tiro só renova (alfa 1 enquanto o braço
+## atira, apaga em BOCA_APAGA_S depois do último tiro): no máximo 2 trocas por rajada contínua, nunca acima de 2 Hz no mesmo lugar.
+## A folha do mecha já traz um clarão branco no quadro do disparo (combo 1 e 7; com "Reduzir piscadas" a folha usa poses sem ele): o BOCA é desenhado por cima, centrado na mesma boca.
 
 const Piscadas := preload("res://v2/piscadas.gd")
 const MAX := 12
@@ -19,9 +26,12 @@ const REGIAO := 8.0  # px: dois impactos mais perto que isto são o mesmo lugar
 const REPETE_S := 0.5  # o mesmo lugar acende no máximo 2 vezes por segundo
 const MEMORIA := 24  # lugares lembrados (anel); com o anel cheio de lugares ainda "quentes", o impacto novo é descartado
 const NUM_RAJADAS := 16  # rajadas recentes com a conta de impactos (anel, como o dos números em adagas.gd)
-enum { ESTALO, ESTALO_CRIT, FIZZLE }
-const DUR := [0.2, 0.24, 0.15]
-const LADO := [11, 15, 7]  # quadros ímpares: o centro cai num pixel
+enum { ESTALO, ESTALO_CRIT, FIZZLE, BOCA }
+const DUR := [0.2, 0.24, 0.15, 0.1]
+const LADO := [11, 15, 7, 13]  # quadros ímpares: o centro cai num pixel
+const BOCA_VAGAS := 3  # os dois canos + 1 de folga na troca de direção (o clarão velho ainda acende enquanto o novo nasce)
+const BOCA_CALMA_S := 0.6  # "Reduzir piscadas": quanto dura o brilho parado depois de um tiro (bem mais que o intervalo de ~0,35 s do mesmo braço + a parte que apaga: nunca apaga atirando)
+const BOCA_APAGA_S := 0.15  # e a parte final em que ele apaga em alfa
 
 const BRANCO := Color(1.0, 1.0, 1.0)
 const QUENTE := Color(1.0, 0.93, 0.66)
@@ -33,6 +43,10 @@ var quadros: Array = []  # [tipo] -> Array[Texture2D]
 var pos := PackedVector2Array()
 var tempo := PackedFloat32Array()  # restante (s); 0 = vaga livre
 var tipo := PackedInt32Array()
+var boca_pos := PackedVector2Array()  # as vagas do clarão de boca (BOCA_VAGAS)
+var boca_tempo := PackedFloat32Array()  # restante (s); 0 = vaga livre
+var bocas_emitidas := 0  # testes: clarões de boca pedidos e aceitos (renovar o brilho parado conta)
+var bocas_cortadas := 0  # testes: barrados pelo perfil (Baixo / sem partículas) ou por vaga cheia
 var _mem_pos := PackedVector2Array()
 var _mem_t := PackedFloat32Array()  # instante (relógio) do último impacto naquele lugar
 var _mem_i := 0
@@ -50,16 +64,21 @@ func montar() -> void:
 	pos.resize(MAX)
 	tempo.resize(MAX)
 	tipo.resize(MAX)
+	boca_pos.resize(BOCA_VAGAS)
+	boca_tempo.resize(BOCA_VAGAS)
 	_mem_pos.resize(MEMORIA)
 	_mem_t.resize(MEMORIA)
 	_raj_id.resize(NUM_RAJADAS)
 	_raj_n.resize(NUM_RAJADAS)
-	quadros = [_quadros_estalo(5, 4), _quadros_estalo(7, 5), _quadros_fizzle()]
+	quadros = [_quadros_estalo(5, 4), _quadros_estalo(7, 5), _quadros_fizzle(), _quadros_boca()]
 	limpar()
 
 
 func limpar() -> void:
 	tempo.fill(0.0)
+	boca_tempo.fill(0.0)
+	bocas_emitidas = 0
+	bocas_cortadas = 0
 	_mem_t.fill(-99.0)
 	_raj_id.fill(0)
 	_raj_n.fill(0)
@@ -126,11 +145,39 @@ func emitir(p: Vector2, t: int, rajada: int, fator: float, forcar := false) -> b
 	return true
 
 
+## O clarão de boca em `p` (a boca do cano, em px de mundo). `fator` = efe_impactos do nível de partículas: abaixo de 0,5 (Baixo) e sem partículas, nada.
+## No mesmo lugar (REGIAO px) de um clarão ainda aceso, o pedido renova a vaga em vez de ocupar outra. Devolve true se acendeu ou renovou.
+func emitir_boca(p: Vector2, fator: float) -> bool:
+	if fator < 0.5:
+		bocas_cortadas += 1
+		return false
+	var lugar := p.round()
+	var vaga := -1
+	for i in BOCA_VAGAS:
+		if boca_tempo[i] > 0.0 and boca_pos[i].distance_squared_to(lugar) < REGIAO * REGIAO:
+			vaga = i
+			break
+	if vaga < 0:
+		for i in BOCA_VAGAS:
+			if boca_tempo[i] <= 0.0:
+				vaga = i
+				break
+	if vaga < 0:
+		bocas_cortadas += 1
+		return false
+	boca_pos[vaga] = lugar
+	boca_tempo[vaga] = BOCA_CALMA_S if Piscadas.ligado() else float(DUR[BOCA])
+	bocas_emitidas += 1
+	return true
+
+
 func atualizar(dt: float) -> void:
 	_relogio += dt
 	_no_quadro = 0
 	for i in MAX:
 		tempo[i] = maxf(0.0, tempo[i] - dt)
+	for i in BOCA_VAGAS:
+		boca_tempo[i] = maxf(0.0, boca_tempo[i] - dt)
 
 
 func ativas() -> int:
@@ -139,6 +186,35 @@ func ativas() -> int:
 		if t > 0.0:
 			n += 1
 	return n
+
+
+## Vagas acesas dos clarões de boca.
+func bocas_ativas() -> int:
+	var n := 0
+	for t in boca_tempo:
+		if t > 0.0:
+			n += 1
+	return n
+
+
+## Tudo o que ainda desenha: impactos e clarões de boca (é o que mantém o desenho de v2/adagas.gd acordado).
+func vivos() -> int:
+	return ativas() + bocas_ativas()
+
+
+## O alfa do clarão de boca da vaga `i`: sempre 1 no modo normal (os quadros mudam, o alfa não); calmo: 1 enquanto o braço atira e só apaga nos últimos BOCA_APAGA_S.
+func alfa_boca(i: int, calmo: bool) -> float:
+	if boca_tempo[i] <= 0.0:
+		return 0.0
+	return clampf(boca_tempo[i] / BOCA_APAGA_S, 0.0, 1.0) if calmo else 1.0
+
+
+## O quadro do clarão de boca que ainda tem `restante` s: os 3 primeiros em sequência; com "Reduzir piscadas" (`calmo`) sempre o brilho parado (o último).
+func quadro_boca(restante: float, calmo: bool) -> int:
+	var n: int = (quadros[BOCA] as Array).size()
+	if calmo:
+		return n - 1
+	return clampi(int((1.0 - restante / float(DUR[BOCA])) * float(n - 1)), 0, n - 2)
 
 
 ## O quadro do impacto que ainda tem `restante` s; com "Reduzir piscadas" (`calmo`), sempre o último (sem o miolo branco).
@@ -160,6 +236,11 @@ func desenhar(no: Node2D) -> void:
 		var meio := floorf(float(LADO[t]) * 0.5)
 		var cor := Color(1, 1, 1, tempo[i] / float(DUR[t])) if calmo else Color.WHITE  # calmo: um só apagar, sem trocar de luminância
 		no.draw_texture(tex, pos[i] - Vector2(meio, meio), cor)
+	var meio_b := floorf(float(LADO[BOCA]) * 0.5)
+	for i in BOCA_VAGAS:
+		if boca_tempo[i] <= 0.0:
+			continue
+		no.draw_texture(quadros[BOCA][quadro_boca(boca_tempo[i], calmo)], boca_pos[i] - Vector2(meio_b, meio_b), Color(1, 1, 1, alfa_boca(i, calmo)))
 
 
 # ------------------------------------------------------------------ quadros (pixel a pixel)
@@ -213,6 +294,57 @@ func _quadros_estalo(r: int, n: int) -> Array:
 			_contornar(im)
 		lista.append(ImageTexture.create_from_image(im))
 	return lista
+
+
+## O clarão de boca 13x13 (raio 6), 3 quadros + o brilho parado do "Reduzir piscadas". Simétrico (não gira: serve nas 8 direções): 0 = núcleo branco com
+## quatro espetos longos e quatro curtos; 1 = disco âmbar com quatro espetos médios; 2 = brasas soltas; 3 (só com a opção ligada) = disco âmbar parado, sem branco.
+## Contorno escuro nos quadros 0, 1 e 3, como a bolinha e o estalo; o quadro de brasas fica sem contorno (já é o fim).
+func _quadros_boca() -> Array:
+	const R := 6
+	const CARDEAIS := [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
+	const DIAGONAIS := [Vector2i(1, 1), Vector2i(-1, 1), Vector2i(-1, -1), Vector2i(1, -1)]
+	var lista: Array = []
+	for q in 4:
+		var im := Image.create(2 * R + 1, 2 * R + 1, false, Image.FORMAT_RGBA8)
+		var c := Vector2i(R, R)
+		match q:
+			0:
+				_disco(im, c, 2.5, AMBAR)
+				_disco(im, c, 1.5, QUENTE)
+				_disco(im, c, 0.6, BRANCO)
+				for v in CARDEAIS:
+					for d in range(3, 7):
+						im.set_pixelv(c + v * d, QUENTE if d < 5 else AMBAR)
+				for v in DIAGONAIS:
+					for d in range(2, 4):
+						im.set_pixelv(c + v * d, AMBAR)
+			1:
+				_disco(im, c, 2.5, AMBAR)
+				_disco(im, c, 1.2, QUENTE)
+				for v in CARDEAIS:
+					for d in range(3, 6):
+						im.set_pixelv(c + v * d, AMBAR)
+			2:
+				im.set_pixelv(c, AMBAR)
+				for v in DIAGONAIS:
+					im.set_pixelv(c + v * 2, BRASA)
+				for v in CARDEAIS:
+					im.set_pixelv(c + v * 5, BRASA)
+			3:
+				_disco(im, c, 3.5, BRASA)
+				_disco(im, c, 2.5, AMBAR)
+		if q != 2:
+			_contornar(im)
+		lista.append(ImageTexture.create_from_image(im))
+	return lista
+
+
+## Disco cheio de raio `r` (px) em volta de `c`, na grade de 1 px (alfa 0 ou 1).
+func _disco(im: Image, c: Vector2i, r: float, cor: Color) -> void:
+	for y in im.get_height():
+		for x in im.get_width():
+			if Vector2(x - c.x, y - c.y).length() <= r:
+				im.set_pixel(x, y, cor)
 
 
 ## O fizzle 7x7: um ponto quente que se desfaz em quatro pontinhos âmbar e depois em brasa.

@@ -3010,3 +3010,20 @@ Pendente:
 (1) Andando e atirando, o mecha fica na pose de mira e as pernas deslizam sem andar. Antes do PR isso já acontecia durante o golpe. O conserto de verdade é uma folha "andar atirando" (pernas no ciclo, braços na mira). Não volte ao pisca do andar. O Alisson aprova jogando.
 (2) A câmera segue o passo inteiro só do herói principal. No coop, o segundo herói continua com o meio pixel dele: não piorou, mas não foi corrigido nem medido. O controle também não foi medido.
 (3) A janela de 1280 escala o 960 por 4/3, e o fundo anda 3,1 px na tela. Não é tremor de vai e volta, mas é irregular. Se incomodar, a saída está na escala inteira do project.godot (fora desta frente).
+- **LightWolf: clarão de boca, origem da rajada e bolinha a 840 px/s (04/11/2026, Claude do Alisson, PR #620, branch alisson/lw-canhao-matriz):** pedido do Alisson ("a explosão ao sair da arma também", a rajada sair do cano e "dobra a velocidade").
+  - **Clarão de boca:**
+    - O que é: tipo novo BOCA em `v2/estalos_visual.gd`, de 13x13 px, com 3 quadros em 0,1 s na grade de 1 px. Tem vagas próprias, fora do pool dos estalos.
+    - Quando sai: o `lancar` emite 1 por rajada quando o passo tem `clarao_boca: true`, na boca do braço certo nas 8 direções.
+    - Conta como partícula extra: não sai no perfil Baixo nem sem partículas.
+    - Com "Reduzir piscadas" vira um brilho âmbar parado que cada tiro só renova.
+    - No modo normal cada braço acende ~2,9 vezes/s, sem teto de 2 Hz.
+  - **Origem:** a tabela `bocas_projeteis.canhoes` da folha já estava certa, com até 1,7 px de erro. O "20 px abaixo" vinha da descida de 60 px até o chão. Agora `boca_converge: 170` faz a bolinha seguir a linha do cano, a até 2,7 px dela a 2 quadros. Mudou só o desenho: física e RNG ficaram iguais, e o míssil mantém 60.
+  - **Velocidade:** `vel` 420→840. O alcance continua 170, e a bolinha vive 0,2 s.
+    - O pool no pior caso foi de 37 para 26 de 96, e o DPS não mudou.
+    - O acerto já varria o segmento: o teste novo de 126 casos não deixou nenhuma bolinha atravessar.
+    - O rastro passou de 4 para 6 px.
+    - O roteiro lightwolf ganhou as fotos 1b_boca e 1c_outro_braco.
+  - **Pendente:**
+    - o Alisson ver em movimento;
+    - decidir se quer teto de 2 Hz também no modo normal;
+    - ver se o clarão branco da folha mais o âmbar novo ficam carregados juntos.

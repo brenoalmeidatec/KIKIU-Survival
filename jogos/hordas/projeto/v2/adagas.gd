@@ -26,6 +26,14 @@ extends RefCounted
 ## número, para o jogador ver o crítico. A memória é um anel fixo de NUM_RAJADAS rajadas recentes, sem alocar nem consumir sorteio.
 ## Estalo da bolinha (v2/estalos_visual.gd): o acerto toca uma explosãozinha âmbar-branca no ponto do contato e o fim do alcance sem acerto um
 ## "fizzle"; pool fixo, com teto por quadro, por rajada e por lugar, e o nível de partículas (efe_impactos) cortando no perfil Baixo. Só desenho.
+## Convergência da bolinha do canhão: o campo `boca_converge` do passo (px, 170 = o alcance) é a distância em que o desenho desce da boca (no alto do mecha) até a trajetória lógica no
+## chão: a 840 px/s, com os 60 px de antes, a bolinha mergulhava ~35 px em 4 quadros (parecia nascer abaixo do cano, e o clarão ficava solto no alto); com 170 ela segue o cano e desce
+## devagar, e a previsão de colisão continua encurtando a descida até a entrada no círculo do monstro, então ela ainda chega no alvo. O padrão (sem o campo; os mísseis nunca leem o campo) segue 60.
+## Clarão de boca (mesmo arquivo, tipo BOCA): o passo com `clarao_boca` (true) acende UM clarão no cano do braço (a boca medida da folha, `bocas_projeteis.canhoes`)
+## a cada `lancar`, junto com a rajada. É o mesmo ponto onde a primeira imagem de cada bolinha nasce; a física continua saindo da origem lógica no chão e o desenho converge
+## para ela (veja `_pos_visual`). Sem sorteio, sem nó, sem som: só desenho, e o perfil Baixo e "Reduzir piscadas" têm a versão deles (veja estalos_visual.gd).
+## Acerto das bolinhas rápidas (o canhão voa a 840 px/s, ~14 px por quadro a 60 Hz): `_mover` testa o SEGMENTO do passo (posição anterior até a atual) contra o círculo do
+## monstro, não o ponto de chegada, e `_selecionar_candidatos` usa o mesmo segmento (com o `dt` que chegou): nenhuma bolinha atravessa um monstro, nem com quadro lento.
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
@@ -39,7 +47,7 @@ const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px,
 const PROJ_PADRAO := "adaga"
 const VISUAL_DIST := 60.0  # deslocamento da boca projetada converge para a trajetória lógica
 const VISUAL_DUR := 0.2
-const RASTRO_BOLINHA := [0.9, 0.65, 0.4, 0.2]  # alfa de cada pixel do rastro da bolinha do mecha, do mais perto ao mais longe
+const RASTRO_BOLINHA := [0.9, 0.7, 0.5, 0.35, 0.2, 0.1]  # alfa de cada pixel do rastro da bolinha do mecha, do mais perto ao mais longe (6 px: a 840 px/s ela anda ~14 px por quadro)
 const NUM_RAJADAS := 16  # rajadas com número já mostrado lembradas ao mesmo tempo (no máximo ~9 rajadas/s x ~0,6 s de voo em voo juntas)
 
 var combate
@@ -240,6 +248,10 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 		if cresce_com_nivel:  # só combate.golpear; Q e chuva nunca recebem grupo elegível
 			a_grupo[i] = _grupo
 			a_pausa[i] = 1
+	if bool(passo.get("clarao_boca", false)) and _bolinha(proj):  # o clarão no cano que atirou, uma vez por rajada (só desenho)
+		var boca := _boca_mundo(proj, h, origem, dir, passo)
+		if boca.is_finite():
+			estalos.emitir_boca(boca, _fator_impactos())
 	combate.fx.faiscas(origem + dir * 12.0, dir, 3, cor, 110.0, not _visual_mecha(proj))
 
 
@@ -300,7 +312,7 @@ func atualizar(dt: float) -> void:
 	estalos.atualizar(dt)
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	_relogio += dt
-	var ativo := misseis_visual.ativas() > 0 or estalos.ativas() > 0
+	var ativo := misseis_visual.ativas() > 0 or estalos.vivos() > 0
 	for i in MAX:
 		if a_rest[i] > 0.0:
 			ativo = true
@@ -646,8 +658,8 @@ func _desenhar_corpo() -> void:
 		no_corpo.draw_set_transform(p.round(), (a_dir[i] as Vector2).angle(), Vector2.ONE)
 		no_corpo.draw_texture(e.tex, Vector2(-float(e.compr) * 0.5, -float(e.alt) * 0.5), Color(1, 1, 1, fade))
 	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if estalos.ativas() > 0:
-		estalos.desenhar(no_corpo)  # por cima das bolinhas: o estalo nasce onde a bolinha some
+	if estalos.vivos() > 0:
+		estalos.desenhar(no_corpo)  # por cima das bolinhas: o estalo nasce onde a bolinha some, e o clarão de boca onde ela nasce
 
 
 func _desenhar_brilho() -> void:
@@ -734,27 +746,39 @@ func _visual_mecha(proj: int) -> bool:
 	return nome == "missil" or (nome == "bala" and combate.heroi_id == "lightwolf")
 
 
-## Coordenadas projetadas na folha, relativas aos pés do herói. Só desenho: nada altera a_pos/a_dir/alcance/colisão.
-func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
-	if not _visual_mecha(a_proj[i]):
-		return
-	var nome := str(_proj_lista[a_proj[i]].nome)
+## A boca do cano (ou do pod) deste disparo em px de mundo: a posição projetada na folha (`bocas_projeteis` do JSON da folha, relativa aos pés do herói) da linha
+## de 8 direções da mira e do braço (`lateral` < 0 = o braço esquerdo da tela, a tabela [linha][0]). Vector2.INF se o projétil não é do mecha ou a folha não tem a tabela.
+## A tabela foi conferida contra o clarão desenhado na própria folha (combo, quadros 1 e 7): centro do clarão e boca diferem até 1,7 px nas 16 bocas (v2_mecha_projeteis confere <= 3).
+func _boca_mundo(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
+	if not _visual_mecha(proj):
+		return Vector2.INF
+	var nome := str(_proj_lista[proj].nome)
 	var chave := "pods" if nome == "missil" else "canhoes"
 	var tabela: Array = h.tipo.info.get("bocas_projeteis", {}).get(chave, [])
 	var mira: Vector2 = passo.get("cone_dir", dir)
 	var linha: int = h.linha_de(mira)
 	if tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
-		return
+		return Vector2.INF
 	var lado := 0 if float(passo.get("lateral", -1.0)) < 0.0 else 1
 	if nome == "missil":
 		var perp := Vector2(-mira.y, mira.x)
 		lado = 0 if (origem - (h.pos + h.ORIGEM_GOLPE)).dot(perp) < 0.0 else 1
 	var xy: Array = tabela[linha][lado]
 	if xy.size() != 2:
+		return Vector2.INF
+	return h.pos + Vector2(float(xy[0]), float(xy[1]))
+
+
+## Coordenadas projetadas na folha, relativas aos pés do herói. Só desenho: nada altera a_pos/a_dir/alcance/colisão.
+func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
+	var boca := _boca_mundo(a_proj[i], h, origem, dir, passo)
+	if not boca.is_finite():
 		return
-	a_visual_offset[i] = h.pos + Vector2(float(xy[0]), float(xy[1])) - a_pos[i]
+	a_visual_offset[i] = boca - a_pos[i]
+	if _bolinha(a_proj[i]):  # só a bolinha do canhão: a bala segue a linha do cano e só chega ao chão perto do fim do alcance; o míssil mantém os 60 px
+		a_visual_compr[i] = maxf(float(passo.get("boca_converge", VISUAL_DIST)), 1.0)
 	a_visual_t[i] = VISUAL_DUR
-	a_visual_ultima[i] = h.pos + Vector2(float(xy[0]), float(xy[1]))
+	a_visual_ultima[i] = boca
 	a_visual_seguir[i] = 1
 
 

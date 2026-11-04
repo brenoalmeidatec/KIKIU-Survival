@@ -36,7 +36,7 @@ extends RefCounted
 ##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
 ##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
 ##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
-##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mira travada), 3_misseis (a E no disparo),
+##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 1b_boca, 1c_outro_braco, 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mira travada), 3_misseis (a E no disparo),
 ##                         4_salto, 5_aceso e 6_explosao (o Q, Autodestruição: o piloto salta, o mecha acende, o estouro), 7_lobo (o Lobo livre), 8_chamado
 ##                         (o CHAMAR apertado) e 9_volta (o mecha de volta), e 10_carta (escolha com uma carta só dele). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=andar_seq   (o "tremendo todo" de 04/11) fotos SEGUIDAS, uma por quadro de render, do herói escolhido (o LightWolf com
@@ -70,6 +70,7 @@ var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do dispa
 const LW_CARTAS := ["sifao", "ampla", "cabo"]  # as cartas só do LightWolf (dados/v2_cartas.json, herois: lightwolf)
 var lw_expl0 := 0  # o roteiro do LightWolf: quantas explosões já tinham saído antes do Q
 var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da matriz de frente e de lado (volta depois)
+var lw_boca := Vector2.INF  # o roteiro do LightWolf: onde a foto 1b_boca viu o clarão de boca (a 1c procura o do outro cano)
 var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
 var seq_n := 0  # o roteiro andar_seq: quantas fotos seguidas já saíram no trecho atual
 
@@ -209,7 +210,7 @@ func _r_cores() -> void:
 
 
 ## Uma foto de cada estado do LightWolf (LW-2 a LW-6), com `--heroi=lightwolf` (o beta só entra por esse argumento). Herói imortal e parado,
-## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia, atirando as rajadas pelo vão do anel, à direita), 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mesma
+## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia, atirando as rajadas pelo vão do anel, à direita), 1b_boca (o clarão no cano de uma rajada recém-saída), 1c_outro_braco (o clarão do outro cano), 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mesma
 ## matriz com a mira travada para baixo e para a direita: as molduras de frente e de lado), 3_misseis (a E no meio do disparo),
 ## 4_salto (o Q: o piloto já saltou para trás da mira e o mecha segue no lugar), 5_aceso (o mecha aceso perto de explodir), 6_explosao (0,12 s
 ## depois do estouro: onda e tela limpa), 7_lobo (o Lobo livre), 8_chamado (o CHAMAR apertado, com o aviso sobre os pés), 9_volta (o mecha de
@@ -231,6 +232,25 @@ func _r_lightwolf() -> void:
 		1:  # a foto pega uma rajada recém-saída de um braço (golpe_t ~0,08 s) e a anterior, do outro braço, já longe
 			if t_passo > 0.4 and (h.estado == h.Estado.GOLPE and h.golpe_t >= 0.08 or t_passo > 1.0):
 				_foto("1_mecha")
+				passo = 20
+				t_passo = 0.0
+		20:  # 1b_boca: o clarão de boca da rajada que acabou de sair (dura 0,1 s: a foto espera um clarão recém-aceso; no perfil Baixo ele não existe e a foto sai igual)
+			var e = c.adagas.estalos
+			var fresco := _boca_fresca(e, Vector2.INF)
+			if fresco.is_finite() or t_passo > 1.0:
+				if not fresco.is_finite() and c.adagas._fator_impactos() >= 0.5:
+					lw_atrasos += 1
+				lw_boca = fresco
+				_foto("1b_boca")
+				passo = 21
+				t_passo = 0.0
+		21:  # 1c_outro_braco: o clarão do OUTRO braço (a boca é outra, 20 px ou mais de distância), a rajada seguinte
+			var e = c.adagas.estalos
+			var fresco := _boca_fresca(e, lw_boca)
+			if fresco.is_finite() or t_passo > 1.0:
+				if not fresco.is_finite() and c.adagas._fator_impactos() >= 0.5:
+					lw_atrasos += 1
+				_foto("1c_outro_braco")
 				passo = 2
 				t_passo = 0.0
 		2:  # a matriz (LW-3): segurar o secundário ergue a barra de defesa
@@ -403,6 +423,14 @@ func _r_andar_seq() -> void:
 		passo += 1
 		t_passo = 0.0
 		seq_n = 0
+
+
+## A posição de um clarão de boca recém-aceso (restam pelo menos metade dos 0,1 s) a 20 px ou mais de `longe` (Vector2.INF = qualquer um); Vector2.INF se não há.
+func _boca_fresca(e, longe: Vector2) -> Vector2:
+	for k in e.BOCA_VAGAS:
+		if e.boca_tempo[k] >= float(e.DUR[e.BOCA]) * 0.5 and (not longe.is_finite() or (e.boca_pos[k] as Vector2).distance_to(longe) >= 20.0):
+			return e.boca_pos[k]
+	return Vector2.INF
 
 
 func _cercar_lightwolf(n: int) -> void:
