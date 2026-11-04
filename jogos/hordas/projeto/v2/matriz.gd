@@ -16,9 +16,12 @@ extends RefCounted
 ##
 ## A casca de 88 px (era 40) segura a horda mais longe, a ~94 px do herói no chão: ainda dentro dos 170 px do canhão. MEDIDO em testes/v2_matriz: o canhão nos 8 cães
 ## que a matriz parou dá ~61 de dano por segundo, contra ~64 com a mesma horda a ~35 px (a casca antiga); o leque abre, mas a horda espalhada pega o que o alvo único
-## perderia. O empurrão (170 px/s) não mudou. A casca é uma PAREDE na frente do campo: de lado até a meia-largura da moldura da frente (+ o raio do monstro) ela é medida
-## NA MIRA, então o monstro para rente ao pé da moldura da frente em qualquer ângulo (num raio só, a 35 graus ele parava 12 px para dentro dela, atravessando o campo);
-## nas pontas do arco, fora da largura do campo, vale o raio da casca, onde a marca fina no chão mostra o alcance.
+## perderia. O empurrão (170 px/s) não mudou. A casca é uma PAREDE só onde a moldura da frente está DESENHADA (`segura`, `meia_parede`): no cone que bate nela a casca
+## é medida NA MIRA, então o monstro para rente ao pé da moldura (num raio só, mirando para baixo a 35 graus ele parava 12 px para dentro dela, atravessando o campo);
+## fora da largura que o desenho mostra naquela direção (de frente ~68 px no chão; de lado só ~10, o painel estreito) vale o raio da casca, onde a marca fina no chão
+## mostra o alcance, e a reta tangente do canto da parede ao círculo liga as duas sem degrau. A Matriz Ampla abre o arco e o desenho, não a parede (ver `meia_parede`).
+## Antes era uma caixa (a meia-largura cheia, sem o encolhimento de lado nem limite de ângulo): de lado segurava o cão a 35 graus no ar, ~30 px fora da moldura e da
+## marca, e com a Ampla no máximo segurava no flanco a ~154 px (degrau de ~58 px a 90 graus) e no canto a ~180 px (testes/v2_matriz 8b e 8c, v2_matriz_visual 9).
 ##
 ## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo` serve aos dois, velocidade, a barra); este módulo cuida da geometria (`cobre`), da absorção, do empurrão
 ## (`atualizar`, no tempo do mundo) e do visual (`efeitos`, no relógio de parede). O VISUAL é 100% em código (nenhuma folha) e segue a Matriz de Defesa como IDEIA (pedido do
@@ -236,8 +239,9 @@ func abaixou(h) -> void:
 	combate.fx.luz_rapida(centro, COR_BASE, 1.6, 48.0, 0.2)
 
 
-## O empurrão, todo quadro do mundo enquanto erguida: quem está na casca e dentro do arco é empurrado para longe do herói. Na frente do campo a casca é a parede (a distância
-## na mira); fora da largura dele, o raio. O rumo é sempre o radial (o monstro anda para o herói e o empurrão o devolve na mesma linha, sem escorregar de lado).
+## O empurrão, todo quadro do mundo enquanto erguida: quem está dentro da casca e do arco é empurrado para longe do herói. A casca tem a forma do campo DESENHADO
+## (`segura`): na frente da moldura da frente, a parede (a distância medida na mira); fora dela, o raio (a marca no chão); entre as duas, a reta que liga o canto da
+## parede ao círculo, sem degrau. O rumo é sempre o radial (o monstro anda para o herói e o empurrão o devolve na mesma linha, sem escorregar de lado).
 ## Não toca na vida nem no flash do monstro.
 func atualizar(dt: float) -> void:
 	_cesta = minf(_cesta + teto_cura() * dt, teto_cura())  # a cesta do teto de cura do sifão enche à razão do teto por segundo
@@ -250,22 +254,16 @@ func atualizar(dt: float) -> void:
 	var graus := arco_graus()
 	var hp: Vector2 = h.pos
 	var u := _mira_chao(h)
-	var meia := float(_plano(h, _n() - 1).w)  # a meia-largura da moldura da frente, no chão (a Matriz Ampla alarga a parede junto com o desenho)
+	var meia := meia_parede(h)
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo:
 			continue
 		var rel: Vector2 = m.pos - hp
-		var raio := float(m.raio)
-		var lim: float = casca + raio
-		var fora: float = Vector2(lim, meia + raio).length()  # o canto da parede, o mais longe que alguém pode ser segurado
+		var lim: float = casca + float(m.raio)
+		var fora: float = Vector2(lim, meia).length()  # o canto da parede, o mais longe que alguém pode ser segurado
 		if absf(rel.x) > fora or absf(rel.y) > fora * ACHATA:
 			continue
-		var rf := Vector2(rel.x, rel.y / ACHATA)
-		var na_mira := rf.dot(u)
-		if na_mira > 0.0 and absf(rf.cross(u)) <= meia + raio:
-			if na_mira > lim:  # na frente do campo: a PAREDE, a casca medida na mira (rente ao pé da moldura da frente)
-				continue
-		elif rf.length() > lim:  # nas pontas do arco, fora da largura do campo: o raio (a marca no chão)
+		if not segura(Vector2(rel.x, rel.y / ACHATA), u, lim, meia):
 			continue
 		if not combate.escudo.cobre_arco(h, m.pos, graus):
 			continue
@@ -274,6 +272,33 @@ func atualizar(dt: float) -> void:
 		if m.emp.dot(rumo) < v:
 			m.emp = rumo * v
 		empurrados += 1
+
+
+## A meia-largura da PAREDE no chão (perpendicular à mira), a mesma que a moldura da frente MOSTRA nessa direção: a largura dela vezes o quanto o eixo do desenho
+## anda de lado no chão (de frente, 1; de lado, o `lado_min` e o `lado_inclina` deixam ~0,15: a moldura de lado cobre só ~±10 px no chão). Com a largura do ARCO
+## do dado: a Matriz Ampla abre o arco (o raio, a marca no chão) e alarga o desenho, mas não a parede. Uma parede da largura do campo amplo (146 px no máximo)
+## seguraria no canto a ~175 px do herói, além dos 170 do canhão; com a do dado, o canto fica a ~118 px.
+func meia_parede(h) -> float:
+	var p := _plano(h, _n() - 1)
+	var k := arco_graus() / maxf(float(cfg.arco), 1.0)
+	var g := Vector2(p.eixo.x, p.eixo.y / ACHATA)  # o passo de 1 px de largura do desenho, de volta para o chão
+	return float(p.w) / maxf(k, 1.0) * absf(g.cross(_mira_chao(h)))
+
+
+## O monstro em `rf` (no chão, relativo ao herói) está dentro da casca? A casca é o fecho do círculo de raio `lim` com a parede (na mira em `lim`, de lado até
+## `meia`): no cone que bate na parede vale a distância NA MIRA; dali até o ponto em que a reta do canto da parede encosta no círculo (tangente), essa reta; depois,
+## o raio. Contínua: a distância segurada nunca dá degrau de um ângulo para o outro.
+static func segura(rf: Vector2, u: Vector2, lim: float, meia: float) -> bool:
+	var a := rf.dot(u)  # na mira
+	var b := absf(rf.cross(u))  # de lado
+	if a > 0.0 and b * lim <= meia * a:  # o raio bate na parede (a frente da moldura da frente)
+		return a <= lim
+	var canto := Vector2(lim, meia).length()
+	var fi := atan2(meia, lim) + acos(clampf(lim / maxf(canto, 0.001), -1.0, 1.0))  # o ângulo em que a reta do canto encosta no círculo
+	var t := Vector2(cos(fi), sin(fi))
+	if b * t.x - a * t.y < 0.0:  # entre a parede e a tangente: a reta do canto
+		return a * t.x + b * t.y <= lim
+	return rf.length() <= lim
 
 
 ## O visual no relógio de parede: só redesenha enquanto a barreira está erguida (e uma vez ao apagar). A posição do nó (a chave do y-sort) segue a base do campo.

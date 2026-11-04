@@ -72,6 +72,27 @@ func ponto(graus: float, dist := 30.0) -> Vector2:
 	return w.heroi.pos + Vector2(cos(a), sin(a) * ACHATA) * dist
 
 
+## Um ponto no chão a `graus` da mira `u` (no chão, unitária), `dist` px de distância, de volta para a tela.
+func ponto_u(u: Vector2, graus: float, dist: float) -> Vector2:
+	var v := u.rotated(deg_to_rad(graus)) * dist
+	return w.heroi.pos + Vector2(v.x, v.y * ACHATA)
+
+
+## Até onde a matriz SEGURA o monstro `m` na direção `graus` da mira `u` (no chão): a maior distância, de `de` px para dentro em passos de 0,5 px, em que um quadro
+## de `atualizar` o empurra (0 = em nenhuma). O monstro não anda: é a forma da parede, medida pela própria regra.
+func alcance(m, u: Vector2, graus: float, de := 200.0) -> float:
+	var mat = w.combate.matriz
+	var d := de
+	while d > 0.0:
+		m.pos = ponto_u(u, graus, d)
+		m.emp = Vector2.ZERO
+		mat.atualizar(0.0)
+		if mat.empurrados > 0:
+			return d
+		d -= 0.5
+	return 0.0
+
+
 func _ready() -> void:
 	Herois.forcado = "lightwolf"
 	w = Mundo.instantiate()
@@ -259,26 +280,32 @@ func _ready() -> void:
 	for m in [perto_a, meio_a, longe, atras, lado]:
 		m.vivo = false
 
-	# 8b. a PAREDE: na frente do campo (de lado até a meia-largura da moldura da frente) o monstro para na distância da casca MEDIDA NA MIRA, rente ao pé da
-	# moldura da frente, e não no raio: num raio de 88 o monstro a 35 graus parava com o pé a ~72 px na mira, 12 px para dentro da moldura (atravessando o campo).
-	# Fora da largura do campo, nas pontas do arco, continua o raio (a marca no chão).
+	# 8b. a PAREDE de frente: mirando para baixo (o campo largo na tela), na frente da moldura da frente o monstro para na distância da casca MEDIDA NA MIRA, rente
+	# ao pé dela, e não no raio: num raio de 88 o monstro a 35 graus parava com o pé a ~72 px na mira, 12 px para dentro da moldura (atravessando o campo). Fora da
+	# largura do campo, nas pontas do arco, vale o raio (a marca no chão). Até o #620 este caso mirava para a DIREITA, e o "para na mira" de lá era o defeito: de lado
+	# a moldura da frente cobre só ~±6 px na vertical, e a parede-caixa segurava o cão a 35 graus parado no ar ~30 px fora da moldura e da marca no chão (abaixo).
 	zerar()
+	w.mouse_forcado = h.centro() + Vector2(0, 100)
+	passos(3)
+	var u_b: Vector2 = mat._mira_chao(h)
 	var meia_f := float(mat._plano(h, mat._n() - 1).w)
 	var diag = monstro_a(0.0)
-	diag.pos = ponto(35.0, 75.0)
+	diag.pos = ponto_u(u_b, 35.0, 75.0)
 	var ponta = monstro_a(0.0)
-	ponta.pos = ponto(-66.0, 75.0)  # de lado além da largura do campo, ainda dentro do arco de 140
+	ponta.pos = ponto_u(u_b, -66.0, 75.0)  # de lado além da largura do campo, ainda dentro do arco de 140
 	h.escudo_forcado = true
 	var fmin := 999.0
 	var rmin_p := 999.0
+	var lado_d := 0.0
 	for i in 180:  # 3 s: os dois andam para o herói e o empurrão os segura
 		passos(1)
 		if i >= 90:
 			var rd: Vector2 = diag.pos - h.pos
-			fmin = minf(fmin, rd.x)  # mirando para a direita, a distância na mira é o x no chão
+			var rdc := Vector2(rd.x, rd.y / ACHATA)
+			fmin = minf(fmin, rdc.dot(u_b))  # a distância na mira, no chão
+			lado_d = absf(rdc.cross(u_b))
 			var rp: Vector2 = ponta.pos - h.pos
 			rmin_p = minf(rmin_p, Vector2(rp.x, rp.y / ACHATA).length())
-	var lado_d: float = absf((diag.pos.y - h.pos.y) / ACHATA)
 	print("parede: diagonal na mira %.1f px (lado %.1f, meia-largura %.0f); ponta no raio %.1f px" % [fmin, lado_d, meia_f, rmin_p])
 	ok(lado_d <= meia_f + float(diag.raio), "o monstro da diagonal está na frente do campo (de lado %.1f, meia-largura %.0f)" % [lado_d, meia_f])
 	ok(
@@ -291,6 +318,60 @@ func _ready() -> void:
 	)
 	diag.vivo = false
 	ponta.vivo = false
+	# e mirando DE LADO (para a direita): o cão a 35 graus para rente à marca no chão (a frente dele a ~4 px do traço), não no ar fora da moldura e da marca
+	zerar()
+	var lado_c = monstro_a(0.0)
+	lado_c.pos = ponto(35.0, 75.0)
+	h.escudo_forcado = true
+	var rmin_l := 999.0
+	for i in 180:
+		passos(1)
+		if i >= 90:
+			var rl: Vector2 = lado_c.pos - h.pos
+			rmin_l = minf(rmin_l, Vector2(rl.x, rl.y / ACHATA).length())  # o mais perto que ele chega (o empurrão o devolve)
+	var folga_l: float = rmin_l - float(lado_c.raio) - mat._raio()
+	print("parede de lado: o cão a 35 graus para com a frente a %.1f px da marca no chão" % folga_l)
+	ok(absf(folga_l) <= 6.0, "mirando de lado, o cão a 35 graus para rente à marca no chão (a frente dele a %.1f px dela), não parado no ar" % folga_l)
+	lado_c.vivo = false
+
+	# 8c. a FORMA da parede, medida pela própria regra (até onde um quadro de `atualizar` empurra, raio a raio de 0 grau até a ponta do arco, dos dois lados):
+	# mirando para baixo, para a direita e na diagonal, com o arco do dado e com a MATRIZ AMPLA no máximo (300 graus). Ninguém é segurado a mais de casca + raio +
+	# 30 px do herói (a caixa de antes, com a Ampla, segurava no canto a ~180 px, além dos 170 do canhão, e no FLANCO a ~154 px, a 89 graus) e a parede não tem
+	# degrau de mais de 10 px de um grau para o outro (a caixa dava ~26 px no arco do dado e ~58 px com a Ampla, a 90 graus). Na mira ela continua na casca.
+	zerar()
+	h.escudo_forcado = true
+	passos(3)
+	var sonda = monstro_a(0.0)
+	var teto_p := float(mz.casca) + float(sonda.raio) + 30.0
+	var amp_antes: float = float(w.combate.armas.mods.get("ampla", 0.0))
+	var pior_d := 0.0
+	var pior_degrau := 0.0
+	var na_mira_ok := true
+	var onde := ""
+	for ampla in [0.0, 999.0]:
+		w.combate.armas.mods["ampla"] = ampla
+		for alvo in [Vector2(0, 100), Vector2(100, 0), Vector2(100, 100)]:
+			w.mouse_forcado = h.centro() + alvo
+			passos(2)
+			var u_c: Vector2 = mat._mira_chao(h)
+			var meio_arco := int(floorf(mat.arco_graus() * 0.5)) - 1
+			na_mira_ok = na_mira_ok and perto(alcance(sonda, u_c, 0.0), float(mz.casca) + float(sonda.raio), 1.0)
+			for lado_s in [1.0, -1.0]:
+				var ant := -1.0
+				for g in meio_arco + 1:
+					var dg := alcance(sonda, u_c, lado_s * float(g))
+					if dg > pior_d:
+						pior_d = dg
+						onde = "arco %.0f, mira %s, %.0f graus" % [mat.arco_graus(), alvo, lado_s * g]
+					if ant >= 0.0 and absf(dg - ant) > pior_degrau:
+						pior_degrau = absf(dg - ant)
+					ant = dg
+	w.combate.armas.mods["ampla"] = amp_antes
+	sonda.vivo = false
+	print("forma da parede: o mais longe %.1f px (%s; teto %.0f), maior degrau %.1f px" % [pior_d, onde, teto_p, pior_degrau])
+	ok(na_mira_ok, "na mira a parede segura na casca + raio (o pé da moldura da frente), com e sem a Ampla")
+	ok(pior_d <= teto_p, "ninguém é segurado a mais de casca + raio + 30 px (%.1f px; %s)" % [pior_d, onde])
+	ok(pior_degrau <= 10.0, "a parede não tem degrau de mais de 10 px de um grau para o outro (%.1f px)" % pior_degrau)
 
 	# 9. o Lobo não tem matriz: a quebra do mecha apaga o slot e a barra
 	zerar()

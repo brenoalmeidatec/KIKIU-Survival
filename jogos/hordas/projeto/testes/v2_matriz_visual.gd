@@ -13,6 +13,7 @@ const Herois := preload("res://v2/herois.gd")
 const PASSO := 1.0 / 60.0
 const ALTURA_MECHA := 73.0  # o corpo opaco do mecha na folha (lightwolf_mecha_albedo.png, quadro 128x192: y 50 a 123)
 const LARGURA_MECHA := 55.0  # idem na largura (x 36 a 91)
+const ACHATA := 0.62  # o chão visto de lado (a mesma da matriz)
 var falhas := 0
 var w
 
@@ -59,6 +60,21 @@ func convexo(pts: PackedVector2Array) -> bool:
 		elif s != sinal:
 			return false
 	return sinal != 0
+
+
+## Até onde a matriz SEGURA o monstro `m` na direção `graus` da mira `u` (no chão): a maior distância, de 200 px para dentro em passos de 0,5 px, em que um quadro
+## de `atualizar` o empurra (0 = em nenhuma). O monstro não anda: é a forma da parede, medida pela própria regra.
+func alcance(mat, m, u: Vector2, graus: float) -> float:
+	var d := 200.0
+	while d > 0.0:
+		var v := u.rotated(deg_to_rad(graus)) * d
+		m.pos = w.heroi.pos + Vector2(v.x, v.y * ACHATA)
+		m.emp = Vector2.ZERO
+		mat.atualizar(0.0)
+		if mat.empurrados > 0:
+			return d
+		d -= 0.5
+	return 0.0
 
 
 func mirar(v: Vector2) -> void:
@@ -197,6 +213,39 @@ func _ready() -> void:
 	ok(mat._hz_varredura() == 2.0, "um dado de 9 Hz na varredura vira 2 Hz")
 	mat.visual["varredura_hz"] = hz0
 	ok(float(vis.varredura_hz) <= 2.0 and float(vis.pulso_hz) <= 2.0, "os dados pedem no máximo 2 Hz")
+
+	# 9. REGRA x DESENHO mirando DE LADO (para a direita e para a esquerda): onde a regra para o monstro (até onde um quadro de `atualizar` o empurra, de 5 em 5
+	# graus pelo arco), a frente dele fica a no máximo 5 px na tela da moldura da frente desenhada (o pé dela no chão, de ponta a ponta da largura) ou da marca no
+	# chão (o raio `_raio`), as duas sem a folga de altura do desenho (`solo` e os 8 px da marca). Falha na parede-caixa de antes: ela usava a meia-largura da moldura
+	# sem o encolhimento de lado (68 px no chão contra os ~10 que o desenho mostra) e segurava o cão a 35 graus parado no ar, ~20 px fora da moldura e da marca.
+	var sonda = w.nascer_monstro("inimigo_cao_ossos", h.pos + Vector2(300, 0))
+	sonda.atordoa_t = 0.0
+	sonda.recarga = 99.0
+	var solo := Vector2(0.0, float(vis.solo))
+	var pior := 0.0
+	var pior_onde := ""
+	for v in [Vector2.RIGHT, Vector2.LEFT]:
+		mirar(v)
+		var u: Vector2 = mat._mira_chao(h)
+		var pe_a: Vector2 = mat._ponto(h, mat._n() - 1, -1.0, 0.0) + solo
+		var pe_b: Vector2 = mat._ponto(h, mat._n() - 1, 1.0, 0.0) + solo
+		var meio_a: float = mat.arco_graus() * 0.5
+		for g in range(-65, 70, 5):
+			var dg := alcance(mat, sonda, u, float(g))
+			var fr := u.rotated(deg_to_rad(float(g))) * (dg - float(sonda.raio))  # a frente do monstro, no chão
+			var tela: Vector2 = h.pos + Vector2(fr.x, fr.y * ACHATA)
+			var d_moldura := tela.distance_to(Geometry2D.get_closest_point_to_segment(tela, pe_a, pe_b))
+			var d_marca := 999.0
+			for k in int(meio_a) * 2 + 1:
+				var mc: Vector2 = u.rotated(deg_to_rad(float(k) - meio_a)) * mat._raio()
+				d_marca = minf(d_marca, tela.distance_to(h.pos + Vector2(mc.x, mc.y * ACHATA)))
+			var dd := minf(d_moldura, d_marca)
+			if dd > pior:
+				pior = dd
+				pior_onde = "mira %s, %d graus: parou a %.1f px, %.1f da moldura e %.1f da marca" % [v, g, dg, d_moldura, d_marca]
+	sonda.vivo = false
+	print("de lado: o pior ponto de parada fica a %.1f px do desenho (%s)" % [pior, pior_onde])
+	ok(pior <= 5.0, "mirando de lado, o monstro para rente à moldura da frente ou à marca no chão (pior %.1f px: %s)" % [pior, pior_onde])
 
 	Herois.forcado = ""
 	print("v2_matriz_visual falhas=%d" % falhas)

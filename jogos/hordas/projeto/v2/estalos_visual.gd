@@ -13,9 +13,12 @@ extends RefCounted
 ## CLARÃO DE BOCA (BOCA, o tiro do canhão saindo): um clarão âmbar-branco no cano de cada braço quando a rajada sai (`emitir_boca`, chamada uma vez por
 ## rajada pelo `lancar` de v2/adagas.gd, na boca medida da folha). 13x13, 3 quadros em 0,1 s, mesma grade de 1 px e mesmo contorno. Conta como partícula extra:
 ## perfil Baixo (efe_impactos < 0,5) e "nenhuma" não desenham. Vagas PRÓPRIAS (BOCA_VAGAS, fora do pool dos impactos: o clarão nunca tira lugar de um estalo e
-## os contadores dos estalos não mudam). Cada braço atira ~2,9 vezes por segundo no mesmo lugar: no modo normal cada tiro reinicia o clarão (o mesmo que a folha faz
-## com o clarão dela); com "Reduzir piscadas" não há flash nem miolo branco: UM brilho âmbar parado por boca, que cada tiro só renova (alfa 1 enquanto o braço
-## atira, apaga em BOCA_APAGA_S depois do último tiro): no máximo 2 trocas por rajada contínua, nunca acima de 2 Hz no mesmo lugar.
+## os contadores dos estalos não mudam). A vaga é do BRAÇO (o herói + o lado 0/1), não de um ponto do mundo: guarda a boca relativa aos pés do herói (a linha
+## de 8 direções e o braço, já arredondada) e é desenhada a cada quadro em h.pr + essa boca, o mesmo pixel em que a folha desenha o cano. Andando e atirando o
+## clarão vai junto com o cano (nunca fica para trás no chão) e não pula 1 px em relação a ele. A mira virou com o brilho aceso (a folha já desenha o cano em outra
+## das 8 linhas): o mesmo brilho passa para a boca daquele braço na linha nova (a tabela da folha, guardada com a vaga), sem apagar e reacender. Cada braço atira ~2,9 vezes por segundo: no modo normal cada tiro
+## reinicia o clarão daquele braço (o mesmo que a folha faz com o clarão dela); com "Reduzir piscadas" não há flash nem miolo branco: UM brilho âmbar parado por
+## braço, que cada tiro só renova (alfa 1 enquanto o braço atira, apaga em BOCA_APAGA_S depois do último tiro): no máximo 2 trocas por rajada contínua.
 ## A folha do mecha já traz um clarão branco no quadro do disparo (combo 1 e 7; com "Reduzir piscadas" a folha usa poses sem ele): o BOCA é desenhado por cima, centrado na mesma boca.
 
 const Piscadas := preload("res://v2/piscadas.gd")
@@ -29,7 +32,8 @@ const NUM_RAJADAS := 16  # rajadas recentes com a conta de impactos (anel, como 
 enum { ESTALO, ESTALO_CRIT, FIZZLE, BOCA }
 const DUR := [0.2, 0.24, 0.15, 0.1]
 const LADO := [11, 15, 7, 13]  # quadros ímpares: o centro cai num pixel
-const BOCA_VAGAS := 3  # os dois canos + 1 de folga na troca de direção (o clarão velho ainda acende enquanto o novo nasce)
+const BOCA_HEROIS := 4  # heróis com clarão ao mesmo tempo (coop / tela dividida dividem o mesmo combate.adagas)
+const BOCA_VAGAS := 2 * BOCA_HEROIS  # uma vaga por braço de cada herói: o tiro do mesmo braço renova a vaga dele, nunca abre outra
 const BOCA_CALMA_S := 0.6  # "Reduzir piscadas": quanto dura o brilho parado depois de um tiro (bem mais que o intervalo de ~0,35 s do mesmo braço + a parte que apaga: nunca apaga atirando)
 const BOCA_APAGA_S := 0.15  # e a parte final em que ele apaga em alfa
 
@@ -43,8 +47,15 @@ var quadros: Array = []  # [tipo] -> Array[Texture2D]
 var pos := PackedVector2Array()
 var tempo := PackedFloat32Array()  # restante (s); 0 = vaga livre
 var tipo := PackedInt32Array()
-var boca_pos := PackedVector2Array()  # as vagas do clarão de boca (BOCA_VAGAS)
+var boca_heroi: Array = []  # [vaga] -> o herói dono do braço (null = livre): o clarão é desenhado a partir dele
+var boca_lado := PackedInt32Array()  # [vaga] -> o braço (0 = o esquerdo da tela, 1 = o direito)
+var boca_rel := PackedVector2Array()  # [vaga] -> a boca relativa aos pés do herói, em px inteiros
+var boca_linha := PackedInt32Array()  # [vaga] -> a linha (8 direções) que a folha desenhava no tiro; mudou, a boca sai da tabela na linha nova
+var boca_tabela: Array = []  # [vaga] -> a tabela de bocas da folha ([linha][lado] -> [x, y]); [] = sem tabela, fica em boca_rel
 var boca_tempo := PackedFloat32Array()  # restante (s); 0 = vaga livre
+var boca_pos: PackedVector2Array:  # (só leitura) onde cada vaga desenha neste quadro, em px de mundo: h.pr + a boca da linha desenhada
+	get:
+		return _bocas_no_mundo()
 var bocas_emitidas := 0  # testes: clarões de boca pedidos e aceitos (renovar o brilho parado conta)
 var bocas_cortadas := 0  # testes: barrados pelo perfil (Baixo / sem partículas) ou por vaga cheia
 var _mem_pos := PackedVector2Array()
@@ -64,7 +75,11 @@ func montar() -> void:
 	pos.resize(MAX)
 	tempo.resize(MAX)
 	tipo.resize(MAX)
-	boca_pos.resize(BOCA_VAGAS)
+	boca_heroi.resize(BOCA_VAGAS)
+	boca_lado.resize(BOCA_VAGAS)
+	boca_rel.resize(BOCA_VAGAS)
+	boca_linha.resize(BOCA_VAGAS)
+	boca_tabela.resize(BOCA_VAGAS)
 	boca_tempo.resize(BOCA_VAGAS)
 	_mem_pos.resize(MEMORIA)
 	_mem_t.resize(MEMORIA)
@@ -77,6 +92,8 @@ func montar() -> void:
 func limpar() -> void:
 	tempo.fill(0.0)
 	boca_tempo.fill(0.0)
+	boca_heroi.fill(null)
+	boca_tabela.fill([])
 	bocas_emitidas = 0
 	bocas_cortadas = 0
 	_mem_t.fill(-99.0)
@@ -145,16 +162,17 @@ func emitir(p: Vector2, t: int, rajada: int, fator: float, forcar := false) -> b
 	return true
 
 
-## O clarão de boca em `p` (a boca do cano, em px de mundo). `fator` = efe_impactos do nível de partículas: abaixo de 0,5 (Baixo) e sem partículas, nada.
-## No mesmo lugar (REGIAO px) de um clarão ainda aceso, o pedido renova a vaga em vez de ocupar outra. Devolve true se acendeu ou renovou.
-func emitir_boca(p: Vector2, fator: float) -> bool:
+## O clarão de boca do braço `lado` (0/1) do herói `h`, com a boca em `rel` (px relativos aos pés, a tabela da folha para a linha da mira e o braço).
+## `fator` = efe_impactos do nível de partículas: abaixo de 0,5 (Baixo) e sem partículas, nada. Se o mesmo braço do mesmo herói ainda tem o clarão aceso,
+## o pedido renova essa vaga (e leva a boca para a linha nova, se a mira virou) em vez de ocupar outra. `tabela` = a tabela de bocas da folha: se a mira virar
+## com o brilho aceso, a vaga lê nela a boca da linha que a folha passou a desenhar. Devolve true se acendeu ou renovou.
+func emitir_boca(h, rel: Vector2, lado: int, fator: float, tabela: Array = []) -> bool:
 	if fator < 0.5:
 		bocas_cortadas += 1
 		return false
-	var lugar := p.round()
 	var vaga := -1
 	for i in BOCA_VAGAS:
-		if boca_tempo[i] > 0.0 and boca_pos[i].distance_squared_to(lugar) < REGIAO * REGIAO:
+		if boca_tempo[i] > 0.0 and is_same(boca_heroi[i], h) and boca_lado[i] == lado:
 			vaga = i
 			break
 	if vaga < 0:
@@ -165,7 +183,11 @@ func emitir_boca(p: Vector2, fator: float) -> bool:
 	if vaga < 0:
 		bocas_cortadas += 1
 		return false
-	boca_pos[vaga] = lugar
+	boca_heroi[vaga] = h
+	boca_lado[vaga] = lado
+	boca_rel[vaga] = rel.round()
+	boca_linha[vaga] = h.linha_de(h.dir_olhar)
+	boca_tabela[vaga] = tabela
 	boca_tempo[vaga] = BOCA_CALMA_S if Piscadas.ligado() else float(DUR[BOCA])
 	bocas_emitidas += 1
 	return true
@@ -178,6 +200,9 @@ func atualizar(dt: float) -> void:
 		tempo[i] = maxf(0.0, tempo[i] - dt)
 	for i in BOCA_VAGAS:
 		boca_tempo[i] = maxf(0.0, boca_tempo[i] - dt)
+		if boca_tempo[i] <= 0.0:
+			boca_heroi[i] = null  # a vaga livre não segura o herói
+			boca_tabela[i] = []
 
 
 func ativas() -> int:
@@ -195,6 +220,27 @@ func bocas_ativas() -> int:
 		if t > 0.0:
 			n += 1
 	return n
+
+
+## Onde cada vaga do clarão de boca desenha neste quadro (px de mundo, inteiros): o pixel dos pés do herói (h.pr, o mesmo da folha) + a boca relativa.
+## Vaga livre: Vector2.INF.
+func _bocas_no_mundo() -> PackedVector2Array:
+	var r := PackedVector2Array()
+	r.resize(BOCA_VAGAS)
+	for i in BOCA_VAGAS:
+		r[i] = (boca_heroi[i].pr as Vector2) + _boca_rel_agora(i) if boca_tempo[i] > 0.0 and boca_heroi[i] != null else Vector2.INF
+	return r
+
+
+## A boca relativa (px inteiros) da vaga `i` neste quadro: a do tiro enquanto a folha desenha a mesma linha; a mira virou, a do mesmo braço na linha nova.
+func _boca_rel_agora(i: int) -> Vector2:
+	var h = boca_heroi[i]
+	var linha: int = h.linha_de(h.dir_olhar)
+	var tabela: Array = boca_tabela[i]
+	if linha == boca_linha[i] or tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
+		return boca_rel[i]
+	var xy: Array = tabela[linha][boca_lado[i]]
+	return Vector2(float(xy[0]), float(xy[1])).round() if xy.size() == 2 else boca_rel[i]
 
 
 ## Tudo o que ainda desenha: impactos e clarões de boca (é o que mantém o desenho de v2/adagas.gd acordado).
@@ -238,9 +284,10 @@ func desenhar(no: Node2D) -> void:
 		no.draw_texture(tex, pos[i] - Vector2(meio, meio), cor)
 	var meio_b := floorf(float(LADO[BOCA]) * 0.5)
 	for i in BOCA_VAGAS:
-		if boca_tempo[i] <= 0.0:
+		if boca_tempo[i] <= 0.0 or boca_heroi[i] == null:
 			continue
-		no.draw_texture(quadros[BOCA][quadro_boca(boca_tempo[i], calmo)], boca_pos[i] - Vector2(meio_b, meio_b), Color(1, 1, 1, alfa_boca(i, calmo)))
+		var lugar: Vector2 = (boca_heroi[i].pr as Vector2) + _boca_rel_agora(i)  # segue o cano: o herói pode ter andado ou virado a mira desde o tiro
+		no.draw_texture(quadros[BOCA][quadro_boca(boca_tempo[i], calmo)], lugar - Vector2(meio_b, meio_b), Color(1, 1, 1, alfa_boca(i, calmo)))
 
 
 # ------------------------------------------------------------------ quadros (pixel a pixel)

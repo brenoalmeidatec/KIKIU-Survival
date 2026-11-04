@@ -30,7 +30,7 @@ extends RefCounted
 ## chão: a 840 px/s, com os 60 px de antes, a bolinha mergulhava ~35 px em 4 quadros (parecia nascer abaixo do cano, e o clarão ficava solto no alto); com 170 ela segue o cano e desce
 ## devagar, e a previsão de colisão continua encurtando a descida até a entrada no círculo do monstro, então ela ainda chega no alvo. O padrão (sem o campo; os mísseis nunca leem o campo) segue 60.
 ## Clarão de boca (mesmo arquivo, tipo BOCA): o passo com `clarao_boca` (true) acende UM clarão no cano do braço (a boca medida da folha, `bocas_projeteis.canhoes`)
-## a cada `lancar`, junto com a rajada. É o mesmo ponto onde a primeira imagem de cada bolinha nasce; a física continua saindo da origem lógica no chão e o desenho converge
+## a cada `lancar`, junto com a rajada; o clarão é guardado por braço e relativo ao herói (`_boca_rel` + `_boca_lado`), então anda com o cano. É o mesmo ponto onde a primeira imagem de cada bolinha nasce; a física continua saindo da origem lógica no chão e o desenho converge
 ## para ela (veja `_pos_visual`). Sem sorteio, sem nó, sem som: só desenho, e o perfil Baixo e "Reduzir piscadas" têm a versão deles (veja estalos_visual.gd).
 ## Acerto das bolinhas rápidas (o canhão voa a 840 px/s, ~14 px por quadro a 60 Hz): `_mover` testa o SEGMENTO do passo (posição anterior até a atual) contra o círculo do
 ## monstro, não o ponto de chegada, e `_selecionar_candidatos` usa o mesmo segmento (com o `dt` que chegou): nenhuma bolinha atravessa um monstro, nem com quadro lento.
@@ -249,9 +249,9 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 			a_grupo[i] = _grupo
 			a_pausa[i] = 1
 	if bool(passo.get("clarao_boca", false)) and _bolinha(proj):  # o clarão no cano que atirou, uma vez por rajada (só desenho)
-		var boca := _boca_mundo(proj, h, origem, dir, passo)
-		if boca.is_finite():
-			estalos.emitir_boca(boca, _fator_impactos())
+		var rel := _boca_rel(proj, h, origem, dir, passo)
+		if rel.is_finite():  # relativo ao herói: o clarão anda com o cano (estalos_visual desenha em h.pr + rel a cada quadro)
+			estalos.emitir_boca(h, rel, _boca_lado(proj, h, origem, dir, passo), _fator_impactos(), _boca_tabela(proj, h))
 	combate.fx.faiscas(origem + dir * 12.0, dir, 3, cor, 110.0, not _visual_mecha(proj))
 
 
@@ -750,23 +750,36 @@ func _visual_mecha(proj: int) -> bool:
 ## de 8 direções da mira e do braço (`lateral` < 0 = o braço esquerdo da tela, a tabela [linha][0]). Vector2.INF se o projétil não é do mecha ou a folha não tem a tabela.
 ## A tabela foi conferida contra o clarão desenhado na própria folha (combo, quadros 1 e 7): centro do clarão e boca diferem até 1,7 px nas 16 bocas (v2_mecha_projeteis confere <= 3).
 func _boca_mundo(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
+	var rel := _boca_rel(proj, h, origem, dir, passo)
+	return h.pos + rel if rel.is_finite() else Vector2.INF
+
+
+## A mesma boca relativa aos pés do herói (a tabela da folha, sem arredondar); Vector2.INF quando `_boca_mundo` também não tem.
+func _boca_rel(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
 	if not _visual_mecha(proj):
 		return Vector2.INF
-	var nome := str(_proj_lista[proj].nome)
-	var chave := "pods" if nome == "missil" else "canhoes"
-	var tabela: Array = h.tipo.info.get("bocas_projeteis", {}).get(chave, [])
-	var mira: Vector2 = passo.get("cone_dir", dir)
-	var linha: int = h.linha_de(mira)
+	var tabela := _boca_tabela(proj, h)
+	var linha: int = h.linha_de(passo.get("cone_dir", dir))
 	if tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
 		return Vector2.INF
-	var lado := 0 if float(passo.get("lateral", -1.0)) < 0.0 else 1
-	if nome == "missil":
-		var perp := Vector2(-mira.y, mira.x)
-		lado = 0 if (origem - (h.pos + h.ORIGEM_GOLPE)).dot(perp) < 0.0 else 1
-	var xy: Array = tabela[linha][lado]
+	var xy: Array = tabela[linha][_boca_lado(proj, h, origem, dir, passo)]
 	if xy.size() != 2:
 		return Vector2.INF
-	return h.pos + Vector2(float(xy[0]), float(xy[1]))
+	return Vector2(float(xy[0]), float(xy[1]))
+
+
+## A tabela de bocas da folha para este projétil ([linha][lado] -> [x, y], relativa aos pés): os pods do míssil ou os canhões. [] se a folha não tem.
+func _boca_tabela(proj: int, h) -> Array:
+	var chave := "pods" if str(_proj_lista[proj].nome) == "missil" else "canhoes"
+	return h.tipo.info.get("bocas_projeteis", {}).get(chave, [])
+
+
+## O braço (ou o pod) deste disparo: 0 = o esquerdo da tela (a tabela [linha][0]), 1 = o direito. Canhão: o sinal de `lateral`; míssil: o lado da origem.
+func _boca_lado(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> int:
+	if str(_proj_lista[proj].nome) == "missil":
+		var mira: Vector2 = passo.get("cone_dir", dir)
+		return 0 if (origem - (h.pos + h.ORIGEM_GOLPE)).dot(Vector2(-mira.y, mira.x)) < 0.0 else 1
+	return 0 if float(passo.get("lateral", -1.0)) < 0.0 else 1
 
 
 ## Coordenadas projetadas na folha, relativas aos pés do herói. Só desenho: nada altera a_pos/a_dir/alcance/colisão.

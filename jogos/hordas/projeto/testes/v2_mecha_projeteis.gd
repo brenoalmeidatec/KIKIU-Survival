@@ -522,7 +522,7 @@ func boca_e_velocidade() -> void:
 	h.ataque_forcado = false
 	var rajadas: int = (ad.lancadas - lanc0) / 5
 	ok(rajadas >= 14 and e.bocas_emitidas == rajadas, "atirando 3 s: %d rajadas, %d clarões de boca (um por rajada)" % [rajadas, e.bocas_emitidas])
-	ok(maximo <= e.BOCA_VAGAS and e.boca_tempo.size() == e.BOCA_VAGAS, "o clarão nunca passa das %d vagas próprias (pico %d)" % [e.BOCA_VAGAS, maximo])
+	ok(maximo <= 2 and e.boca_tempo.size() == e.BOCA_VAGAS, "um herói, dois braços: no máximo 2 clarões acesos (pico %d)" % maximo)
 	ok(get_tree().get_node_count() == nos, "o clarão de boca não cria nó")
 	# 6) perfil Baixo e sem partículas: o clarão de boca conta como partícula extra e não sai (a rajada, a bolinha e o dano seguem)
 	for nivel in ["poucas", "nenhuma"]:
@@ -591,6 +591,153 @@ func boca_e_velocidade() -> void:
 	w.args = args_antes
 	zerar()
 	ok(e.bocas_emitidas == 0 and e.bocas_ativas() == 0, "reiniciar limpa os clarões de boca")
+
+
+## Regressão (revisão do PR #620): o clarão ficava PRESO NO MUNDO onde o tiro saiu. Andando e atirando (~72 px/s), a boca anda ~23 px entre dois tiros do mesmo
+## braço: o tiro novo nunca renovava o clarão velho, abria outra vaga, e com "Reduzir piscadas" ficavam até 3 discos âmbar parados atrás do mecha, com tiros saindo
+## sem brilho (vagas cheias). Agora: no máximo UM clarão por braço, sempre no pixel da boca desenhada (h.pr + a boca da folha arredondada), em todos os quadros,
+## e nenhum cortado. E sem o pulo de 1 px em relação ao cano (antes arredondava h.pos + boca, fracionário, em vez de h.pr + boca arredondada).
+func boca_andando() -> void:
+	var c = w.combate
+	var h = w.heroi
+	var e = c.adagas.estalos
+	var args_antes: Dictionary = w.args.duplicate()
+	var reduzir: bool = Config.reduzir_piscadas
+	w.args["particulas"] = "muitas"
+	var tabela: Array = h.tipo.info.bocas_projeteis.canhoes
+	for calmo in [false, true]:
+		Config.reduzir_piscadas = calmo
+		zerar()
+		e.limpar()
+		var nome := "reduzir piscadas" if calmo else "normal"
+		var inicio: Vector2 = h.pos
+		h.entrada_forcada = Vector2.DOWN  # anda para baixo atirando para a direita: a boca anda de lado em relação ao tiro
+		h.ataque_forcado = true
+		var pior := 0.0  # a maior distância entre um clarão aceso e a boca desenhada mais perto (px)
+		var exato := true  # todo clarão aceso está EXATAMENTE em h.pr + a boca arredondada (sem o pulo de 1 px)
+		var mais_por_braco := 0
+		var quadros_acesos := 0
+		var ambos_atirando := 0  # calmo: quadros (atirando) com os dois braços acesos
+		for q in 180:
+			w.mouse_forcado = h.centro() + Vector2(300, 0)
+			w.avancar(PASSO)
+			var no_braco := [0, 0]
+			var mundo: PackedVector2Array = e.boca_pos
+			for i in e.BOCA_VAGAS:
+				if e.boca_tempo[i] <= 0.0:
+					continue
+				quadros_acesos += 1
+				var perto := INF
+				var lado_perto := 0
+				var linha: int = h.linha_de(h.dir_olhar)  # a linha que a folha está desenhando, não qualquer uma das 8
+				for lado in 2:
+					var xy: Array = tabela[linha][lado]
+					var d: float = (mundo[i] as Vector2).distance_to((h.pr as Vector2) + Vector2(xy[0], xy[1]).round())
+					if d < perto:
+						perto = d
+						lado_perto = lado
+				pior = maxf(pior, perto)
+				exato = exato and perto == 0.0
+				no_braco[lado_perto] += 1
+			mais_por_braco = maxi(mais_por_braco, maxi(no_braco[0], no_braco[1]))
+			if calmo and q >= 30 and no_braco[0] >= 1 and no_braco[1] >= 1:
+				ambos_atirando += 1
+		h.ataque_forcado = false
+		h.entrada_forcada = Vector2.ZERO
+		var andou: float = h.pos.distance_to(inicio)
+		ok(andou > 100.0, "%s: o mecha andou atirando (%.0f px em 3 s)" % [nome, andou])
+		ok(e.bocas_emitidas >= 14 and quadros_acesos > 0, "%s: atirando andando acende o clarão (%d tiros)" % [nome, e.bocas_emitidas])
+		ok(pior <= 1.0, "%s: andando, o clarão fica a <= 1 px da boca desenhada em todos os quadros (pior %.1f px)" % [nome, pior])
+		ok(exato, "%s: o clarão está sempre exatamente em h.pr + a boca arredondada (sem pular 1 px em relação ao cano)" % nome)
+		ok(mais_por_braco <= 1, "%s: andando, no máximo UM clarão por braço (pico %d)" % [nome, mais_por_braco])
+		ok(e.bocas_cortadas == 0, "%s: andando, nenhum tiro sai sem clarão por vaga cheia (%d cortados)" % [nome, e.bocas_cortadas])
+		if calmo:
+			ok(ambos_atirando >= 140, "reduzir piscadas: andando e atirando, os dois braços ficam com o brilho aceso (%d de 150 quadros)" % ambos_atirando)
+	# coop: dois heróis com clarão ao mesmo tempo, mesmo braço: cada um na sua vaga, cada um desenhado a partir do seu herói
+	if "boca_heroi" in e:
+		Config.reduzir_piscadas = true
+		e.limpar()
+		var outro = Heroi.new()
+		outro.pos = h.pos + Vector2(200.4, 50.6)
+		outro.pr = outro.pos.round()
+		ok(e.emitir_boca(h, Vector2(20.9, -8.5), 1, 1.0) and e.emitir_boca(outro, Vector2(20.9, -8.5), 1, 1.0), "coop: dois heróis acendem o mesmo braço")
+		ok(e.bocas_ativas() == 2 and e.emitir_boca(h, Vector2(20.9, -8.5), 1, 1.0) and e.bocas_ativas() == 2, "coop: o tiro de um herói renova só a vaga dele")
+		var lugares: Array = []
+		for i in e.BOCA_VAGAS:
+			if e.boca_tempo[i] > 0.0:
+				lugares.append(e.boca_pos[i])
+		ok(
+			lugares.has((h.pr as Vector2) + Vector2(21, -9)) and lugares.has((outro.pr as Vector2) + Vector2(21, -9)),
+			"coop: cada clarão é desenhado no cano do seu herói"
+		)
+		outro.pr += Vector2(7, 3)
+		ok(e.boca_pos.has((outro.pr as Vector2) + Vector2(21, -9)), "coop: o clarão do outro herói anda com ele")
+		e.limpar()
+	Config.reduzir_piscadas = reduzir
+	w.args = args_antes
+	zerar()
+
+
+## Regressão (revisão do PR #620): com o brilho aceso a mira vira (atirando, ou logo depois de parar) e a folha passa a desenhar o cano em outra das 8 linhas,
+## 20 a 40 px dali. O clarão ficava no deslocamento da linha do tiro até aquele braço atirar de novo (até ~0,45 s no "Reduzir piscadas"). Agora, em todo
+## quadro, cada clarão aceso está exatamente na boca de um braço da linha desenhada (h.pr + a tabela da folha em linha_de(dir_olhar)), sem apagar e reacender.
+func boca_virando() -> void:
+	var c = w.combate
+	var h = w.heroi
+	var e = c.adagas.estalos
+	var args_antes: Dictionary = w.args.duplicate()
+	var reduzir: bool = Config.reduzir_piscadas
+	w.args["particulas"] = "muitas"
+	var tabela: Array = h.tipo.info.bocas_projeteis.canhoes
+	var miras := [Vector2(300, 0), Vector2(-300, 0), Vector2(0, -300)]  # direita atirando, esquerda atirando, cima já sem atirar
+	for calmo in [false, true]:
+		Config.reduzir_piscadas = calmo
+		zerar()
+		e.limpar()
+		var nome := "reduzir piscadas" if calmo else "normal"
+		var fora := 0  # quadros com um clarão aceso fora da boca da linha desenhada
+		var pior := 0.0
+		var virado_aceso := 0  # quadros com o brilho aceso numa linha diferente da do tiro que o acendeu
+		var series := [[], []]  # calmo: aceso (1) ou não (0) em cada braço, para contar trocas
+		for q in 180:
+			var fase: int = q / 60
+			w.mouse_forcado = h.centro() + miras[fase]
+			h.ataque_forcado = fase < 2
+			w.avancar(PASSO)
+			var linha: int = h.linha_de(h.dir_olhar)
+			var aceso := [0.0, 0.0]
+			for i in e.BOCA_VAGAS:
+				if e.boca_tempo[i] <= 0.0:
+					continue
+				var perto := INF
+				var lado_perto := 0
+				for lado in 2:
+					var xy: Array = tabela[linha][lado]
+					var d: float = (e.boca_pos[i] as Vector2).distance_to((h.pr as Vector2) + Vector2(xy[0], xy[1]).round())
+					if d < perto:
+						perto = d
+						lado_perto = lado
+				pior = maxf(pior, perto)
+				if perto != 0.0:
+					fora += 1
+				aceso[lado_perto] = 1.0
+				if "boca_linha" in e and e.boca_linha[i] != linha:
+					virado_aceso += 1
+			for lado in 2:
+				(series[lado] as Array).append(aceso[lado])
+		h.ataque_forcado = false
+		ok(fora == 0, "%s: virando a mira, o clarão está sempre na boca da linha que a folha desenha (%d quadros fora, pior %.1f px)" % [nome, fora, pior])
+		if calmo:
+			ok(virado_aceso >= 10, "reduzir piscadas: o caso foi exercitado (brilho aceso depois de virar a mira em %d quadros)" % virado_aceso)
+			var pior_troca := 0
+			for lado in 2:
+				var serie: Array = series[lado]
+				for inicio in range(serie.size() - 60):
+					pior_troca = maxi(pior_troca, e.Piscadas.trocas(serie.slice(inicio, inicio + 61)))
+			ok(pior_troca <= 2, "reduzir piscadas: virar a mira não apaga e reacende o brilho (no máximo 2 trocas por segundo, %d)" % pior_troca)
+	Config.reduzir_piscadas = reduzir
+	w.args = args_antes
+	zerar()
 
 
 func _ready() -> void:
@@ -712,6 +859,8 @@ func _ready() -> void:
 	bocas_visuais()
 	estalos_rajada()
 	boca_e_velocidade()
+	boca_andando()
+	boca_virando()
 	var reduzir: bool = Config.reduzir_piscadas
 	Config.reduzir_piscadas = true
 	visual.limpar()
