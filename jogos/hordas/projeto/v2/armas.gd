@@ -1274,9 +1274,16 @@ func _desenhar_brilho_i() -> void:
 		for j in z_n[i]:
 			pts.append(z_pts[base + j].round())
 		# A linha mantém todos os saltos e dentes; a arte acrescenta só uma chamada por raio.
-		no_brilho.draw_polyline(pts, Color(0.5, 0.7, 1.0, 0.35 * k), 7.0)
-		no_brilho.draw_polyline(pts, Color(0.75, 0.88, 1.0, 0.9 * k), 3.0)
-		no_brilho.draw_polyline(pts, Color(1, 1, 1, k), 1.0)
+		# halo, corpo e núcleo em pixel inteiro; o brilho cai em degraus e o raio solta galhos que somem antes dele
+		var kk := ceilf(k * 3.0) / 3.0
+		no_brilho.draw_polyline(pts, Color(0.35, 0.5, 1.0, 0.5 * kk), 3.0)
+		no_brilho.draw_polyline(pts, Color(0.8, 0.9, 1.0, kk), 2.0)
+		no_brilho.draw_polyline(pts, Color(1, 1, 1, kk), 1.0)
+		if k > 0.45:
+			for j in range(2, pts.size() - 1, 3):
+				var lado := 1.0 if (j + i) % 2 == 0 else -1.0
+				var q1 := pts[j] + Vector2(lado * 7.0, 5.0)
+				no_brilho.draw_polyline(PackedVector2Array([pts[j], q1, q1 + Vector2(lado * 4.0, 6.0)]), Color(0.75, 0.88, 1.0, kk), 1.0)
 		# z_* não guarda id de origem. O stamp genérico cobre apenas a primeira queda reamostrada.
 		var sp := Novas.sprite_de("raio")
 		if not sp.is_empty() and pts.size() > 1 and not Anim.de("raio").has("impacto"):  # com a folha, o estalo em cada alvo substitui o carimbo esticado

@@ -2974,3 +2974,10 @@ _Claude do Alisson (notebook)_
 - **FPS:** `v2/fps_pixelfx_{antes,depois}.txt`, `--build=tudo`, perfil Baixo: mediana do render de 87,6 para 67,7 ms e chamadas de desenho de 1165 para 900. O FPS ficou em 10 nos dois, número que parece preso nesta máquina sem GPU.
 - **Pendente:** ninguém jogou em movimento; o PC do Breno não foi medido.
 - **Para o Claude do Alisson:** mexi em código da sua área a pedido do Breno, e pode cruzar com #615 e #618 em `armas.gd`. `fx.explosao` e `fumaca_impacto` seguem existindo, com menos chamadas.
+
+## 2026-11-04 (noite): pixelfx em quase tudo e status no corpo (Claude do Breno, PC do trabalho)
+- **Feito:** fogo, gelo, veneno, choque e sangue no shader do sprite (`v2/status_corpo.gd`), cobrindo a silhueta. Trilhas, marcas, acerto da katana, morte, dano no herói, cura e traço do raio no estilo; partículas com gravidade e quique. Guia atualizado em `docs/visual_2_5d/estilo_pixelfx.md`.
+- **Juízo Final:** não havia travamento; os quadros repetidos eram erro na minha montagem.
+- **FPS:** `docs/visual_2_5d/fps_pixelfx_{antes,depois}.txt`, mediana do render 87,6 ms antes e 78,2 ms depois. As medições saíram de `v2/` porque essa pasta entra no export.
+- **Pendente:** cortes da katana, menus e HUD. Ninguém jogou; o PC do Breno não foi medido.
+- **Para o Claude do Alisson:** `horda.gd` agora usa o alfa da instância para o status. `fx_status` não prende mais chama.

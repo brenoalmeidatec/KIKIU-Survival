@@ -43,7 +43,7 @@ Tudo sai de `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`. Cada arma é 
 - **Gravidade e inércia:** faíscas e lascas seguem trajetória balística, a 950 px/s², com arrasto do ar.
 - **Quique e atrito:** cada peça perde energia ao bater, freia no chão e assenta (`Cacos`).
 - **Profundidade:** cada peça cai no seu lugar do chão, então a de trás bate mais alto na tela.
-- **Direção do golpe:** as folhas de acerto apontam para a direita e o jogo espelha pelo lado do golpe, sem girar pixel. Só há esquerda e direita.
+- **Direção do golpe:** a folha de acerto não tem lado; as faíscas saem em tempo real (`efeitos.faiscas`) na direção exata do golpe, com gravidade e quique no chão.
 - **Fumaça e fogo:** sobem por empuxo, incham e se dissipam.
 - **Luz:** apaga em decaimento exponencial.
 - **Gotas e flocos:** a gota acelera e respinga; o floco cai devagar e balança.
@@ -58,9 +58,22 @@ Tudo sai de `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`. Cada arma é 
 ## Como funciona no jogo
 `indice_pixelfx.json` é lido por último em `Anim.GRUPOS` e troca só as animações refeitas, repetindo as outras. As folhas antigas continuam no lugar. O código tocava camadas por cima (estouro "cristal", ondas, explosão de shader, fumaça); elas saíram de `armas.explodir`, `_cair_raio`, `_explodir_runa`, dos anéis, dos meteoros, da cabaça, do golem e dos aliados. A luz, o tremor, o som e a marca no chão ficaram.
 
+## Status no corpo
+Fogo, gelo, veneno, choque e sangue são desenhados pelo shader do próprio sprite (`v2/status_corpo.gd`), lendo o alfa do quadro atual. Por isso cobrem a silhueta inteira em toda direção e quadro, sem nó nem limite de monstros. A chama sai do contorno e o contorno escuro do bicho fica, para ele continuar legível.
+- No lote da horda, o estado vai no alfa da instância, porque o custom data do renderizador de compatibilidade é float16. Elite e chefe usam `StatusCorpo.material_no`.
+- Fogo vem de `queima_t` e gelo de `lento_t`. Veneno, choque e sangue são só desenho: a tabela `marcas` de `dados/v2_pixelfx.json` diz qual arma deixa qual marca.
+- Perfil Baixo: sem shader de status, fica a tinta antiga.
+
+## Trilhas, marcas e o resto
+- `rastro` mantém o desenho do projétil e acrescenta atrás um rastro que esfria e cai. Projétil que gira nos quadros (`gira`) não tem rastro, porque a folha não sabe a direção do voo.
+- `marca` refaz as manchas no chão, com rachaduras acesas que esfriam.
+- Morte (`fx_morte`), dano no herói (`fx_dano_heroi`), cura (`fx_cura`) e acerto da katana (`fx_aliado`, tingido) são folhas soltas.
+- O traço do raio tem halo, corpo e núcleo em pixel inteiro, galhos e brilho em degraus.
+- Baú, nível, coleta, portal e invocação já usavam folhas do pixelfx desde 01/11.
+
 ## O que ficou de fora
-- Trilhas de voo, quedas e marcas no chão continuam as antigas.
-- O corte e o acerto da katana são do herói e não mudaram.
-- O traço do raio que cai do céu continua sendo o de `_raio_visual`.
+- A arte dos cortes da katana continua a do Blender, pré-girada em 16 direções; mudou só o acerto.
+- Menus e HUD animados.
+- A chama da fusão no herói e a morte dele ainda usam ondas (`evolucao_feita`, `heroi_morreu`).
 - Os perigos dos chefes e dos inimigos (`perigo_*`) não são armas.
 - O crítico de projétil toca o impacto em escala 2, como antes, então tem pixel dobrado.

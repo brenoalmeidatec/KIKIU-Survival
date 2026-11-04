@@ -494,19 +494,16 @@ def eletrico(r, R=26.0, T=VOLT, chao=30.0):
 
 
 def acerto(r, T=ACO, faiscas=None, lascas=None):
-    """O acerto: cruz torta com losango branco e, sempre para a DIREITA (o jogo espelha pelo lado do golpe), o cone de faíscas e lascas que segue
-    a inércia do que bateu, cai e quica."""
+    """O acerto: cruz torta com losango branco e lascas que caem e quicam. As faíscas com a direção exata do golpe saem em tempo real (efeitos.faiscas)."""
     C = [T[7], T[5], T[3], T[1], T[0]]
     ps = Particulas(r, chao=12.0, faiscas=faiscas or AQUECIDO)
     cc = Cacos()
     for _ in range(6):
-        a, v = r.uniform(-0.75, 0.55), r.uniform(150, 280)
+        a, v = r.uniform(0, TAU), r.uniform(90, 170)
         ps.nasce(FAISCA, 0, 0, math.cos(a) * v, math.sin(a) * v - 30, r.uniform(0.12, 0.2))
     for _ in range(4):
-        a, v = r.uniform(-1.0, 0.3), r.uniform(70, 130)
+        a, v = r.uniform(0, TAU), r.uniform(50, 100)
         cc.nasce(2, 0, math.cos(a) * v, math.sin(a) * v - r.uniform(30, 70), 1.0, (lascas or C)[3], (lascas or C)[1], r.uniform(0.15, 0.2), chao=r.uniform(8, 14), r=r)
-    for _ in range(2):  # o coice: pouco vai para trás
-        ps.nasce(FAISCA, 0, 0, -r.uniform(60, 110), -r.uniform(20, 70), r.uniform(0.08, 0.14))
     inc = -0.3
     bracos = [(inc, 17, 2.2), (inc + math.pi, 8, 2.2), (inc - math.pi / 2, 10, 2.4), (inc + math.pi / 2, 7, 2.2)]
 
@@ -719,6 +716,62 @@ def nuvem_desenho(r, w, h, T, extra):
     return desenhar
 
 
+def cura(r, T=VENENO):
+    """A cura: fagulhas que sobem por empuxo, cada uma com a sua deriva, e uma cruz que se abre e some."""
+    ps = Particulas(r, faiscas=[T[0], T[1], T[2], T[3]])
+    for i in range(14):
+        a = r.uniform(0, TAU)
+        ps.nasce(BRASA, math.cos(a) * 10, math.sin(a) * 4 - 2, math.cos(a) * 8, -r.uniform(40, 90), r.uniform(0.3, 0.52), atraso=r.uniform(0, 0.14))
+
+    def quadro(tela, t):
+        ps.desenha(tela)
+        if t < 0.24:
+            k = t / 0.24
+            tela.anel(0, 0, 4 + 12 * k, 2 * (1 - k) + 1, T[1], 1.0, 0.5)
+        tela.brilho(0, -16, 18, T[2], 0.3 * math.exp(-t / 0.2))
+
+    return ps.anda, quadro
+
+
+def rastro(tira_velha, w, h, n, ancora, T, L):
+    """Trilha de voo: o desenho antigo fica, e atrás dele o rastro esfria e cai, em ciclo inteiro. Devolve a tira nova e a âncora nova."""
+    r = random.Random(w * 31 + h)
+    pts = [dict(f=r.random(), y=r.uniform(-1, 1) * h * 0.16, s=r.choice((1, 1, 2))) for _ in range(int(L / 2.5))]
+    feitos = []
+    for i in range(n):
+        tela = Tela(w + L, h, 0, 0)
+        for p in pts:
+            ph = (i / n + p["f"]) % 1.0
+            x = L + ancora[0] * 0.5 - ph * (L + ancora[0] * 0.5)
+            y = ancora[1] + p["y"] * (0.4 + ph) + 8 * ph * ph  # cai: a gravidade curva o rastro
+            c = T[1] if ph < 0.3 else T[3] if ph < 0.6 else T[5]
+            tela.ponto(x, y, c, 1.0 - ph * 0.8)
+            if p["s"] == 2 and ph < 0.5:
+                tela.ponto(x + 1, y, c)
+            tela.brilho(x, y, 3, T[3], 0.3 * (1 - ph))
+        rgb, a = achatar(tela)
+        q = np.array(tira_velha.crop((i * w, 0, (i + 1) * w, h)).convert("RGBA")).astype(float) / 255.0
+        m = q[..., 3:4]
+        rgb[:, L:] = q[..., :3] * m + rgb[:, L:] * (1 - m)
+        a[:, L:] = np.maximum(a[:, L:], q[..., 3])
+        feitos.append((rgb, a))
+    return tira_de(feitos, 24), (ancora[0] + L, ancora[1])
+
+
+def marca(r, T, n=4, w=48, h=32):
+    """O chão que apanhou: mancha queimada com rachaduras acesas que esfriam descendo a rampa até sumir."""
+    fendas = [ziguezague(r, 0, 0, math.cos(a) * r.uniform(10, 20), math.sin(a) * r.uniform(5, 11), 0.25) for a in [i / 6 * TAU + r.uniform(-0.3, 0.3) for i in range(6)]]
+    feitos = []
+    for i in range(n):
+        tela = Tela(w, h, w // 2, h // 2)
+        k = i / (n - 1)
+        tela.disco(0, 0, 18, T[8], 0.8 * (1 - k))
+        for f in fendas:
+            traco(tela, f, T[2 + i * 2] if i < 3 else T[8], 1.0 - k * 0.7)
+        feitos.append(achatar(tela))
+    return tira_de(feitos, 10)
+
+
 # ------------------------------------------------------------------ o que cada arma usa
 
 
@@ -733,7 +786,7 @@ def _bola(R, T, **op):
 
 
 def _acerto(T=ACO, **op):
-    return dict(fn=acerto, op=dict(T=T, **op), quadro=(56, 44), ancora=(20, 22), n=5, fps=30, flip=True)
+    return dict(fn=acerto, op=dict(T=T, **op), quadro=(48, 44), ancora=(24, 22), n=5, fps=30)
 
 
 IMPACTOS = {
@@ -767,6 +820,13 @@ SOLTOS = {
     "fx_pancada": _meteoro(terra, 40.0),  # o golem e o colosso batendo no chão
     "fx_aliado": dict(_acerto(tema("#ffffff", "#ffffff", "#e8e8e8", "#b0b0b0", "#707070"), faiscas=[BRANCO, BRANCO, (0.85, 0.85, 0.85), (0.6, 0.6, 0.6)]), cinza=True),  # tingido pela cor do aliado
 }
+SOLTOS.update(
+    {
+        "fx_morte": dict(fn=terra, op=dict(R=13.0, T=tema("#f4f0e4", "#d8d2c0", "#a8a292", "#6e6a60", "#3a3834")), quadro=(56, 48), ancora=(28, 34), n=9, fps=24),
+        "fx_dano_heroi": _acerto(SANGUE, faiscas=_faiscas_de(SANGUE)),
+        "fx_cura": dict(fn=lambda r: cura(r), quadro=(48, 64), ancora=(24, 52), n=12, fps=20),
+    }
+)
 ANEIS = {
     "anel_onda_branca": (ACO, "poeira"), "anel_dourado": (OURO, "luz"), "anel_gelo": (GELO, "ponta"), "anel_vermelho": (CIANO, "faisca"),
     "terremoto_poeira": (PEDRA, "racha"), "anel_eletrico": (VOLT, "faisca"), "redemoinho_verde": (VENENO, "vento"), "anel_espinhos_verdes": (VENENO, "ponta"),
@@ -896,6 +956,21 @@ def main():
         q = velho[nome]["anims"]["expandir"]
         w, h = q["quadro"]
         grava(nome, "expandir", simular_anel(nome, w, h, T, extra), w, h, 8, q["fps"], (w // 2, h // 2))
+    padrao = {explosao: FOGO, eletrico: VOLT, acerto: ACO, pontas: GELO, terra: PEDRA}
+    for nome, d in IMPACTOS.items():  # as trilhas e as marcas seguem a cor do impacto da mesma folha
+        T = d["op"].get("T", padrao[d["fn"]])
+        anims = velho[nome]["anims"]
+        for anim, L in (("voo", 18), ("queda", 26)):
+            q = anims.get(anim)
+            if q is None or q.get("gira"):
+                continue
+            w, h = q["quadro"]
+            antiga = Image.open(os.path.join(ASSETS, q["arquivo"]))
+            tira, anc = rastro(antiga, w, h, q["n"], q.get("ancora", (w * 3 // 4, h // 2)), T, L)
+            grava(nome, anim, tira, w + L, h, q["n"], q["fps"], anc, {"loop": True})
+        if "marca" in anims:
+            q = anims["marca"]
+            grava(nome, "marca", marca(random.Random(semente(nome)), T), 48, 32, 4, q["fps"], (24, 16))
     for nome, (T, extra) in NUVENS.items():
         for anim, q in velho[nome]["anims"].items():
             if anim in ("entrada", "loop", "saida", "aura"):

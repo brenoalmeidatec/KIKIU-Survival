@@ -219,6 +219,7 @@ var fator_part := 1.0  # opção "partículas" da aba Gráficos (0 a 1)
 # partículas
 var p_pos := PackedVector2Array()
 var p_vel := PackedVector2Array()
+var p_chao := PackedFloat32Array()  # o y em que a partícula com peso bate e quica
 var p_vida := PackedFloat32Array()
 var p_max := PackedFloat32Array()
 var p_tam := PackedFloat32Array()
@@ -329,6 +330,7 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	camada.add_child(txt)
 	p_pos.resize(MAX_PART)
 	p_vel.resize(MAX_PART)
+	p_chao.resize(MAX_PART)
 	p_vida.resize(MAX_PART)
 	p_max.resize(MAX_PART)
 	p_tam.resize(MAX_PART)
@@ -842,6 +844,7 @@ func particula(pos: Vector2, vel: Vector2, vida: float, tam: float, cor: Color, 
 		p_ativas += 1
 	p_pos[i] = pos
 	p_vel[i] = vel
+	p_chao[i] = pos.y + 8.0 + float(i & 7)  # sem sorteio: o enfeite não mexe no RNG da partida
 	p_vida[i] = vida
 	p_max[i] = vida
 	p_tam[i] = tam
@@ -863,9 +866,7 @@ func faiscas(pos: Vector2, dir: Vector2, n: int, cor: Color, vel := 170.0, desen
 		var tam := 2.0 if randf() < 0.6 else 3.0
 		var tinta := cor.lerp(Color.WHITE, randf() * 0.6)
 		if desenhar:
-			particula(pos, v, vida, tam, tinta, 120.0)
-	if desenhar:
-		particula(pos, Vector2.ZERO, 0.11, 22.0, Color(1, 0.95, 0.8, 0.9), 0.0, true)
+			particula(pos, v, vida, tam, tinta, 420.0)
 
 
 ## O estouro da morte do monstro: ossos/cinzas para todo lado e almas que sobem.
@@ -879,16 +880,13 @@ func estouro(pos: Vector2, cor: Color, n: int, desenhar := true) -> void:
 		var tam := 2.0 if randf() < 0.7 else 3.0
 		var tinta := cor.lerp(Color(0.85, 0.85, 0.8), randf() * 0.7)
 		if desenhar:
-			particula(pos, v, vida, tam, tinta, 150.0)
+			particula(pos, v, vida, tam, tinta, 420.0)
 	for i in maxi(2, roundi(5 * fator_part)):
 		var origem := pos + Vector2(randf_range(-5, 5), randf_range(-4, 2))
 		var vel := Vector2(randf_range(-14, 14), randf_range(-30, -12))
 		var vida := randf_range(0.45, 0.8)
 		if desenhar:
 			particula(origem, vel, vida, 9.0, Color(0.5, 0.9, 1.0, 0.6), -20.0, true)
-	if desenhar:
-		particula(pos, Vector2.ZERO, 0.16, 34.0, Color(1, 0.9, 0.75, 0.85), 0.0, true)
-		onda(pos, Color(1, 0.9, 0.8, 0.8), 26.0, 0.18)
 
 
 func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:
@@ -986,6 +984,9 @@ func atualizar(dt: float) -> void:
 			var vel := p_vel[i]
 			vel.y += p_sobe[i] * dt
 			vel *= exp(-3.0 * dt)
+			if p_sobe[i] > 0.0 and vel.y > 0.0 and p_pos[i].y >= p_chao[i]:  # bate, perde energia e o atrito segura
+				vel.y *= -0.4
+				vel.x *= 0.6
 			p_vel[i] = vel
 			p_pos[i] += vel * dt
 	# números

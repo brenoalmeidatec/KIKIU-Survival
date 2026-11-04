@@ -24,14 +24,14 @@
     "impacto": {
      "arquivo": "pfx_adaga_aco_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -60,14 +60,14 @@
     "impacto": {
      "arquivo": "pfx_disco_ferro_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -96,14 +96,14 @@
     "impacto": {
      "arquivo": "pfx_laminas_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -132,14 +132,14 @@
     "impacto": {
      "arquivo": "pfx_chuva_de_ferro_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -151,30 +151,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "flecha_roxa_voo.png",
+     "arquivo": "pfx_flecha_roxa_voo.png",
      "quadro": [
-      24,
+      42,
       8
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      18,
+      36,
       4
      ]
     },
     "impacto": {
      "arquivo": "pfx_flecha_roxa_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -203,14 +203,14 @@
     "impacto": {
      "arquivo": "pfx_shuriken_sombria_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -222,30 +222,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "lanca_gelo_voo.png",
+     "arquivo": "pfx_lanca_gelo_voo.png",
      "quadro": [
-      30,
+      48,
       6
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      22,
+      40,
       3
      ]
     },
     "impacto": {
      "arquivo": "pfx_lanca_gelo_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -257,30 +257,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "chuva_de_lacas_voo.png",
+     "arquivo": "pfx_chuva_de_lacas_voo.png",
      "quadro": [
-      40,
+      58,
       12
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      30,
+      48,
       6
      ]
     },
     "impacto": {
      "arquivo": "pfx_chuva_de_lacas_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -292,30 +292,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "dardo_verde_voo.png",
+     "arquivo": "pfx_dardo_verde_voo.png",
      "quadro": [
-      16,
+      34,
       8
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      12,
+      30,
       4
      ]
     },
     "impacto": {
      "arquivo": "pfx_dardo_verde_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -327,30 +327,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "feixe_dourado_voo.png",
+     "arquivo": "pfx_feixe_dourado_voo.png",
      "quadro": [
-      64,
+      82,
       6
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      48,
+      66,
       3
      ]
     },
     "impacto": {
      "arquivo": "pfx_feixe_dourado_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -362,30 +362,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "urso_solar_voo.png",
+     "arquivo": "pfx_urso_solar_voo.png",
      "quadro": [
-      42,
+      60,
       18
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      31,
+      49,
       9
      ]
     },
     "impacto": {
      "arquivo": "pfx_urso_solar_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -397,30 +397,30 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "tempestade_primordial_voo.png",
+     "arquivo": "pfx_tempestade_primordial_voo.png",
      "quadro": [
-      72,
+      90,
       18
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      54,
+      72,
       9
      ]
     },
     "impacto": {
      "arquivo": "pfx_tempestade_primordial_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     }
@@ -449,14 +449,14 @@
     "impacto": {
      "arquivo": "pfx_anel_de_brasas_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
      ]
     },
@@ -482,16 +482,16 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "bola_fogo_voo.png",
+     "arquivo": "pfx_bola_fogo_voo.png",
      "quadro": [
-      26,
+      44,
       18
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      19,
+      37,
       9
      ]
     },
@@ -517,16 +517,16 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "bola_incendiaria_voo.png",
+     "arquivo": "pfx_bola_incendiaria_voo.png",
      "quadro": [
-      40,
+      58,
       20
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      30,
+      48,
       10
      ]
     },
@@ -552,16 +552,16 @@
    ],
    "anims": {
     "voo": {
-     "arquivo": "bola_chumbo_voo.png",
+     "arquivo": "pfx_bola_chumbo_voo.png",
      "quadro": [
-      24,
+      42,
       16
      ],
      "n": 4,
      "fps": 12,
      "loop": true,
      "ancora": [
-      18,
+      36,
       8
      ]
     },
@@ -608,16 +608,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "meteoro_flamejante_queda.png",
+     "arquivo": "pfx_meteoro_flamejante_queda.png",
      "quadro": [
-      46,
+      72,
       30
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      34,
+      60,
       15
      ]
     },
@@ -636,7 +636,7 @@
      ]
     },
     "marca": {
-     "arquivo": "meteoro_flamejante_marca.png",
+     "arquivo": "pfx_meteoro_flamejante_marca.png",
      "quadro": [
       48,
       32
@@ -657,16 +657,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "fogo_do_ceu_queda.png",
+     "arquivo": "pfx_fogo_do_ceu_queda.png",
      "quadro": [
-      38,
+      64,
       26
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      28,
+      54,
       13
      ]
     },
@@ -685,7 +685,7 @@
      ]
     },
     "marca": {
-     "arquivo": "fogo_do_ceu_marca.png",
+     "arquivo": "pfx_fogo_do_ceu_marca.png",
      "quadro": [
       48,
       32
@@ -706,16 +706,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "pedreira_ardente_queda.png",
+     "arquivo": "pfx_pedreira_ardente_queda.png",
      "quadro": [
-      36,
+      62,
       26
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      27,
+      53,
       13
      ]
     },
@@ -734,7 +734,7 @@
      ]
     },
     "marca": {
-     "arquivo": "pedreira_ardente_marca.png",
+     "arquivo": "pfx_pedreira_ardente_marca.png",
      "quadro": [
       48,
       32
@@ -755,16 +755,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "estrela_cadente_queda.png",
+     "arquivo": "pfx_estrela_cadente_queda.png",
      "quadro": [
-      40,
+      66,
       18
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      30,
+      56,
       9
      ]
     },
@@ -783,7 +783,7 @@
      ]
     },
     "marca": {
-     "arquivo": "estrela_cadente_marca.png",
+     "arquivo": "pfx_estrela_cadente_marca.png",
      "quadro": [
       48,
       32
@@ -804,16 +804,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "juizo_final_queda.png",
+     "arquivo": "pfx_juizo_final_queda.png",
      "quadro": [
-      60,
+      86,
       36
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      45,
+      71,
       18
      ]
     },
@@ -832,7 +832,7 @@
      ]
     },
     "marca": {
-     "arquivo": "juizo_final_marca.png",
+     "arquivo": "pfx_juizo_final_marca.png",
      "quadro": [
       48,
       32
@@ -853,16 +853,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "cometa_roxo_queda.png",
+     "arquivo": "pfx_cometa_roxo_queda.png",
      "quadro": [
-      64,
+      90,
       42
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      48,
+      74,
       21
      ]
     },
@@ -881,7 +881,7 @@
      ]
     },
     "marca": {
-     "arquivo": "cometa_roxo_marca.png",
+     "arquivo": "pfx_cometa_roxo_marca.png",
      "quadro": [
       48,
       32
@@ -902,16 +902,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "eclipse_negro_queda.png",
+     "arquivo": "pfx_eclipse_negro_queda.png",
      "quadro": [
-      56,
+      82,
       34
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      42,
+      68,
       17
      ]
     },
@@ -930,7 +930,7 @@
      ]
     },
     "marca": {
-     "arquivo": "eclipse_negro_marca.png",
+     "arquivo": "pfx_eclipse_negro_marca.png",
      "quadro": [
       48,
       32
@@ -951,16 +951,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "pedra_vulcanica_queda.png",
+     "arquivo": "pfx_pedra_vulcanica_queda.png",
      "quadro": [
-      16,
+      42,
       12
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      12,
+      38,
       6
      ]
     },
@@ -979,7 +979,7 @@
      ]
     },
     "marca": {
-     "arquivo": "pedra_vulcanica_marca.png",
+     "arquivo": "pfx_pedra_vulcanica_marca.png",
      "quadro": [
       48,
       32
@@ -1000,16 +1000,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "pedra_cinza_queda.png",
+     "arquivo": "pfx_pedra_cinza_queda.png",
      "quadro": [
-      24,
+      50,
       16
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      18,
+      44,
       8
      ]
     },
@@ -1028,7 +1028,7 @@
      ]
     },
     "marca": {
-     "arquivo": "pedra_cinza_marca.png",
+     "arquivo": "pfx_pedra_cinza_marca.png",
      "quadro": [
       48,
       32
@@ -1049,16 +1049,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "cometa_gelo_queda.png",
+     "arquivo": "pfx_cometa_gelo_queda.png",
      "quadro": [
-      36,
+      62,
       24
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      27,
+      53,
       12
      ]
     },
@@ -1077,7 +1077,7 @@
      ]
     },
     "marca": {
-     "arquivo": "cometa_gelo_marca.png",
+     "arquivo": "pfx_cometa_gelo_marca.png",
      "quadro": [
       48,
       32
@@ -1098,16 +1098,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "cometa_duplo_queda.png",
+     "arquivo": "pfx_cometa_duplo_queda.png",
      "quadro": [
-      50,
+      76,
       24
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      37,
+      63,
       12
      ]
     },
@@ -1126,7 +1126,7 @@
      ]
     },
     "marca": {
-     "arquivo": "cometa_duplo_marca.png",
+     "arquivo": "pfx_cometa_duplo_marca.png",
      "quadro": [
       48,
       32
@@ -1147,16 +1147,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "espinho_verde_queda.png",
+     "arquivo": "pfx_espinho_verde_queda.png",
      "quadro": [
-      10,
+      36,
       16
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      7,
+      33,
       8
      ]
     },
@@ -1175,7 +1175,7 @@
      ]
     },
     "marca": {
-     "arquivo": "espinho_verde_marca.png",
+     "arquivo": "pfx_espinho_verde_marca.png",
      "quadro": [
       48,
       32
@@ -1196,16 +1196,16 @@
    ],
    "anims": {
     "queda": {
-     "arquivo": "raio_meteorico_queda.png",
+     "arquivo": "pfx_raio_meteorico_queda.png",
      "quadro": [
-      48,
+      74,
       32
      ],
      "n": 8,
      "fps": 16,
      "loop": true,
      "ancora": [
-      36,
+      62,
       16
      ]
     },
@@ -1224,7 +1224,7 @@
      ]
     },
     "marca": {
-     "arquivo": "raio_meteorico_marca.png",
+     "arquivo": "pfx_raio_meteorico_marca.png",
      "quadro": [
       48,
       32
@@ -1408,15 +1408,78 @@
     "impacto": {
      "arquivo": "pfx_fx_aliado_impacto.png",
      "quadro": [
-      56,
+      48,
       44
      ],
      "n": 5,
      "fps": 30,
      "loop": false,
      "ancora": [
-      20,
+      24,
       22
+     ]
+    }
+   }
+  },
+  "fx_morte": {
+   "armas": [
+    "fx_morte"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_morte_impacto.png",
+     "quadro": [
+      56,
+      48
+     ],
+     "n": 9,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      28,
+      34
+     ]
+    }
+   }
+  },
+  "fx_dano_heroi": {
+   "armas": [
+    "fx_dano_heroi"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_dano_heroi_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "fx_cura": {
+   "armas": [
+    "fx_cura"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_cura_impacto.png",
+     "quadro": [
+      48,
+      64
+     ],
+     "n": 12,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      24,
+      52
      ]
     }
    }

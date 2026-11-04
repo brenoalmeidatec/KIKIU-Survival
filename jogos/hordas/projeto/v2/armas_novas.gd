@@ -474,7 +474,7 @@ func vel_anim(h) -> float:
 
 
 ## Toca a folha `f` (impacto ou marca no chão) uma vez em `p`. Só efeito: o dano já saiu no evento que chamou isto. Pool fixo, sem nó.
-## `flip` -1 espelha (as folhas de acerto apontam para a direita); `cor` tinge a folha cinza dos aliados.
+## `flip` -1 espelha; `cor` tinge a folha cinza dos aliados e do acerto do herói.
 func tocar_fx(f: Dictionary, p: Vector2, esc := 1.0, chao := false, flip := 1.0, cor := Color.WHITE) -> void:
 	if f.is_empty():
 		return
@@ -552,7 +552,8 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		pai.combate.ferir(m, dano, dir, 40.0, 0.1, COR_CRIT if crit else _cor_num(a.cor), not estilhaco, crit)
 		var fa: Dictionary = it.fa
 		if fa.has("impacto"):  # o impacto toca no ponto do acerto (o evento real), não no fim da animação do voo
-			tocar_fx(fa.impacto, p, 2.0 if crit else 1.0, false, -1.0 if dir.x < 0.0 else 1.0)  # os estilhaços seguem o lado do golpe
+			tocar_fx(fa.impacto, p, 2.0 if crit else 1.0)
+			pai.fx.faiscas(p, dir, 6 if crit else 4, a.cor, 190.0)  # os estilhaços seguem a direção exata do golpe e caem
 		elif Anim.suave:  # sem folha: brilhos no acerto
 			pai.fx.brilhos(p, 12.0, a.cor, 3)
 		if crit and Anim.suave:

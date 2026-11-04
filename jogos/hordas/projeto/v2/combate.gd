@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const ApiceTela := preload("res://v2/apice_tela.gd")
 const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
+const StatusCorpo := preload("res://v2/status_corpo.gd")
 const FxFolha := preload("res://v2/fx_folha.gd")  # folhas do pixelfx (docs/PIXELFX.md)
 const FxStatus := preload("res://v2/fx_status.gd")  # chama, relógio e estrelas sobre quem queima, está lento ou atordoado
 const Orbes := preload("res://v2/orbes.gd")
@@ -54,6 +55,8 @@ var mundo
 var cfg: Dictionary = {}
 var fx
 var apice_tela  # varredura reutilizável do ÁPICE; anel no mundo e luz na UI, sem criar nós ao ganhar bônus
+var _marcas: Dictionary = Dados.json("v2_pixelfx").get("marcas", {})  # arma -> status que ela deixa no corpo (só desenho)
+var _marca_dur := float(Dados.json("v2_pixelfx").get("marca_dur", 0.6))
 var fx_folha  # folhas do pixelfx em pool fixo (v2/fx_folha.gd): os módulos de status e coleta tocam por aqui
 var fx_status  # os status visíveis (v2/fx_status.gd): acha quem queima, está lento ou atordoado e prende o efeito do fx_folha
 var orbes
@@ -702,7 +705,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, COR_CRIT, m)
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
 		fx.flash(m, 0.1)
-		fx.folha("estrela", ponto, 15.0 if crit else 11.0, cor, 0.14)  # camada 1: a centelha de 2 quadros em todo acerto
+		armas.novas.tocar_fx(Anim.de("fx_aliado").get("impacto", {}), ponto, 1.0, false, 1.0, cor)  # camada 1: a cruz de acerto
 		if crit or pancada or passo.nome == "estocada":  # camada 2: a marca branca sustentada só no golpe forte
 			fx.flash(m, 0.45, Color.WHITE, 3)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
@@ -768,6 +771,7 @@ func matar(m, leve := false) -> void:
 	if leve:  # morte da limpeza da tela: só uma fração das partículas (são dezenas de mortes juntas)
 		parts *= _lp_part
 	fx.estouro(c, Color(0.9, 0.9, 0.85), roundi(parts))
+	armas.novas.tocar_fx(Anim.de("fx_morte").get("impacto", {}), m.pos)
 	audio.tocar("morte", randf_range(0.9, 1.12) * (0.7 if grande else 1.0), -1.0, 0.03)
 	mundo.abates += 1
 	mundo.combo += 1
@@ -881,6 +885,9 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	especial.dano(util)
 	contar_dano(fonte_dano, util)
 	ferimentos += 1
+	var marca: String = _marcas.get(fonte_dano, "")
+	if marca != "":
+		m.marcar(StatusCorpo.ESTADOS[marca], _marca_dur)
 	dano_causado += dn
 	if numero:
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, critico)
@@ -1014,6 +1021,7 @@ func heroi_apanhou(valor: float) -> void:
 	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
+	armas.novas.tocar_fx(Anim.de("fx_dano_heroi").get("impacto", {}), h.pos + Vector2(0, -16))
 	audio.tocar("dano_heroi", randf_range(0.95, 1.05), 0.0, 0.05)
 	hit_stop(0.06)
 

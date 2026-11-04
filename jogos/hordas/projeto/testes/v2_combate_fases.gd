@@ -288,7 +288,7 @@ func checar_perigo() -> void:
 	passos(25)
 	ok(novas().impactos == imp0 and w.heroi.vida == v0, "nada toca nem fere antes do disparo")
 	passos(10)
-	ok(novas().impactos == imp0 + 2, "a pedra e o estouro tocam a folha no disparo (%d)" % (novas().impactos - imp0))
+	ok(novas().impactos == imp0 + 3, "a pedra, o estouro e o sangue do herói tocam a folha no disparo (%d)" % (novas().impactos - imp0))
 	ok(w.heroi.vida < v0, "o dano do aviso saiu no mesmo instante")
 	w.heroi.imortal = true
 
