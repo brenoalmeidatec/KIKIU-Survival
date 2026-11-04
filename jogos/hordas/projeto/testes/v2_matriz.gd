@@ -105,7 +105,7 @@ func _ready() -> void:
 	ok(float(be.regen_parado) == 3.0 and float(be.atraso_recarga) == 2.5 and float(be.retorno) == 0.25, "a barra do escudo do Nick não mudou")
 	ok(perto(esc.mov_de("lightwolf"), 0.75, 0.001) and perto(esc.mov_de("nicao"), float(d.escudo.mov), 0.001), "andar erguido: matriz 75%, escudo o dele")
 	var mz: Dictionary = d.matriz
-	ok(float(mz.arco) == 140.0 and float(mz.casca) == 40.0, "matriz: arco 140 graus, casca a 40 px")
+	ok(float(mz.arco) == 140.0 and float(mz.casca) == 88.0, "matriz: arco 140 graus, casca a 88 px (no pé da moldura da frente)")
 	ok(float(mz.visual.pulso_hz) <= 2.0 and float(mz.visual.impacto_min) >= 0.5, "o brilho pulsa a no máximo 2 Hz e o clarão não passa de 2 por segundo")
 
 	# 2. o herói nasce com a barra e publica o slot S
@@ -235,8 +235,10 @@ func _ready() -> void:
 		if m != null and m.vivo:
 			m.vivo = false
 	zerar()
+	var casca := float(mz.casca)
 	var perto_a = monstro_a(30.0)
-	var longe = monstro_a(80.0)
+	var meio_a = monstro_a(70.0)  # longe do corpo, no meio do campo grande desenhado (a casca de antes, 40 px, não chegava aqui)
+	var longe = monstro_a(casca + float(perto_a.raio) + 15.0)
 	var atras = monstro_a(-30.0)
 	var lado = monstro_a(0.0, 30.0)
 	perto_a.recarga = 99.0
@@ -248,13 +250,47 @@ func _ready() -> void:
 	w.avancar(PASSO)
 	ok(mat.empurrados >= 1 and perto_a.emp.x > 100.0, "erguida, quem está na casca e no arco leva empurrão para fora (emp %s, peso %s)" % [perto_a.emp, peso])
 	ok(perto_a.vida == vida_m, "o empurrão não tira vida")
-	ok(longe.emp.length() < 5.0, "fora da casca (80 px): nada")
+	ok(meio_a.emp.x > 100.0, "a 70 px (onde o campo está desenhado) também leva empurrão (emp %s)" % meio_a.emp)
+	ok(longe.emp.length() < 5.0, "fora da casca (%.0f px): nada" % (casca + float(perto_a.raio) + 15.0))
 	ok(atras.emp.length() < 5.0, "atrás do herói (fora do arco): nada")
 	ok(lado.emp.length() < 5.0, "a 90 graus da mira (fora do arco de 140): nada")
 	passos(30)
 	ok(perto_a.pos.x > antes_x, "o monstro da casca é afastado do herói (x %s para %s)" % [antes_x, perto_a.pos.x])
-	for m in [perto_a, longe, atras, lado]:
+	for m in [perto_a, meio_a, longe, atras, lado]:
 		m.vivo = false
+
+	# 8b. a PAREDE: na frente do campo (de lado até a meia-largura da moldura da frente) o monstro para na distância da casca MEDIDA NA MIRA, rente ao pé da
+	# moldura da frente, e não no raio: num raio de 88 o monstro a 35 graus parava com o pé a ~72 px na mira, 12 px para dentro da moldura (atravessando o campo).
+	# Fora da largura do campo, nas pontas do arco, continua o raio (a marca no chão).
+	zerar()
+	var meia_f := float(mat._plano(h, mat._n() - 1).w)
+	var diag = monstro_a(0.0)
+	diag.pos = ponto(35.0, 75.0)
+	var ponta = monstro_a(0.0)
+	ponta.pos = ponto(-66.0, 75.0)  # de lado além da largura do campo, ainda dentro do arco de 140
+	h.escudo_forcado = true
+	var fmin := 999.0
+	var rmin_p := 999.0
+	for i in 180:  # 3 s: os dois andam para o herói e o empurrão os segura
+		passos(1)
+		if i >= 90:
+			var rd: Vector2 = diag.pos - h.pos
+			fmin = minf(fmin, rd.x)  # mirando para a direita, a distância na mira é o x no chão
+			var rp: Vector2 = ponta.pos - h.pos
+			rmin_p = minf(rmin_p, Vector2(rp.x, rp.y / ACHATA).length())
+	var lado_d: float = absf((diag.pos.y - h.pos.y) / ACHATA)
+	print("parede: diagonal na mira %.1f px (lado %.1f, meia-largura %.0f); ponta no raio %.1f px" % [fmin, lado_d, meia_f, rmin_p])
+	ok(lado_d <= meia_f + float(diag.raio), "o monstro da diagonal está na frente do campo (de lado %.1f, meia-largura %.0f)" % [lado_d, meia_f])
+	ok(
+		fmin >= float(mz.casca) - 4.0,
+		"a 35 graus ele para rente ao pé da moldura da frente, na mira (%.1f px, o pé a %.0f): não atravessa o campo" % [fmin, float(mz.casca) - 4.0]
+	)
+	ok(
+		rmin_p >= float(mz.casca) - 6.0 and rmin_p <= float(mz.casca) + float(ponta.raio) + 12.0,
+		"na ponta do arco ele para no raio da casca (%.1f px)" % rmin_p
+	)
+	diag.vivo = false
+	ponta.vivo = false
 
 	# 9. o Lobo não tem matriz: a quebra do mecha apaga o slot e a barra
 	zerar()
@@ -291,14 +327,34 @@ func _ready() -> void:
 			if h.dir_olhar.dot(rel.normalized()) > 0.5:
 				dmin = minf(dmin, Vector2(rel.x, rel.y / ACHATA).length())
 	print("horda: dist min %.1f px, vida %.1f -> %.1f, absorvido %.1f, barra %.1f" % [dmin, vida_h, h.vida, mat.absorvido - abs_h, h.def])
-	ok(dmin > 25.0, "a horda de 8 cães à frente não chega ao corpo (distância mínima %.1f px)" % dmin)
+	ok(
+		dmin > 0.75 * float(mz.casca),
+		"a horda de 8 cães à frente fica na casca, na frente do campo (distância mínima %.1f px; casca %.0f)" % [dmin, float(mz.casca)]
+	)
 	ok(
 		h.def >= 75.0 and mat.absorvido - abs_h <= 5.0,
 		"e a barra só gasta o segurar: 4 s x 5 = 20, de 100 para ~80 (%.1f, absorvido %.1f)" % [h.def, mat.absorvido - abs_h]
 	)
 	ok(h.vida == vida_h, "e não tira vida do herói em 4 s")
+	# 10b. o CANHÃO contra a horda que a matriz segurou (a medida que faltava da casca de 88): baixa a matriz e atira 3 s nas posições em que os cães pararam
+	# (espantalhos de vida enorme, presos lá), e de novo com a mesma horda puxada para a distância em que a casca antiga (40) a segurava (~35 px).
+	var held: Array = []
 	for cao in horda:
+		var rel_c: Vector2 = cao.pos - h.pos
+		if h.dir_olhar.dot(rel_c.normalized()) > 0.5:
+			held.append(rel_c)
 		cao.vivo = false
+	held.sort_custom(func(a, b): return Vector2(a.x, a.y / ACHATA).length() < Vector2(b.x, b.y / ACHATA).length())
+	var dps_nova := _dps_horda(held)
+	var perto_h: Array = []
+	for rel_c in held:
+		perto_h.append(rel_c * (35.5 / maxf(dmin, 1.0)))
+	var dps_antiga := _dps_horda(perto_h)
+	print("canhão na horda segurada: %d alvos, dps %.1f a ~%.0f px (casca 88) contra %.1f a ~35 px (casca 40)" % [held.size(), dps_nova, dmin, dps_antiga])
+	ok(
+		held.size() >= 6 and dps_nova >= 40.0,
+		"o canhão ainda rende na horda segurada mais longe (%.1f de dano por segundo em %d alvos)" % [dps_nova, held.size()]
+	)
 
 	# 11. perfil Baixo (partículas "poucas"): só a faixa parada e o som, sem clarão na faixa, luz rápida nem tremor de tela (item 7 do plano)
 	zerar()
@@ -361,3 +417,30 @@ func _ready() -> void:
 	Herois.forcado = ""
 	print("v2_matriz falhas=%d" % falhas)
 	get_tree().quit()
+
+
+## O dano por segundo do canhão em 3 s de tiro contra espantalhos de vida enorme presos nas posições `alvos` (relativas aos pés), a matriz baixada, mirando no 1º
+## (como `_segurar` de testes/v2_lightwolf: o mouse onde a linha da boca ao peito do alvo aponta).
+func _dps_horda(alvos: Array) -> float:
+	zerar("medio")
+	var h = w.heroi
+	var ms := []
+	for a in alvos:
+		var m = w.nascer_monstro("inimigo_espantalho", h.pos + a)
+		m.vida = 100000.0
+		m.vida_max = 100000.0
+		ms.append(m)
+	w.mouse_forcado = h.centro() + (alvos[0] + Vector2(0, -6) - Heroi.ORIGEM_GOLPE)
+	var dano0: float = w.combate.dano_causado
+	h.ataque_forcado = true
+	for i in 180:
+		w.avancar(PASSO)
+		for k in ms.size():
+			ms[k].atordoa_t = 0.0
+			ms[k].pos = h.pos + alvos[k]
+	h.ataque_forcado = false
+	passos(40)  # as últimas bolinhas ainda estão a caminho
+	var dps: float = (w.combate.dano_causado - dano0) * 60.0 / 180.0
+	for m in ms:
+		m.vivo = false
+	return dps

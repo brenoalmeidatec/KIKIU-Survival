@@ -2975,3 +2975,38 @@ _Claude do Alisson (notebook)_
   - o ícone do slot S da HUD ainda é o arco antigo;
   - bug antigo: a sombra do projétil usa o transform do anterior em `_desenhar_corpo`;
   - comentário velho em `v2/combate.gd:635`.
+
+### 04/11/2026 — LightWolf rodada 2 (Claude do Alisson, notebook, PR #620)
+
+- **Matriz maior e mais à frente (pedido do Alisson no #620):**
+  - O campo das 3 molduras cresceu e foi para a frente: os pés ficam a 34, 59 e 84 px do mecha, e a moldura da frente mede 136x80 px de frente (o mecha tem 55x73). Os números estão em `dados/v2_secundario.json > matriz > visual`.
+  - A casca da regra foi de 40 para 88 px e virou uma PAREDE: na frente do campo (de lado até a meia-largura da moldura da frente) ela é medida na mira, e o monstro para rente ao pé da moldura em qualquer ângulo. Nas pontas do arco vale o raio.
+  - A horda agora para a ~94 px, em vez de ~35. O empurrão, o arco, a absorção e a barra não mudaram.
+  - DPS medido no `v2_matriz`: o canhão na horda segurada dá ~60/s, contra ~67/s na mesma horda a ~35 px.
+  - Testes novos: `v2_matriz_visual` (geometria) e `v2_matriz` 8b (parede). Os dois falham no código antigo.
+  - Visto em captura real (lw_2b): ninguém atravessa o campo.
+  - Pendente: o Alisson jogar e sentir o balanço; o caso Matriz Ampla no teto (300 graus) atrás do mecha continua no raio de 88 e sem desenho; de lado (lw_2c) a leitura da profundidade monstro x painel não foi confirmada.
+- **Impacto da rajada do LightWolf (04/11/2026, Claude do Alisson, branch alisson/lw-canhao-matriz):** a pedido do Alisson ("animação da explosão do projetil").
+  - **Explosão das bolinhas:** a explosão fica em `v2/estalos_visual.gd`, com quadros desenhados em código na grade de 1 px. São três tipos: ESTALO no acerto (11x11, 4 quadros em 0,2 s), ESTALO_CRIT no crítico (15x15, 5 quadros em 0,24 s) e FIZZLE no fim do alcance (7x7, 3 quadros em 0,15 s).
+  - **Custo:** pool fixo de 12 vagas, sem nó e sem sorteio, com teto de 3 por quadro e 2 por rajada (o crítico passa só do teto por rajada). O mesmo lugar (8 px) acende no máximo 2 Hz, ou 1 Hz com "Reduzir piscadas", que também mostra só as faíscas, sem o miolo branco.
+  - **Perfil Baixo e "nenhuma":** sem estalo e sem fizzle.
+  - **Correção da revisão:** as 8 faíscas da fase do anel ficaram com o mesmo raio, porque com diagonais curtas o estalo lia como mira (⊕).
+  - **Testes:** o teste `estalos_rajada`, dentro do `v2_mecha_projeteis`, falha no código antigo e na regra anterior do Baixo. Vizinhos com falhas=0.
+- **Pendente:**
+  - o Alisson ver em movimento (a fase do anel não apareceu em foto parada);
+  - decidir se 2 estalos/s num alvo único colado é ralo (o botão é REPETE_S/REGIAO);
+  - decidir se quer o estalo no Baixo (hoje zera, pela regra "Baixo sem partículas extras");
+  - o roteiro `--fotos` não cria a pasta de destino: sem ela, o PNG falha com "Can't save PNG".
+## 2026-11-04: "mecha tremendo todo" (PR #620, frente TREMOR) (Claude do Alisson (PC))
+
+O tremor tinha três causas, todas medidas antes de mexer.
+- Câmera e herói arredondados cada um no seu meio pixel. A 1,5 px por quadro, o corpo vibrava 1 px na tela a 30 Hz. Agora v2/camera_mundo.gd recebe o resto do herói (pos - pr) e desenha a câmera em (pos - residuo).round(). No eixo preso na borda do mapa o resto não entra. centro_base() usa a mesma conta.
+- Andar atirando metia o quadro do andar entre as rajadas: 10 trocas de pose por segundo. Agora _coluna_acao segura a mira também andando.
+- O quadro em que o golpe sai não andava (engasgo de 1 quadro por rajada). Agora _livre anda nesse quadro na velocidade mov_golpe. Isso vale para todos os heróis: no máximo ~1,2 px a mais por golpe.
+
+Medido em janela real, andando e atirando: inversões do corpo na tela 18 → 3, faixa 21 → 2 px. Teste novo: v2_mecha_tremor, que dava 5 falhas no código antigo e dá 0 agora. Roteiro novo: --roteiro=andar_seq, com 100 fotos seguidas (use --fixed-fps 60 ANTES do `--`).
+
+Pendente:
+(1) Andando e atirando, o mecha fica na pose de mira e as pernas deslizam sem andar. Antes do PR isso já acontecia durante o golpe. O conserto de verdade é uma folha "andar atirando" (pernas no ciclo, braços na mira). Não volte ao pisca do andar. O Alisson aprova jogando.
+(2) A câmera segue o passo inteiro só do herói principal. No coop, o segundo herói continua com o meio pixel dele: não piorou, mas não foi corrigido nem medido. O controle também não foi medido.
+(3) A janela de 1280 escala o 960 por 4/3, e o fundo anda 3,1 px na tela. Não é tremor de vai e volta, mas é irregular. Se incomodar, a saída está na escala inteira do project.godot (fora desta frente).

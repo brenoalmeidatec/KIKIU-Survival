@@ -39,6 +39,9 @@ extends RefCounted
 ##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mira travada), 3_misseis (a E no disparo),
 ##                         4_salto, 5_aceso e 6_explosao (o Q, Autodestruição: o piloto salta, o mecha acende, o estouro), 7_lobo (o Lobo livre), 8_chamado
 ##                         (o CHAMAR apertado) e 9_volta (o mecha de volta), e 10_carta (escolha com uma carta só dele). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=andar_seq   (o "tremendo todo" de 04/11) fotos SEGUIDAS, uma por quadro de render, do herói escolhido (o LightWolf com
+##                         --heroi=lightwolf) sem monstros: anda_00..29 (andando para a direita, sem atirar), anda_tiro_00..39 (andando e
+##                         atirando para a direita) e tiro_00..29 (parado atirando). Para medir quadro a quadro o corpo contra o cenário.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -68,6 +71,7 @@ const LW_CARTAS := ["sifao", "ampla", "cabo"]  # as cartas só do LightWolf (dad
 var lw_expl0 := 0  # o roteiro do LightWolf: quantas explosões já tinham saído antes do Q
 var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da matriz de frente e de lado (volta depois)
 var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
+var seq_n := 0  # o roteiro andar_seq: quantas fotos seguidas já saíram no trecho atual
 
 
 func montar(m, a: Dictionary) -> void:
@@ -153,6 +157,8 @@ func atualizar(dt: float) -> void:
 				_r_inicio()
 			"lightwolf":
 				_r_lightwolf()
+			"andar_seq":
+				_r_andar_seq()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -369,6 +375,34 @@ func _r_lightwolf() -> void:
 				passo = 18
 		18:
 			mundo.get_tree().quit()
+
+
+## Fotos seguidas (uma por quadro de render: a próxima é pedida no quadro depois da anterior) para medir o tremor do corpo contra o
+## cenário. Herói imortal, sem monstros, mira bem longe à direita (o ângulo quase não muda andando). Os trechos: andando sem atirar,
+## andando atirando e parado atirando; cada um espera a câmera assentar (1 s) antes da primeira foto.
+func _r_andar_seq() -> void:
+	var h = mundo.heroi
+	const TRECHOS := [["anda", Vector2.RIGHT, false, 30], ["anda_tiro", Vector2.RIGHT, true, 40], ["tiro", Vector2.ZERO, true, 30]]
+	if passo == 0:
+		_preparar()
+		mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+		passo = 1
+		t_passo = 0.0
+		seq_n = 0
+	if passo > TRECHOS.size():
+		mundo.get_tree().quit()
+		return
+	var tr: Array = TRECHOS[passo - 1]
+	h.entrada_forcada = tr[1]
+	h.ataque_forcado = tr[2]
+	if t_passo < 1.0:
+		return
+	_foto("%s_%02d" % [tr[0], seq_n])
+	seq_n += 1
+	if seq_n >= int(tr[3]):
+		passo += 1
+		t_passo = 0.0
+		seq_n = 0
 
 
 func _cercar_lightwolf(n: int) -> void:

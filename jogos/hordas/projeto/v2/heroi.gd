@@ -775,8 +775,8 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return _escudo(dt, v)
 	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
-		if _iniciar_golpe():
-			return Vector2.ZERO
+		if _iniciar_golpe():  # o quadro em que o golpe sai já anda no passo do golpe: parado nele, o tiro contínuo do mecha engasgava 1 quadro por rajada
+			return v * vel_base * m_vel_mov * float(mundo.combate.cfg.heroi.mov_golpe) * dt
 	if not andando:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
@@ -1592,7 +1592,9 @@ func _coluna_acao(dt: float) -> int:
 		if not hab_anim_quadros.is_empty():
 			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
-	if corpo_fixo and estado == Estado.LIVRE and not andando and not escudo_ativo and _pose_tiro_t > 0.0 and _tem_anim("combo"):
+	# o intervalo entre tiros segura a mira também andando: sem isso, andar atirando metia 1 quadro do andar (pernas e braços em outra pose,
+	# ~2000 px diferentes) entre duas rajadas, 10 trocas de pose por segundo (o "tremendo todo" de 04/11)
+	if corpo_fixo and estado == Estado.LIVRE and not escudo_ativo and _pose_tiro_t > 0.0 and _tem_anim("combo"):
 		return _coluna_anim("combo", 0)
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)

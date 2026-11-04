@@ -14,11 +14,20 @@ extends RefCounted
 ##  - AURORA LUNAR (Sifão 3 + Ampla 3, sem consumir as peças): a cura do sifão dobra (e o teto também) e a cura que passa da vida cheia vira defesa (`excedente_barra`, 50%).
 ##  - CABO DE RESGATE não passa por aqui: multiplica a carga do chamado em `especial.carregar` (`cartas.mult_cabo`).
 ##
+## A casca de 88 px (era 40) segura a horda mais longe, a ~94 px do herói no chão: ainda dentro dos 170 px do canhão. MEDIDO em testes/v2_matriz: o canhão nos 8 cães
+## que a matriz parou dá ~61 de dano por segundo, contra ~64 com a mesma horda a ~35 px (a casca antiga); o leque abre, mas a horda espalhada pega o que o alvo único
+## perderia. O empurrão (170 px/s) não mudou. A casca é uma PAREDE na frente do campo: de lado até a meia-largura da moldura da frente (+ o raio do monstro) ela é medida
+## NA MIRA, então o monstro para rente ao pé da moldura da frente em qualquer ângulo (num raio só, a 35 graus ele parava 12 px para dentro dela, atravessando o campo);
+## nas pontas do arco, fora da largura do campo, vale o raio da casca, onde a marca fina no chão mostra o alcance.
+##
 ## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo` serve aos dois, velocidade, a barra); este módulo cuida da geometria (`cobre`), da absorção, do empurrão
 ## (`atualizar`, no tempo do mundo) e do visual (`efeitos`, no relógio de parede). O VISUAL é 100% em código (nenhuma folha) e segue a Matriz de Defesa como IDEIA (pedido do
 ## Alisson): um campo EM PÉ na frente do mecha, na direção da mira, feito de 3 MOLDURAS hexagonais (`molduras`) encaixadas em degraus: a de trás menor e mais perto do mecha,
 ## a da frente maior e mais longe; todas com contorno de 2 px (de 1 px as de trás sumiam sobre o corpo do mecha e o campo se lia como um contorno só) e preenchimento
-## translúcido leve, em px inteiros e sem antialiasing (a grade de 1 px do mundo). De frente, o topo de cada moldura sobe ~13 px e os lados abrem ~9 px em relação à de trás.
+## translúcido leve, em px inteiros e sem antialiasing (a grade de 1 px do mundo). De frente, o topo de cada moldura sobe ~8 px e os lados abrem ~14 px em relação à de trás.
+## O campo é GRANDE e BEM À FRENTE (pedido do Alisson no #620): os pés a 34, 59 e 84 px do herói no chão e a da frente com 136x80 px de frente (o mecha tem 55x73), não
+## uma caixinha em volta do corpo. A CASCA da regra acompanha a moldura da frente (88 px, 4 por fora do pé dela): o monstro que o empurrão segura fica logo na frente do
+## campo, nunca atravessando a moldura (testes/v2_matriz_visual cobra os dois juntos).
 ## Cada moldura é um painel vertical no chão: a base fica a `distancia` + i x `recuo` px do herói, na mira, e o eixo da largura é a perpendicular à mira vista de cima (de frente
 ## para a câmera quando mira para baixo, largo; de lado quando mira para a direita ou a esquerda, estreito, mas nunca abaixo de `lado_min` da largura). A largura cresce com o
 ## arco (`arco_graus`, a Matriz Ampla abre). O nó do desenho fica DENTRO do y-sort do mundo (`no_mundo`), com a chave de ordem na base do campo: mirando para baixo o campo é
@@ -227,7 +236,9 @@ func abaixou(h) -> void:
 	combate.fx.luz_rapida(centro, COR_BASE, 1.6, 48.0, 0.2)
 
 
-## O empurrão, todo quadro do mundo enquanto erguida: quem está na casca e dentro do arco é empurrado para longe do herói. Não toca na vida nem no flash do monstro.
+## O empurrão, todo quadro do mundo enquanto erguida: quem está na casca e dentro do arco é empurrado para longe do herói. Na frente do campo a casca é a parede (a distância
+## na mira); fora da largura dele, o raio. O rumo é sempre o radial (o monstro anda para o herói e o empurrão o devolve na mesma linha, sem escorregar de lado).
+## Não toca na vida nem no flash do monstro.
 func atualizar(dt: float) -> void:
 	_cesta = minf(_cesta + teto_cura() * dt, teto_cura())  # a cesta do teto de cura do sifão enche à razão do teto por segundo
 	empurrados = 0
@@ -238,14 +249,23 @@ func atualizar(dt: float) -> void:
 	var forca := float(cfg.empurrao)
 	var graus := arco_graus()
 	var hp: Vector2 = h.pos
+	var u := _mira_chao(h)
+	var meia := float(_plano(h, _n() - 1).w)  # a meia-largura da moldura da frente, no chão (a Matriz Ampla alarga a parede junto com o desenho)
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo:
 			continue
 		var rel: Vector2 = m.pos - hp
-		var lim: float = casca + float(m.raio)
-		if absf(rel.x) > lim or absf(rel.y) > lim * ACHATA:
+		var raio := float(m.raio)
+		var lim: float = casca + raio
+		var fora: float = Vector2(lim, meia + raio).length()  # o canto da parede, o mais longe que alguém pode ser segurado
+		if absf(rel.x) > fora or absf(rel.y) > fora * ACHATA:
 			continue
-		if Vector2(rel.x, rel.y / ACHATA).length() > lim:
+		var rf := Vector2(rel.x, rel.y / ACHATA)
+		var na_mira := rf.dot(u)
+		if na_mira > 0.0 and absf(rf.cross(u)) <= meia + raio:
+			if na_mira > lim:  # na frente do campo: a PAREDE, a casca medida na mira (rente ao pé da moldura da frente)
+				continue
+		elif rf.length() > lim:  # nas pontas do arco, fora da largura do campo: o raio (a marca no chão)
 			continue
 		if not combate.escudo.cobre_arco(h, m.pos, graus):
 			continue

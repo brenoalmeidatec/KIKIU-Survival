@@ -4,13 +4,15 @@ extends "res://testes/isolamento_v2.gd"
 # parte do mecha (o corpo dele tem ~73 px); mirando para baixo o campo fica na frente do mecha (chave do y-sort abaixo dos pés) e largo; para cima, atrás (chave acima dos pés,
 # o campo de costas não cobre o mecha); para a direita, estreito e todo à direita; as 8 direções dão hexágonos convexos de largura visível; a Matriz Ampla alarga; o clarão
 # cai no plano da moldura da frente; no perfil Baixo não há varredura nem pulso; a varredura e o pulso ficam em até 2 Hz. Falha no código antigo (faixa deitada no chão na
-# camada glow, sem `molduras`). A REGRA (cobre, absorver, empurrar) é do v2_matriz e do v2_mare_matriz, que não mudam.
+# camada glow, sem `molduras`). O campo é grande e bem à frente (a da frente a 70 px ou mais no chão e com o dobro da largura do mecha) e a casca da regra acompanha
+# a moldura da frente (colada por fora, até 8 px; a marca no chão no pé dela): falha na geometria de antes (a da frente a 30 px, 88 px de largura, casca 40). A REGRA (cobre, absorver, empurrar) é do v2_matriz e do v2_mare_matriz, que não mudam.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_matriz_visual.tscn  (imprime "v2_matriz_visual falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const PASSO := 1.0 / 60.0
 const ALTURA_MECHA := 73.0  # o corpo opaco do mecha na folha (lightwolf_mecha_albedo.png, quadro 128x192: y 50 a 123)
+const LARGURA_MECHA := 55.0  # idem na largura (x 36 a 91)
 var falhas := 0
 var w
 
@@ -125,9 +127,18 @@ func _ready() -> void:
 	)
 	ok(meio.end.y >= tras.end.y + 3.0 and frente.end.y >= meio.end.y + 3.0, "de frente, cada pé fica pelo menos 3 px abaixo do de trás")
 	ok(tras.position.x >= meio.position.x + 4.0 and meio.position.x >= frente.position.x + 4.0, "de frente, cada lado sai pelo menos 4 px para fora do de trás")
-	# a moldura da frente fica DENTRO da casca (onde a regra para os monstros): o monstro parado ali está na frente do campo, não atravessando a moldura
+	# o campo GRANDE e BEM À FRENTE (pedido do Alisson no #620, a ideia da Matriz de Defesa): a da frente passa a largura do mecha com folga e o pé dela fica a 70 px ou
+	# mais do herói, no chão (a de antes ficava a 30 px, dentro do mecha, e media 88 px de largura: uma caixinha em volta dele)
 	var d_frente := float(vis.distancia) + float(int(vis.molduras) - 1) * float(vis.recuo)
-	ok(d_frente <= float(mat.cfg.casca) - 6.0, "a moldura da frente fica dentro da casca (%.0f px; casca %.0f)" % [d_frente, float(mat.cfg.casca)])
+	ok(d_frente >= 70.0, "a moldura da frente fica bem à frente do mecha (%.0f px no chão)" % d_frente)
+	ok(frente.size.x >= 2.0 * LARGURA_MECHA, "de frente a moldura da frente tem o dobro da largura do mecha (%.0f px de %.0f)" % [frente.size.x, LARGURA_MECHA])
+	ok(frente.end.y >= h.pos.y + 35.0, "o pé da moldura da frente fica bem abaixo dos pés do mecha na tela (%.0f; pés %.0f)" % [frente.end.y, h.pos.y])
+	# REGRA x VISUAL: a moldura da frente fica DENTRO da casca e colada nela (no máximo 8 px): o monstro que a casca segura fica logo na frente do campo e é desenhado
+	# por cima dele, como deve; fora da casca ele pareceria atravessar a moldura, e longe demais para dentro o campo pareceria não segurar nada
+	var casca := float(mat.cfg.casca)
+	ok(d_frente <= casca and d_frente >= casca - 8.0, "a moldura da frente fica colada na casca, por dentro (%.0f px; casca %.0f)" % [d_frente, casca])
+	# e a marca no chão (o alcance do empurrão) cai no pé da moldura da frente, a no máximo 2 px
+	ok(absf(mat._raio() - d_frente) <= 2.0, "a marca no chão fica no pé da moldura da frente (%.0f; frente %.0f)" % [mat._raio(), d_frente])
 
 	# 3. mirando para cima: atrás do mecha (ordenado antes dele) e todo acima dos pés
 	mirar(Vector2.UP)

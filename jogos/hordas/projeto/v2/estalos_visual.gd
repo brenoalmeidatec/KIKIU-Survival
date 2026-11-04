@@ -1,0 +1,253 @@
+extends RefCounted
+## Estalo das bolinhas do canhão do mecha (a rajada do LightWolf, `bala` em v2/adagas.gd): no ACERTO, uma explosãozinha de energia âmbar-branca
+## no ponto do contato (ESTALO, 4 quadros em 0,2 s; o crítico usa o ESTALO_CRIT, maior, 5 quadros em 0,24 s); no FIM DO ALCANCE sem acertar,
+## um "fizzle" menor (FIZZLE, 3 quadros em 0,15 s). Só desenha: o dano, o número, o som e o RNG continuam em adagas._acertar (aqui não há sorteio).
+## Quadros desenhados em código uma vez (montar), na grade de 1 px: desenhados com draw_texture na posição inteira, sem escala nem giro.
+## Custo (são ~28 bolinhas/s): pool fixo de MAX vagas, nenhum nó por impacto, e quatro tetos antes de ocupar uma vaga:
+##  - por quadro: POR_QUADRO impactos (x efe_impactos do nível de partículas);
+##  - por rajada (o `lancar` de 5 bolinhas): POR_RAJADA impactos, contando estalo e fizzle (x efe_impactos; o crítico passa deste teto, não dos outros);
+##  - por lugar: o mesmo ponto (REGIAO px) não estala de novo antes de REPETE_S (no máximo 2 Hz; 1,0 s com "Reduzir piscadas");
+##  - pool cheio: o impacto novo é descartado (não rouba a vaga de quem está tocando nem a memória de lugar).
+## Perfil Baixo (efe_impactos < 0,5) e partículas "nenhuma" (0): nada (é efeito extra; o monstro continua piscando no acerto).
+## "Reduzir piscadas": sem o miolo branco; mostra só o último quadro (faíscas âmbar) apagando em alfa, e o lugar espera 1,0 s.
+
+const Piscadas := preload("res://v2/piscadas.gd")
+const MAX := 12
+const POR_QUADRO := 3
+const POR_RAJADA := 2
+const REGIAO := 8.0  # px: dois impactos mais perto que isto são o mesmo lugar
+const REPETE_S := 0.5  # o mesmo lugar acende no máximo 2 vezes por segundo
+const MEMORIA := 24  # lugares lembrados (anel); com o anel cheio de lugares ainda "quentes", o impacto novo é descartado
+const NUM_RAJADAS := 16  # rajadas recentes com a conta de impactos (anel, como o dos números em adagas.gd)
+enum { ESTALO, ESTALO_CRIT, FIZZLE }
+const DUR := [0.2, 0.24, 0.15]
+const LADO := [11, 15, 7]  # quadros ímpares: o centro cai num pixel
+
+const BRANCO := Color(1.0, 1.0, 1.0)
+const QUENTE := Color(1.0, 0.93, 0.66)
+const AMBAR := Color(1.0, 0.7, 0.22)  # o mesmo âmbar do corpo da bolinha
+const BRASA := Color(0.85, 0.42, 0.1)
+const CONTORNO := Color(0.16, 0.08, 0.03)  # o contorno escuro da bolinha: destaca do chão quente
+
+var quadros: Array = []  # [tipo] -> Array[Texture2D]
+var pos := PackedVector2Array()
+var tempo := PackedFloat32Array()  # restante (s); 0 = vaga livre
+var tipo := PackedInt32Array()
+var _mem_pos := PackedVector2Array()
+var _mem_t := PackedFloat32Array()  # instante (relógio) do último impacto naquele lugar
+var _mem_i := 0
+var _raj_id := PackedInt64Array()
+var _raj_n := PackedInt32Array()
+var _raj_i := 0
+var _relogio := 0.0
+var _no_quadro := 0
+var emitidos := 0  # testes
+var descartados := 0  # testes: barrados por teto, lugar ou pool cheio
+var pico := 0  # testes: o máximo de vagas ocupadas ao mesmo tempo
+
+
+func montar() -> void:
+	pos.resize(MAX)
+	tempo.resize(MAX)
+	tipo.resize(MAX)
+	_mem_pos.resize(MEMORIA)
+	_mem_t.resize(MEMORIA)
+	_raj_id.resize(NUM_RAJADAS)
+	_raj_n.resize(NUM_RAJADAS)
+	quadros = [_quadros_estalo(5, 4), _quadros_estalo(7, 5), _quadros_fizzle()]
+	limpar()
+
+
+func limpar() -> void:
+	tempo.fill(0.0)
+	_mem_t.fill(-99.0)
+	_raj_id.fill(0)
+	_raj_n.fill(0)
+	_mem_i = 0
+	_raj_i = 0
+	_relogio = 0.0
+	_no_quadro = 0
+	emitidos = 0
+	descartados = 0
+	pico = 0
+
+
+## Pede um impacto `t` (ESTALO, ESTALO_CRIT, FIZZLE) em `p`. `rajada` = adagas.a_rajada da bolinha (0 = sem conta por rajada); `fator` = efe_impactos
+## do nível de partículas; `forcar` (o crítico) passa do teto por rajada. Devolve true se tocou.
+func emitir(p: Vector2, t: int, rajada: int, fator: float, forcar := false) -> bool:
+	if fator < 0.5:  # perfil Baixo / sem partículas: sem estalo nem fizzle
+		return false
+	var lugar := p.round()
+	if _no_quadro >= maxi(1, roundi(POR_QUADRO * minf(fator, 1.0))):
+		descartados += 1
+		return false
+	var k_raj := -1
+	if rajada != 0:
+		for k in NUM_RAJADAS:
+			if _raj_id[k] == rajada:
+				k_raj = k
+				break
+		var teto := maxi(1, roundi(POR_RAJADA * minf(fator, 1.0)))
+		if k_raj >= 0 and _raj_n[k_raj] >= teto and not forcar:
+			descartados += 1
+			return false
+	var repete := 1.0 if Piscadas.ligado() else REPETE_S
+	for k in MEMORIA:
+		if _relogio - _mem_t[k] < repete and _mem_pos[k].distance_squared_to(lugar) < REGIAO * REGIAO:
+			descartados += 1
+			return false
+	if _relogio - _mem_t[_mem_i] < repete:  # o anel inteiro ainda está quente: sobrescrever deixaria um lugar acender cedo demais
+		descartados += 1
+		return false
+	var livre := -1
+	for i in MAX:
+		if tempo[i] <= 0.0:
+			livre = i
+			break
+	if livre < 0:
+		descartados += 1
+		return false
+	pos[livre] = lugar
+	tempo[livre] = DUR[t]
+	tipo[livre] = t
+	_mem_pos[_mem_i] = lugar
+	_mem_t[_mem_i] = _relogio
+	_mem_i = (_mem_i + 1) % MEMORIA
+	if rajada != 0:
+		if k_raj < 0:
+			k_raj = _raj_i
+			_raj_id[k_raj] = rajada
+			_raj_n[k_raj] = 0
+			_raj_i = (_raj_i + 1) % NUM_RAJADAS
+		_raj_n[k_raj] += 1
+	_no_quadro += 1
+	emitidos += 1
+	pico = maxi(pico, ativas())
+	return true
+
+
+func atualizar(dt: float) -> void:
+	_relogio += dt
+	_no_quadro = 0
+	for i in MAX:
+		tempo[i] = maxf(0.0, tempo[i] - dt)
+
+
+func ativas() -> int:
+	var n := 0
+	for t in tempo:
+		if t > 0.0:
+			n += 1
+	return n
+
+
+## O quadro do impacto que ainda tem `restante` s; com "Reduzir piscadas" (`calmo`), sempre o último (sem o miolo branco).
+func quadro_em(t: int, restante: float, calmo: bool) -> int:
+	var n: int = (quadros[t] as Array).size()
+	if calmo:
+		return n - 1
+	return clampi(int((1.0 - restante / float(DUR[t])) * n), 0, n - 1)
+
+
+func desenhar(no: Node2D) -> void:
+	var calmo := Piscadas.ligado()
+	no.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	for i in MAX:
+		if tempo[i] <= 0.0:
+			continue
+		var t := tipo[i]
+		var tex: Texture2D = quadros[t][quadro_em(t, tempo[i], calmo)]
+		var meio := floorf(float(LADO[t]) * 0.5)
+		var cor := Color(1, 1, 1, tempo[i] / float(DUR[t])) if calmo else Color.WHITE  # calmo: um só apagar, sem trocar de luminância
+		no.draw_texture(tex, pos[i] - Vector2(meio, meio), cor)
+
+
+# ------------------------------------------------------------------ quadros (pixel a pixel)
+
+
+## Estalo de raio `r` (5 = normal 11x11, 7 = crítico 15x15) em `n` quadros: núcleo branco contornado, que abre em estrela, vira anel de faíscas
+## e se espalha em pontinhos âmbar. Contorno escuro só nos quadros cheios (os primeiros), como a bolinha. As 8 faíscas têm o mesmo raio
+## (diagonal = cardeal): com diagonais curtas o anel + 4 espetos longos lia como mira (⊕) numa foto parada, não como estouro.
+func _quadros_estalo(r: int, n: int) -> Array:
+	var lado := 2 * r + 1
+	var lista: Array = []
+	for q in n:
+		var f := float(q) / float(n - 1)  # 0 no primeiro quadro, 1 no último
+		var im := Image.create(lado, lado, false, Image.FORMAT_RGBA8)
+		var corpo := 0.0  # raio do disco cheio
+		var anel := 0.0  # raio do anel oco (0 = sem anel)
+		var faisca := 0  # raio das faíscas (0 = sem faíscas)
+		var diagonais := false
+		if f < 0.2:
+			corpo = r * 0.4 + 0.5
+		elif f < 0.45:
+			corpo = r * 0.6 + 0.5
+			faisca = r
+		elif f < 0.8:  # o anel abre (o crítico, com mais quadros, mostra dois tamanhos)
+			anel = r * (0.6 if f < 0.6 else 0.75) + 0.5
+			faisca = r
+			diagonais = true
+		else:
+			faisca = r
+			diagonais = true
+		for y in lado:
+			for x in lado:
+				var d := Vector2(x - r, y - r).length()
+				if corpo > 0.0 and d <= corpo:
+					im.set_pixel(x, y, BRANCO if d <= corpo * 0.45 else (QUENTE if d <= corpo * 0.75 else AMBAR))
+				elif anel > 0.0 and absf(d - anel) <= 0.5:
+					im.set_pixel(x, y, AMBAR)
+		if faisca > 0:
+			var ponta := BRASA if f >= 0.8 else QUENTE
+			for k in 8:
+				if k % 2 == 1 and not diagonais:
+					continue
+				var v := Vector2.from_angle(float(k) * PI / 4.0)
+				var fim := Vector2i((v * float(faisca)).round()) + Vector2i(r, r)
+				im.set_pixelv(fim, ponta)
+				if f < 0.8:  # a faísca ainda tem cauda (um pixel para dentro)
+					var cauda := Vector2i((v * float(faisca - 1)).round()) + Vector2i(r, r)
+					if im.get_pixelv(cauda).a == 0.0:
+						im.set_pixelv(cauda, AMBAR)
+		if corpo > 0.0:
+			_contornar(im)
+		lista.append(ImageTexture.create_from_image(im))
+	return lista
+
+
+## O fizzle 7x7: um ponto quente que se desfaz em quatro pontinhos âmbar e depois em brasa.
+func _quadros_fizzle() -> Array:
+	var lista: Array = []
+	var desenhos := [
+		[[Vector2i(3, 3), QUENTE], [Vector2i(2, 3), AMBAR], [Vector2i(4, 3), AMBAR], [Vector2i(3, 2), AMBAR], [Vector2i(3, 4), AMBAR]],
+		[[Vector2i(3, 3), AMBAR], [Vector2i(1, 1), AMBAR], [Vector2i(5, 1), AMBAR], [Vector2i(1, 5), AMBAR], [Vector2i(5, 5), AMBAR]],
+		[[Vector2i(0, 3), BRASA], [Vector2i(6, 3), BRASA], [Vector2i(3, 0), BRASA], [Vector2i(3, 6), BRASA]],
+	]
+	for q in desenhos.size():
+		var im := Image.create(7, 7, false, Image.FORMAT_RGBA8)
+		for px in desenhos[q]:
+			im.set_pixelv(px[0], px[1])
+		if q == 0:
+			_contornar(im)
+		lista.append(ImageTexture.create_from_image(im))
+	return lista
+
+
+## Contorno de 1 px (4 vizinhos) em volta do que já está pintado.
+func _contornar(im: Image) -> void:
+	var w := im.get_width()
+	var h := im.get_height()
+	var cheio := PackedByteArray()
+	cheio.resize(w * h)
+	for y in h:
+		for x in w:
+			cheio[y * w + x] = 1 if im.get_pixel(x, y).a > 0.0 else 0
+	for y in h:
+		for x in w:
+			if cheio[y * w + x] == 1:
+				continue
+			for v in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var o: Vector2i = Vector2i(x, y) + v
+				if o.x >= 0 and o.y >= 0 and o.x < w and o.y < h and cheio[o.y * w + o.x] == 1:
+					im.set_pixel(x, y, CONTORNO)
+					break

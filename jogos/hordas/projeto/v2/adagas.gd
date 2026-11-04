@@ -24,9 +24,12 @@ extends RefCounted
 ## só o PRIMEIRO acerto de cada rajada (um `lancar`) mostrar o número e tocar o som de impacto; os outros projéteis da mesma rajada ferem, empurram
 ## e acendem o flash do monstro, mas sem número nem som (cinco números e cinco sons a cada disparo poluíam a tela). O crítico sempre mostra o
 ## número, para o jogador ver o crítico. A memória é um anel fixo de NUM_RAJADAS rajadas recentes, sem alocar nem consumir sorteio.
+## Estalo da bolinha (v2/estalos_visual.gd): o acerto toca uma explosãozinha âmbar-branca no ponto do contato e o fim do alcance sem acerto um
+## "fizzle"; pool fixo, com teto por quadro, por rajada e por lugar, e o nível de partículas (efe_impactos) cortando no perfil Baixo. Só desenho.
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
+const EstalosVisual := preload("res://v2/estalos_visual.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
 const ALCANCE_EXTRA := 120.0  # a Chuva pode nascer e andar ainda neste quadro
@@ -89,6 +92,7 @@ var _proj_nomes := {}  # nome -> índice em _proj_lista
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
 var misseis_visual := MisseisVisual.new()
+var estalos := EstalosVisual.new()  # o estalo das bolinhas do mecha (acerto e fim do alcance)
 
 
 func montar(c, camada: Node, tex: Texture2D) -> void:
@@ -102,6 +106,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_registrar("plasma", _img_plasma(), 11.0, 7.0)
 	_registrar("missil", _img_missil(), 24.0, 9.0)
 	misseis_visual.montar()
+	estalos.montar()
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
 	a_vel.resize(MAX)
@@ -148,6 +153,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 
 func limpar() -> void:
 	misseis_visual.limpar()
+	estalos.limpar()
 	a_rest.fill(0.0)
 	a_grupo.fill(0)
 	a_rajada.fill(0)
@@ -291,9 +297,10 @@ func _nova(
 
 func atualizar(dt: float) -> void:
 	misseis_visual.atualizar(dt)
+	estalos.atualizar(dt)
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	_relogio += dt
-	var ativo := misseis_visual.ativas() > 0
+	var ativo := misseis_visual.ativas() > 0 or estalos.ativas() > 0
 	for i in MAX:
 		if a_rest[i] > 0.0:
 			ativo = true
@@ -480,7 +487,7 @@ func _mover(i: int, dt: float) -> void:
 	a_pos[i] = p0 + dir * passo
 	a_rest[i] -= passo
 	if a_rest[i] <= 0.0 or not mundo.mapa.has_point(a_pos[i]):
-		_acabar(i)
+		_acabar(i, a_rest[i] <= 0.0)
 
 
 ## Ricochete do acerto de `m` em `perto` (a lâmina andou `t` px neste quadro): vira a lâmina para o vivo mais perto que ela ainda não acertou.
@@ -509,9 +516,12 @@ func _ricochetear(i: int, m, perto: Vector2, t: float) -> bool:
 	return true
 
 
-func _acabar(i: int) -> void:
+## `fim_alcance`: acabou o alcance sem acertar (a bolinha do mecha faz o fizzle ali); furar tudo ou sair do mapa não estala.
+func _acabar(i: int, fim_alcance := false) -> void:
 	a_rest[i] = 0.0
 	sumiram += 1
+	if fim_alcance and _bolinha(a_proj[i]):
+		estalos.emitir(a_pos[i], EstalosVisual.FIZZLE, a_rajada[i], _fator_impactos())
 	combate.fx.faiscas(a_pos[i], a_dir[i], 2, a_cor[i], 70.0, not _visual_mecha(a_proj[i]))
 
 
@@ -539,6 +549,8 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	if a_expl[i] > 0.0:
 		_explodir(i, m)
 	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0, not _visual_mecha(a_proj[i]))
+	if _bolinha(a_proj[i]):  # o estalo no ponto do contato (o crítico, maior, passa do teto por rajada)
+		estalos.emitir(p, EstalosVisual.ESTALO_CRIT if crit else EstalosVisual.ESTALO, a_rajada[i], _fator_impactos(), crit)
 	var tom := randf_range(1.25, 1.5)  # sorteado sempre, com ou sem som: a rajada não muda a sequência de sorteios
 	if mostra:
 		combate.audio.tocar("critico" if crit else "impacto", tom, -7.0, 0.05)
@@ -550,6 +562,13 @@ func _acertar(i: int, m, p: Vector2) -> void:
 		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], ALCANCE_EXTRA, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
 		a_proj[j] = a_proj[i]
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
+
+
+## Fração de impactos do nível de partículas (Config.PART_NIVEL.efe_impactos): 1 no Alto, 0,34 no Baixo, 0 sem partículas.
+func _fator_impactos() -> float:
+	if mundo == null or not mundo.has_method("_nivel_particulas"):
+		return 1.0
+	return float(mundo._nivel_particulas().get("efe_impactos", 1.0))
 
 
 ## true se o acerto do projétil `i` é o primeiro da rajada dele (ou se ele não é de rajada): esse mostra o número e toca o som.
@@ -627,6 +646,8 @@ func _desenhar_corpo() -> void:
 		no_corpo.draw_set_transform(p.round(), (a_dir[i] as Vector2).angle(), Vector2.ONE)
 		no_corpo.draw_texture(e.tex, Vector2(-float(e.compr) * 0.5, -float(e.alt) * 0.5), Color(1, 1, 1, fade))
 	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if estalos.ativas() > 0:
+		estalos.desenhar(no_corpo)  # por cima das bolinhas: o estalo nasce onde a bolinha some
 
 
 func _desenhar_brilho() -> void:

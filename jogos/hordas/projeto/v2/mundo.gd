@@ -979,7 +979,7 @@ func avancar(dt: float) -> void:
 			_perfil("monstros", p2 - p1)
 			_perfil("combate", p3 - p2)
 		var p4 := Time.get_ticks_usec()
-		cam.seguir(heroi.pos + Heroi.CENTRO_CORPO + heroi.avanco_camera, dt)
+		cam.seguir(heroi.pos + Heroi.CENTRO_CORPO + heroi.avanco_camera, dt, heroi.pos - heroi.pr)
 		combate.efeitos(dt)
 		_perfil("camera_efeitos", Time.get_ticks_usec() - p4)
 	var p5 := Time.get_ticks_usec()

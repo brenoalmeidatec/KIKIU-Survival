@@ -144,6 +144,172 @@ func bocas_visuais() -> void:
 	h.tipo.info = info_original
 
 
+## Uma rajada do braço 0 só pelo canhão (o resto do mundo não anda), até todas as bolinhas acabarem.
+func _rajada_isolada(ad, h, dir := Vector2.RIGHT) -> void:
+	var passo: Dictionary = w.combate.cfg.golpe.passos[0]
+	w.combate.golpear(h, h.pos + h.ORIGEM_GOLPE, dir, passo, 0)
+	for q in 90:
+		ad.atualizar(PASSO)
+		if ad.ativas() == 0:
+			break
+
+
+func _sumir(lista: Array) -> void:
+	for m in lista:
+		m.vivo = false
+		m.pos = w.heroi.pos + Vector2(5000, 5000)
+
+
+func _parede() -> Array:
+	var h = w.heroi
+	var lista := []
+	for k in 7:
+		lista.append(monstro(h.pos + h.ORIGEM_GOLPE + Vector2(90, -2) + Vector2(0, (k - 3) * 9.0)))
+	return lista
+
+
+## O estalo da bolinha (pedido do Alisson: "animação da explosão do projétil"): o acerto e o fim do alcance tocam o impacto, com teto
+## por quadro, por rajada e por lugar, pool fixo no pior caso (horda grande + crítico sempre) e o perfil Baixo cortando.
+func estalos_rajada() -> void:
+	zerar()
+	var c = w.combate
+	var ad = c.adagas
+	var h = w.heroi
+	var e = ad.get("estalos")
+	ok(e != null, "o canhão do mecha tem pool de estalos (acerto e fim do alcance)")
+	if e == null:
+		return
+	var args_antes: Dictionary = w.args.duplicate()
+	w.args["particulas"] = "muitas"  # Alto: efe_impactos 1
+	# quadros na grade de 1 px: tamanho ímpar inteiro, alfa só 0 ou 1 (sem antialiasing), miolo branco no começo e sem branco no fim
+	var tamanhos := [11, 15, 7]
+	var contagens := [4, 5, 3]
+	for t in 3:
+		var lista: Array = e.quadros[t]
+		ok(lista.size() == contagens[t], "tipo %d tem %d quadros" % [t, contagens[t]])
+		var difere := false
+		for q in lista.size():
+			var img: Image = (lista[q] as Texture2D).get_image()
+			ok(img.get_width() == tamanhos[t] and img.get_height() == tamanhos[t], "quadro %d/%d no tamanho inteiro %d" % [t, q, tamanhos[t]])
+			var binario := true
+			for y in img.get_height():
+				for x in img.get_width():
+					var a := img.get_pixel(x, y).a
+					binario = binario and (a == 0.0 or a == 1.0)
+			ok(binario, "quadro %d/%d sem alfa parcial (1 px, sem antialiasing)" % [t, q])
+			if q > 0 and img.get_data() != (lista[q - 1] as Texture2D).get_image().get_data():
+				difere = true
+		ok(difere, "o impacto %d anima (quadros diferentes)" % t)
+		ok(float(e.DUR[t]) >= 0.15 and float(e.DUR[t]) <= 0.25, "duração curta do impacto %d (0,15 a 0,25 s)" % t)
+	var f0: Image = (e.quadros[e.ESTALO][0] as Texture2D).get_image()
+	var fz: Image = (e.quadros[e.ESTALO][3] as Texture2D).get_image()
+	ok(f0.get_pixel(5, 5) == Color.WHITE and fz.get_pixel(5, 5).a == 0.0, "o estalo nasce com miolo branco e termina em faíscas soltas")
+	# 1) o ACERTO toca o estalo no ponto do contato, em pixel inteiro, sem nó novo
+	var alvo = monstro(h.pos + Vector2(70, 0))
+	var nos: int = get_tree().get_node_count()
+	_rajada_isolada(ad, h)
+	ok(ad.acertos > 0 and e.emitidos >= 1, "acerto da bolinha toca o estalo (%d acertos, %d estalos)" % [ad.acertos, e.emitidos])
+	var achou := false
+	for i in e.MAX:
+		var pe: Vector2 = e.pos[i]
+		if e.tipo[i] == e.ESTALO and pe == pe.round():
+			achou = achou or pe.distance_to(alvo.pos + Vector2(0, -6)) < float(alvo.raio) + 8.0
+	ok(achou, "o estalo fica no contato com o monstro, em pixel inteiro")
+	ok(e.emitidos <= e.POR_RAJADA, "uma rajada no mesmo alvo não passa de %d estalos (%d)" % [e.POR_RAJADA, e.emitidos])
+	ok(get_tree().get_node_count() == nos, "o estalo não cria nó")
+	_sumir([alvo])
+	# 2) o FIM DO ALCANCE sem acerto toca o fizzle
+	zerar()
+	_rajada_isolada(ad, h)
+	ok(ad.acertos == 0 and e.emitidos >= 1 and e.emitidos <= e.POR_RAJADA, "fim do alcance sem acerto toca o fizzle, com teto por rajada (%d)" % e.emitidos)
+	ok(e.tipo[0] == e.FIZZLE, "o impacto do fim do alcance é o fizzle")
+	# 3) teto por RAJADA: as bolinhas em vários monstros diferentes, sem crítico
+	zerar()
+	var parede := _parede()
+	_rajada_isolada(ad, h)
+	ok(ad.acertos >= 3 and e.emitidos <= e.POR_RAJADA, "rajada em vários monstros: %d acertos, %d estalos (teto %d)" % [ad.acertos, e.emitidos, e.POR_RAJADA])
+	_sumir(parede)
+	# 4) teto por QUADRO e por LUGAR (direto no pool)
+	e.limpar()
+	var aceitos := 0
+	for k in 10:
+		aceitos += 1 if e.emitir(Vector2(k * 40.0, 0.0), e.ESTALO, 0, 1.0) else 0
+	ok(aceitos == e.POR_QUADRO, "no máximo %d impactos por quadro (%d)" % [e.POR_QUADRO, aceitos])
+	e.limpar()
+	ok(e.emitir(Vector2(10, 10), e.ESTALO, 0, 1.0), "primeiro estalo num lugar toca")
+	e.atualizar(0.2)
+	ok(not e.emitir(Vector2(13, 12), e.ESTALO, 0, 1.0), "o mesmo lugar não reacende antes de 0,5 s (2 Hz)")
+	e.atualizar(0.31)
+	ok(e.emitir(Vector2(13, 12), e.ESTALO, 0, 1.0), "o mesmo lugar reacende depois de 0,5 s")
+	# 5) o mesmo ponto pedido a cada quadro por 3 s (crítico, que passa do teto por rajada): no máximo 2 acesos por segundo
+	e.limpar()
+	var acesos := []
+	for q in 180:
+		e.emitir(Vector2(50, 50), e.ESTALO, 0, 1.0, true)
+		acesos.append(1.0 if e.ativas() > 0 else 0.0)
+		e.atualizar(PASSO)
+	var pior := 0
+	for ini in range(acesos.size() - 60):
+		pior = maxi(pior, e.Piscadas.trocas(acesos.slice(ini, ini + 61)))
+	ok(pior <= 4, "o mesmo ponto acende no máximo 2 vezes por segundo (%d trocas em 1 s)" % pior)
+	# 6) PIOR CASO: horda grande colada + crítico em todo acerto, atirando de verdade por 4 s
+	zerar()
+	e.limpar()
+	h.m_critico = 1.0
+	var horda := []
+	for k in 56:
+		horda.append(monstro(h.pos + Vector2(30 + (k / 7) * 14, -48 + (k % 7) * 14)))
+	w.mouse_forcado = h.centro() + Vector2(300, 0)
+	h.ataque_forcado = true
+	var lanc0: int = ad.lancadas
+	for q in 240:
+		w.avancar(PASSO)
+		for k in horda.size():
+			horda[k].pos = h.pos + Vector2(30 + (k / 7) * 14, -48 + (k % 7) * 14)
+			horda[k].vida = 1000.0
+			horda[k].atordoa_t = 60.0
+	h.ataque_forcado = false
+	ok(ad.lancadas - lanc0 > 60 and e.emitidos > 0, "pior caso atirou (%d bolinhas, %d estalos)" % [ad.lancadas - lanc0, e.emitidos])
+	ok(e.pico <= e.MAX and e.tempo.size() == e.MAX, "pior caso (horda de 56 + crítico) cabe no pool: pico %d de %d" % [e.pico, e.MAX])
+	print("estalos, pior caso: %d bolinhas, %d estalos, %d barrados, pico %d/%d vagas" % [ad.lancadas - lanc0, e.emitidos, e.descartados, e.pico, e.MAX])
+	_sumir(horda)
+	h.m_critico = -1.0
+	# 7) perfil BAIXO (poucas: efe_impactos 0,34): sem estalo nem fizzle (efeito extra); sem partículas: nada
+	w.args["particulas"] = "poucas"
+	zerar()
+	_rajada_isolada(ad, h)
+	ok(e.emitidos == 0, "perfil Baixo corta o fizzle do fim do alcance (%d)" % e.emitidos)
+	zerar()
+	var parede_b := _parede()
+	_rajada_isolada(ad, h)
+	ok(ad.acertos >= 3 and e.emitidos == 0, "perfil Baixo: sem estalo extra no acerto (%d acertos, %d estalos)" % [ad.acertos, e.emitidos])
+	_sumir(parede_b)
+	w.args["particulas"] = "medias"  # Médio (efe_impactos 0,67): o estalo volta, com o teto por rajada reduzido
+	zerar()
+	parede_b = _parede()
+	_rajada_isolada(ad, h)
+	ok(ad.acertos >= 3 and e.emitidos >= 1, "perfil Médio ainda estala (%d acertos, %d estalos)" % [ad.acertos, e.emitidos])
+	_sumir(parede_b)
+	w.args["particulas"] = "nenhuma"
+	zerar()
+	parede_b = _parede()
+	_rajada_isolada(ad, h)
+	ok(ad.acertos >= 3 and e.emitidos == 0, "sem partículas: nenhum estalo (%d)" % e.emitidos)
+	_sumir(parede_b)
+	# 8) "Reduzir piscadas": sem o miolo branco (só o último quadro) e o lugar espera 1,0 s
+	var reduzir: bool = Config.reduzir_piscadas
+	Config.reduzir_piscadas = true
+	e.limpar()
+	ok(e.quadro_em(e.ESTALO, float(e.DUR[e.ESTALO]), true) == 3, "reduzir piscadas mostra só as faíscas, sem o miolo branco")
+	e.emitir(Vector2(10, 10), e.ESTALO, 0, 1.0)
+	e.atualizar(0.6)
+	ok(not e.emitir(Vector2(10, 10), e.ESTALO, 0, 1.0), "reduzir piscadas: o mesmo lugar espera 1,0 s")
+	Config.reduzir_piscadas = reduzir
+	w.args = args_antes
+	zerar()
+	ok(e.emitidos == 0 and e.ativas() == 0, "reiniciar limpa o pool de estalos")
+
+
 func _ready() -> void:
 	Herois.forcado = "lightwolf"
 	w = Mundo.instantiate()
@@ -261,6 +427,7 @@ func _ready() -> void:
 		comparar_rng()
 	c.fx.fator_part = fator_antes
 	bocas_visuais()
+	estalos_rajada()
 	var reduzir: bool = Config.reduzir_piscadas
 	Config.reduzir_piscadas = true
 	visual.limpar()
