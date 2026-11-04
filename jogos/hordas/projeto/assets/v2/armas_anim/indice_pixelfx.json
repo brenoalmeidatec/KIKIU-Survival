@@ -1484,6 +1484,90 @@
     }
    }
   },
+  "fx_fusao": {
+   "armas": [
+    "fx_fusao"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_fusao_impacto.png",
+     "quadro": [
+      176,
+      112
+     ],
+     "n": 10,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      88,
+      56
+     ]
+    }
+   }
+  },
+  "fx_queda_heroi": {
+   "armas": [
+    "fx_queda_heroi"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_queda_heroi_impacto.png",
+     "quadro": [
+      88,
+      74
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      44,
+      53
+     ]
+    }
+   }
+  },
+  "fx_ui_anuncio": {
+   "armas": [
+    "fx_ui_anuncio"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_ui_anuncio_impacto.png",
+     "quadro": [
+      208,
+      72
+     ],
+     "n": 10,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      104,
+      36
+     ]
+    }
+   }
+  },
+  "fx_ui_pronta": {
+   "armas": [
+    "fx_ui_pronta"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_ui_pronta_impacto.png",
+     "quadro": [
+      96,
+      96
+     ],
+     "n": 10,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      48,
+      48
+     ]
+    }
+   }
+  },
   "anel_onda_branca": {
    "armas": [
     "onda_choque"

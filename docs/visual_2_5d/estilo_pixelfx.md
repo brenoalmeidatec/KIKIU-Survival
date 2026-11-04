@@ -71,9 +71,13 @@ Fogo, gelo, veneno, choque e sangue são desenhados pelo shader do próprio spri
 - O traço do raio tem halo, corpo e núcleo em pixel inteiro, galhos e brilho em degraus.
 - Baú, nível, coleta, portal e invocação já usavam folhas do pixelfx desde 01/11.
 
+## Katana, fusão, HUD e giratórios
+- **Cortes da katana:** `fonte_arte/blender_corte/corte_pfx.py` parte da folha do Blender e acrescenta o rastro largo que esfria e as faíscas que a lâmina arranca; depois `girar_corte.py` gera as 16 direções. As folhas `corte_hazaki*` continuam no repositório, sem uso no jogo.
+- **Fusão, ápice, morte do chefe e queda do herói:** folhas `fx_fusao` (tingida) e `fx_queda_heroi` no lugar das ondas.
+- **Projétil que gira:** as faíscas de rastro saem em tempo real (`armas_novas._mover_projetil`), porque a folha não sabe a direção do voo.
+- **HUD:** `v2/fx_ui.gd` toca `fx_ui_anuncio` atrás do letreiro e `fx_ui_pronta` no slot da ultimate e na barra de nível. Não toca com "Reduzir piscadas" nem no perfil Baixo.
+
 ## O que ficou de fora
-- A arte dos cortes da katana continua a do Blender, pré-girada em 16 direções; mudou só o acerto.
-- Menus e HUD animados.
-- A chama da fusão no herói e a morte dele ainda usam ondas (`evolucao_feita`, `heroi_morreu`).
+- A tela de título e os menus: o título já tem partículas próprias (`titulo_vivo.gd`), que não mudaram.
 - Os perigos dos chefes e dos inimigos (`perigo_*`) não são armas.
 - O crítico de projétil toca o impacto em escala 2, como antes, então tem pixel dobrado.

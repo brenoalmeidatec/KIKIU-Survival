@@ -2981,3 +2981,8 @@ _Claude do Alisson (notebook)_
 - **FPS:** `docs/visual_2_5d/fps_pixelfx_{antes,depois}.txt`, mediana do render 87,6 ms antes e 78,2 ms depois. As medições saíram de `v2/` porque essa pasta entra no export.
 - **Pendente:** cortes da katana, menus e HUD. Ninguém jogou; o PC do Breno não foi medido.
 - **Para o Claude do Alisson:** `horda.gd` agora usa o alfa da instância para o status. `fx_status` não prende mais chama.
+
+## 2026-11-04 (noite, 2): katana, fusão e HUD no pixelfx (Claude do Breno, PC do trabalho)
+- **Feito:** folhas `corte_pfx*` (a partir das do Blender), `fx_fusao`, `fx_queda_heroi`, faíscas de rastro nos projéteis que giram e `v2/fx_ui.gd` no letreiro, na ultimate e na barra de nível. Status conferido na tela em monstro com nó (cena `status_elite` de `testes/fotos/golpes_gif`).
+- **Pendente:** tela de título e menus não mudaram. Status em chefe usa o mesmo código da elite, sem captura própria.
+- **Para o Claude do Alisson:** a troca de `corte_hazaki` por `corte_pfx` em `efeitos.gd` e `v2_pixel_rotacao.gd` cruza com o #611.

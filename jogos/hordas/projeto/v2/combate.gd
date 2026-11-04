@@ -746,8 +746,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 func _estouro_chao(h, alc: float, passo: Dictionary) -> void:
 	var cor := _cor(passo.cor)
 	var p: Vector2 = h.pos + Vector2(0, -2)
-	fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), alc, 0.3)
-	fx.onda(p, Color(1, 1, 1, 0.6), alc * 0.6, 0.2)
+	armas.novas.tocar_fx(Anim.de("fx_pancada").get("impacto", {}), p)
 	fx.estouro(p, Color(0.75, 0.68, 0.55), 12)
 	fx.luz_rapida(p + Vector2(0, -6), cor, 1.8, alc * 2.6, 0.3)
 	audio.tocar("impacto", 0.5, 2.0, 0.05)
@@ -788,7 +787,7 @@ func matar(m, leve := false) -> void:
 		elites.ao_morrer(m)
 	if m.chefe:
 		mundo.cam.tremer(4.0, 0.4)
-		fx.onda(m.pos, Color(1.0, 0.9, 0.7, 0.9), 120.0, 0.6)
+		armas.novas.tocar_fx(Anim.de("fx_fusao").get("impacto", {}), m.pos, 2.0, false, 1.0, Color(1.0, 0.9, 0.7))
 		hit_stop(0.25)
 	mundo.devolver_monstro(m)
 	if m.chefe:
@@ -1029,7 +1028,7 @@ func heroi_apanhou(valor: float) -> void:
 func heroi_morreu() -> void:
 	var h = mundo.heroi
 	audio.tocar("derrota", 1.0, 0.0, 0.0)
-	fx.onda(h.pos + Vector2(0, -10), Color(1.0, 0.4, 0.35, 0.9), 60.0, 0.5)
+	armas.novas.tocar_fx(Anim.de("fx_queda_heroi").get("impacto", {}), h.pos)
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
 	jogo = "morrendo"
@@ -1043,8 +1042,6 @@ func heroi_morreu() -> void:
 func nivel_subiu(nivel: int) -> void:
 	var h = mundo.heroi
 	audio.tocar("nivel", 1.0, 0.0, 0.0)
-	fx.onda(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0, 0.95), 110.0, 0.45)
-	fx.onda(h.pos + Vector2(0, -12), Color(1.0, 0.95, 0.7, 0.8), 70.0, 0.3)
 	fx.luz_rapida(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0), 1.8, 190.0, 0.5)
 	fx.flash(h, 0.3, Color(0.7, 1.0, 1.0), 0, 0.8)
 	fx_folha.tocar("level-up", h.pos)  # a coluna de luz do pixelfx nos pés do herói (sem o texto da folha: só os primeiros quadros)
@@ -1071,7 +1068,6 @@ func onda_forte(numero: int) -> void:
 func elite_apareceu(nome: String, m, cor: Color) -> void:
 	mundo.elite_apareceu.emit(nome)
 	audio.tocar("elite", 1.0, 0.0, 0.1)
-	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 70.0, 0.5)
 
 
 func chefe_apareceu(m, mk: Dictionary) -> void:
@@ -1080,7 +1076,6 @@ func chefe_apareceu(m, mk: Dictionary) -> void:
 	mundo.chefe_apareceu.emit(str(mk.nome), float(mk.vida))
 	anunciar(str(a.texto).replace("{nome}", str(mk.nome)), cor)
 	audio.tocar("chefe", 0.7, 0.0, 0.3)
-	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 110.0, 0.7)
 	mundo.cam.tremer(3.0, 0.4)
 
 
@@ -1092,11 +1087,9 @@ func evolucao_feita(ev: Dictionary) -> void:
 	audio.tocar("evolucao", 1.0, 0.0, 0.0)
 	hit_stop(FUSAO_PARADA_S)  # um instante parado e a câmera lenta: a fusão precisa ser lida, não passar voando
 	camera_lenta("fusao", FUSAO_LENTA_S, FUSAO_ESCALA)
-	fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.95), 130.0, 0.6)
-	fx.onda(h.pos + Vector2(0, -12), Color(1, 1, 1, 0.8), 80.0, 0.4)
+	armas.novas.tocar_fx(Anim.de("fx_fusao").get("impacto", {}), h.pos, 1.0, false, 1.0, cor)
 	fx.luz_rapida(h.pos + Vector2(0, -12), cor, 2.4, 240.0, 0.7)
 	fx.flash(h, 0.4, cor, 0, 0.9)
-	fx.estouro(h.pos + Vector2(0, -16), cor, 20)
 	mundo.cam.tremer(3.0, 0.3)
 
 
@@ -1129,8 +1122,7 @@ func _apice_executar() -> void:
 	audio.tocar("evolucao", 1.2, 0.0, 0.0)
 	var centro: Vector2 = h.pos + Vector2(0, -12)
 	apice_tela.iniciar(centro, mundo.cam.retangulo(), cor, dourado, A.tela, _perfil_baixo())
-	fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), 150.0, 0.7)
-	fx.onda(centro, Color(dourado.r, dourado.g, dourado.b, 0.8), 96.0, 0.45)
+	armas.novas.tocar_fx(Anim.de("fx_fusao").get("impacto", {}), centro, 1.0, false, 1.0, dourado)
 	if not _perfil_baixo():
 		fx.luz_rapida(centro, dourado, 1.8, 220.0, 0.6)
 		fx.estouro(h.pos + Vector2(0, -16), dourado, 24)

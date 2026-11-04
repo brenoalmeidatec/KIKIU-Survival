@@ -25,23 +25,23 @@ const FOLHAS := {
 	"anel": [preload("res://assets/v2/efeitos/efeito_anel_folha.png"), 18.0],
 	"espiral": [preload("res://assets/v2/efeitos/efeito_espiral_folha.png"), 12.0],
 }
-const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
-const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
+const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_pfx.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
+const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_pfx_ciano.png")  # variante: so a energia ciano, 12 quadros
 # o corte so gira em 16 direcoes (passos de 22,5 graus): 0, 90, 180 e 270 sao a mesma folha com o UV trocado no shader, e os outros tres
 # angulos de cada folha (22,5, 45 e 67,5) vem prontos, girados com RotSprite (fonte_arte/blender_corte/girar_corte.py), sem pixel solto
 const CORTE_DIRECOES := 16
 const FOLHAS_CORTE_GIRADAS := [
 	[
 		FOLHA_CORTE,
-		preload("res://assets/v2/efeitos/corte_hazaki_r1.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_r2.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_r3.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_r1.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_r2.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_r3.png"),
 	],
 	[
 		FOLHA_CORTE_CIANO,
-		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r1.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r2.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r3.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_ciano_r1.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_ciano_r2.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_ciano_r3.png"),
 	],
 ]
 const PixelRot := preload("res://v2/pixel_rot.gd")
@@ -597,7 +597,7 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 			var aa := ang + lerpf(-meio, meio, (float(k) + _rng.randf()) / float(n))
 			var pt := origem + Vector2.from_angle(aa) * alcance * _rng.randf_range(0.8, 1.15)
 			var tang := Vector2.from_angle(aa + PI * 0.5 * lado) * _rng.randf_range(40.0, 110.0)
-			particula(pt, tang, _rng.randf_range(0.3, 0.55), _rng.randf_range(10.0, 16.0), Color(claro.r, claro.g, claro.b, 0.95), -24.0, true)
+			particula(pt, tang, _rng.randf_range(0.22, 0.4), 2.0, Color(claro.r, claro.g, claro.b, 0.95), 300.0)
 		_corte_eco(origem, ang, alcance * ECO_ESCALA, arco_graus * 1.1, lado, Color(claro.r * 0.75, claro.g * 0.75, claro.b * 0.75), dur * 0.9)
 		var ponta := origem + Vector2.from_angle(ang + meio * lado) * alcance * 0.95  # onde o arco termina: a estrela que pisca no fim da varrida
 		folha("estrela", ponta, alcance * 0.45, claro, dur * 0.8)

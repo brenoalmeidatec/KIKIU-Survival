@@ -63,6 +63,7 @@ CHUMBO = tema("#d8dae0", "#9a9ea8", "#64687a", "#3c3f4c", "#20222c")
 CIANO = tema("#ffffff", "#c8fff4", "#5ae8d0", "#1f8f8a", "#0e3f44")
 SANGUE = tema("#ffe0e0", "#ff7a7a", "#d42a3a", "#7a1020", "#30060c")
 ROSA = tema("#ffffff", "#e8d0ff", "#b890f0", "#6a50b0", "#2a2060")
+BRANCA = tema("#ffffff", "#ffffff", "#e8e8e8", "#b0b0b0", "#707070")
 AQUECIDO = [FOGO[0], FOGO[1], FOGO[3], FOGO[5]]
 
 
@@ -825,6 +826,10 @@ SOLTOS.update(
         "fx_morte": dict(fn=terra, op=dict(R=13.0, T=tema("#f4f0e4", "#d8d2c0", "#a8a292", "#6e6a60", "#3a3834")), quadro=(56, 48), ancora=(28, 34), n=9, fps=24),
         "fx_dano_heroi": _acerto(SANGUE, faiscas=_faiscas_de(SANGUE)),
         "fx_cura": dict(fn=lambda r: cura(r), quadro=(48, 64), ancora=(24, 52), n=12, fps=20),
+        "fx_fusao": dict(fn=lambda r: anel(r, 176, 112, BRANCA, "faisca", 0.42), quadro=(176, 112), ancora=(88, 56), n=10, fps=24),  # tingida pela cor da fusão
+        "fx_queda_heroi": _bola(30.0, SANGUE),
+        "fx_ui_anuncio": dict(fn=lambda r: anel(r, 208, 72, BRANCA, "faisca", 0.42), quadro=(208, 72), ancora=(104, 36), n=10, fps=24),
+        "fx_ui_pronta": dict(fn=lambda r: anel(r, 96, 96, BRANCA, "luz", 0.42), quadro=(96, 96), ancora=(48, 48), n=10, fps=24),
     }
 )
 ANEIS = {

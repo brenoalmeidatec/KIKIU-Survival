@@ -529,6 +529,11 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 	var p: Vector2 = it.p
 	# O virote da torre e o estilhaço da granada só enxergam os monstros perto DELES (`lista`): o herói pode estar longe dali.
 	var alvos: Array = perto if it.lista == null else it.lista
+	if bool(it.fa.get("voo", {}).get("gira", false)) and Anim.suave:  # o que gira não tem rastro na folha: as faíscas ficam para trás e caem
+		it.mira = float(it.mira) - dt
+		if float(it.mira) <= 0.0:
+			it.mira = 0.05
+			pai.fx.particula(p, (it.v as Vector2) * -0.08, 0.2, 2.0, Color(a.cor.lerp(Color.WHITE, 0.4), 0.9), 260.0)
 	if str(a.tipo) == "torre":  # o rastro do virote: uma faísca a cada ~2 quadros, que apaga rápido
 		it.mira = float(it.mira) - dt
 		if float(it.mira) <= 0.0:
