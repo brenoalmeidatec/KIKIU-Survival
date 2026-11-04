@@ -27,13 +27,13 @@ Guia para repetir, nas armas, o estilo de https://patch-gg.github.io/pixelfx/. C
 | Escala à vontade | 1 px do mundo: a folha já nasce do tamanho da área da arma |
 
 ## Os efeitos desta prova
-| Arma | Folha | Quadro | Quadros e fps | O que acontece |
+| Arma | Folha | Célula | Animação | O que acontece |
 |---|---|---|---|---|
-| Bola de Fogo | `pfx_bola_fogo_impacto.png` | 112x96 | 13 a 24 | clarão, onda no chão, chamas que esfriam em fumaça, faíscas e brasas |
-| Raio em Cadeia | `pfx_raio_impacto.png` | 64x56 | 10 a 30 | nó de ziguezagues, queimadura em samambaia, faíscas que mudam de rumo |
-| Adagas Voadoras | `pfx_adaga_aco_impacto.png` | 48x40 | 5 a 30 | cruz torta com losango branco e lascas quentes |
-| Cometa Gelado | `pfx_cometa_gelo_impacto.png` | 128x104 | 12 a 24 | pontas de gelo que brotam e quebram, geada e vapor frio |
-| Chuva de Pedras | `pfx_pedra_cinza_impacto.png` | 72x64 | 9 a 24 | rachadura, terra jogada para cima e poeira rente ao chão, sem luz |
+| Bola de Fogo | `pfx_bola_fogo_impacto.png` | 112x96 | 13 quadros, 24 fps | clarão, onda no chão, chamas que esfriam em fumaça, faíscas e brasas |
+| Raio em Cadeia | `pfx_raio_impacto.png` | 64x56 | 10 quadros, 30 fps | nó de ziguezagues, queimadura em samambaia, faíscas que mudam de rumo |
+| Adagas Voadoras | `pfx_adaga_aco_impacto.png` | 48x40 | 5 quadros, 30 fps | cruz torta com losango branco e lascas quentes |
+| Cometa Gelado | `pfx_cometa_gelo_impacto.png` | 128x104 | 12 quadros, 24 fps | pontas de gelo que brotam e quebram, geada e vapor frio |
+| Chuva de Pedras | `pfx_pedra_cinza_impacto.png` | 72x64 | 9 quadros, 24 fps | rachadura, terra jogada para cima e poeira rente ao chão, sem luz |
 
 ## Como fazer outro
 1. Em `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`, escreva uma função que devolve `(ps, quadro)`: as partículas e o desenho do tempo `t`. Use `bola_fogo` como modelo. Tudo tem que sumir antes do último quadro.
