@@ -27,6 +27,24 @@ const FOLHAS := {
 }
 const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
+# o corte so gira em 16 direcoes (passos de 22,5 graus): 0, 90, 180 e 270 sao a mesma folha com o UV trocado no shader, e os outros tres
+# angulos de cada folha (22,5, 45 e 67,5) vem prontos, girados com RotSprite (fonte_arte/blender_corte/girar_corte.py), sem pixel solto
+const CORTE_DIRECOES := 16
+const FOLHAS_CORTE_GIRADAS := [
+	[
+		FOLHA_CORTE,
+		preload("res://assets/v2/efeitos/corte_hazaki_r1.png"),
+		preload("res://assets/v2/efeitos/corte_hazaki_r2.png"),
+		preload("res://assets/v2/efeitos/corte_hazaki_r3.png"),
+	],
+	[
+		FOLHA_CORTE_CIANO,
+		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r1.png"),
+		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r2.png"),
+		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r3.png"),
+	],
+]
+const PixelRot := preload("res://v2/pixel_rot.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": sem clarão de tela, flash de acerto em tinta fixa
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
 const CORTE_CRESCE := 0.3  # fração do corte em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
@@ -41,6 +59,8 @@ uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
 uniform float quadros = 16.0;
 uniform float fixo = 0.0;  // 1 = rampa ciano fixa (variante ciano) em vez da cor do golpe
+uniform float ang = 0.0;  // modos 0 e 1 (formas calculadas por pixel do mundo): a direção do golpe, girada aqui e não no nó
+uniform float giros = 0.0;  // modo 2: quantos quartos de volta (0 a 3) a folha gira; troca exata do UV, sem reamostrar o pixel art
 uniform float suave = 1.0;  // 1 = funde o quadro com o próximo (o meio-quadro que a folha não tem; Anim.suave)
 uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
@@ -48,10 +68,15 @@ void fragment() {
 	if (modo > 1.5) {
 		float fq = prog * quadros;
 		float q = min(floor(fq), quadros - 1.0);
-		float vy = lado > 0.0 ? UV.y : 1.0 - UV.y;
-		vec4 t = texture(folha, vec2((UV.x + q) / quadros, vy));
+		vec2 d = UV - 0.5;
+		if (lado < 0.0) d.y = -d.y;
+		if (giros > 2.5) d = vec2(-d.y, d.x);
+		else if (giros > 1.5) d = -d;
+		else if (giros > 0.5) d = vec2(d.y, -d.x);
+		vec2 uv = d + 0.5;
+		vec4 t = texture(folha, vec2((uv.x + q) / quadros, uv.y));
 		if (suave > 0.5 && q < quadros - 1.0) {
-			t = mix(t, texture(folha, vec2((UV.x + q + 1.0) / quadros, vy)), fract(fq));
+			t = mix(t, texture(folha, vec2((uv.x + q + 1.0) / quadros, uv.y)), fract(fq));
 		}
 		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.85);
 		if (fixo > 0.5) {
@@ -61,6 +86,8 @@ void fragment() {
 		COLOR = vec4(c * (fixo > 0.5 ? 1.8 : 3.0), t.a);
 	} else {
 	vec2 p = (UV - 0.5) * 2.0;
+	p = vec2(cos(ang) * p.x + sin(ang) * p.y, -sin(ang) * p.x + cos(ang) * p.y);
+	if (abs(p.x) > 1.0 || abs(p.y) > 1.0) discard;  // o recorte do quad girado de antes: sem isto a ponta da estocada (até 1,05) aparece inteira nas diagonais
 	p.y *= lado;
 	float r = length(p);
 	float a = atan(p.y, p.x);
@@ -195,6 +222,7 @@ var p_vel := PackedVector2Array()
 var p_vida := PackedFloat32Array()
 var p_max := PackedFloat32Array()
 var p_tam := PackedFloat32Array()
+var _discos_px := {}  # lado -> disco de pixel (cache do brilho das partículas)
 var p_sobe := PackedFloat32Array()  # aceleração vertical (px/s2): faíscas caem, almas sobem
 var p_glow := PackedByteArray()  # 1 = brilho redondo, 0 = quadradinho
 var p_cor := PackedColorArray()
@@ -355,9 +383,10 @@ func fragmentar(m, fora: Vector2) -> void:
 		s.texture = m.tipo.alb
 		s.region_rect = Rect2(reg.position + Vector2(reg.size.x * 0.25 * parte, reg.size.y * 0.2), reg.size * Vector2(0.5, 0.6))
 		s.flip_h = m.espelha
-		s.scale = Vector2.ONE * m.escala
+		var esc_px := _esc_px(m.esc)  # a escala do desenho da folha atual (a grande vem em 1)
+		s.scale = Vector2.ONE * esc_px
 		s.modulate = m.tinta
-		s.position = m.raiz.position + m.offset * m.escala
+		s.position = m.raiz.position + m.offset * esc_px
 		s.rotation = 0.0
 		s.visible = true
 		_frag_t[i] = 0.6
@@ -514,6 +543,21 @@ func _montar_flashes() -> void:
 # ------------------------------------------------------------------ pedidos
 
 
+## Escala do ator na grade de 1 px: inteira, no mínimo 1 (igual a Monstro.escala_px).
+static func _esc_px(e: float) -> float:
+	return maxf(1.0, roundf(e))
+
+
+## Qual folha pré-girada e quantos quartos de volta o corte em `ang` (rad) usa: (índice 0 a 3 da folha, giros 0 a 3), em 16 direções.
+## Com `lado` negativo o shader espelha o quadro ANTES de girar, e espelhar depois de girar `a` é girar `-a` depois de espelhar:
+## por isso o espelhado escolhe a direção oposta.
+static func corte_direcao(ang: float, lado: float) -> Vector2i:
+	var k := posmod(roundi(ang / (TAU / float(CORTE_DIRECOES))), CORTE_DIRECOES)
+	if lado < 0.0:
+		k = posmod(-k, CORTE_DIRECOES)
+	return Vector2i(k % 4, k / 4)
+
+
 ## O rastro da katana. `ang` = direção do golpe (rad), `lado` = sentido do corte (1 ou -1), `tipo` = "corte" ou "estocada".
 func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado: float, tipo: String, cor: Color, dur: float) -> void:
 	var i := _ci
@@ -522,7 +566,7 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var folha := tipo == "corte"  # o corte usa a folha do Blender; a estocada continua no shader
 	var r := alcance * (1.45 if folha else 1.25)  # na folha o arco ocupa 0,8 da meia-largura
 	s.position = origem.round()
-	s.rotation = ang
+	s.rotation = 0.0  # nada de pixel art girado em tempo de execução: a folha vem pré-girada (corte_direcao) e o resto o shader calcula por pixel
 	_cortes_esc[i] = r / 32.0
 	s.scale = Vector2.ONE * (r / 32.0) * (0.88 if Anim.suave else 1.0)
 	s.visible = true
@@ -533,7 +577,10 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	mat.set_shader_parameter("lado", lado)
 	mat.set_shader_parameter("modo", 2.0 if folha else (1.0 if tipo == "estocada" else 0.0))
 	var ciano := variante == "ciano"
-	mat.set_shader_parameter("folha", FOLHA_CORTE_CIANO if ciano else FOLHA_CORTE)
+	var dir := corte_direcao(ang, lado)
+	mat.set_shader_parameter("folha", FOLHAS_CORTE_GIRADAS[1 if ciano else 0][dir.x])
+	mat.set_shader_parameter("giros", float(dir.y) if folha else 0.0)
+	mat.set_shader_parameter("ang", 0.0 if folha else ang)
 	mat.set_shader_parameter("quadros", 12.0 if ciano else 16.0)
 	mat.set_shader_parameter("fixo", 1.0 if ciano else 0.0)
 	mat.set_shader_parameter("cor", cor)
@@ -600,10 +647,11 @@ func _corte_eco(origem: Vector2, ang: float, alcance: float, arco_graus: float, 
 	_eco_i = (_eco_i + 1) % MAX_ECOS
 	var s := _eco[i]
 	s.position = origem.round()
-	s.rotation = ang
+	s.rotation = 0.0  # o crescente é calculado por pixel do mundo: o shader gira a forma (uniform ang), o sprite não gira
 	s.scale = Vector2.ONE * (alcance * 1.25 / 32.0)
 	s.visible = true
 	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("ang", ang)
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
 	mat.set_shader_parameter("lado", lado)
@@ -745,8 +793,9 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	s.region_rect = a.regiao
 	s.flip_h = a.espelha
 	s.position = a.raiz.position
-	_fl_esc[i] = a.escala
-	s.scale = Vector2.ONE * a.escala
+	var esc_px := _esc_px(a.esc)
+	_fl_esc[i] = esc_px
+	s.scale = Vector2.ONE * esc_px
 	s.rotation = 0.0
 	s.visible = true
 	var mat := s.material as ShaderMaterial
@@ -919,7 +968,7 @@ func atualizar(dt: float) -> void:
 			continue
 		s.position += _frag_v[i] * dt
 		_frag_v[i].y += 180.0 * dt
-		s.rotation += dt * (2.0 if i % 2 == 0 else -2.0)
+		s.rotation = PixelRot.quarto((0.6 - _frag_t[i]) * (2.0 if i % 2 == 0 else -2.0))  # gira em passos de 90 graus, sem girar pixel art livre
 	var desenha := false
 	# partículas
 	if p_ativas > 0:
@@ -1059,7 +1108,6 @@ func atualizar(dt: float) -> void:
 				mat.set_shader_parameter("k", 1.0 if k < 0.65 else (1.0 - k) / 0.35)
 			1:
 				mat.set_shader_parameter("dissolver", k)
-				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k) * _fl_esc[i]
 				s.position.y -= 24.0 * dt
 				mat.set_shader_parameter("k", 1.0 - k)
 			2:
@@ -1094,13 +1142,14 @@ func _desenhar_add() -> void:
 		var c := p_cor[i]
 		var k := v / p_max[i]
 		c.a *= minf(1.0, k * 2.2)
-		var tam := p_tam[i]
 		var p := p_pos[i].round()
+		# pixel art: o lado é sempre inteiro (o brilho encolhe em degraus de 1 px) e o canto cai na grade; nada de textura suave esticada
+		var lado := maxi(1, roundi(p_tam[i] * ((1.6 - 0.6 * k) if p_glow[i] == 1 else 1.0)))
+		var canto := p - Vector2(floorf(lado * 0.5), floorf(lado * 0.5))
 		if p_glow[i] == 1:
-			var t2 := tam * (1.6 - 0.6 * k)
-			add.draw_texture_rect(tex_brilho, Rect2(p - Vector2(t2, t2) * 0.5, Vector2(t2, t2)), false, c)
+			add.draw_texture_rect(_disco_pixel(lado), Rect2(canto, Vector2(lado, lado)), false, c)
 		else:
-			add.draw_rect(Rect2(p - Vector2(tam, tam) * 0.5, Vector2(tam, tam)), c)
+			add.draw_rect(Rect2(canto, Vector2(lado, lado)), c)
 	for i in MAX_ONDAS:
 		if o_t[i] >= o_dur[i]:
 			continue
@@ -1109,6 +1158,23 @@ func _desenhar_add() -> void:
 		c.a *= 1.0 - k
 		var r := o_raio[i] * (1.0 - (1.0 - k) * (1.0 - k))
 		add.draw_arc(o_pos[i].round(), r, 0.0, TAU, 28, c, 2.0)
+
+
+## Disco de pixel de `lado` px (núcleo opaco, aro a meia luz, sem gradiente), em cache por lado: o brilho das partículas na grade de 1 px.
+func _disco_pixel(lado: int) -> Texture2D:
+	if _discos_px.has(lado):
+		return _discos_px[lado]
+	var im := Image.create(lado, lado, false, Image.FORMAT_RGBA8)
+	var m := float(lado) * 0.5
+	for y in lado:
+		for x in lado:
+			var d := sqrt(pow((float(x) + 0.5 - m) / m, 2.0) + pow((float(y) + 0.5 - m) / m, 2.0))
+			var a := 1.0 if d <= 0.55 else (0.5 if d <= 1.0 else 0.0)
+			if a > 0.0:
+				im.set_pixel(x, y, Color(1, 1, 1, a))
+	var t := ImageTexture.create_from_image(im)
+	_discos_px[lado] = t
+	return t
 
 
 ## A cratera e as rachaduras (camada do mundo, normal): escurecem o chão e somem no último terço.

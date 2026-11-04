@@ -41,7 +41,7 @@ func montar(c) -> void:
 		corpo.texture = _tex
 		corpo.centered = false
 		corpo.offset = Vector2(-11, -19)
-		corpo.scale = Vector2(1.5, 1.5)
+		corpo.scale = Vector2(2, 2)  # pixel art só amplia por inteiro (era 1,5x)
 		corpo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		corpo.visible = false
 		mundo.glow.add_child(corpo)  # na camada glow, sem o escurecimento da floresta: o baú sempre aparece, e o brilho dele é a luz

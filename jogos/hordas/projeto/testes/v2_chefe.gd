@@ -354,6 +354,15 @@ func _ready() -> void:
 
 	var ch = w.combate.chefes.atual
 	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 4000.0, "o chefão é grande e tem muita vida (%s)" % ch.vida_max)
+	ok(ch.escala == floorf(ch.escala), "o tamanho do chefão é inteiro (%.2f)" % ch.escala)
+	# sprite maior desenhado em 1x (folha `_xN` do gerar_cara_nova.py): nada de sprite pequeno ampliado
+	var base: Dictionary = w.sprites.tipo(ch.chave)
+	ok(
+		ch.esc == 1.0 and ch.sprite.scale.x == 1.0 and ch.tipo.w > base.w * (ch.escala - 1.0) and ch.sprite.texture == ch.tipo.tex,
+		"o chefão usa a folha grande em escala 1 (esc %.1f, quadro %s contra %s)" % [ch.esc, ch.tipo.w, base.w]
+	)
+	# os enfeites (coroa, capa, corvos) se posicionam por pe * escala: com a folha grande o pé lógico continua o da folha do lote
+	ok(absf(ch.pe_logico() - float(base.pe)) <= float(base.pe) * 0.1, "o pé lógico do chefão é o da folha do lote (%.1f contra %s)" % [ch.pe_logico(), base.pe])
 	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
 	ok(
 		str(sinais.get("anuncio_texto", "")).contains("CHEFE") and not str(sinais.get("anuncio_texto", "")).contains("MINI"),

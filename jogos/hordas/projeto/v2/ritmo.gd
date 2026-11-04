@@ -4,6 +4,7 @@ const Progresso := preload("res://v2/progresso.gd")
 const Andante := preload("res://v2/andante.gd")
 const VIDA := preload("res://assets/v2/icones_cartas/vida.png")
 const IMA := preload("res://assets/v2/icones_cartas/ima.png")
+const VIDA_16 := preload("res://assets/v2/icones_cartas/16/vida.png")  # o coração do curandeiro: a versão 16x16 já pronta, em 1:1 (antes: a de 32 a escala 0,5)
 var combate
 var cfg: Dictionary
 var rng := RandomNumberGenerator.new()
@@ -33,8 +34,7 @@ func montar(c) -> void:
 		no.visible = false
 		c.mundo.no_mundo.add_child(no)
 		var coracao := Sprite2D.new()
-		coracao.texture = VIDA
-		coracao.scale = Vector2(0.5, 0.5)
+		coracao.texture = VIDA_16
 		coracao.position = Vector2(0, -70)
 		coracao.visible = false
 		no.add_child(coracao)

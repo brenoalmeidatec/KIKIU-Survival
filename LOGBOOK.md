@@ -2921,6 +2921,48 @@ _Claude do Alisson (notebook)_
 
 - Revisão visual adicional encontrou um defeito na primeira correção d0c4c0b0: a convergência curta ainda podia fazer o desenho recuar. RED específico reproduziu 38 casos de recuo visível (102 falhas incluindo o contrato de curva). Acrescentados convergência curta linear e controle visual por vaga: quando a boca já passou do contato ou o alvo aparece tarde, ocultam-se sprite/rastro/sombra até haver avanço novamente, mantendo clarão e impacto. Perfuração preserva o referencial e ricochete real o reinicia; física/RNG inalterados. O novo teste exige voo visível quando há espaço, não passa escondendo todos os tiros, e confere reset das vagas. Resultados finais e ressalvas das capturas ficam no PR no novo head, substituindo a aprovação do commit anterior.
 
+## 2026-11-02 (noite): checagem de pixel art contra a lista de boas práticas (Claude do Alisson (PC))
+- **Feito:** a v2 foi conferida contra a lista de renderização de pixel art que o Alisson mandou.
+  - **Já seguíamos:**
+    - filtro Nearest como padrão;
+    - os 974 PNG sem compressão com perda e sem mipmap;
+    - bloco fixo de 960×540;
+    - câmera arredondada (`camera_mundo.gd`);
+    - Spleen e Jersey10 sem antialiasing.
+  - **PR `alisson/pixel-perfeito`:**
+    - liga o snap de transformações e vértices a pixel nos SubViewports do mundo e da UI (`v2/apresentacao.gd`);
+    - tira o antialiasing da PressStart2P.
+- **Divergências que ficam (decisão, não descuido):**
+  - **Escala:** a v2 usa sharp bilinear fracionário sem barras pretas (`apresentacao.gd`), e não escala inteira com barras. Já existe o `--escala_pura` para comparar. Mudar isso é decisão do Alisson.
+  - **Escala e rotação em tempo de execução:** usamos squash/stretch e rotação em monstros, no giro do herói, no escudo e nos efeitos.
+  - **Filtro linear** em 4 pontos: sombras, sombra da horda, ícone de 32→24 px no HUD e uma tela da apresentação.
+  - **Atkinson:** a fonte de leitura não é pixel.
+- **Pendente:** ninguém olhou em movimento se o snap fez algum sprite lento "tremer" de 1 px. As capturas paradas em 1280×720 saíram iguais.
+### 2026-11-03: PR #601, piso da floresta na grade de 1 px (Claude do Alisson (PC))
+- Feito: `piso.png` da floresta refinado para 1 px (bordas e manchas com textura de 1 px, folhas sem bloco 2x2 por varredura sequencial em `fonte_arte/piso/refinar_piso.py`); fração de janelas 2x2 uniformes de 0,77 para 0,23. Teste `v2_piso_pixel`.
+- Pendente: ninguém viu em movimento numa janela real; merge depende do "pode mergear" do Alisson e do CI 7/7.
+- Próximo: escudos (2 px) e efeitos do pixelfx, em PRs próprios.
+
+## 2026-11-03: integração da grade de pixel (Claude do Alisson (PC))
+- **Feito:** os 8 PRs de pixel art (#599 snap, #600 escala inteira, #601 piso, #603 escudos, #602 efeitos, #604 squash, #605 rotação, #606 filtros/UI) mesclados numa branch só, `alisson/pixel-integrado`, com o "integra tudo" do Alisson. Conflitos: `escudo.gd` ficou com a versão do #603 (o #604 fazia a mesma troca de escala por deslocamento); `heroi.gd` ficou com a rotação em quartos do #605 sem o achatamento (tirado pelo #604); `efeitos.gd` com as duas funções; `LICENCAS_ARTE.md` com as entradas dos dois lados. Os 14 testes tocados deram falhas=0 no PC.
+- **Não visto:** ninguém jogou em movimento. Risco maior: o piso em xadrez de 1 px sob o ganho 3,6 pode piscar com a câmera andando (baixar `AMP` em `fonte_arte/piso/refinar_piso.py`).
+- **Pendente (varredura final):** golem colosso em 1,3x; cortes da katana em `raio/32` (~2,1x); folhas cristal/estrela/anel/espiral em 2 px; HUD do Q e E em 1,5x; armas com alfa gradual; partículas de título/menu/salão com escala fracionária e giro; menus com `content_scale_factor` fracionário. Decisão do Alisson: elites e chefes ampliados por inteiro (2x a 4x) ou sprite maior em 1x; e a janela com sharp bilinear ou escala inteira com barras.
+
+## 2026-11-03 (tarde): elite e chefes com sprite maior em 1x (Claude do Alisson (PC))
+- **Feito:** a decisão 1 de hoje. `gerar_cara_nova.py` ganhou o `CARA_NOVA_MULT=N`, que renderiza o mesmo modelo com N vezes mais pixels por unidade. Na versão grande o ruído perde as oitavas finas e o pixel solto é limpo; o contorno continua de 1 px. As folhas novas estão em `prototipos/cara_nova/sprites/inimigo_*_xN`: cão de ossos, cavaleiro oco, lobo sombrio e espantalho em 2x (elite e mini1), aranha tecelã em 2x e 3x (elite e mini2), espantalho em 4x (chefe). Estão também em `gerar_tudo.sh`. No jogo, `Monstro.definir_escala` troca para a folha `_xN` em escala 1 quando o monstro tem nó e a folha existe (`Sprites.tipo_grande`). Sem a folha, o sprite pequeno continua ampliando por inteiro. `escala` ficou como o tamanho lógico e `esc` como a escala do desenho da folha atual; a barra de vida da elite, a oclusão e os fragmentos e flashes de `efeitos.gd` passaram a ler `esc`.
+- **Testes:** `v2_chefe` e `v2_partida` ganharam checagens da folha grande em escala 1 e da volta à folha do lote; as duas falham no código antigo. Também passaram `v2_andante`, `v2_hud`, `v2_golpes_visuais` e `v2_elencos`. Capturas em janela real dos roteiros `chefe` e `elite`, fora da tela e não versionadas: os três chefes aparecem com detalhe nativo, na mesma grade do cenário, e o contorno está alinhado.
+- **Pendente:** o aliado `dragao_de_brasa` e o golem colosso (1,3x) ainda não têm folha grande. Os roteiros que chamam `definir_escala` em monstro de lote continuam ampliando o sprite pequeno. Ninguém jogou em movimento.
+## 2026-11-03: decisões de pixel art do Alisson (Claude do Alisson (PC))
+- A grade de pixel (#599 a #606, integrada no #607) está na main. Build: `build-2026-11-03-9fa47db`.
+- **Decisão 1:** elites, chefes, aliado grande e baú deixam de ser o sprite normal ampliado 2x a 4x. Eles **ganham sprite maior desenhado em 1x**, no tamanho final (pipeline do Blender), e a escala do desenho volta a 1.
+- **Decisão 2:** a janela **continua com o filtro sharp bilinear e sem barras pretas** (`v2/apresentacao.gd`). A escala inteira com barras está descartada.
+- **Próximo:** os sprites maiores (decisão 1) e a 2ª rodada da varredura (golem 1,3x, corte da katana, Q e E do HUD em 1,5x, alfa das armas, partículas de título e menu).
+
+## 2026-11-03 (noite): #609 mesclado (Claude do Alisson (PC))
+- **Mesclado:** #609 (elite e chefes com sprite maior em 1x), merge `5d27e108`, com o "mergeia" do Alisson. CI 8/8 verde no `de889569`. Revisão independente "aprovo com ressalvas" depois da correção dos enfeites do chefe (`pe_logico`).
+- **CI da 1ª rodada:** quebrou a `v2_oclusao`, porque os monstros de teste são Dictionary e não têm `esc`, e a `v2_golpes_visuais`, que esperava o sprite ampliado 2x. As duas foram corrigidas. A `armas_novas` ("runas machucou os inimigos", dano 0) falhou uma vez no CI e passou no PC: parece instável. Se voltar a falhar, investigar.
+- **Pendente:** coroa e gemas do chefão desenhadas por código em blocos grossos (`chefe_visual.gd`), fora da grade de 1 px; dragão aliado e golem colosso sem folha grande; 2ª rodada da varredura (katana, HUD Q/E, armas, partículas). Ninguém jogou em movimento.
+
 **Elenco #586, padrão visual dos 9 heróis (01/11/2026, Claude do Alisson, notebook, branch alisson/elenco-padrao):** feito por workflow durante a noite. O framework compartilhado `hazaki/gerar.py` ganhou parâmetros opcionais (CABECA, ARMA_ESCALA/ESPESSURA/CLAREAR/DIRECAO/ESCALA_ANIM, ESTILO_2D, RETRATO); um perfil que não os usa gera o mesmo de antes, pixel a pixel. O módulo novo `hazaki/estilo2d.py` aplica o contorno de 1 px e o rim light. Os 9 heróis foram regerados com cor-assinatura, cabeça ~38% e arma 1,5x, e cada um tem `retrato.png` 64x64. A revisão de arte reprovou 5 (John, Matthew, Bert, Lukako e Fabian, pela arma ilegível e pela bainha da katana herdada do Hazaki). As 5 armas foram refeitas: naginata, shurikens, kusarigama com gancho e corrente, leque aberto (a Lukako ganhou silhueta feminina) e yumi com corda. `dados/v2_herois.json`: joao, beto, lukako e fabio deixaram de usar `hazaki_samurai` e passam a usar a própria folha. O retrato duplo do LightWolf (#584) fica em `assets/personagens/lightwolf/retrato_dupla*.png`, ainda sem uso no jogo. Testes pela fila (v2_herois, v2_herois_novos, v2_elencos, animacao_heroi, v2_hud_busto, v2_morte_heroi, v2_oclusao) com falhas=0. Prévias em `notas/o9_previas/elenco/` (a `prancha_pos_correcao.png` mostra o estado final). Pendente: o Alisson e o Isac precisam ver e aprovar (é mudança visual, então não tem merge automático); o próprio revisor não reviu os 5 corrigidos; a arma do Brendan troca de pose de repente quando o combo começa; a leitura a 1x precisa ser conferida em partida real; no retrato duplo, o lobo se funde com o mecha no tamanho 128; e o Nick tem a mesma altura dos humanos.
 
 **Elenco #586, 2ª revisão de arte (01/11/2026, Claude do Alisson, notebook):** um revisor independente olhou de novo os 5 heróis corrigidos. John e Lukako foram aprovados com ressalvas: a naginata do John some de perfil no parado, e de perfil as mechas da Lukako leem como barba. Matthew foi reprovado porque a bainha da katana ficava no quadril de propósito; corrigido aqui, sem bainha, com a folha regerada. Bert foi reprovado porque a corrente e o peso não aparecem em nenhum quadro. Fabian foi reprovado porque o combo não anima o arco, porque o arco se funde ao braço e porque fica marrom sobre marrom. Bert e Fabian já reprovaram duas vezes na arma, então parei neles: decisão do Alisson e do Isac (refazer a arma por um caminho novo ou aceitar como está). Detalhes no PR #598.

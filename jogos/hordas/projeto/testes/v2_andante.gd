@@ -245,7 +245,10 @@ func checar_fusao(id: String) -> void:
 	for b in bs:
 		var base: Dictionary = Andante.FICHAS[b]
 		var f := Andante.resolver("%s/%s" % [id, b])
-		ok(is_equal_approx(float(f.esc), e) and f.tinta == al.get("tinta", Color.WHITE), "%s/%s: escala e tinta do alias" % [id, b])
+		# o desenho só amplia por inteiro (pixel art): 1,5 vira 2, 1,15 vira 1; o alcance segue o `e` exato
+		var esc := float(f.esc)
+		ok(esc == maxf(1.0, roundf(e)) and esc == floorf(esc), "%s/%s: escala inteira do desenho (%.2f)" % [id, b, esc])
+		ok(f.tinta == al.get("tinta", Color.WHITE), "%s/%s: tinta do alias" % [id, b])
 		for k in ["alcance", "frente", "raio", "sombra"]:
 			ok(is_equal_approx(float(f[k]), float(base[k]) * e), "%s/%s: %s escala com o desenho" % [id, b, k])
 		ok(float(f.frente) <= float(Andante.ficha(b).frente) * e + 0.01 and f.tempos == base.tempos, "%s/%s: o ritmo do ataque é o da base" % [id, b])

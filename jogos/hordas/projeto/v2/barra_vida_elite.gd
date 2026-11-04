@@ -21,7 +21,7 @@ func sincronizar(monstro) -> void:
 		return
 	var vida_max := maxf(float(monstro.vida_max), 1.0)
 	var nova_fracao := clampf(float(monstro.vida) / vida_max, 0.0, 1.0)
-	var novo_largura := clampf(float(monstro.tipo.get("w", 36.0)) * float(monstro.escala) * 0.9, LARGURA_MIN, LARGURA_MAX)
+	var novo_largura := clampf(float(monstro.tipo.get("w", 36.0)) * float(monstro.esc) * 0.9, LARGURA_MIN, LARGURA_MAX)
 	var nova_cor: Color = monstro.cor_elite
 	var retangulo: Rect2 = monstro.sprite.get_rect()
 	var topo_visual := float(monstro.sprite.position.y) + retangulo.position.y * float(monstro.sprite.scale.y)
