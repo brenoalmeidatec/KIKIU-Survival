@@ -477,11 +477,10 @@ func _base_barras() -> Vector2:
 
 
 func _animar(dt: float) -> void:
-	# Pulso do combo: sobe alguns pixels e dá um soco de escala (1,0 a 1,3 em degraus), e clareia para a cor do marco. Volta no repouso.
+	# Pulso do combo: sobe alguns pixels e clareia para a cor do marco (o soco de escala de 1,0 a 1,3 saiu: fração de pixel borra a grade). Volta no repouso.
 	pulso = maxf(pulso - dt, 0.0)
 	var k := pulso / PULSO_T
 	_combo.position = Vector2(_combo_x, _combo_y - roundf(SALTO_PX * k))
-	_combo_num.scale = Vector2.ONE * (1.0 + 0.1 * roundf(3.0 * k))
 	_combo_num.modulate = _cor_base.lerp(Color.WHITE, 0.6 * k)
 	# Brilho do XP: a barra e o selo clareiam para o dourado, piscando em degraus de 1/4 (pixel art não tem alfa suave) e apagando até zero.
 	brilho = maxf(brilho - dt, 0.0)
@@ -489,17 +488,14 @@ func _animar(dt: float) -> void:
 	if Piscadas.ligado():  # "Reduzir piscadas": o seno de ~2,5 Hz some; dourado fixo enquanto o brilho dura, uma subida e uma descida só
 		f = Piscadas.BRILHO_XP_FIXO if brilho > 0.0 else 0.0
 	_xp_barra.modulate = Color.WHITE.lerp(BRILHO_XP, f)
-	# Pop do selo ao subir de nível (cresce 0,4 e volta, em degraus de 0,05) e o anel de luz que sai dele.
+	# Pop do selo ao subir de nível: ele clareia (o `modulate` da barra acima) e o anel de luz sai dele. Sem escala: só pixel inteiro.
 	_pop_selo = maxf(_pop_selo - dt, 0.0)
-	_selo.scale = Vector2.ONE * (1.0 + roundf(8.0 * _pop_selo / POP_SELO_T) / 20.0)
 	_selo.modulate = _xp_barra.modulate
 	_anel_t = maxf(_anel_t - dt, 0.0)
 	_anel.visible = _anel_t > 0.0
 	if _anel.visible:
 		var sumindo := _anel_t / ANEL_T
-		var cresce := 1.0 - sumindo
-		_anel.scale = Vector2.ONE * (0.6 + 1.6 * cresce)
-		_anel.modulate = Color(1, 1, 1, sumindo)
+		_anel.modulate = Color(1, 1, 1, roundf(4.0 * sumindo) / 4.0)  # o anel acende e some em quatro degraus, no tamanho do desenho
 	# Relógio: pisca dourado a cada minuto, em quatro degraus.
 	_relogio_pisca = maxf(_relogio_pisca - dt, 0.0)
 	_relogio.modulate = Color.WHITE.lerp(OURO, roundf(4.0 * _relogio_pisca / RELOGIO_PISCA_T) / 4.0)
@@ -589,13 +585,12 @@ func _mostrar_fusao(nome: String, desc: String, cor: Color) -> void:
 		halo.modulate = Color(cor.r, cor.g, cor.b, 0.9)
 	_fusao_nome.text = nome.to_upper()
 	_fusao_desc.text = desc
-	_fusao.modulate.a = 1.0
-	_fusao.scale = Vector2.ONE * 1.25
+	_fusao.modulate = Color(1.6, 1.6, 1.6, 1.0)  # chega acesa e assenta (antes: chegava 1,25x maior)
 	_fusao.visible = true
 	if _fusao_tween != null:
 		_fusao_tween.kill()
 	_fusao_tween = create_tween()
-	_fusao_tween.tween_property(_fusao, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_fusao_tween.tween_property(_fusao, "modulate", Color.WHITE, 0.22)
 	_fusao_tween.tween_interval(FUSAO_T - 0.6)
 	_fusao_tween.tween_property(_fusao, "modulate:a", 0.0, 0.4)
 	_fusao_tween.tween_callback(_fusao.hide)

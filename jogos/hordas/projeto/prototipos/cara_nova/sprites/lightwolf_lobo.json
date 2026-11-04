@@ -220,7 +220,5 @@
    "aviso": "cai DE LADO, deitada atravessada na tela (cabeca para a esquerda ou a direita), encolhida; nos quadros deitados o corpo (botas, katana) passa 3 a 5 px dos 32 e e cortado pela celula (anim_morte.py, medir.py)"
   }
  },
- "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'.",
- "provisorio": true,
- "origem": "lucas (recolor.py, LW-1; troca pela arte final do LW-7)"
+ "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."
 }

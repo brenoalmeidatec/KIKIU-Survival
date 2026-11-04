@@ -642,7 +642,7 @@ func _testes_anuncios(vista: SubViewport) -> void:
 	g.combo = 50
 	hg.avancar(PASSO)
 	ok(ag.texto_ativo == "MASSACRE!", "marco 50 anuncia MASSACRE!")
-	ok(hg._combo_num.scale.x > 1.0, "o número do combo dá o soco de escala no abate")
+	ok(hg._combo_num.scale == Vector2.ONE and hg.pulso > 0.0, "o número do combo pulsa no abate sem escala fracionária")
 	_passar(hg, 2.5)
 	g.combo = 60
 	hg.avancar(PASSO)
@@ -652,7 +652,7 @@ func _testes_anuncios(vista: SubViewport) -> void:
 	g.combo = 250
 	hg.avancar(PASSO)
 	ok(ag.texto_ativo == "LENDÁRIO!" and ag.fila.size() == 0, "de 0 a 250 num quadro, só o marco mais alto (LENDÁRIO!)")
-	ok(ag.scale.x > 1.5, "o marco 200 entra maior que os outros: %s" % ag.scale.x)
+	ok(ag.scale == Vector2.ONE and ag.modulate.r > 1.5, "o marco 200 entra mais aceso que os outros, sem escala: %s" % ag.modulate)
 	_passar(hg, 3.0)
 
 	# E. nível: o anúncio NÍVEL N!, o pop do selo e o anel de luz
@@ -660,9 +660,9 @@ func _testes_anuncios(vista: SubViewport) -> void:
 	h.avancar(PASSO)
 	ok(an.texto_ativo == "NÍVEL 8!", "nível novo anuncia NÍVEL 8!")
 	ok(an._texto.get_theme_color("font_color") == Hud.COR_NIVEL, "NÍVEL N! sai em azul-claro")
-	ok(h._anel.visible and h._selo.scale.x > 1.0, "o selo dá pop e o anel de luz sai")
+	ok(h._anel.visible and h._pop_selo > 0.0 and h._selo.scale == Vector2.ONE, "o selo clareia (sem escala) e o anel de luz sai")
 	_passar(h, 0.6)
-	ok(not h._anel.visible and h._selo.scale.x == 1.0, "o anel some em meio segundo e o selo volta ao tamanho")
+	ok(not h._anel.visible and h._selo.scale == Vector2.ONE and h._anel.scale == Vector2.ONE, "o anel some em meio segundo e nada do HUD escala")
 	_passar(h, 3.0)
 
 	# F. sinal livre: a cor vem do sinal (Color ou o texto de uma cor)

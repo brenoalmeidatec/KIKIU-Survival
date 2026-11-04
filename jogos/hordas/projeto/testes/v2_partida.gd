@@ -471,6 +471,15 @@ func _ready() -> void:
 		el != null and el.elite and el.escala > 1.3 and el.vida_max > 100.0,
 		"a elite nasce maior e com mais vida (%.1fx, %d de vida)" % [el.escala, roundi(el.vida_max)]
 	)
+	# sprite maior desenhado em 1x: a elite usa a folha `_x2` em escala 1, e volta à folha do lote quando a escala volta a 1
+	var base_el: Dictionary = w.sprites.tipo("inimigo_cao_ossos")
+	ok(
+		el.esc == 1.0 and el.sprite.scale.x == 1.0 and el.tipo.w > base_el.w and el.sprite.texture == el.tipo.tex,
+		"a elite usa a folha grande em escala 1 (quadro %s contra %s)" % [el.tipo.w, base_el.w]
+	)
+	el.definir_escala(1.0)
+	ok(is_same(el.tipo, base_el) and el.sprite.texture == base_el.tex, "na escala 1 a elite volta à folha do lote")
+	el.definir_escala(1.5)
 	ok(el.contorno != null and el.contorno.visible, "a elite tem o contorno colorido")
 	ok(
 		conta("elite") == 1 and str(sinais.get("elite_nome", "")) == "%s Blindado" % _nome_elite(el),

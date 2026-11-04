@@ -43,6 +43,7 @@ extends "res://v2/ator.gd"
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 const Foguinho := preload("res://v2/foguinho.gd")
+const PixelRot := preload("res://v2/pixel_rot.gd")  # pixel art só gira em passos de 90 graus
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a invencibilidade vira tom fixo
 const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a defesa do escudo recarrega sozinha?
 
@@ -50,6 +51,9 @@ enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
 const VEL := 100.0  # px/s
 const AMORTECE_EMP := 11.0  # o empurrão que o herói leva perde força: emp *= exp(-AMORTECE_EMP dt) (o vigia dos segredos lê para não confundir com andar)
+const GOLPE_AFUNDA_PX := 1.0  # px que o corpo afunda no acerto do golpe
+const CARGA_AFUNDA_PX := 2.0  # px que o corpo agacha com a ruptura carregada
+const RECUO_DISPARO_PX := 2.0  # px que o corpo recua no disparo da ruptura
 const PASSO_ANIM := 0.13  # s por quadro de andar
 const MORTE_DISSOLVE := 0.3  # s de jogo (relógio do herói: hit-stop e câmera lenta esticam) que o corpo leva para se desfazer
 const MORTE_FLASH := 0.2  # fração inicial da dissolução em que o corpo fica branco (o "flash" do golpe fatal)
@@ -194,6 +198,7 @@ var hab_icone := ""  # o id do ícone (assets/v2/icones_cartas)
 var hab_cor := Color.WHITE  # o brilho do slot e dos efeitos
 var hab_recarga := 0.0  # s até poder usar a E de novo (por tempo; o tempo do mundo corre)
 var hab_recarga_max := 1.0  # a recarga cheia, para o HUD desenhar a fração
+var hab_pedido_t := 0.0  # janela do aperto antecipado da E não-Ruptura, no tempo do mundo
 var hab_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
 var hab_t := 0.0  # s desde o disparo (0 fora da E)
 var hab_dur := 1.0  # a duração da E em andamento
@@ -229,6 +234,7 @@ var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
 var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
+var _pose_tiro_t := 0.0  # somente a pose visual da folha: evita baixar e erguer os braços entre tiros rápidos
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
 var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
@@ -333,6 +339,7 @@ func resetar(p: Vector2) -> void:
 	hab_t = 0.0
 	hab_invul = false
 	hab_recarga = 0.0
+	hab_pedido_t = 0.0
 	hab_nega_t = 0.0
 	_rup_tique = 0
 	_rup_punch = 0.0
@@ -347,6 +354,7 @@ func resetar(p: Vector2) -> void:
 	sprite.offset = _off_base
 	sprite.material = null
 	morte_t = 0.0
+	_pose_tiro_t = 0.0
 	foguinho.resetar()
 	definir_pos(p)
 	iniciar_stats(mundo.combate.cfg)
@@ -396,18 +404,27 @@ func habilidade() -> bool:
 		or c.jogo != "jogando"
 		or c.pausado
 		or _pausa_aberta()
+		or _hab_menu_aberto()
 		or estado == Estado.MORTO
 		or estado == Estado.HABILIDADE
 		or estado == Estado.ESPECIAL
 	):
+		cancelar_habilidade_pedida()
 		return false
 	if hab_nome == "" or hab_id == "ruptura":
+		cancelar_habilidade_pedida()
 		return false  # este herói não tem E (ou a dele é a ruptura)
 	if hab_recarga > 0.0:
+		var janela := float(c.habilidade.comum.buffer_s)
+		if hab_recarga <= janela:
+			hab_pedido_t = janela
+			return false
+		cancelar_habilidade_pedida()
 		hab_nega_t = float(c.habilidade.comum.nega_t)
 		hab_negados += 1
 		c.habilidade.negou(self)
 		return false
+	cancelar_habilidade_pedida()
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
@@ -439,6 +456,7 @@ func especial() -> bool:
 		esp_negados += 1
 		c.especial.negou(self)
 		return false
+	cancelar_habilidade_pedida()
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
@@ -524,6 +542,7 @@ func sair_lobo() -> void:
 ## A barra de defesa NÃO se reabastece com a troca (só a cura repõe, combinado 2; no Difícil ela não recarrega sozinha): o Lobo não tem matriz, então a barra do mecha fica
 ## guardada (`def_reserva`, com a sobrecarga) enquanto durar o Lobo e volta como estava, ao contrário da vida, que volta cheia. Partida nova (`iniciar_stats`) enche e esquece a reserva.
 func trocar_forma(nova: String, folha: Dictionary) -> void:
+	cancelar_habilidade_pedida()
 	cancelar_ruptura(false)
 	_baixar_escudo()
 	_cancelar_aparo()
@@ -636,6 +655,7 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	mundo.combate.heroi_apanhou(valor)
 	_dano_t = 0.0
 	if vida <= 0.0:
+		cancelar_habilidade_pedida()
 		var mecha = mundo.combate.mecha
 		if mecha != null and mecha.quebrou(self):  # LW-2: a vida do mecha zerou: ele estoura e o herói vira Lobo (só a morte do Lobo cai no código abaixo)
 			return true
@@ -653,6 +673,7 @@ func atualizar(dt: float) -> void:
 	var real := entrada_forcada == null
 	var v: Vector2 = entrada_forcada if not real else Input.get_vector("esquerda", "direita", "cima", "baixo")
 	if estado == Estado.MORTO:
+		cancelar_habilidade_pedida()
 		_visual_morto(dt)
 		return
 	if real and InputMap.has_action("mira_esquerda"):
@@ -673,7 +694,7 @@ func atualizar(dt: float) -> void:
 	pausa_t = maxf(0.0, pausa_t - dt)
 	if rup_recarga > 0.0 or rup_pedido_t > 0.0 or rup_nega_t > 0.0 or contragolpe_t > 0.0:
 		_rup_relogios(dt)
-	if hab_recarga > 0.0 or hab_nega_t > 0.0:
+	if hab_recarga > 0.0 or hab_nega_t > 0.0 or hab_pedido_t > 0.0:
 		_hab_relogios(dt)
 	if esp_nega_t > 0.0:
 		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
@@ -696,6 +717,9 @@ func atualizar(dt: float) -> void:
 		if d.length() > 4.0:
 			dir_olhar = d.normalized()
 	mira_mundo = c + dir_olhar * 120.0 if fonte != Fonte.MOUSE else mundo.mouse_mundo()
+	if hab_pedido_t > 0.0 and hab_recarga <= 0.0:
+		cancelar_habilidade_pedida()
+		habilidade()  # consome uma vez no quadro em que a recarga zera, com a mira atual
 	var desl := Vector2.ZERO
 	match estado:
 		Estado.LIVRE:
@@ -1221,6 +1245,16 @@ func _pausa_aberta() -> bool:
 	return mundo.pausa != null and mundo.pausa.aberto
 
 
+## Não deixar que um comando das cartas ou do baú vire habilidade ao retomar a partida.
+func _hab_menu_aberto() -> bool:
+	var telas = mundo.combate.telas
+	return telas != null and (telas.escolha_aberta or telas.bau_aberto)
+
+
+func cancelar_habilidade_pedida() -> void:
+	hab_pedido_t = 0.0
+
+
 ## O botão da ruptura está segurado? Polling, como o atacar. Em modo forçado (testes e fotos) vale `ruptura_forcada`.
 func _segurando_ruptura() -> bool:
 	if entrada_forcada != null:
@@ -1241,11 +1275,23 @@ func _rup_relogios(dt: float) -> void:
 
 ## Relógios da E (a que não é a ruptura), no tempo do mundo (hit-stop e pausa congelam). Quando a recarga zera, avisa uma vez.
 func _hab_relogios(dt: float) -> void:
+	if (
+		estado == Estado.HABILIDADE
+		or estado == Estado.ESPECIAL
+		or estado == Estado.MORTO
+		or mundo.combate.jogo != "jogando"
+		or mundo.combate.pausado
+		or _pausa_aberta()
+		or _hab_menu_aberto()
+	):
+		cancelar_habilidade_pedida()
 	hab_nega_t = maxf(0.0, hab_nega_t - dt)
 	if hab_recarga > 0.0 and estado != Estado.HABILIDADE:  # a recarga só corre depois da E (durante ela fica cheia)
 		hab_recarga = maxf(0.0, hab_recarga - dt)
 		if hab_recarga <= 0.0:
 			mundo.combate.habilidade.pronta(self)
+	if hab_pedido_t > 0.0 and hab_recarga > 0.0:
+		hab_pedido_t = maxf(0.0, hab_pedido_t - dt)
 
 
 func _iniciar_carga() -> void:
@@ -1355,19 +1401,19 @@ func _visual(dt: float, v: Vector2) -> void:
 	# corpo: o "soco" do golpe (esticada na direção do corte), o giro da esquiva e o pisca de quem acabou de apanhar
 	if _punch > 0.0:
 		_punch = maxf(0.0, _punch - dt / 0.16)
-	var desloca := Vector2.ZERO
-	var esc := Vector2.ONE
-	if estado == Estado.GOLPE:
+	var desloca := Vector2.ZERO  # o peso do corpo é um passo de pixel inteiro (afunda, recua): o sprite nunca é escalado fora de 1x
+	if estado == Estado.GOLPE and not bool(tipo.info.get("corpo_fixo_ao_atirar", false)):
 		var corpo := CurvaGolpe.corpo(golpe_t / golpe_dur, float(golpe_cfg.acerto_em))
 		desloca = (golpe_dir * corpo.x).round()
-		esc = Vector2(1.0 + 0.1 * corpo.y, 1.0 - 0.07 * corpo.y)
-	elif estado == Estado.CARGA:  # agacha, treme um pixel na carga cheia
-		esc = Vector2(1.0 + 0.05 * rup_carga, 1.0 - 0.09 * rup_carga)
+		desloca.y += float(roundi(corpo.y * GOLPE_AFUNDA_PX))  # o acerto assenta o corpo no chão (era o achatar de 7%)
+	elif estado == Estado.CARGA:  # agacha 1-2 px, treme um pixel na carga cheia
+		desloca = Vector2(0.0, float(roundi(rup_carga * CARGA_AFUNDA_PX)))
 		if rup_carga >= 1.0:
-			desloca = Vector2(float(int(Time.get_ticks_msec() / 40.0) % 3 - 1), 0.0)
-	if _rup_punch > 0.0:  # o soco do disparo: alarga e achata um instante
+			desloca.x = float(int(Time.get_ticks_msec() / 40.0) % 3 - 1)
+	if _rup_punch > 0.0:  # o soco do disparo: o corpo recua 2 px da mira na primeira metade (era alargar e achatar)
 		_rup_punch = maxf(0.0, _rup_punch - dt / 0.12)
-		esc = Vector2(lerpf(esc.x, 1.14, _rup_punch), lerpf(esc.y, 0.88, _rup_punch))
+		if _rup_punch >= 0.5:
+			desloca -= (dir_olhar * RECUO_DISPARO_PX).round()
 	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
 		sprite.position = Vector2.ZERO  # o rolamento já está desenhado na folha: sem girar o sprite
 		sprite.offset = _off_base
@@ -1377,14 +1423,13 @@ func _visual(dt: float, v: Vector2) -> void:
 		var gira := signf(esq_dir.x) if absf(esq_dir.x) > 0.1 else 1.0
 		sprite.position = Vector2(0, -14)
 		sprite.offset = _off_base + Vector2(0, 14)
-		sprite.rotation = gira * TAU * minf(p * 1.15, 1.0)
-		esc = Vector2(1.0, 0.82)
+		sprite.rotation = PixelRot.quarto(gira * TAU * minf(p * 1.15, 1.0))  # pixel art só gira em passos de 90 graus (a folha de hoje tem o rolamento desenhado: isto é o reserva)
 	else:
 		if sprite.rotation != 0.0:
 			sprite.rotation = 0.0
 			sprite.offset = _off_base
 		sprite.position = desloca
-	sprite.scale = esc
+	sprite.scale = Vector2.ONE
 	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:
 		sprite.modulate = Color(1, 1, 1, 0.78)
@@ -1456,7 +1501,7 @@ func _visual_morto(dt: float) -> void:
 		return
 	sprite.position = Vector2(0, -14)
 	sprite.offset = _off_base + Vector2(0, 14)
-	sprite.rotation = lerpf(sprite.rotation, 1.45 * (1.0 if dir_olhar.x >= 0 else -1.0), 1.0 - exp(-9.0 * dt))
+	sprite.rotation = PixelRot.quarto(1.45 * (1.0 if dir_olhar.x >= 0 else -1.0) * (1.0 - exp(-9.0 * morte_t)))  # a queda do lerp em forma fechada, em passos de 90 graus (de pé e depois deitado)
 	sprite.scale = Vector2.ONE
 	sprite.modulate = Color(1, 0.8, 0.8, 0.85)
 
@@ -1480,7 +1525,11 @@ func _duracao_anim(nome: String, sem_ultimo := false) -> float:
 ## A coluna do quadro `i` da animação `nome` (limitado ao último).
 func _coluna_anim(nome: String, i: int) -> int:
 	var cols: Array = tipo.info.animacoes[nome].colunas
-	return int(cols[clampi(i, 0, cols.size() - 1)])
+	var indice := clampi(i, 0, cols.size() - 1)
+	if Piscadas.ligado():
+		var sem_clarao: Dictionary = tipo.info.animacoes[nome].get("sem_clarao", {})
+		indice = clampi(int(sem_clarao.get(str(indice), indice)), 0, cols.size() - 1)
+	return int(cols[indice])
 
 
 ## A coluna da animação `nome` depois de `t` segundos, pelos tempos s_quadros da folha (ou s_por_quadro); trava no último quadro.
@@ -1498,6 +1547,11 @@ func _coluna_por_tempo(nome: String, t: float) -> int:
 
 ## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
 func _coluna_acao(dt: float) -> int:
+	var corpo_fixo := bool(tipo.info.get("corpo_fixo_ao_atirar", false))
+	if corpo_fixo and estado == Estado.GOLPE:
+		_pose_tiro_t = maxf(float(tipo.info.get("segurar_mira_s", 0.0)), 0.0)
+	else:
+		_pose_tiro_t = maxf(_pose_tiro_t - dt, 0.0)
 	if _dano_t >= 0.0:
 		_dano_t += dt
 		if _tem_anim("dano") and estado != Estado.ESQUIVA:
@@ -1521,6 +1575,10 @@ func _coluna_acao(dt: float) -> int:
 		var passo := mini(esp_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
 		var p := fposmod(esp_t / maxf(esp_dur, 0.001) * esp_anim_ciclos, 0.999)
 		return _coluna_anim("combo", passo * por_golpe + int(p * por_golpe))
+	if estado == Estado.HABILIDADE:
+		var pose_habilidade := str(tipo.info.get("poses_habilidades", {}).get(hab_id, ""))
+		if pose_habilidade != "" and _tem_anim(pose_habilidade):
+			return _coluna_anim(pose_habilidade, 0)  # mísseis saem dos pods: sem simular tiro dos canhões dos braços
 	if estado == Estado.HABILIDADE and _tem_anim("combo"):  # a E toca um passo do combo (hab_anim_passo), repetido hab_anim_ciclos vezes
 		var por_golpe_h := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
@@ -1534,6 +1592,8 @@ func _coluna_acao(dt: float) -> int:
 		if not hab_anim_quadros.is_empty():
 			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
+	if corpo_fixo and estado == Estado.LIVRE and not andando and not escudo_ativo and _pose_tiro_t > 0.0 and _tem_anim("combo"):
+		return _coluna_anim("combo", 0)
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)
 	return -1

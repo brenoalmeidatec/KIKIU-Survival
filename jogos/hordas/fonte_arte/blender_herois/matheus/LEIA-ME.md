@@ -38,3 +38,16 @@ GIFs, comparativo e prints: `docs/visual_2_5d/blender_herois/matheus/`.
 parado, andar, andar na diagonal, combo, E, Q, rolamento, escudo, dano, morte, círculo de colisão e HUD. E e Q do Matheus usam as mesmas colunas da folha que as do Hazaki (mesmo json): a E (ruptura) não tem pose própria, é o quadro parado/andar com o agachar e o "soco" de escala feitos em código (`heroi.gd`, estado CARGA);
 o Q (investida) toca o 3º golpe do combo, a estocada (`anim.passo` 2 de `dados/v2_especial.json`). Nenhuma pose nova foi precisa.
 Fotos e GIFs: `docs/visual_2_5d/matheus_em_jogo_2026_10_21/`.
+
+## Arma e combo de arremesso (PER-4, 01/11)
+O Matthew joga com SHURIKEN (`dados/v2_herois.json`, herói `matheus`). Na folha, a katana continua na mão direita, e a **shuriken** entra na mão ESQUERDA (`perfil.py`, `ajustar`): estrela de 4 pontas em aço fosco, ~4 a 5 px, presa ao antebraço esquerdo para seguir o braço.
+- O **combo** do Matthew é de **3 arremessos** (`anim_combo_arremesso.py`): o braço da shuriken recua, solta e estende; a katana fica na guarda. `perfil.py` registra esse módulo no lugar de `anim_combo` (só neste perfil; o `anim_combo.py` do Hazaki não muda). A shuriken sai da mão no voo (`efeito`), como o rastro da lâmina.
+- Regerar só as animações que mudaram (dano, morte, escudo e rolamento não têm shuriken):
+```
+blender -b -t 6 -P gerar.py -- --anim=parado
+blender -b -t 6 -P gerar.py -- --anim=andar
+blender -b -t 6 -P gerar.py -- --anim=combo
+python ../hazaki/montar_folha.py . matheus      # folha + prévia x4
+```
+  Atenção: sem `--anim`, a shuriken entra também em dano, morte, escudo e rolamento (o perfil vale para todas). Se for regerar tudo, reveja esses quadros antes.
+- Estado: a prévia mostra a shuriken na mão nos três quadros; o arremesso ainda lê fraco a 32x44 (o voo sai em 3 a 5 px). Pendente de olho do Alisson/Isac.

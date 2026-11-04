@@ -219,6 +219,56 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 - `jogos/hordas/fonte_arte/lightwolf_icones/A23_lw_cartas.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com o prompt em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fonte copiada sem alteração.
 - Derivados (mesma arte, nenhuma arte nova), gerados por `jogos/hordas/fonte_arte/lightwolf_icones/reduzir_cartas.py`: `jogos/hordas/projeto/assets/v2/icones_cartas/{sifao,ampla,cabo,aurora_lunar}.png` (32x32), `.../icones_cartas/16/` (16x16) e, para as três cartas de bônus, `jogos/hordas/projeto/assets/gerado/icone_{matriz_sifao,matriz_ampla,cabo_resgate}.png` (16x16, o ícone antigo de reserva). Mudanças: separação dos quatro desenhos pelas colunas com alfa, corte do halo de alfa baixo (alfa < 160 vira 0), recorte pela caixa do objeto, encaixe no quadrado (30 px e 15 px) com a proporção mantida, média de caixa com cor pré-multiplicada e alfa endurecido (>= 128 vira 255).
 
+## PER-4: folha Blender do Bert (KUSARIGAMA), Claude do Alisson (PC, worktree alisson/per4-beto), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/beto/`: folha de sprites gerada por script (Blender 4.5, `gerar.py` + `perfil.py`) sobre o rig e as animações do Hazaki, com a aparência e a foice do Bert. Arte PRÓPRIA, sem modelo, textura ou referência de terceiros: a geometria vem do estudo do Codex (arte própria dele no Blender, já registrada em LW/PER-3) e as peças novas são primitivas do script.
+- Gerados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/beto.json`, `beto_albedo.png` e `beto_normal.png` (cópia de `beto_final*`). Sem direitos de terceiros declarados. Nada de referência externa usada.
+
+- **John (PER-4, 01/11, Claude do Alisson, notebook)**: folha própria `jogos/hordas/projeto/prototipos/cara_nova/sprites/joao{.json,_albedo.png,_normal.png}`, gerada por script no Blender 4.5 a partir de `jogos/hordas/fonte_arte/blender_herois/joao/` (perfil.py + gerar.py, sobre o rig e o modelo do Hazaki, que é o estudo do Codex já registrado acima). Sem arte de terceiros. Cores e cabelo tirados do retrato `assets/personagens/joao/rosto.png` (do próprio projeto). Naginata modelada no mesmo script.
+
+## PER-4: shuriken do Matthew na mão e combo de arremesso (folha `matheus`), Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/matheus/` (`perfil.py`, `anim_combo_arremesso.py`, quadros `parado`, `andar` e `combo`, e a folha `matheus_final_{albedo,normal}.png` + `matheus_final.json`): arte PRÓPRIA, gerada por script no Blender 4.5 (sem modelagem à mão, sem material de terceiros). Nenhuma fonte, ícone ou imagem externa.
+- Mudanças: shuriken de aço fosco na mão esquerda (estrela de 4 pontas, ~4 a 5 px) nos quadros parado, andar e combo; combo de katana trocado por 3 arremessos do perfil do Matthew (só este perfil; o do Hazaki não mudou). Animações dano, morte, escudo e rolamento não foram regeradas e saíram idênticas pixel a pixel.
+- Cópia no jogo: `jogos/hordas/projeto/prototipos/cara_nova/sprites/matheus_{albedo,normal}.png` e `matheus.json` (formato igual, 50 colunas x 8 linhas, 1600x352).
+
+## PER-4: folha Blender do Lukako (TESSEN), Claude do Alisson (sessão do subagente; máquina não identificada), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/lukako/` (`perfil.py`, `gerar.py`, `medir.py`, `LEIA-ME.md`): modelo, rig e animações gerados por script (Blender 4.5, `blender -b`) sobre o framework do Hazaki e o estudo do Codex, já registrados acima. O perfil é próprio (paleta, cabelo, roupa e o leque TESSEN, no lugar da katana). Sem arte, fonte ou ícone de terceiros.
+- Derivados no jogo, gerados pelo `hazaki/montar_folha.py`, sem mudança à mão: `jogos/hordas/projeto/prototipos/cara_nova/sprites/lukako.json`, `lukako_albedo.png` e `lukako_normal.png` (grade 50x8 de quadros 32x44).
+- Sem licença de terceiros a declarar, e sem crédito obrigatório nos Créditos por isso.
+
+## PER-4: folha Blender do Fabian (YUMI), Claude do Alisson (notebook, worktree alisson/per4-fabio), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/fabio/`: folha de sprites gerada por script (Blender 4.5, `gerar.py` + `perfil.py` + `anim_combo.py`) sobre o rig e as animações do Hazaki, com a aparência e o arco do Fabian. Arte PRÓPRIA, sem modelo, textura ou referência de terceiros: as peças novas são primitivas do script.
+- Gerados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/fabio.json`, `fabio_albedo.png` e `fabio_normal.png` (cópia de `fabio_final*`). Sem direitos de terceiros declarados.
+
+## LW-7: folha final do Lobo do LightWolf (Blender por script), Claude do Alisson, 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/lightwolf_lobo/` (`modelo_lobo.py`, `gerar.py`, `montar_folha.py`): modelo próprio feito por script no Blender 4.5, no rig e nas animações do Luke (`../lucas/`), a partir da referência `notas/artes_chatgpt/A16_lightwolf_lobo_ref.png` (arte gerada por IA, ChatGPT, conta do Alisson, sem direitos de terceiros declarados; só serviu de guia, não entra no repo). Nenhuma arte de terceiros.
+- Derivados: `jogos/hordas/projeto/prototipos/cara_nova/sprites/lightwolf_lobo{.json,_albedo.png,_normal.png}` (substituem a folha provisória do `lightwolf_provisorio/recolor.py`). Mudanças: nenhuma depois do render (a folha sai de `montar_folha.py`).
+
+## LW-7: folha Blender do mecha do LightWolf, Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/projeto/prototipos/cara_nova/sprites/lightwolf_mecha{.json,_albedo.png,_normal.png}`: arte PRÓPRIA, gerada por script no Blender 4.5 (`jogos/hordas/fonte_arte/blender_herois/lightwolf_mecha/`: `modelo.py` modela o robô com caixas, cones e esferas; o resto do pipeline é cópia do Nicão). Desenho inspirado na referência de 3 vistas A15 (ChatGPT, conta do Alisson, sem direitos de terceiros declarados), sem usar nenhuma imagem de terceiros. Substitui a folha provisória (recolor do Nick). Nenhuma arte de terceiros.
+
+## #587: tiros, micro-míssil e explosão do mecha, Codex do Alisson, 01/11/2026
+
+- Arte própria procedural em `jogos/hordas/projeto/v2/adagas.gd` (`_img_missil`, 24×9 px) e `v2/misseis_visual.gd` (oito quadros de explosão de 40×40 px, gerados em memória). Formas e paleta desenhadas por código neste projeto; sem imagem, textura, modelo, biblioteca de efeitos ou referência de terceiros adicionados. Não usa o pixelfx nem exige arquivo bitmap externo.
+- O ajuste de recuo dos braços em `jogos/hordas/fonte_arte/blender_herois/lightwolf_mecha/anim_combo.py` e os quadros derivados do combo continuam sobre o modelo próprio do mecha registrado acima. Não acrescenta arte de terceiros nem muda a origem das demais animações.
+
+- `jogos/hordas/projeto/prototipos/piso/piso.png` (piso da floresta, 512x512) refeito para a grade de 1 px (2026-11-03, `Claude do Alisson (PC)`): derivado do nosso próprio piso anterior (`jogos/hordas/fonte_arte/piso/piso_floresta_base.png`, saído de `prototipos/cara_nova/piso/gerar_piso.py`) pelo script `jogos/hordas/fonte_arte/piso/refinar_piso.py` (numpy e Pillow, semente fixa): bordas das manchas em xadrez de 1 px, ordenado Bayer de baixo contraste dentro das manchas, mesma paleta de 30 cores, sem emenda. `piso_normal.png` não mudou. Medição em `fonte_arte/piso/medir_piso.py`. Arte própria, sem material de terceiros. Licença: a do projeto.
+## Pixel art na grade de 1 px: folhas do pixelfx redesenhadas, Claude do Alisson (PC), 03/11/2026
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/spawn-portal-e70.png`, `spawn-portal-e80.png`, `summon-rise-e45.png`, `pickups/chest-open-e80.png`, `loot-beam-e55.png` e `ui/level-up-e75.png`: folhas DERIVADAS das folhas do pixelfx (patch-gg/pixelfx, MIT, Copyright (c) 2026 Patch e Hugo Duprez; efeitos de origem `spawn/spawn-portal`, `spawn/summon-rise`, `pickups/chest-open`, `pickups/loot-beam` e `ui/level-up`, já registrados acima). Mudança: reduzidas quadro a quadro para o tamanho final (fator no sufixo: e70 = 0,70; antes o jogo as tocava em escala fracionária) por `jogos/hordas/fonte_arte/pixelfx/gerar_folhas.py`, com média em alfa pré-multiplicado, alfa em 6 degraus e remoção de pixel fantasma e de pixel solto fraco. As folhas originais de `summon-rise`, `chest-open`, `loot-beam` e `level-up` ficam em `jogos/hordas/fonte_arte/pixelfx/originais/` (fonte do script, fora do export); `spawn-portal.png` e `soul-rise.png` seguem em `assets/` na escala 1. Mesma licença MIT, aviso de copyright mantido.
+- As partículas de `v2/atmosfera.gd` e `v2/efeitos.gd` passam a usar formas de pixel geradas por código (discos de dois degraus de alfa e retângulos cheios); arte própria procedural, sem imagem de terceiros.
+## PIXEL-ROT: folhas do corte da katana pré-giradas, Claude do Alisson (PC), 03/11/2026
+
+- `jogos/hordas/projeto/assets/v2/efeitos/corte_hazaki_r{1,2,3}.png` e `corte_hazaki_ciano_r{1,2,3}.png`: arte PRÓPRIA, derivada das folhas do corte feitas no Blender por nós (`jogos/hordas/fonte_arte/blender_corte/corte_hazaki_folha.png` e `corte_hazaki_ciano_folha.png`, as mesmas de `assets/v2/efeitos/`). Mudança: cada quadro de 128x128 girado 22,5, 45 e 67,5 graus (sentido horário) pelo `jogos/hordas/fonte_arte/blender_corte/girar_corte.py` (algoritmo RotSprite: Scale2x três vezes, giro por vizinho mais próximo, redução pelo pixel do meio de cada bloco 8x8; só copia cores e alfas que já existiam, nenhuma cor nova). Os ângulos múltiplos de 90 graus saem da folha original com o UV trocado no shader. Nenhuma imagem, biblioteca ou referência de terceiros.
+## Pixel de um tamanho só: filtros e escala (alisson/pixel-filtros-ui)
+
+- Nenhuma arte nova nem de terceiros. O coração do curandeiro (`jogos/hordas/projeto/v2/ritmo.gd`) passa a usar `jogos/hordas/projeto/assets/v2/icones_cartas/16/vida.png`, que já estava no repositório (derivado de `icones_cartas/vida.png`, folhas próprias de ícones registradas acima), em 1:1, em vez de `icones_cartas/vida.png` (32x32) a escala 0,5. A mancha dos pés das sombras (`v2/sombras.gd`) é gerada por código (3 degraus de alfa), sem arquivo. Licença: a do projeto.
+
 ## LW-7: rosto do LightWolf (A17), Claude do Alisson (notebook), 01/11/2026
 
 - `jogos/hordas/fonte_arte/lightwolf_rosto/A17_lw_rosto.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com o prompt em `jogos/hordas/fonte_arte/lightwolf_rosto/PROMPTS.md`. Sem direitos de terceiros declarados. Fonte copiada sem alteração.

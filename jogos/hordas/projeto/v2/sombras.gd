@@ -19,6 +19,16 @@ const SUAVIZA := 12.0  # vetor = lerp(alvo, 1 - exp(-12 dt))
 const LUZ_REF := 1.2  # intensidade da luz a partir da qual a sombra tem força total
 const GRAD_OFF := [0.0, 0.22, 0.55, 1.0]  # queda das luzes (a mesma da textura das PointLight2D, em luzes.gd)
 const GRAD_VAL := [1.0, 0.5, 0.1, 0.0]
+## Sombra em degraus de 1 px (nada de borrão linear): o fragmento do SubViewport do mundo já é 1 px do mundo, então quantizar o alfa POR FRAGMENTO
+## garante a grade mesmo com o cisalhamento e a escala fracionária da sombra. `cobertura` vira a silhueta (borrada ou nítida) em 2 níveis: miolo
+## e penumbra de 1 degrau; `banda` troca o esmaecimento contínuo ao longo do comprimento por 3 degraus. O alfa da instância (a luz) segue contínuo.
+## Bandas fixas, não dither de tela: o dither fica preso à tela e "anda" quando a câmera mexe.
+const GLSL_DEGRAUS := (
+	"float cobertura(float a) { return step(0.25, a) * (0.55 + 0.45 * step(0.75, a)); }\n"
+	+ "float banda(float d) { return d > 0.66 ? 1.0 : (d > 0.33 ? 0.6 : 0.3); }\n"
+)
+## A mancha oval dos pés (64x32): três degraus de alfa por distância ao centro, em pixel (sem gradiente).
+const BLOB_DEGRAUS := [[0.55, 0.65], [0.8, 0.4], [1.0, 0.2]]  # [até que fração do raio, alfa]
 
 var modo := MEDIA
 var luzes  # luzes.gd: dpos, dr, de, dh (as luzes ativas) e dn
@@ -26,7 +36,7 @@ var raiz_sombras: Node2D
 var raiz_blobs: Node2D
 var us_script := 0  # tempo de script (só para a medição)
 var _mat: ShaderMaterial
-var _tex_blob: GradientTexture2D
+var _tex_blob: Texture2D
 var _todos: Array[Ator] = []
 var amb_e := 0.0  # luz de AMBIENTE (mapa.sombra_ambiente no json): uma luz virtual, paralela e sem fim, que dá sombra base a todo objeto, mesmo longe de qualquer luz
 var amb_dir := Vector2.ZERO  # vetor (mundo) para onde a sombra ambiente aponta, já com o y achatado
@@ -69,41 +79,70 @@ static func borrar_folha(im: Image, w: int, h: int) -> ImageTexture:
 	cp.convert(Image.FORMAT_RGBA8)
 	var iw := cp.get_width()
 	var ih := cp.get_height()
-	var dados := cp.get_data()
-	var a := PackedByteArray()
-	a.resize(iw * ih)
-	for i in iw * ih:
-		a[i] = dados[i * 4 + 3]
-	for passe in 2:
-		a = _caixa1d(a, iw, ih, w, h, true)
-		a = _caixa1d(a, iw, ih, w, h, false)
 	var saida := PackedByteArray()
 	saida.resize(iw * ih * 4)
-	for i in iw * ih:
-		saida[i * 4 + 3] = a[i]
+	# Cada célula é independente. A caixa do alfa é nativa; três pixels de halo incluem o alcance dos dois passes e uma borda vazia.
+	# Assim, a divisão nos limites artificiais do recorte não altera nenhum pixel não transparente do resultado.
+	for cy in range(0, ih, h):
+		for cx in range(0, iw, w):
+			var cw := mini(w, iw - cx)
+			var ch := mini(h, ih - cy)
+			var celula := cp.get_region(Rect2i(cx, cy, cw, ch))
+			var usado := celula.get_used_rect()
+			if not usado.has_area():
+				continue
+			var area := usado.grow(3).intersection(Rect2i(0, 0, cw, ch))
+			var largura := area.size.x
+			var altura := area.size.y
+			var dados := celula.get_region(area).get_data()
+			var a := PackedByteArray()
+			a.resize(largura * altura)
+			for i in largura * altura:
+				a[i] = dados[i * 4 + 3]
+			for passe in 2:
+				a = _caixa1d(a, largura, altura, largura, altura, true)
+				a = _caixa1d(a, largura, altura, largura, altura, false)
+			for y in altura:
+				var destino := ((cy + area.position.y + y) * iw + cx + area.position.x) * 4 + 3
+				for x in largura:
+					saida[destino + x * 4] = a[y * largura + x]
 	return ImageTexture.create_from_image(Image.create_from_data(iw, ih, false, Image.FORMAT_RGBA8, saida))
 
 
 static func _caixa1d(a: PackedByteArray, iw: int, ih: int, w: int, h: int, horiz: bool) -> PackedByteArray:
 	var o := PackedByteArray()
 	o.resize(iw * ih)
-	for y in ih:
-		var y0 := (y / h) * h
-		var y1 := mini(y0 + h, ih) - 1
-		for x in iw:
-			var soma := 0
-			var n := 0
-			if horiz:
-				var x0 := (x / w) * w
-				var x1 := mini(x0 + w, iw) - 1
-				for k in range(maxi(x - 1, x0), mini(x + 1, x1) + 1):
-					soma += a[y * iw + k]
-					n += 1
-			else:
-				for k in range(maxi(y - 1, y0), mini(y + 1, y1) + 1):
-					soma += a[k * iw + x]
-					n += 1
-			o[y * iw + x] = soma / n
+	if horiz:
+		for y in ih:
+			var linha := y * iw
+			for x0 in range(0, iw, w):
+				var primeiro := linha + x0
+				var ultimo := linha + mini(x0 + w, iw) - 1
+				if primeiro == ultimo:
+					o[primeiro] = a[primeiro]
+					continue
+				o[primeiro] = (a[primeiro] + a[primeiro + 1]) / 2
+				for i in range(primeiro + 1, ultimo):
+					o[i] = (a[i - 1] + a[i] + a[i + 1]) / 3
+				o[ultimo] = (a[ultimo - 1] + a[ultimo]) / 2
+	else:
+		for y0 in range(0, ih, h):
+			var y1 := mini(y0 + h, ih) - 1
+			var primeira := y0 * iw
+			var ultima := y1 * iw
+			if y0 == y1:
+				for x in iw:
+					o[primeira + x] = a[primeira + x]
+				continue
+			for x in iw:
+				o[primeira + x] = (a[primeira + x] + a[primeira + iw + x]) / 2
+			for y in range(y0 + 1, y1):
+				var linha := y * iw
+				for x in iw:
+					var i := linha + x
+					o[i] = (a[i - iw] + a[i] + a[i + iw]) / 3
+			for x in iw:
+				o[ultima + x] = (a[ultima - iw + x] + a[ultima + x]) / 2
 	return o
 
 
@@ -112,9 +151,10 @@ func _material_sombra() -> ShaderMaterial:
 	var sh := Shader.new()
 	sh.code = (
 		(
-			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\n"
-			+ "void vertex(){ up = -VERTEX.y; }\n"
-			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, COLOR.a * clamp(1.0 - up / fade_len, 0.12, 1.0)); }\n"
+			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
+			+ GLSL_DEGRAUS
+			+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
+			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
 		)
 		% SOMBRA_FADE
 	)
@@ -123,18 +163,16 @@ func _material_sombra() -> ShaderMaterial:
 	return m
 
 
-func _textura_blob() -> GradientTexture2D:
-	var g := Gradient.new()
-	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
-	g.colors = PackedColorArray([Color(0, 0, 0, 0.7), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0)])
-	var t := GradientTexture2D.new()
-	t.gradient = g
-	t.fill = GradientTexture2D.FILL_RADIAL
-	t.fill_from = Vector2(0.5, 0.5)
-	t.fill_to = Vector2(1.0, 0.5)
-	t.width = 64
-	t.height = 32
-	return t
+func _textura_blob() -> Texture2D:
+	var im := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	for y in 32:
+		for x in 64:
+			var d := Vector2((x + 0.5 - 32.0) / 32.0, (y + 0.5 - 16.0) / 16.0).length()
+			for g in BLOB_DEGRAUS:
+				if d < g[0]:
+					im.set_pixel(x, y, Color(0, 0, 0, g[1]))
+					break
+	return ImageTexture.create_from_image(im)
 
 
 ## A textura da mancha dos pés (a horda desenha as manchas dos monstros em lote com ela).
@@ -150,7 +188,7 @@ func _sprite_sombra(a: Ator) -> Sprite2D:
 	sp.material = _mat
 	sp.light_mask = 0
 	sp.centered = false
-	sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sp.offset = a.offset
 	if a.regiao != Rect2():
 		sp.region_enabled = true

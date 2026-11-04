@@ -10,6 +10,7 @@ extends RefCounted
 ## (v2/ruptura.gd) é um módulo daqui (`ruptura`): o contragolpe dela entra em golpe_comecou e golpear.
 
 const Efeitos := preload("res://v2/efeitos.gd")
+const ApiceTela := preload("res://v2/apice_tela.gd")
 const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
 const FxFolha := preload("res://v2/fx_folha.gd")  # folhas do pixelfx (docs/PIXELFX.md)
 const FxStatus := preload("res://v2/fx_status.gd")  # chama, relógio e estrelas sobre quem queima, está lento ou atordoado
@@ -52,6 +53,7 @@ const FUSAO_ESCALA := 0.35  # velocidade do mundo na câmera lenta da fusão
 var mundo
 var cfg: Dictionary = {}
 var fx
+var apice_tela  # varredura reutilizável do ÁPICE; anel no mundo e luz na UI, sem criar nós ao ganhar bônus
 var fx_folha  # folhas do pixelfx em pool fixo (v2/fx_folha.gd): os módulos de status e coleta tocam por aqui
 var fx_status  # os status visíveis (v2/fx_status.gd): acha quem queima, está lento ou atordoado e prende o efeito do fx_folha
 var orbes
@@ -185,6 +187,8 @@ func montar(m) -> void:
 	orbes.ima_acel = float(cfg.xp.ima_acel)
 	cartas = Cartas.new()
 	cartas.montar(self)
+	apice_tela = ApiceTela.new()
+	apice_tela.montar(m)
 	armas = Armas.new()
 	armas.montar(self, m.glow, m.sv, m.atm.tex_brilho)
 	adagas = Adagas.new()
@@ -477,6 +481,7 @@ func _contato(h) -> void:
 ## Efeitos visuais no relógio de parede (continuam andando no hit-stop).
 func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
+	apice_tela.atualizar(dt)
 	fx_status.atualizar(dt)
 	fx_folha.atualizar(dt)
 	ruptura.efeitos(dt)
@@ -1088,7 +1093,7 @@ func evolucao_feita(ev: Dictionary) -> void:
 
 
 ## Um bônus chegou ao ÁPICE, o 5/5 (cartas.aplicar chama; CAR-5, degrau a): o mundo para um instante e anda em câmera lenta. Os avisos, os anéis e a
-## passada de dano esperam o mundo voltar a andar (`_apice_executar`), porque a carta é escolhida com o jogo pausado. A cinemática de tela cheia é o CAR-6 (v3).
+## passada de dano e a varredura de tela esperam o mundo voltar a andar (`_apice_executar`), porque a carta é escolhida com o jogo pausado.
 func apice_ganho(id: String, nome: String, cor: Color) -> void:
 	var A: Dictionary = cartas.cfg.apice
 	apices += 1
@@ -1115,6 +1120,7 @@ func _apice_executar() -> void:
 	_apice_fila.clear()
 	audio.tocar("evolucao", 1.2, 0.0, 0.0)
 	var centro: Vector2 = h.pos + Vector2(0, -12)
+	apice_tela.iniciar(centro, mundo.cam.retangulo(), cor, dourado, A.tela, _perfil_baixo())
 	fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), 150.0, 0.7)
 	fx.onda(centro, Color(dourado.r, dourado.g, dourado.b, 0.8), 96.0, 0.45)
 	if not _perfil_baixo():
@@ -1241,6 +1247,7 @@ func limpar_partida() -> void:
 	elites.zerar()
 	chefes.zerar()
 	fx.limpar()
+	apice_tela.limpar()
 	fx_status.limpar()
 	fx_folha.limpar()
 	parada_t = 0.0
@@ -1284,6 +1291,7 @@ func liberar() -> void:
 		diretor,
 		telas,
 		fx,
+		apice_tela,
 		fx_folha,
 		fx_status,
 		cartas,
@@ -1311,6 +1319,7 @@ func liberar() -> void:
 	diretor = null
 	telas = null
 	fx = null
+	apice_tela = null
 	fx_folha = null
 	fx_status = null
 	cartas = null

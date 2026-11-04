@@ -221,6 +221,14 @@ func pontos_arco(h, graus: float, r: float) -> PackedVector2Array:
 	return pts
 
 
+## Os pontos de um arco desenhado, arredondados para px inteiros: o traço do aparo (que segue a mira) cai na grade de 1 px do mundo; a geometria do bloqueio (`pontos_arco`) fica exata.
+func pontos_na_grade(pts: PackedVector2Array) -> PackedVector2Array:
+	var r := PackedVector2Array()
+	for p in pts:
+		r.append(p.round())
+	return r
+
+
 ## O dano que vem de `de` (posição no mundo) cai dentro do arco do escudo? A conta é no chão (y dividido pela achatada), a mesma da ruptura e dos avisos.
 func cobre(h, de: Vector2) -> bool:
 	return cobre_arco(h, de, arco(h))
@@ -298,7 +306,7 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	if entrada.length_squared() < 0.1:
 		entrada = Vector2(h.dir_olhar.x, h.dir_olhar.y / ACHATA).normalized()
 	var para := Vector2(entrada.x, entrada.y * ACHATA)
-	_impacto = _deslocamento(h) + para * 6.0 + Vector2(0, float(visual.get("centro_y", -15.0)))  # na superfície do escudo, do lado de quem bateu
+	_impacto = (_deslocamento(h) + para * 6.0 + Vector2(0, float(visual.get("centro_y", -15.0)))).round()  # em px inteiros, na grade; na superfície do escudo, do lado de quem bateu
 	_treme_dur = 0.24 if perfeito else 0.16
 	_treme_t = _treme_dur
 	if perfeito:
@@ -494,7 +502,7 @@ func _quebrar(_h) -> void:
 	var centro: Vector2 = _raiz.position + Vector2(0, cy)
 	for i in 4:
 		var meio := float(_cel) / 2.0
-		var c := Vector2(float(cents[i][0]), float(cents[i][1])) if i < cents.size() else Vector2(meio, meio)
+		var c := Vector2(float(cents[i][0]), float(cents[i][1])).round() if i < cents.size() else Vector2(meio, meio).round()  # centro em px inteiros: o pedaço nasce na grade, no lugar da frente
 		var fora := c - Vector2(meio, meio)
 		fora = fora.normalized() if fora.length() > 0.1 else Vector2.RIGHT
 		var f: Sprite2D = _frags[i]
@@ -570,19 +578,16 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 		_celula = quadro
 		_spr.region_rect = _quadro(quadro)
 	var leve := _leve()
-	var esc := 1.0
 	var alfa := 1.0
-	var dy := 0.0
+	var dy := 0.0  # pixel art numa grade só: subir e descer só deslocam em px inteiros (o `.round()` da posição) e esmaecem; o sprite nunca é escalado
 	if descendo and not ativo:
 		var p := _desce_t / dur_desce
-		esc = 1.0 - 0.3 * p
 		alfa = 1.0 - p
 		dy = 5.0 * p
 	elif _sobe_t < _sobe_dur and not leve:
 		var p := _sobe_t / _sobe_dur
 		var k := _ease_back(p)
-		esc = 0.55 + 0.45 * k
-		dy = 7.0 * (1.0 - minf(k, 1.0))
+		dy = 7.0 * (1.0 - k)  # com o pulo: passa 1 px do lugar e volta
 		alfa = minf(p * 3.0, 1.0)
 	if cel == COSTAS:
 		dy += float(visual.get("costas_dy", 0.0))  # de costas o escudo sobe um pouco: sem isso o corpo do herói o esconde por inteiro
@@ -597,7 +602,6 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	chao.y += 0.6  # empate de y-sort: de lado, o escudo fica na frente do herói
 	_raiz.position = chao.round()
 	_spr.position = (Vector2(0, float(visual.get("centro_y", -15.0)) + dy) + desl).round()
-	_spr.scale = Vector2(esc, esc)
 	_spr.flip_h = flip
 	var tom := Color(1, 1, 1, alfa)
 	if baixo and not rachado_visivel:  # de lado ou de costas não há quadro rachado: o aviso é o escudo avermelhado, pulsando
@@ -611,7 +615,6 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	if _bri.visible:
 		_bri.region_rect = _spr.region_rect
 		_bri.position = _spr.position
-		_bri.scale = _spr.scale
 		_bri.flip_h = flip
 		_bri.modulate = b
 	_flip = flip
@@ -628,7 +631,6 @@ func _atualizar_casca(h, cel: int, flip: bool, tom: Color) -> void:
 	var lado := int(visual.casca.celula)
 	_cam.region_rect = Rect2(celc * lado, 0, lado, lado)
 	_cam.position = _spr.position
-	_cam.scale = _spr.scale
 	_cam.flip_h = flip
 	_cam.modulate = Color(1, 1, 1, tom.a * (0.7 + 0.3 * sin(_relogio * 3.0)))
 	_cam.visible = true
@@ -654,7 +656,7 @@ func _atualizar_pedacos(dt: float) -> void:
 		v.rot += v.vrot * dt
 		var f: Sprite2D = _frags[i]
 		f.position = Vector2(v.x, v.gy - v.z).round()
-		f.rotation = v.rot
+		f.rotation = snappedf(v.rot, PI / 2.0)  # só em passos de 90 graus: girar em ângulo qualquer reamostra o pixel art
 		f.modulate.a = clampf((fim - v.t) / 0.3, 0.0, 1.0)
 		if v.t >= fim:
 			f.visible = false
@@ -708,12 +710,12 @@ func _desenhar() -> void:
 		var perfeito := _perf_t > 0.0
 		var t := _perf_t / 0.22 if perfeito else _flash_t / 0.14
 		var c2 := COR_OURO if perfeito else Color.WHITE
-		var impacto: Vector2 = h.pos + _impacto
+		var impacto: Vector2 = (h.pos + _impacto).round()
 		var tamanho := (1.0 - t) * 16.0 + 5.0
 		for i in 8 if perfeito else 4:
 			var d := Vector2.from_angle(TAU * float(i) / (8.0 if perfeito else 4.0))
-			no.draw_line(impacto + d * tamanho * 0.4, impacto + d * tamanho, Color(c2.r, c2.g, c2.b, t), 2.0)
-		no.draw_circle(impacto, 3.0 * t, Color(1.0, 0.97, 0.8, t))
+			no.draw_line((impacto + d * tamanho * 0.4).round(), (impacto + d * tamanho).round(), Color(c2.r, c2.g, c2.b, t), 2.0)  # pontas em px inteiros
+		no.draw_circle(impacto, maxf(roundf(3.0 * t), 1.0), Color(1.0, 0.97, 0.8, t))
 
 
 ## O arco de lâmina do aparo no chão (140 graus, na direção da mira) enquanto a janela está aberta: dois traços que esmaecem com o tempo; dourado depois de aparar.
@@ -725,7 +727,7 @@ func _desenhar_arco_aparo(h) -> void:
 	var cor := COR_OURO if h.aparo_acertou else Color(0.85, 0.95, 1.0)
 	var r := float(v.get("raio", 26.0))
 	var largura := float(v.get("largura", 2.0))
-	var fora := pontos_arco(h, float(cfg_aparo.arco), r)
-	var dentro := pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8)
+	var fora := pontos_na_grade(pontos_arco(h, float(cfg_aparo.arco), r))
+	var dentro := pontos_na_grade(pontos_arco(h, float(cfg_aparo.arco) * 0.8, r * 0.8))
 	no.draw_polyline(fora, Color(cor.r, cor.g, cor.b, 0.95 * (1.0 - 0.6 * t)), largura)
 	no.draw_polyline(dentro, Color(cor.r, cor.g, cor.b, 0.5 * (1.0 - 0.6 * t)), maxf(largura * 0.5, 1.0))

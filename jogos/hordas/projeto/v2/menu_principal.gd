@@ -31,7 +31,10 @@ const BOTAO_LARG := 260.0
 const BOTAO_ALT := 44.0
 const BOTAO_Y0 := 300.0
 const BOTAO_PASSO := 52.0
-const ORNAMENTO_Y := 196.0  # a linha dourada entre o logo e os botões
+const ORNAMENTO_Y := 206.0  # a linha dourada entre o logo e os botões
+const SUBTITULO := "Knights In Kaos, Infinite Upgrades"  # o acrônimo por extenso, entre o logo e a linha dourada (#134: o acrônimo vira subtítulo)
+const SUBTITULO_Y := 150.0
+const TAM_SUBTITULO := Paleta.TITULO_MEDIO
 const LOGO_ESCALA := 1.4  # o logo é desenhado na fonte do título (TAM_LOGO) e ampliado: marca de jogo, não só um texto
 const INTRO_T := 1.4  # s da entrada: a tela sai do preto, o logo desce e os botões sobem um a um
 const Glifos := preload("res://v2/glifos.gd")
@@ -50,6 +53,7 @@ var aviso_versao: Button  # "Versão nova disponível": só existe depois que a 
 var abrir_url := Callable()  # gancho: os testes trocam a abertura da página no navegador; vazio = OS.shell_open
 var _url_versao := ""
 var _logo: Label
+var _subtitulo: Label
 var codigo  # o código secreto (codigo_secreto.gd): o último filho, para ver a entrada antes dos botões
 var _selo: Label  # BETA TESTER / CÓDIGO SECRETO, no canto: só existe com o modo ligado
 var _seletor: Node2D  # os dois losangos dourados que marcam o botão com foco
@@ -111,6 +115,8 @@ func _montar() -> void:
 	ornamento.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ornamento.draw.connect(_desenhar_ornamento.bind(ornamento))
 	add_child(ornamento)
+	_subtitulo = _texto(SUBTITULO, TAM_SUBTITULO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, SUBTITULO_Y, LARG, 48))
+	add_child(_subtitulo)
 	var textos := ["JOGAR", "AJUSTES", "CRÉDITOS", "SAIR"]
 	var acoes := [_jogar, _abrir_ajustes, _abrir_creditos, _sair]
 	for i in textos.size():
@@ -157,6 +163,8 @@ func _entrada() -> void:
 	var tl := create_tween().set_parallel(true)
 	tl.tween_property(_logo, "modulate:a", 1.0, 0.9).set_delay(0.35)
 	tl.tween_property(_logo, "position:y", LOGO_Y, 1.0).set_delay(0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_subtitulo.modulate.a = 0.0
+	tl.tween_property(_subtitulo, "modulate:a", 1.0, 0.7).set_delay(0.7)
 	for i in _botoes.size():
 		var b := _botoes[i]
 		var y := b.position.y
