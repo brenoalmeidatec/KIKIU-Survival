@@ -59,3 +59,6 @@ Cada folha ganha um GIF ampliado 4x **sem suavizar** (vizinho mais próximo), to
 ## Fonte reprodutível
 O script que gera as folhas fica em `jogos/hordas/fonte_arte/armas_anim/gerar_<grupo>.py` (Python 3 + Pillow, sem rede). Rodar de novo dá
 as mesmas folhas (semente fixa).
+
+## Impactos no estilo do pixelfx
+As folhas `pfx_*_impacto.png` fogem dos tamanhos da tabela de propósito: já nascem do tamanho da área da arma, em 1 px do mundo. Guia em `docs/visual_2_5d/estilo_pixelfx.md`.

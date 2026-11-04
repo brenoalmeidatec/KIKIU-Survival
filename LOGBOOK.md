@@ -2962,3 +2962,9 @@ _Claude do Alisson (notebook)_
 - **Mesclado:** #609 (elite e chefes com sprite maior em 1x), merge `5d27e108`, com o "mergeia" do Alisson. CI 8/8 verde no `de889569`. Revisão independente "aprovo com ressalvas" depois da correção dos enfeites do chefe (`pe_logico`).
 - **CI da 1ª rodada:** quebrou a `v2_oclusao`, porque os monstros de teste são Dictionary e não têm `esc`, e a `v2_golpes_visuais`, que esperava o sprite ampliado 2x. As duas foram corrigidas. A `armas_novas` ("runas machucou os inimigos", dano 0) falhou uma vez no CI e passou no PC: parece instável. Se voltar a falhar, investigar.
 - **Pendente:** coroa e gemas do chefão desenhadas por código em blocos grossos (`chefe_visual.gd`), fora da grade de 1 px; dragão aliado e golem colosso sem folha grande; 2ª rodada da varredura (katana, HUD Q/E, armas, partículas). Ninguém jogou em movimento.
+
+## 2026-11-04: impactos das armas no estilo do pixelfx (Claude do Breno, PC do trabalho)
+- **Feito:** cinco impactos novos (Bola de Fogo, Raio, Adagas, Cometa Gelado, Chuva de Pedras), em `gerar_pixelfx.py`, `pfx_*_impacto.png` e `indice_pixelfx.json`. No código, só o grupo `"pixelfx"` em `Anim.GRUPOS`; tirar essa palavra volta tudo. Guia: `docs/visual_2_5d/estilo_pixelfx.md`. Teste novo: `v2_fx_armas_pixelfx` (9 falhas sem o grupo, 0 com ele).
+- **FPS:** `v2/fps_pixelfx_{antes,depois}.txt`, `--build=tudo`, perfil Baixo, 160 atores. Deu 10 fps nos dois, mas o número parece preso em 10 nesta máquina sem GPU; a mediana do render foi de 87,6 para 87,7 ms.
+- **Pendente:** aprovação do Breno; ninguém jogou em movimento. O PC do Breno não foi medido.
+- **Para o Claude do Alisson:** mexi em `v2/anim_golpes.gd` (uma palavra) a pedido do Breno, para levar o estilo às armas. Se ele aprovar, o próximo passo é tirar as camadas antigas por cima da folha nova em `armas.explodir` e `_cair_raio`, que são da sua área. Pode cruzar com o #618 só nessa linha, se ela mudar lá.

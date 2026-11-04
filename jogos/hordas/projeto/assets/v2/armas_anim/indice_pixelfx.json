@@ -1,0 +1,195 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py (nao edite a mao)",
+ "folhas": {
+  "bola_fogo": {
+   "armas": [
+    "bola_fogo"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "bola_fogo_voo.png",
+     "quadro": [
+      26,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      19,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_bola_fogo_impacto.png",
+     "quadro": [
+      112,
+      96
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      56,
+      68
+     ]
+    }
+   }
+  },
+  "raio": {
+   "armas": [
+    "raio"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_raio_impacto.png",
+     "quadro": [
+      64,
+      56
+     ],
+     "n": 10,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      32,
+      28
+     ]
+    }
+   }
+  },
+  "adaga_aco": {
+   "armas": [
+    "adagas_voadoras"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "adaga_aco_voo.png",
+     "quadro": [
+      14,
+      14
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      7,
+      7
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_adaga_aco_impacto.png",
+     "quadro": [
+      48,
+      40
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      20
+     ]
+    }
+   }
+  },
+  "cometa_gelo": {
+   "armas": [
+    "cometa_gelado"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "cometa_gelo_queda.png",
+     "quadro": [
+      36,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      27,
+      12
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_cometa_gelo_impacto.png",
+     "quadro": [
+      128,
+      104
+     ],
+     "n": 12,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      64,
+      66
+     ]
+    },
+    "marca": {
+     "arquivo": "cometa_gelo_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "pedra_cinza": {
+   "armas": [
+    "chuva_pedras"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pedra_cinza_queda.png",
+     "quadro": [
+      24,
+      16
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      18,
+      8
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_pedra_cinza_impacto.png",
+     "quadro": [
+      72,
+      64
+     ],
+     "n": 9,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      36,
+      44
+     ]
+    },
+    "marca": {
+     "arquivo": "pedra_cinza_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  }
+ }
+}
