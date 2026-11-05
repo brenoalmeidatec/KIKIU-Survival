@@ -60,6 +60,7 @@ var ultimo: Dictionary = {}  # o último especial (testes): id, n (monstros atin
 var ondas := 0  # testes: quantas ondas de choque do terremoto saíram
 var prontos := 0  # quantas vezes a carga chegou a 100 na partida (o robô de playtest e os testes)
 var carga_total := {"dano": 0.0, "abate": 0.0, "recebido": 0.0, "tempo": 0.0}  # pontos de carga ganhos na partida por fonte (calibragem, robô de playtest)
+var tamanho_soma := {"util": 0.0, "pesado": 0.0}  # dano útil e dano x fator de tamanho na partida (calibragem do fator, ligado ou não; robô)
 var _graca := 0.0  # s depois do fim do Q em que ainda não carrega (as últimas adagas voando)
 var limpa_ligada := true  # a limpeza da tela (ULT-A) liga/desliga por instância (os testes antigos de dano por área desligam)
 var limpas := 0  # testes: quantas limpezas saíram
@@ -161,6 +162,7 @@ func limpar() -> void:
 	ondas = 0
 	prontos = 0
 	carga_total = {"dano": 0.0, "abate": 0.0, "recebido": 0.0, "tempo": 0.0}
+	tamanho_soma = {"util": 0.0, "pesado": 0.0}
 	_graca = 0.0
 	ultimo = {}
 	a_vivo.fill(0)
@@ -825,11 +827,31 @@ func carregar(h, pontos: float, fonte := "dano", por_nivel := true) -> void:
 		pronta(h)
 
 
-## Dano causado a um monstro (pontos de dano, sem contar o que passou da vida dele). Chamado por combate.ferir e combate.golpear.
-func dano(valor: float) -> void:
+## Dano causado ao monstro `m` (pontos de dano, sem contar o que passou da vida dele). Chamado por combate.ferir e combate.golpear.
+func dano(valor: float, m = null) -> void:
 	if mundo == null or mundo.heroi == null:
 		return
-	carregar(mundo.heroi, valor * float(_carga_de(mundo.heroi).dano), "dano")
+	if m != null:  # calibragem: quanto o fator mudaria a carga por dano deste herói, ligado ou não (robô de playtest, q_tamanho)
+		tamanho_soma.util = float(tamanho_soma.util) + valor
+		tamanho_soma.pesado = float(tamanho_soma.pesado) + valor * fator_de(m)
+	carregar(mundo.heroi, valor * float(_carga_de(mundo.heroi).dano) * fator_tamanho(mundo.heroi, m), "dano")
+
+
+## Carga por TAMANHO do alvo (05/11): alvo pequeno, difícil de acertar, enche o Q mais rápido; grande (elite, chefe) mais devagar. Só para o Q cujo bloco
+## traz `carga_tamanho` (o LightWolf); os outros e `m` nulo valem 1.
+func fator_tamanho(h, m) -> float:
+	if m == null or not bool(bloco_de(str(h.chave)).get("carga_tamanho", false)):
+		return 1.0
+	return fator_de(m)
+
+
+## O fator do monstro `m` pela regra comum.tamanho, sem olhar o herói: (raio_ref / raio dele) ^ expoente, preso entre min e max (1 sem a regra).
+func fator_de(m) -> float:
+	var t: Dictionary = comum.get("tamanho", {})
+	if t.is_empty():
+		return 1.0
+	var f := pow(float(t.raio_ref) / maxf(float(m.raio), 0.5), float(t.expoente))
+	return clampf(f, float(t.min), float(t.max))
 
 
 ## O herói levou dano de verdade (não o que o escudo bloqueou). Chamado por combate.heroi_apanhou.

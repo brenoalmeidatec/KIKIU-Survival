@@ -46,7 +46,8 @@ extends RefCounted
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
 ##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
-##                         --playtest_q (o robô aperta o Q quando enche e a E quando pronta; o JSON traz q_prontos, q_disparos, e_disparos e q_carga por fonte),
+##                         --playtest_q (o robô aperta o Q quando enche e a E quando pronta; o JSON traz q_prontos, q_disparos, e_disparos, q_carga por fonte
+##                         e q_tamanho: a média, pesada pelo dano, do fator de carga por tamanho do alvo, ligado ou não no herói),
 ##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia),
 ##                         --playtest_fim=morte (partida curta que termina na morte real: parado, com 1 de vida, até um monstro matar).
 ##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
@@ -1777,6 +1778,7 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 			"abate": snappedf(float(c.especial.carga_total.abate), 0.1),
 			"recebido": snappedf(float(c.especial.carga_total.recebido), 0.1)
 		},
+		"q_tamanho": snappedf(float(c.especial.tamanho_soma.pesado) / maxf(float(c.especial.tamanho_soma.util), 1.0), 0.001),
 		"quadros": pt.quadros,
 		"proc_ms": _pt_pcts(pt.proc_ms),
 		"quadro_ms": _pt_pcts(pt.quadro_ms),
