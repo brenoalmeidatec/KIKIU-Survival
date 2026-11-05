@@ -183,13 +183,18 @@ func _ready() -> void:
 	ok(giro > deg_to_rad(20.0), "o caso mede algo: o ângulo até o mouse mudou andando (%.0f graus)" % rad_to_deg(giro))
 	ok(fora_mouse == 0, "segurando o tiro com o mouse, virar o andar não troca a fonte para ANDA (%d quadros)" % fora_mouse)
 	ok(longe == 0, "a mira segue o ponto do mouse com o herói andando (%d quadros longe)" % longe)
-	# soltou o tiro: virar o andar volta a olhar para onde anda (o comportamento de sempre sem tiro)
+	# soltou o tiro: com o mouse como última fonte, virar o andar também NÃO passa a olhar para onde anda (regra do strafe, 05/11)
 	h.ataque_forcado = false
 	for i in 10:
 		w.avancar(PASSO)
 	h.entrada_forcada = Vector2.RIGHT
 	w.avancar(PASSO)
-	ok(h.fonte == Heroi.Fonte.ANDA, "sem tiro, virar o andar ainda passa a olhar para onde anda")
+	ok(h.fonte == Heroi.Fonte.MOUSE, "sem tiro, com o mouse na mira, virar o andar continua olhando o mouse")
+	# já com a fonte ANDA (teclado puro), virar o andar segue olhando para onde anda
+	h.fonte = Heroi.Fonte.ANDA
+	h.entrada_forcada = Vector2.DOWN
+	w.avancar(PASSO)
+	ok(h.fonte == Heroi.Fonte.ANDA, "com a fonte ANDA, virar o andar segue olhando para onde anda")
 	h.entrada_forcada = Vector2.ZERO
 
 	# 3. andando sem atirar, de costas (para a esquerda, mouse à direita): o andar recua um quadro por vez

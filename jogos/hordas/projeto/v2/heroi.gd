@@ -1,6 +1,6 @@
 extends "res://v2/ator.gd"
 ## Herói da v2 (o escolhido no santuário: Hazaki, Nick ou Luke, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
-## anda quando a direção de andar muda (menos segurando o tiro com o mouse num herói de golpe.mira_continua, o LightWolf: aí fica no mouse);
+## anda quando a direção de andar muda (menos se a última fonte da mira foi o mouse: aí o herói segue olhando o cursor e andar de lado é strafe);
 ## com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
 ##
 ## Combate (números em dados/v2_combate.json):
@@ -722,10 +722,12 @@ func atualizar(dt: float) -> void:
 			segurando = false
 	elif ataque_forcado != null:
 		segurando = bool(ataque_forcado)
-	# a direção de andar mudou (começou a andar ou virou): passa a olhar para onde anda, até o mouse mexer de novo. Exceto atirando com
-	# o mouse num herói de mira contínua (o canhão do LightWolf, como num shooter): segurando o tiro, a mira fica no mouse.
+	# a direção de andar mudou (começou a andar ou virou): sem mouse na mira, passa a olhar para onde anda (teclado e controle). Se a última
+	# fonte da mira foi o MOUSE, ela fica nele: o herói segue olhando o cursor e andar de lado vira strafe com o mouse parado (regra do
+	# Alisson, 05/11; antes o primeiro quadro de cada passo e de cada inversão tocava o andar de frente). Só o analógico direito tira
+	# a fonte do mouse.
 	if v != Vector2.ZERO and (_anda_ant == Vector2.ZERO or v.normalized().dot(_anda_ant.normalized()) < 0.9):
-		if not (segurando and fonte == Fonte.MOUSE and mira_continua()):
+		if fonte != Fonte.MOUSE:
 			fonte = Fonte.ANDA
 	_anda_ant = v
 	# relógios
@@ -1449,6 +1451,10 @@ func _visual(dt: float, v: Vector2) -> void:
 		# O andar comum (sem atirar) da folha que tem o andar_tiro (o mecha) recua do mesmo jeito: a mira no mouse contra o passo era moonwalk.
 		# De lado (strafe), o passo-junta da folha toca para a frente ou ao contrário conforme o lado: um ciclo só cobre os dois lados.
 		var sentido := _lado_passo if _lado_passo != 0.0 else (-1.0 if (anda_atira or _tem_anim("andar_tiro")) and v.dot(dir_olhar) < 0.0 else 1.0)
+		if _lado_passo < 0.0 and _anim == 0.0:
+			# o strafe começa na pose 0 (junta, os pés sob o corpo) nos dois lados: tocado ao contrário, a fase 0 cairia no quadro 5 (base
+			# aberta) já no primeiro passo; a semente põe o começo no fim da pose 0, que então dura o mesmo que as outras.
+			_anim = _passo_andar()
 		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
 		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
 		if _lado_passo != 0.0 and not anda_atira:

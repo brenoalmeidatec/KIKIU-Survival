@@ -175,7 +175,7 @@ func _ready() -> void:
 	Config.g_perfil_temporario("alto")
 	w._ler_graficos()
 
-	# 7. o herói olha para o mouse (8 direções) quando o mouse mexe, e para onde anda quando a direção de andar muda
+	# 7. o herói olha para o mouse (8 direções) quando o mouse mexe, e para onde anda quando a direção de andar muda (só sem o mouse como última fonte)
 	var centro: Vector2 = w.heroi.pos + Heroi.CENTRO_CORPO
 	w.heroi.fonte = Heroi.Fonte.MOUSE
 	for par in [
@@ -191,9 +191,15 @@ func _ready() -> void:
 		w.mouse_forcado = centro + par[0]
 		passos(2)
 		ok(w.heroi.linha == par[1], "mouse em %s: linha %d (deu %d)" % [str(par[0]), par[1], w.heroi.linha])
-	w.heroi.entrada_forcada = Vector2(0, 1)  # começa a andar para baixo com o mouse parado à esquerda-cima: passa a olhar para onde anda
+	w.heroi.entrada_forcada = Vector2(0, 1)  # começa a andar para baixo com o mouse parado à esquerda-cima: a última fonte é o mouse, segue olhando para ele
 	passos(4)
-	ok(w.heroi.fonte == Heroi.Fonte.ANDA and w.heroi.linha == 0, "andando para baixo: olha para baixo (linha %d)" % w.heroi.linha)
+	ok(w.heroi.fonte == Heroi.Fonte.MOUSE and w.heroi.linha == 6, "mouse como última fonte, andando para baixo: olha o mouse (linha %d)" % w.heroi.linha)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	passos(2)
+	w.heroi.fonte = Heroi.Fonte.ANDA  # teclado puro (nunca usou o mouse): passa a olhar para onde anda
+	w.heroi.entrada_forcada = Vector2(0, 1)
+	passos(4)
+	ok(w.heroi.fonte == Heroi.Fonte.ANDA and w.heroi.linha == 0, "fonte ANDA, andando para baixo: olha para baixo (linha %d)" % w.heroi.linha)
 	w.heroi.fonte = Heroi.Fonte.MOUSE  # o mouse mexeu
 	w.mouse_forcado = w.heroi.pos + Heroi.CENTRO_CORPO + Vector2(100, 0)
 	passos(2)
