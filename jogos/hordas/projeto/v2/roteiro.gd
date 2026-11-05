@@ -42,6 +42,9 @@ extends RefCounted
 ##   --roteiro=andar_seq   (o "tremendo todo" de 04/11) fotos SEGUIDAS, uma por quadro de render, do herói escolhido (o LightWolf com
 ##                         --heroi=lightwolf) sem monstros: anda_00..29 (andando para a direita, sem atirar), anda_tiro_00..39 (andando e
 ##                         atirando para a direita) e tiro_00..29 (parado atirando). Para medir quadro a quadro o corpo contra o cenário.
+##   --roteiro=lw_tiros    (05/11/2026, para VÍDEO com --write-movie, sem fotos) com --heroi=lightwolf: o mecha atira 1,5 s para a direita num arco de monstros
+##                         (o traçante das bolinhas, com vãos para elas voarem inteiras) e 1 s para cima à esquerda, solta a E Mísseis inteira (3 s na tela), aperta o Q,
+##                         e o Lobo livre atira 1,5 s para a direita (a cadência nova). Sai sozinho no fim; os passos que esperaram até o prazo vão para lw_atrasos.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -73,6 +76,7 @@ var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da 
 var lw_boca := Vector2.INF  # o roteiro do LightWolf: onde a foto 1b_boca viu o clarão de boca (a 1c procura o do outro cano)
 var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
 var seq_n := 0  # o roteiro andar_seq: quantas fotos seguidas já saíram no trecho atual
+var lw_alvos: Array = []  # o roteiro lw_tiros: [monstro, posição] dos alvos parados
 
 
 func montar(m, a: Dictionary) -> void:
@@ -160,6 +164,8 @@ func atualizar(dt: float) -> void:
 				_r_lightwolf()
 			"andar_seq":
 				_r_andar_seq()
+			"lw_tiros":
+				_r_lw_tiros()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -423,6 +429,82 @@ func _r_andar_seq() -> void:
 		passo += 1
 		t_passo = 0.0
 		seq_n = 0
+
+
+## Vídeo do canhão, dos Mísseis e da pistola do Lobo (veja o cabeçalho): um passo por estado, com prazo em cada espera.
+func _r_lw_tiros() -> void:
+	var h = mundo.heroi
+	for k in lw_alvos.size():  # os alvos ficam parados onde nasceram (senão a horda encosta no mecha e as bolinhas não chegam a voar)
+		if is_instance_valid(lw_alvos[k][0]):
+			lw_alvos[k][0].pos = lw_alvos[k][1]
+	match passo:
+		0:
+			_preparar()
+			lw_alvos.clear()
+			for i in 5:  # arco à direita, de -40 a 40 graus, a 150 e 185 px alternados (no fim do alcance de 170): parte acerta, parte passa no vão
+				var a := deg_to_rad(-40.0 + 20.0 * float(i))
+				var r := 150.0 if i % 2 == 0 else 185.0
+				var m = mundo.nascer_monstro("inimigo_espantalho", h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				lw_alvos.append([m, m.pos])
+			mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+			h.ataque_forcado = true
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 1.5:
+				mundo.mouse_forcado = h.centro() + Vector2(-160, -110)
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 1.0:
+				h.ataque_forcado = false
+				mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo > 0.2:
+				h.hab_recarga = 0.0
+				h.hab_nega_t = 0.0
+				if not h.habilidade():
+					lw_atrasos += 1
+				passo = 4
+				t_passo = 0.0
+		4:  # o aperto fica guardado e a E começa no quadro seguinte: espera ela começar e depois acabar (senão o Q entra no buffer durante a E)
+			if h.estado == h.Estado.HABILIDADE:
+				passo = 40
+				t_passo = 0.0
+			elif t_passo > 1.0:
+				lw_atrasos += 1
+				passo = 40
+				t_passo = 0.0
+		40:
+			if h.estado != h.Estado.HABILIDADE or t_passo > 5.0:
+				passo = 5
+				t_passo = 0.0
+		5:
+			if t_passo > 0.5:
+				h.esp_carga = h.esp_carga_max
+				if not h.especial():
+					lw_atrasos += 1
+				passo = 6
+				t_passo = 0.0
+		6:
+			if h.forma_lobo and h.estado == h.Estado.LIVRE and t_passo > 0.3:
+				mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+				h.ataque_forcado = true
+				passo = 7
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				lw_atrasos += 1
+				passo = 7
+				t_passo = 0.0
+		7:
+			if t_passo > 1.5:
+				h.ataque_forcado = false
+				print("LW_TIROS fim atrasos=%d" % lw_atrasos)
+				mundo.get_tree().quit()
 
 
 ## A posição de um clarão de boca recém-aceso (restam pelo menos metade dos 0,1 s) a 20 px ou mais de `longe` (Vector2.INF = qualquer um); Vector2.INF se não há.
