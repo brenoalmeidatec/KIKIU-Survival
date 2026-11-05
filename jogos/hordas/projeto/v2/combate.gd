@@ -818,6 +818,7 @@ func limpar_tela(centro: Vector2, L: Dictionary) -> int:
 	if chefes != null and chefes.atual != null and not bool(chefes.marca.get("mini", true)):
 		chefao = chefes.atual
 	fonte_dano = "especial"
+	var ini := _lp_n
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo or not rect.has_point(m.pos):
 			continue
@@ -837,10 +838,38 @@ func limpar_tela(centro: Vector2, L: Dictionary) -> int:
 			_lp_t[_lp_n] = (m.pos - centro).length() / vel
 			_lp_n += 1
 			marcados += 1
+	_espalhar_limpa(ini, centro, float(L.get("espalha", 0.0)))
 	limpa_info = {"comuns": marcados, "elites": elites_n, "chefes": chefes_n}
 	processar_mortes()
 	mundo._perfil("c_limpa", Time.get_ticks_usec() - t0)
 	return marcados
+
+
+## `espalha` (s do mundo, L.espalha do Q; 0 = só a frente de onda): os comuns marcados de `ini` até `_lp_n` morrem em ONDA saindo de `centro`, um depois do outro
+## na ordem da distância (empate: x, depois y; determinístico), o último em `espalha` s. Sem isso, a frente a comum.limpa.vel px/s alcança um cerco inteiro
+## no mesmo quadro e as nuvens de morte acendem juntas num bloco claro (o clarão duplo da Autodestruição, 05/11). Ninguém morre ANTES da frente passar.
+func _espalhar_limpa(ini: int, centro: Vector2, espalha: float) -> void:
+	var n := _lp_n - ini
+	if espalha <= 0.0 or n < 2:
+		return
+	var ordem: Array = []
+	for i in range(ini, _lp_n):
+		ordem.append(i)
+	ordem.sort_custom(
+		func(a: int, b: int) -> bool:
+			var pa: Vector2 = _lp_m[a].pos
+			var pb: Vector2 = _lp_m[b].pos
+			var da := pa.distance_squared_to(centro)
+			var db := pb.distance_squared_to(centro)
+			if da != db:
+				return da < db
+			if pa.x != pb.x:
+				return pa.x < pb.x
+			return pa.y < pb.y
+	)
+	for k in n:
+		var i: int = ordem[k]
+		_lp_t[i] = maxf(_lp_t[i], espalha * float(k) / float(n - 1))
 
 
 ## Um quadro da fila adiada da limpeza (tempo do mundo, chamada logo depois de `especial.atualizar`): mata no máximo `_lp_max` comuns marcados cuja
@@ -848,6 +877,8 @@ func limpar_tela(centro: Vector2, L: Dictionary) -> int:
 func drenar_limpa(dt: float) -> void:
 	limpa_quadro = 0
 	if _lp_n == 0 or jogo != "jogando" or pausado:
+		return
+	if local.parada_t > 0.0:  # o quadro em que um hit-stop começa (o do estouro da Autodestruição) ainda roda o combate: a fila só anda depois do congelamento
 		return
 	var t0 := Time.get_ticks_usec()
 	_lp_relogio += dt

@@ -3115,3 +3115,34 @@ Branch `alisson/lw-canhao-matriz` (PR #620), saindo de a684d784. Entraram, uma p
 - Ninguém viu em vídeo o perfil Baixo nem "Reduzir piscadas" desta rodada (só testes); a combinação voar + andar atirando (boca somando alt_px e desvio_boca) só foi vista em código e testes, não em vídeo.
 
 **Conflitos com o #619 (pixelfx) resolvidos em 10 PRs (05/11/2026, Claude do Alisson, PC):** depois do #619 entrar na main, os PRs #611, #613, #615, #616, #617, #618, #597, #598, #588 e #578 ficaram em conflito. Cada um recebeu `git merge origin/main` (sem rebase nem force), passou pela fila do Godot (--import e testes, todos com falhas=0) e foi enviado; os dez estão MERGEABLE. Os arquivos que só crescem no fim (LOGBOOK, docs/LICENCAS_ARTE.md, ferramentas/tempos_testes.txt) ficaram iguais ao da main, com as linhas da branch acrescentadas no fim; em #597, #598 e #578 o git tinha juntado o LOGBOOK no meio, e isso foi corrigido. O único conflito de verdade foi o que o Breno avisou, no #611: a main trocou corte_hazaki por corte_pfx (folha de 128 px girada com RotSprite), e o #611 troca a folha de 128 px por uma folha por tamanho em escala 1. Ficaram as duas coisas: o `fonte_arte/blender_corte/corte_pfx.py` agora desenha o rastro e as faíscas do pixelfx ponto a ponto em cada tamanho (escala L/128, 22,5 graus por linha, só os tons que a folha já tem, sem pixel solto na ciano), por cima da base do Blender, que foi para `fonte_arte/blender_corte/1px/`. O jogo lê `assets/v2/efeitos/corte_pfx_e<L>.png` e `corte_pfx_ciano_e<L>.png`. Saíram do jogo as folhas de 128 px `corte_pfx*.png`, as `_r1..r3` e o `girar_corte.py`. O #618 recebeu as cinco branches já resolvidas, e a parte do corte ficou igual à do #611. Pendente: alguém precisa olhar o corte da katana em jogo (num vídeo do Movie Maker o arco aparece, mas o rastro e as faíscas não dão para separar a olho porque a saída amplia 1,33x), e o Breno precisa dizer se aceita que as folhas de 128 px dele saiam do jogo. O CI dos 10 pushes não foi acompanhado. Nada mesclado na main.
+
+### 05/11/2026 — LightWolf rodada 5, frente Q (branch alisson/lw-r5-q, saindo de 369857c9; Claude do Alisson)
+
+Os vídeos da rodada 4 mostraram três defeitos no Q do mecha (Autodestruição). Todos foram corrigidos na causa e um quarto ponto foi só investigado.
+- **Clarão duplo:** o estouro acendia um clarão de tela (`fx.clarao`, alfa 0,3) que apagava durante o hit-stop. Logo depois, o cerco inteiro morria no mesmo quadro, porque a frente a 2600 px/s alcança 150 px em 2 ou 3 quadros (no teste, pico de 18 mortes num quadro). As 24 nuvens de morte acendiam juntas, e o resultado era claro, escuro e claro de novo a ~0,15 s. Também havia uma morte que escapava no próprio quadro do estouro, antes do congelamento.
+  - Saiu o clarão do estouro: o claro do impacto agora é só o miolo da bola.
+  - As mortes da limpeza deste Q saem em onda do centro, uma depois da outra pela distância, ao longo de `autodestruicao.limpa.espalha` = 0,5 s do mundo (0,4 s de relógio). Isso fica em `combate._espalhar_limpa`, e ninguém morre antes da frente de onda.
+  - `drenar_limpa` não anda no quadro em que um hit-stop começa.
+  - Tremor, hit-stop, bola, onda e cratera não mudaram. O Baixo não ganhou partícula.
+  - Os outros Qs não mudam: `espalha` é só do bloco da Autodestruição, mas a regra do hit-stop vale para todos.
+- **Mecha fantasma:** não era a oclusão. Em `especial._desenhar_autodestruicao`, o quadro do mecha era desenhado no nó aditivo da camada glow com alfa de 0,3 a 0,9 e crescia 10%.
+  - Agora é arte opaca num nó próprio, `no_casco`, filho do `no_mundo` (y-sort), sem escala, em posição inteira.
+  - O aviso é um contorno de 1 px âmbar em volta da silhueta (gerado no aperto, com cache por quadro) mais um tom no corpo. Liga e desliga a `alerta.hz` 1,5 do mundo, o que dá ~1,9 Hz de relógio, medido no vídeo. Com "Reduzir piscadas" fica aceso parado.
+  - É âmbar, não vermelho, porque vermelho piscando é o caso proibido no piscadas.gd.
+- **HUD do Q (16%, 35%, ícone, 35%):** não é bug de carga, é estado de exibição.
+  - O 16% é o roteiro `lw_q`, que força a carga cheia no mesmo quadro do aperto.
+  - Os 35% de um quadro aparecem porque o anel só mostra o ícone com `esp_t > 0`, e no quadro do aperto ainda vale 0. Os 35 são `inicio_autodestruicao`.
+  - As mortes do próprio Q não carregam (`ocupado()`, graça de 0,8 s). O teste novo confere isso com as mortes espalhadas: o chamado fica em 35,00 na última morte.
+- **Números do Lobo empilhando (só investigação):** a branch `alisson/numeros-dano` (#597) resolve.
+  - Números nascidos a menos de 0,3 s e de 30x20 px um do outro, com a mesma cor e tamanho, somam num só. Os que não somam sobem 14 px até 3 vezes se as caixas se cruzam.
+  - Os tiros do Lobo usam `fx.numero` sem `exato` (combate.gd 710/927), então entram na soma: o 16/17/18 sobreposto vira um número que sobe. Crítico tem outro tamanho e não soma, só é afastado.
+  - Não foi implementado aqui.
+
+**Testes.** Teste novo `testes/v2_lw_q_onda`, com 9 falhas no código antigo (rodado contra o 369857c9) e 0 no novo. Passaram com falhas=0 e sem SCRIPT ERROR: v2_lightwolf_q_explosao, v2_lightwolf_q, v2_especial, v2_lightwolf, v2_lightwolf_roteiro, v2_herois, v2_partida, v2_pixel_filtros, v2_pixel_efeitos, v2_piscadas, v2_ult_tamanho, v2_herois_novos, v2_lw_cartas, v2_mecha_tremor e v2_hud.
+
+**Vídeo.** Gravado com o Movie Maker, `--roteiro=lw_q`, 60 fps, fora do repositório. Medi a luminância por célula, procurando pico, vale e pico em menos de 0,5 s com 20 ou mais de diferença:
+- em células de 1/10 da tela, o clipe antigo tem 2 células com o defeito (q79/q87/q88, profundidade 25,6) e o novo tem 0;
+- a luminância média do quadro inteiro antes ia de 28,8 para 71 (o clarão), caía para 38 e subia de novo; agora vai de 28 a 31 sem pico duplo;
+- em células finas (1/20) ainda aparece uma oscilação de quadro a quadro na borda da bola durante o hit-stop. É o tremor de câmera aprovado, que move a imagem alguns px: o centro do brilho anda ±4 px.
+
+**Não visto:** "Reduzir piscadas" e o perfil Baixo em vídeo (só nos testes), um cerco grande (164 mortes) em vídeo e o Q de outros heróis em vídeo. Subir de nível no meio da onda pausa as mortes restantes até a escolha da carta. É o comportamento normal da fila, mas antes quase não acontecia porque morriam todos juntos.
