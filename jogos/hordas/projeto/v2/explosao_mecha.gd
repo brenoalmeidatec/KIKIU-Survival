@@ -3,9 +3,11 @@ extends RefCounted
 ## a tela é a peça comum (`combate.limpar_tela`, frente de onda a comum.limpa.vel px/s em toda a câmera mais comum.limpa.margem).
 ## Três peças, todas na grade de 1 px (quadros desenhados em código UMA vez em `montar`, alfa 0/1, desenhados com draw_texture em posição inteira,
 ## sem escala nem giro; pool fixo: uma explosão por vez, a nova reaproveita a vaga):
-##  - BOLA: a bola de energia que estoura e vira fumaça que esfarela (BOLA_QUADROS quadros a BOLA_FPS), de raio `explosao.bola` px, centrada um pouco acima
-##    do chão onde o mecha ficou. Vai na camada glow (por cima dos monstros e do herói). Começa com o miolo branco nos 2 primeiros quadros (um clarão só);
-##    com "Reduzir piscadas" pula esses dois e começa no ciano.
+##  - BOLA: a bola de energia que estoura e vira fumaça que esfarela (BOLA_QUADROS quadros a BOLA_FPS, em FASES de FASE_QUADROS quadros), de raio `explosao.bola` px, centrada um pouco acima
+##    do chão onde o mecha ficou. Vai na camada glow (por cima dos monstros e do herói). Começa com o miolo branco na 1ª fase (5 quadros, um clarão só);
+##    com "Reduzir piscadas" pula essa fase e começa no ciano. A silhueta (cresce, sobe, abre o miolo, esfarela) muda a cada quadro; as CORES do miolo só mudam a cada
+##    fase e seguem uma disposição FIXA (medida pela raio final da bola, não pelo raio do quadro): cada pixel só desce de claro para escuro, nunca sobe de novo.
+##    Antes a cor era medida pelo raio do quadro e as faixas varriam a bola de um quadro para o outro (a "fervura": 3,2 Hz numa janela de 16x16 px, limite 2 Hz).
 ##  - ONDA NO CHÃO: um anel de 1 px (pontos inteiros numa elipse achatada em ACHATA) que sai do mecha na MESMA velocidade da frente de onda da limpeza
 ##    (comum.limpa.vel) e vai até cobrir o retângulo da câmera mais a margem: é o desenho do alcance real do dano (a tela inteira). Os monstros morrem
 ##    quando ela passa (a limpeza usa distância redonda; a elipse chega um pouco depois na vertical, no máximo ~0,1 s).
@@ -21,8 +23,10 @@ extends RefCounted
 
 const Piscadas := preload("res://v2/piscadas.gd")
 const ACHATA := 0.62
-const BOLA_QUADROS := 10
+const BOLA_QUADROS := 25  # até a rodada 6 eram 10 (0,53 s de relógio); agora 25 a 15 por s do mundo = 1,33 s de relógio (2,5x), o mesmo desenho em mais quadros
 const BOLA_FPS := 15.0
+const FASE_QUADROS := 5  # o PADRÃO INTERNO da bola (as faixas de cor do miolo e a fumaça) só troca a cada 5 quadros = 0,27 s de relógio (limite 0,25 s com "Reduzir piscadas")
+const FASES_COR := 4  # as paletas diferentes: a última (tudo fumaça) segue até o fim, e a fumaça só esfarela (se trocasse de novo, cada degrau escuro fazia um dente de serra com o miolo que abre)
 const BOLA_SOBE := 14.0  # px que o centro da bola fica acima do chão
 const CRATERA_ESFARELA := 4  # degraus do esfarelar (quadros 2..5 da cratera)
 const RACHAS := 7
@@ -132,14 +136,19 @@ func cratera_viva() -> bool:
 
 
 func _bola_dur() -> float:
-	return float(BOLA_QUADROS - (2 if _pulou_branco else 0)) / BOLA_FPS
+	return float(BOLA_QUADROS - _salto()) / BOLA_FPS
+
+
+## Quantos quadros do começo a bola pula: a fase branca inteira com "Reduzir piscadas", nenhum fora dele.
+func _salto() -> int:
+	return FASE_QUADROS if _pulou_branco else 0
 
 
 ## O quadro da bola agora (-1 = acabou ou nada).
 func quadro_bola() -> int:
 	if t < 0.0 or t >= _bola_dur():
 		return -1
-	return mini(BOLA_QUADROS - 1, int(t * BOLA_FPS) + (2 if _pulou_branco else 0))
+	return mini(BOLA_QUADROS - 1, int(t * BOLA_FPS) + _salto())
 
 
 ## O quadro da cratera agora (0 quente, 1 fria, 2.. esfarelando; -1 = nada).
@@ -230,9 +239,8 @@ func _gerar_bola() -> void:
 	bola.clear()
 	var lado := raio_bola * 2 + 1
 	var rb := float(raio_bola)
-	# tabelas fixas (o que não muda de quadro para quadro), para desenhar em ~1/4 do tempo: a borda por ângulo, o ruído da turbulência
-	# (com folga embaixo para a fumaça que sobe), o das manchas escuras e a máscara do esfarelar
-	var sobe_max := int(ceilf(rb * 0.25))
+	# tabelas fixas (o que não muda de quadro para quadro), para desenhar em ~1/4 do tempo: a borda por ângulo, o ruído da turbulência,
+	# o das manchas escuras e a máscara do esfarelar
 	var n_borda := 512
 	var tab_borda := PackedFloat32Array()
 	tab_borda.resize(n_borda)
@@ -240,8 +248,8 @@ func _gerar_bola() -> void:
 		var ang := float(i) / float(n_borda) * TAU - PI
 		tab_borda[i] = _borda(ang, 0.16, 7) * _borda(ang * 2.0, 0.08, 8)
 	var tab_v := PackedFloat32Array()
-	tab_v.resize(lado * (lado + sobe_max))
-	for y in lado + sobe_max:
+	tab_v.resize(lado * lado)
+	for y in lado:
 		for x in lado:
 			tab_v[y * lado + x] = (_ruido(float(x) / 6.0, float(y) / 6.0, 41) - 0.5) * 0.45
 	var tab_esc := PackedByteArray()
@@ -253,6 +261,7 @@ func _gerar_bola() -> void:
 			tab_esc[y * lado + x] = 1 if _ruido(float(x) / 4.0, float(y) / 4.0, 5) < 0.3 else 0
 			tab_hp[y * lado + x] = _h(x, y, 3) * 0.75
 	for k in BOLA_QUADROS:
+		# A SILHUETA (muda a cada quadro): o raio que cresce, a fumaça que sobe, o miolo que abre, o esfarelar e os raios do estalo
 		var tt := (float(k) + 0.5) / float(BOLA_QUADROS)
 		var im := Image.create(lado, lado, false, Image.FORMAT_RGBA8)
 		var cresce := 1.0 - pow(1.0 - clampf(tt / 0.45, 0.0, 1.0), 3.0)
@@ -260,12 +269,15 @@ func _gerar_bola() -> void:
 		var sobe := roundi(rb * 0.25 * clampf((tt - 0.4) / 0.6, 0.0, 1.0))  # a fumaça sobe um pouco (px inteiros)
 		var oco := clampf((tt - 0.35) * 1.1, 0.0, 0.6)  # o miolo abre (o estouro vira anel e fumaça)
 		var some := clampf((tt - 0.5) / 0.5, 0.0, 1.0) * 1.05  # a fração de pixels que já esfarelou
-		var miolo := 0.5 - tt * 1.4  # o branco só nos primeiros quadros
-		var claro := 0.72 - tt * 0.8
-		var medio := 0.9 - tt * 0.45
-		var fumo := 1.25 - clampf((tt - 0.3) / 0.35, 0.0, 1.0) * 1.4  # a fumaça entra de fora para dentro (v acima disto vira fumaça)
-		var raios := 1.0 - clampf(tt / 0.25, 0.0, 1.0)  # os raios do estalo, só nos 2 a 3 primeiros quadros
+		var raios := 1.0 - clampf(tt / 0.25, 0.0, 1.0)  # os raios do estalo, só nos 5 primeiros quadros
 		var alcance := rr * 1.26 * (1.0 + 0.9 * raios) + 1.0  # nenhum pixel passa disto (a borda irregular e os raios): o resto nem é calculado
+		# O PADRÃO INTERNO (muda só a cada FASE_QUADROS quadros, pelo tempo do meio da fase): as faixas de cor e a fumaça
+		var tp := (float(mini(k / FASE_QUADROS, FASES_COR - 1)) + 0.5) * float(FASE_QUADROS) / float(BOLA_QUADROS)
+		var miolo := 0.5 - tp * 1.4  # o branco só na 1ª fase
+		var claro := 0.72 - tp * 0.8
+		var medio := 0.9 - tp * 0.45
+		var fumo := 1.25 - clampf((tp - 0.3) / 0.35, 0.0, 1.0) * 1.4  # a fumaça entra de fora para dentro (v acima disto vira fumaça)
+		var oco_cor := clampf((tp - 0.35) * 1.1, 0.0, 0.6)
 		for y in lado:
 			for x in lado:
 				var dx := float(x) - rb
@@ -288,7 +300,14 @@ func _gerar_bola() -> void:
 					continue
 				if tab_hp[y * lado + x] + (1.0 - d) * 0.25 < some:
 					continue
-				var v: float = d + tab_v[(y + sobe) * lado + x]
+				# a cor mede pelo raio FINAL, a partir do centro PARADO do quadro (disposição fixa na tela: o pixel só desce de claro para escuro, e o miolo não
+				# desliza com a fumaça que sobe; só a silhueta sobe). Se o miolo subisse junto, a borda de cor atravessava uma janela de 16x16 px a cada quadro
+				# e, com a troca de fase, dava dente de serra (2,7 Hz medido no vídeo).
+				var dy0 := float(y) - rb
+				var ang0 := atan2(dy0, dx)
+				var borda0: float = tab_borda[clampi(int((ang0 + PI) / TAU * float(n_borda)), 0, n_borda - 1)]
+				var dc := minf(sqrt(dx * dx + dy0 * dy0) / maxf(rb * 0.92 * borda0, 1.0), 1.0)
+				var v: float = dc + tab_v[y * lado + x]
 				var fumaca := v > fumo
 				var cor: Color
 				if v < miolo:
@@ -297,11 +316,11 @@ func _gerar_bola() -> void:
 					cor = CIANO_CLARO
 				elif v < medio:
 					cor = CIANO if not fumaca else FUMACA
-				elif d < 0.93:
+				elif dc < 0.93:
 					cor = AZUL if not fumaca else FUMACA_ESC
 				else:
 					cor = AZUL if not fumaca else AZUL_ESC
-				if fumaca and d > oco + 0.08 and tab_esc[y * lado + x] == 1:
+				if fumaca and dc > oco_cor + 0.08 and tab_esc[y * lado + x] == 1:
 					cor = FUMACA_ESC
 				im.set_pixel(x, y, cor)
 		bola.append(ImageTexture.create_from_image(im))

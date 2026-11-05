@@ -139,6 +139,7 @@ var _fila: Array = []  # monstros que morreram no quadro por golpe secundário o
 # preparados na montagem. `drenar_limpa` mata no máximo `_lp_max` por quadro, para 164 mortes não virarem um soluço no i5.
 const LIMPA_CAP := 320
 var limpa_mortes := 0  # testes: quantos morreram pela limpeza na partida
+var limpando := false  # true enquanto `drenar_limpa` mata os marcados deste quadro: as mortes da limpeza do Q não enchem a carga dele (especial.ocupado)
 var limpa_quadro := 0  # testes: quantos morreram pela limpeza no último quadro
 var limpa_pico := 0  # testes: o maior número de mortes da limpeza num quadro só
 var limpa_info := {}  # testes: a última limpeza (comuns marcados, elites e chefes atingidos)
@@ -897,6 +898,7 @@ func drenar_limpa(dt: float) -> void:
 		return
 	var t0 := Time.get_ticks_usec()
 	_lp_relogio += dt
+	limpando = true
 	var feitos := 0
 	var i := 0
 	while i < _lp_n and feitos < _lp_max:
@@ -911,6 +913,7 @@ func drenar_limpa(dt: float) -> void:
 		if m.vivo:
 			matar(m, true)
 			feitos += 1
+	limpando = false
 	limpa_quadro = feitos
 	limpa_mortes += feitos
 	limpa_pico = maxi(limpa_pico, feitos)
