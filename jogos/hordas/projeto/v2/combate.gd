@@ -701,7 +701,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var emp: Vector2 = rumo * forca_emp
 		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
-		especial.dano(util)
+		especial.dano(util, m)
 		contar_dano("principal", util)
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
@@ -885,7 +885,7 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	var dn := maxi(1, roundi(dano))
 	var util := minf(float(dn), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
-	especial.dano(util)
+	especial.dano(util, m)
 	contar_dano(fonte_dano, util)
 	ferimentos += 1
 	var marca: String = _marcas.get(fonte_dano, "")
