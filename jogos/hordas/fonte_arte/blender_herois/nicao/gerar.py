@@ -26,9 +26,14 @@ sys.path.insert(0, str(AQUI))
 import normais  # noqa: E402
 import ossos  # noqa: E402
 
+sys.path.append(str(AQUI.parent / "hazaki"))      # acabamento 2D do padrão do elenco (#586), compartilhado; no FIM do path: os anim_*.py são os desta pasta
+import estilo2d  # noqa: E402
+
 CODEX = AQUI.parent / "codex_estudo" / "criar_estudo.py"
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SO_ANIM = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--anim=")), None)
+SO_RETRATO = "--retrato" in ARGS           # só o retrato 64x64 (pula as animações)
+SEM_RETRATO = "--sem-retrato" in ARGS      # todas as animações sem o retrato
 SAIDA = AQUI / "quadros"
 
 W, H = 64, 96             # quadro (o Hazaki usa 32x44): a marreta de 3,2 passa da cabeça e as pancadas a levam longe do corpo
@@ -69,6 +74,18 @@ def mais(c, t, k=1.0):
     return tuple(a * k + b for a, b in zip(c, t))
 
 
+# ---- PADRÃO DO ELENCO (#586), do hazaki/gerar.py: cabeça maior, arma maior e mais clara, contorno escuro + rim, retrato 64x64
+CABECA = 1.0           # o elmo + crista já é ~42% da altura (meta 35-40): a cabeça do anão NÃO cresce; o padrão novo já está nela
+ARMA_CABECA = 1.3         # a cabeça da marreta maior (1,5x cortava 47 quadros nas laterais do quadro de 64; 1,3x: 29, contra 17 antes); o cabo de 3,2 já passa da cabeça e fica no comprimento
+ARMA_ESPESSURA = 1.5      # e o cabo 1,5x mais grosso
+ARMA_CLAREAR = 0.30       # materiais da marreta 30% mais perto do branco (cópias: a fivela e o elmo seguem como eram)
+ESTILO_ELENCO = {"contorno": True, "escuro": 0.30, "teto": 0.16,
+                 "rim": True, "rim_dir": (1, -1), "rim_cor": (0.84, 0.93, 1.0), "rim_forca": 0.55, "rim_largura": 1}
+ESTILO_2D = dict(ESTILO_ELENCO)
+RETRATO_PADRAO = {"tam": 64, "ang": 45.0, "elev": 18.0, "cranio_px": 33.0, "topo_px": 4, "centro_x": 0.5,
+                  "anim": "parado", "quadro": 0, "arma": False, "cranio": "Elmo", "pasta": "nicao"}
+RETRATO = {"ang": 30.0, "cranio_px": 30}     # o anão de frente mais aberto que o humano (45): senão a ombreira cobre o rosto
+
 # ============================================================ 1. modelo (modelo.py): anão, marreta no osso próprio
 import modelo  # noqa: E402
 
@@ -79,6 +96,43 @@ exec(compile(defs, str(CODEX), "exec"), ns)
 heroi, OSSO_DE, PONTOS, HY = modelo.construir(ns)
 PALETA = dict(modelo.PALETA)
 BRILHANTES = {}
+
+# cabeça maior (chibi), em torno do pescoço
+bpy.context.view_layer.update()
+centro = Vector((0.0, HY, 2.15))
+CABECA_PREF = ("Elmo", "Aba do elmo", "Nasal", "Crista do elmo", "Rosto", "Barba", "Olho")
+for o in heroi:
+    if o.name.startswith(CABECA_PREF):
+        o.matrix_world = Matrix.Translation(centro) @ Matrix.Scale(CABECA, 4) @ Matrix.Translation(-centro) @ o.matrix_world
+
+# ARMA (marreta): cabeça e cabo maiores (na malha), materiais clareados em cópia
+bpy.context.view_layer.update()
+ARMA = [o for o in heroi if OSSO_DE.get(o) == "marreta"]
+for o in ARMA:
+    if o.type != "MESH":
+        continue
+    W0 = o.matrix_world.copy()
+    c = W0 @ (sum((v.co for v in o.data.vertices), Vector()) / len(o.data.vertices))
+    if o.name in ("Cabeça da marreta", "Cinta da marreta"):
+        X = Matrix.Translation(c) @ Matrix.Scale(ARMA_CABECA, 4) @ Matrix.Translation(-c)
+    else:                                   # cabo e topo: mais grossos (x e y do mundo em torno do eixo do cabo), mesmo comprimento
+        X = Matrix.Translation(c) @ Matrix.Diagonal((ARMA_ESPESSURA, ARMA_ESPESSURA, 1.0, 1.0)) @ Matrix.Translation(-c)
+    o.data.transform(W0.inverted() @ X @ W0)
+    o.data.update()
+for o in ARMA:
+    if not hasattr(o.data, "materials"):
+        continue
+    for i, m in enumerate(o.data.materials):
+        if m is None or m.name not in PALETA:
+            continue
+        nome_c = m.name + " (arma)"
+        if nome_c not in PALETA:
+            b = hexa(PALETA[m.name])
+            PALETA[nome_c] = "#%02x%02x%02x" % tuple(int(round(255 * (v + (1.0 - v) * ARMA_CLAREAR))) for v in b)
+        o.data.materials[i] = bpy.data.materials.get(nome_c) or m.copy()
+        o.data.materials[i].name = nome_c
+print("ARMA: %d peças (%s), cabeça x%.2f, espessura x%.2f, clarear %.2f"
+      % (len(ARMA), ", ".join(sorted({o.name for o in ARMA})), ARMA_CABECA, ARMA_ESPESSURA, ARMA_CLAREAR))
 
 # ============================================================ 2. materiais: 4 faixas por emissão (técnica do Codex), cores do jogo
 
@@ -206,6 +260,7 @@ def material_contorno(m):
 bpy.context.view_layer.update()
 S = Matrix.Diagonal((ESCALA * LARGURA, ESCALA, ESCALA))
 CASCAS = []
+DELTA_CASCA = {}
 for original in list(heroi):
     if original.type != "MESH" or len(original.data.polygons) < 6 or original.name.startswith(("Olho", "Sobrancelha")):
         continue
@@ -218,14 +273,22 @@ for original in list(heroi):
     bpy.context.collection.objects.link(copia)
     A = S @ original.matrix_world.to_3x3()
     Ai = A.inverted()
+    _base = np.empty(len(copia.data.vertices) * 3, np.float32)
+    copia.data.vertices.foreach_get("co", _base)
+    _delta = []
     for v in copia.data.vertices:
-        v.co = v.co + Ai @ ((Ai.transposed() @ v.normal).normalized() * CONTORNO)
+        dv = Ai @ ((Ai.transposed() @ v.normal).normalized() * CONTORNO)
+        _delta.extend(dv)
+        v.co = v.co + dv
+    DELTA_CASCA[copia] = (_base, np.array(_delta, np.float32))     # o retrato afina a casca para continuar com ~1 px
     copia.data.update()
     copia.data.materials.clear()
     copia.data.materials.append(material_contorno(mats[0]))
     copia.visible_shadow = False
     OSSO_DE[copia] = OSSO_DE[original]
     CASCAS.append(copia)
+    if original in ARMA:
+        ARMA.append(copia)
 heroi += CASCAS
 
 # ============================================================ 4. RIG: armature com joelho e cotovelo; peças presas por osso
@@ -312,7 +375,7 @@ cena.view_settings.look = "None"
 cena.view_settings.exposure = 0
 cena.view_settings.gamma = 1
 cena.render.threads_mode = "FIXED"
-cena.render.threads = 6
+cena.render.threads = int(sys.argv[sys.argv.index("-t") + 1]) if "-t" in sys.argv[:sys.argv.index("--") if "--" in sys.argv else len(sys.argv)] else 6
 
 cam_data = bpy.data.cameras.new("cam")
 cam_data.type = "ORTHO"
@@ -328,11 +391,14 @@ TMP = Path(os.environ.get("TEMP", "/tmp")) / ("nicao_gerar_%d" % os.getpid())
 TMP.mkdir(parents=True, exist_ok=True)
 
 
+OCULTAS = set()      # peças fora do render no momento (o retrato sem a marreta)
+
+
 def renderizar(caminho, normal=False):
     """Renderiza um quadro. Cor: sRGB 'Standard'. Normal: 'Raw' (o número escrito é o número do material) e sem as cascas do contorno."""
     cena.view_settings.view_transform = "Raw" if normal else "Standard"
     for c in CASCAS:
-        c.hide_render = normal
+        c.hide_render = normal or c in OCULTAS
     for o in CORPO:
         o.data.materials[0] = mat_normal if normal else MAT_COR[o][0]
     cena.render.filepath = str(caminho)
@@ -343,13 +409,14 @@ def ler(caminho, cru):
     img = bpy.data.images.load(str(caminho), check_existing=False)
     if cru:
         img.colorspace_settings.name = "Non-Color"
-    px = np.array(img.pixels[:], dtype=np.float32).reshape(H, W, 4)[::-1].copy()
+    w, h = img.size
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[::-1].copy()
     bpy.data.images.remove(img)
     return px
 
 
 def gravar_normal(px, caminho):
-    img = bpy.data.images.new("n", W, H, alpha=True)
+    img = bpy.data.images.new("n", px.shape[1], px.shape[0], alpha=True)
     img.colorspace_settings.name = "Non-Color"
     img.pixels[:] = px[::-1].ravel()
     img.filepath_raw = str(caminho)
@@ -370,6 +437,23 @@ cam_data.shift_y = -dy / max(W, H)
 ossos.calibrar(arm, ELEV)
 LOC0 = Vector(arm["loc0"])
 print("calibragem: caixa y %d..%d x %d..%d (largura %d px); desloca %d px" % (ys.min(), ys.max(), xs.min(), xs.max(), xs.max() - xs.min() + 1, dy))
+
+
+def medir_cabeca(pe_px):
+    """Proporção da cabeça no parado de frente: do topo (crista do elmo) ao queixo (a base da barba), sobre a altura toda (corpo, sem a marreta)."""
+    bpy.context.view_layer.update()
+    cab_objs = [o for o in CORPO if OSSO_DE.get(o) == "cabeca" and o.type == "MESH"]
+    barba = [o for o in cab_objs if o.name == "Barba"]
+    queixo = max((1.0 - world_to_camera_view(cena, cam, o.matrix_world @ v.co).y) * H for o in barba for v in o.data.vertices)
+    topo = min((1.0 - world_to_camera_view(cena, cam, o.matrix_world @ v.co).y) * H for o in cab_objs for v in o.data.vertices)
+    alt = pe_px - topo + 1
+    aba = [o for o in cab_objs if o.name == "Aba do elmo"]
+    fim_elmo = max((1.0 - world_to_camera_view(cena, cam, o.matrix_world @ v.co).y) * H for o in aba for v in o.data.vertices)
+    print("MEDIDA altura_px=%.1f elmo_px=%.1f elmo_pct=%.1f (crista ao fim da aba: o 'crânio' do anão; meta do elenco 35-40) com_barba_px=%.1f com_barba_pct=%.1f"
+          % (alt, fim_elmo - topo, 100.0 * (fim_elmo - topo) / alt, queixo - topo, 100.0 * (queixo - topo) / alt))
+
+
+medir_cabeca(PE_LINHA)
 
 
 def animacoes():
@@ -433,9 +517,11 @@ def renderizar_animacao(nome):
             renderizar(tmp, normal=True)
             nor = normais.pos_normal(ler(tmp, True), mascara)
             polis = efeito(arm, q, n, ang) if efeito else []
-            if polis:
+            if polis or ESTILO_2D:
                 cor = ler(str(base) + "_cor.png", True)
-                pintar_poligonos(cor, nor, mascara, polis)
+                estilo2d.aplicar(cor, mascara, ESTILO_2D)               # contorno escuro + rim: só no corpo, antes do rastro
+                if polis:
+                    pintar_poligonos(cor, nor, mascara, polis)
                 gravar_normal(cor, str(base) + "_cor.png")
             gravar_normal(nor, str(base) + "_normal.png")
     arm.location = LOC0
@@ -443,8 +529,92 @@ def renderizar_animacao(nome):
     print("ANIM_OK %s: %d quadros x %d direções" % (nome, n, len(DIRECOES)))
 
 
-for nome in animacoes():
-    renderizar_animacao(nome)
+
+# ============================================================ 7. RETRATO 64x64 (padrão do elenco; igual ao do hazaki/gerar.py, ver lá)
+
+
+def carregar_anim(nome):
+    return importlib.import_module("anim_" + nome)
+
+
+def retrato():
+    r = dict(RETRATO_PADRAO)
+    r.update(RETRATO or {})
+    T = int(r["tam"])
+    destino = AQUI.parents[2] / "projeto" / "assets" / "personagens" / r["pasta"] / "retrato.png"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    mod = carregar_anim(r["anim"])
+    ossos.zerar(arm)
+    arm.location = LOC0
+    arm.rotation_euler = (0, 0, math.radians(r["ang"]))
+    if len(inspect.signature(mod.posar).parameters) >= 4:
+        mod.posar(arm, int(r["quadro"]), mod.N_QUADROS, r["ang"])
+    else:
+        mod.posar(arm, int(r["quadro"]), mod.N_QUADROS)
+    escondidas = []
+    if not r["arma"]:
+        for o in ARMA:
+            OCULTAS.add(o)
+            if o not in CASCAS and not o.hide_render:
+                o.hide_render = True
+                escondidas.append(o)
+    bpy.context.view_layer.update()
+    salvo = (cam.location.copy(), cam.rotation_euler.copy(), cam_data.ortho_scale, cam_data.shift_x, cam_data.shift_y,
+             cena.render.resolution_x, cena.render.resolution_y)
+    el = math.radians(r["elev"])
+    cam.location = (0.0, -20.0 * math.cos(el), 20.0 * math.sin(el))
+    cam.rotation_euler = (math.pi / 2 - el, 0.0, 0.0)
+    cena.render.resolution_x = cena.render.resolution_y = T
+    cam_data.shift_x = cam_data.shift_y = 0.0
+    cam_data.ortho_scale = max(W, H) / PPU
+    bpy.context.view_layer.update()
+    cabeca = [o for o in heroi if OSSO_DE.get(o) == "cabeca" and not o.hide_render]
+    cran = [o for o in CORPO if o.name == r["cranio"]]
+
+    def caixa(objs):
+        bpy.context.view_layer.update()
+        p = [world_to_camera_view(cena, cam, o.matrix_world @ v.co) for o in objs if o.type == "MESH" for v in o.data.vertices]
+        xs_, ys_ = [q.x * T for q in p], [(1.0 - q.y) * T for q in p]
+        return min(xs_), max(xs_), min(ys_), max(ys_)
+
+    _, _, c0, c1 = caixa(cran)
+    cam_data.ortho_scale *= (c1 - c0) / float(r["cranio_px"])
+    x0, x1, y0, _ = caixa(cabeca)
+    cam_data.shift_y += (r["topo_px"] - y0) / T
+    cam_data.shift_x -= (T * r["centro_x"] - 0.5 * (x0 + x1)) / T
+    ppu_r = T / cam_data.ortho_scale
+    k = PPU / ppu_r
+    for c, (b0, d0) in DELTA_CASCA.items():
+        c.data.vertices.foreach_set("co", b0 + d0 * k)
+        c.data.update()
+    caminho = TMP / "retrato.png"
+    renderizar(caminho)
+    px = ler(caminho, True)
+    mascara = px[:, :, 3] > 0.5
+    px[..., 3] = np.where(mascara, 1.0, 0.0)
+    px[~mascara] = 0.0
+    est = dict(ESTILO_2D or ESTILO_ELENCO)
+    est["abre_baixo"] = True
+    estilo2d.aplicar(px, mascara, est)
+    gravar_normal(px, str(destino))
+    for c, (b0, d0) in DELTA_CASCA.items():
+        c.data.vertices.foreach_set("co", b0 + d0)
+        c.data.update()
+    for o in escondidas:
+        o.hide_render = False
+    OCULTAS.clear()
+    cam.location, cam.rotation_euler, cam_data.ortho_scale, cam_data.shift_x, cam_data.shift_y = salvo[:5]
+    cena.render.resolution_x, cena.render.resolution_y = salvo[5], salvo[6]
+    arm.location = LOC0
+    arm.rotation_euler = (0, 0, 0)
+    print("RETRATO_OK %s (%dx%d, %.1f px/m, %s)" % (destino, T, T, ppu_r, r["anim"]))
+
+
+if not SO_RETRATO:
+    for nome in animacoes():
+        renderizar_animacao(nome)
+if SO_RETRATO or not (SO_ANIM or SEM_RETRATO):
+    retrato()
 
 ossos.zerar(arm)
 for c in CASCAS:
@@ -452,7 +622,7 @@ for c in CASCAS:
 for o in CORPO:
     o.data.materials[0] = MAT_COR[o][0]
 arm.rotation_euler = (0, 0, 0)
-if not SO_ANIM:
+if not (SO_ANIM or SO_RETRATO):
     bpy.ops.wm.save_as_mainfile(filepath=str(AQUI / "nicao_rig.blend"), compress=True)
 shutil.rmtree(TMP, ignore_errors=True)
 print("NICAO_OK")

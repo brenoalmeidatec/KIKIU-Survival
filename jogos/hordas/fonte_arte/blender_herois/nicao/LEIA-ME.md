@@ -75,3 +75,6 @@ Candidatos a módulo compartilhado com o Hazaki, se um terceiro herói chegar: `
 - **Q (terremoto, `dados/v2_especial.json`):** a pancada inteira (passo 1 do combo, 6 quadros em 1,05 s); o quadro de impacto cobre o `golpe` de 0,55 s.
 - **Secundário (escudo):** a guarda (colunas 28 e 29). Rolamento, dano e morte já tinham folha própria.
 - **Retrato do HUD:** a chave `retrato` do `nicao.json` (`regiao` no quadro parado de frente, `escala`) recorta o corpo (38x42) e o HUD o desenha em 2x, centrado na caixa de 90x108. `montar_folha.py` já a emite.
+
+## Padrão do elenco (issue #586)
+O `gerar.py` agora aplica o acabamento 2D do `../hazaki/estilo2d.py` (contorno escuro de 1 px + rim light) em cada quadro de cor, gera o retrato 64x64 (`assets/personagens/nicao/retrato.png`; `-- --retrato` só ele) e imprime a MEDIDA da cabeça. A cabeça do anão (elmo e crista ~42% da altura) já estava no alvo, então CABECA = 1,0. A cabeça da marreta ficou 1,3x e o cabo 1,5x mais grosso (1,5x na cabeça cortava 47 quadros nas laterais do quadro de 64), com materiais 30% mais claros. Aço + vermelho: ombreiras, joelheiras e braçais agora vermelhos. O recorte `retrato` do json (HUD e oclusão) ficou em [10, 34, 38, 42] porque o v2_oclusao fixa 38x42; o corpo novo ocupa x 8..47, y 32..75 (2 px a mais em cima e à esquerda).

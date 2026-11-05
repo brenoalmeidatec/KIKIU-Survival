@@ -31,6 +31,7 @@ from mathutils import Matrix, Vector
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
+import estilo2d  # noqa: E402
 import normais  # noqa: E402
 import ossos  # noqa: E402
 
@@ -40,6 +41,11 @@ SO_ANIM = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--anim=")), No
 # PERFIL: outro personagem sobre o MESMO rig e as MESMAS animações (ex.: ../matheus/perfil.py, rodado por ../matheus/gerar.py). Sem --perfil, é o Hazaki.
 # O perfil define NOME, PALETA, BRILHANTES e, opcionalmente, fonte(heroi_src, trocar) e ajustar(ns, heroi, OSSO_DE, apagar); ver ../matheus/perfil.py.
 _PERFIL = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--perfil=")), None)
+# sem --perfil: o perfil do próprio Hazaki/Brendan (hazaki/perfil.py), se existir; ele traz o PADRÃO DO ELENCO (#586). Sem o arquivo, é o Hazaki antigo.
+if _PERFIL is None and (AQUI / "perfil.py").exists():
+    _PERFIL = str(AQUI / "perfil.py")
+SO_RETRATO = "--retrato" in ARGS           # só o retrato 64x64 (pula as animações)
+SEM_RETRATO = "--sem-retrato" in ARGS      # todas as animações sem o retrato
 perfil = None
 if _PERFIL:
     _spec = importlib.util.spec_from_file_location("perfil_heroi", _PERFIL)
@@ -48,13 +54,39 @@ if _PERFIL:
 NOME = perfil.NOME if perfil else "hazaki"
 SAIDA = (Path(_PERFIL).resolve().parent if perfil else AQUI) / "quadros"
 
+
+def cfg(nome, padrao):
+    """Parâmetro opcional do perfil (PADRÃO DO ELENCO, #586). Perfil sem o parâmetro = o valor de antes (nada muda para quem não o adotou)."""
+    return getattr(perfil, nome, padrao) if perfil else padrao
+
+
 W, H = 32, 44             # quadro do herói no jogo
 PPU = 24.5                # px por metro (câmera do jogo)
 ELEV = 45.0               # graus
 PE_LINHA = 43             # última linha do desenho (pé = 42 + 1 px de contorno)
-ESCALA = 0.55             # o modelo do Codex tem ~3 m; o do jogo, ~2,3 m
-LARGURA = 0.95            # largura relativa do herói (o estudo usava 0.95); com 1.0 a lâmina e o lenço encostam nos 32 px
+ESCALA = cfg("ESCALA", 0.55)      # o modelo do Codex tem ~3 m; o do jogo, ~2,3 m
+LARGURA = cfg("LARGURA", 0.95)    # largura relativa do herói (o estudo usava 0.95); com 1.0 a lâmina e o lenço encostam nos 32 px
 CONTORNO = 0.062          # espessura da casca do contorno, em metros do mundo (~1 px)
+# ---- PADRÃO DO ELENCO (#586): todos opcionais no perfil; o padrão abaixo reproduz o herói de antes
+CABECA = cfg("CABECA", 1.22)              # escala da cabeça (em torno do pescoço). Meta: cabeça = 35-40% da altura (o gerar imprime MEDIDA cabeca_pct)
+ARMA_ESCALA = cfg("ARMA_ESCALA", 1.0)     # tamanho da arma em torno da empunhadura (1.5 = o padrão novo)
+ARMA_ESPESSURA = cfg("ARMA_ESPESSURA", ARMA_ESCALA)   # espessura da arma (perpendicular ao comprimento); padrão = ARMA_ESCALA (escala uniforme)
+ARMA_CLAREAR = cfg("ARMA_CLAREAR", 0.0)   # 0..1: a arma ganha cópias dos materiais, clareadas para o branco por esta fração
+ARMA_PECAS = cfg("ARMA_PECAS", None)      # prefixos dos nomes das peças da arma; None = tudo no antebraço da arma menos braço, proteção e mão
+ARMA_OSSO = cfg("ARMA_OSSO", "antebraco_d")
+ARMA_PIVO = cfg("ARMA_PIVO", None)        # empunhadura (mundo do modelo do Codex); None = a mão direita da tela
+ARMA_ESCALA_ANIM = cfg("ARMA_ESCALA_ANIM", {})  # {anim: fator}: encolhe/aumenta a arma só naquela animação, sobre o ARMA_ESCALA (ex.: rolamento 0,7 para não cortar no quadro)
+ARMA_DIRECAO = cfg("ARMA_DIRECAO", {})    # {anim ou "*": (x, y, z)}: para onde a arma aponta EM REPOUSO naquela animação (eixos do herói); ausente = como foi modelada
+ESTILO_2D = cfg("ESTILO_2D", None)        # contorno escuro de 1 px + rim light (ver estilo2d.aplicar); None = sem acabamento 2D; True = ESTILO_ELENCO;
+#                                           dict = ESTILO_ELENCO com estas chaves trocadas (ex.: {"rim_cor": (1.0, 0.9, 0.7)})
+# o acabamento 2D padrão do elenco: contorno escuro de 1 px em volta da silhueta e rim light frio de cima/direita (a luz principal vem da esquerda)
+ESTILO_ELENCO = {"contorno": True, "escuro": 0.30, "teto": 0.16,
+                 "rim": True, "rim_dir": (1, -1), "rim_cor": (0.84, 0.93, 1.0), "rim_forca": 0.55, "rim_largura": 1}
+if ESTILO_2D is True:
+    ESTILO_2D = dict(ESTILO_ELENCO)
+elif isinstance(ESTILO_2D, dict):
+    ESTILO_2D = {**ESTILO_ELENCO, **ESTILO_2D}
+RETRATO = cfg("RETRATO", None)            # retrato 64x64 (ver retrato() no fim); None = os padrões de RETRATO_PADRAO
 # ordem das linhas do jogo (v2/sprites.gd) e ângulo do herói em torno de Z (0 = de frente para a câmera)
 DIRECOES = [("baixo", 0.0), ("esquerda", -90.0), ("direita", 90.0), ("cima", 180.0),
             ("baixo_esq", -45.0), ("baixo_dir", 45.0), ("cima_esq", -135.0), ("cima_dir", 135.0)]
@@ -73,7 +105,7 @@ PALETA = {
 }
 BRILHANTES = {"Reflexo frio": "#8ea9c4"}
 if perfil:
-    PALETA, BRILHANTES = perfil.PALETA, perfil.BRILHANTES
+    PALETA, BRILHANTES = dict(perfil.PALETA), dict(perfil.BRILHANTES)
 LUZ_PRINCIPAL = Vector((-0.80, -0.35, 0.50)).normalized()
 LUZ_CONTRA = Vector((0.60, 0.75, 0.30)).normalized()
 
@@ -186,13 +218,58 @@ for o in heroi:
     elif o.name.startswith("Sobrancelha") and o.type == "CURVE":
         o.data.bevel_depth = 0.032
 
-# cabeça maior (chibi), em torno do pescoço
-CABECA = 1.22
+# cabeça maior (chibi), em torno do pescoço (CABECA vem do perfil; o padrão 1,22 é o do estudo aprovado)
 centro = Vector((0.0, HY, 2.45))
 CABECA_PREF = ("Cabeça", "Orelha", "Olho", "Sobrancelha", "Nariz", "Cabelo", "Mecha")
 for o in heroi:
     if o.name.startswith(CABECA_PREF):
         o.matrix_world = Matrix.Translation(centro) @ Matrix.Scale(CABECA, 4) @ Matrix.Translation(-centro) @ o.matrix_world
+
+# ARMA (padrão do elenco): peças, empunhadura, tamanho (na malha, para nenhum perfil que mexa em .scale desfazer) e cópia clareada dos materiais
+bpy.context.view_layer.update()
+
+
+def eh_arma(o):
+    if ARMA_PECAS is not None:
+        return o.name.startswith(tuple(ARMA_PECAS))
+    return OSSO_DE.get(o) == ARMA_OSSO and not o.name.startswith(("Antebraço", "Proteção", "Mão", "Braço"))
+
+
+ARMA = [o for o in heroi if eh_arma(o)]
+PIVO_ARMA = Vector(ARMA_PIVO) if ARMA_PIVO is not None else Vector(PONTOS["punho_d"]) + Vector((0.02, -0.04, -0.09))
+if ARMA_ESCALA != 1.0 or ARMA_ESPESSURA != ARMA_ESCALA:
+    # comprimento (ao longo do eixo empunhadura -> ponto mais longe) x ARMA_ESCALA; espessura (perpendicular) x ARMA_ESPESSURA
+    _longe = max(((o.matrix_world @ v.co) for o in ARMA if o.type == "MESH" for v in o.data.vertices),
+                 key=lambda q: (q - PIVO_ARMA).length, default=PIVO_ARMA + Vector((0, 0, -1)))
+    _d = (_longe - PIVO_ARMA).normalized()
+    _dd = Matrix([[_d[i] * _d[j] for j in range(3)] for i in range(3)])
+    _M3 = Matrix.Identity(3) * ARMA_ESPESSURA + _dd * (ARMA_ESCALA - ARMA_ESPESSURA)
+    _X = Matrix.Translation(PIVO_ARMA) @ _M3.to_4x4() @ Matrix.Translation(-PIVO_ARMA)
+    _feitos = set()
+    for o in ARMA:
+        if o.data is None or o.data.name in _feitos or not hasattr(o.data, "transform"):
+            continue
+        _feitos.add(o.data.name)
+        o.data.transform(o.matrix_world.inverted() @ _X @ o.matrix_world)
+        if o.type == "CURVE":
+            o.data.bevel_depth *= ARMA_ESPESSURA
+        else:
+            o.data.update()
+if ARMA_CLAREAR > 0.0:
+    for o in ARMA:
+        if not hasattr(o.data, "materials"):
+            continue
+        for i, m in enumerate(o.data.materials):
+            if m is None or m.name in BRILHANTES or m.name not in PALETA:
+                continue
+            nome_c = m.name + " (arma)"
+            if nome_c not in PALETA:
+                b = hexa(PALETA[m.name])
+                PALETA[nome_c] = "#%02x%02x%02x" % tuple(int(round(255 * (v + (1.0 - v) * ARMA_CLAREAR))) for v in b)
+            o.data.materials[i] = bpy.data.materials.get(nome_c) or m.copy()
+            o.data.materials[i].name = nome_c
+print("ARMA: %d peças (%s), escala %.2f, espessura %.2f, clarear %.2f"
+      % (len(ARMA), ", ".join(sorted({o.name for o in ARMA}))[:160], ARMA_ESCALA, ARMA_ESPESSURA, ARMA_CLAREAR))
 
 # osso de cada peça restante do Codex
 for o in heroi:
@@ -331,6 +408,7 @@ def material_contorno(m):
 bpy.context.view_layer.update()
 S = Matrix.Diagonal((ESCALA * LARGURA, ESCALA, ESCALA))
 CASCAS = []
+DELTA_CASCA = {}
 for original in list(heroi):
     if original.type != "MESH" or len(original.data.polygons) < 6 or original.name.startswith(("Olho", "Sobrancelha")):
         continue
@@ -343,14 +421,22 @@ for original in list(heroi):
     bpy.context.collection.objects.link(copia)
     A = S @ original.matrix_world.to_3x3()
     Ai = A.inverted()
+    _base = np.empty(len(copia.data.vertices) * 3, np.float32)
+    copia.data.vertices.foreach_get("co", _base)
+    _delta = []
     for v in copia.data.vertices:
-        v.co = v.co + Ai @ ((Ai.transposed() @ v.normal).normalized() * CONTORNO)
+        dv = Ai @ ((Ai.transposed() @ v.normal).normalized() * CONTORNO)
+        _delta.extend(dv)
+        v.co = v.co + dv
+    DELTA_CASCA[copia] = (_base, np.array(_delta, np.float32))     # o retrato afina a casca para continuar com ~1 px
     copia.data.update()
     copia.data.materials.clear()
     copia.data.materials.append(material_contorno(mats[0]))
     copia.visible_shadow = False
     OSSO_DE[copia] = OSSO_DE[original]
     CASCAS.append(copia)
+    if original in ARMA:
+        ARMA.append(copia)
 heroi += CASCAS
 
 # ============================================================ 4. RIG: armature com joelho e cotovelo; peças presas por osso
@@ -416,6 +502,22 @@ arm["chao"] = ossos._min_z_botas(arm)      # altura da sola das botas em repouso
 CORPO = [o for o in heroi if o not in CASCAS]
 MAT_COR = {o: list(o.data.materials) for o in CORPO}
 
+# ARMA_DIRECAO: a arma gira em torno da empunhadura (no espaço de repouso do modelo, antes do osso) para apontar para onde o perfil pede em cada
+# animação. A direção de repouso = empunhadura -> ponto mais longe da arma. A matriz é a de base de cada peça (prender() deixou a do mundo de repouso).
+BASE_ARMA = {o: o.matrix_basis.copy() for o in ARMA}
+_mais_longe = max(((o.matrix_basis @ v.co) for o in ARMA if o.type == "MESH" and o not in CASCAS for v in o.data.vertices),
+                  key=lambda q: (q - PIVO_ARMA).length, default=PIVO_ARMA + Vector((0, 0, -1)))
+DIR_ARMA0 = (_mais_longe - PIVO_ARMA).normalized()
+
+
+def posar_arma(nome):
+    alvo = ARMA_DIRECAO.get(nome, ARMA_DIRECAO.get("*")) if ARMA_DIRECAO else None
+    rot = Matrix.Identity(4) if alvo is None else DIR_ARMA0.rotation_difference(Vector(alvo).normalized()).to_matrix().to_4x4()
+    fator = float(ARMA_ESCALA_ANIM.get(nome, 1.0))
+    X = Matrix.Translation(PIVO_ARMA) @ rot @ Matrix.Scale(fator, 4) @ Matrix.Translation(-PIVO_ARMA)
+    for o, b0 in BASE_ARMA.items():
+        o.matrix_basis = X @ b0
+
 # ============================================================ 5. cena: Cycles pixel nativo, câmera do jogo
 cena = bpy.context.scene
 cena.render.engine = "CYCLES"
@@ -436,7 +538,8 @@ cena.view_settings.look = "None"
 cena.view_settings.exposure = 0
 cena.view_settings.gamma = 1
 cena.render.threads_mode = "FIXED"
-cena.render.threads = 6
+# threads = o -t da linha de comando (outros agentes renderizam ao mesmo tempo: use -t 4); sem -t, 6 como antes
+cena.render.threads = int(sys.argv[sys.argv.index("-t") + 1]) if "-t" in sys.argv[:sys.argv.index("--") if "--" in sys.argv else len(sys.argv)] else 6
 
 cam_data = bpy.data.cameras.new("cam")
 cam_data.type = "ORTHO"
@@ -452,11 +555,14 @@ TMP = Path(os.environ.get("TEMP", "/tmp")) / (NOME + "_gerar_%d" % os.getpid())
 TMP.mkdir(parents=True, exist_ok=True)
 
 
+OCULTAS = set()      # peças fora do render no momento (o retrato sem a arma); renderizar() não pode reacender as cascas delas
+
+
 def renderizar(caminho, normal=False):
     """Renderiza um quadro. Cor: sRGB 'Standard'. Normal: 'Raw' (o número escrito é o número do material) e sem as cascas do contorno."""
     cena.view_settings.view_transform = "Raw" if normal else "Standard"
     for c in CASCAS:
-        c.hide_render = normal
+        c.hide_render = normal or c in OCULTAS
     for o in CORPO:
         o.data.materials[0] = mat_normal if normal else MAT_COR[o][0]
     cena.render.filepath = str(caminho)
@@ -467,13 +573,14 @@ def ler(caminho, cru):
     img = bpy.data.images.load(str(caminho), check_existing=False)
     if cru:
         img.colorspace_settings.name = "Non-Color"
-    px = np.array(img.pixels[:], dtype=np.float32).reshape(H, W, 4)[::-1].copy()
+    w, h = img.size
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[::-1].copy()
     bpy.data.images.remove(img)
     return px
 
 
 def gravar_normal(px, caminho):
-    img = bpy.data.images.new("n", W, H, alpha=True)
+    img = bpy.data.images.new("n", px.shape[1], px.shape[0], alpha=True)
     img.colorspace_settings.name = "Non-Color"
     img.pixels[:] = px[::-1].ravel()
     img.filepath_raw = str(caminho)
@@ -486,6 +593,8 @@ def gravar_normal(px, caminho):
 ossos.zerar(arm)
 ossos.pisar(arm)
 arm.rotation_euler = (0, 0, 0)
+if ARMA_DIRECAO or ARMA_ESCALA_ANIM:
+    posar_arma("parado")          # a arma do parado (uma arma grande apontada para baixo passaria do pé e enganaria a calibragem)
 renderizar(TMP / "calibra.png")
 px = ler(TMP / "calibra.png", False)
 ys, xs = np.nonzero(px[:, :, 3] > 0.5)
@@ -494,6 +603,30 @@ cam_data.shift_y = -dy / max(W, H)
 ossos.calibrar(arm, ELEV)
 LOC0 = Vector(arm["loc0"])
 print("calibragem: caixa y %d..%d x %d..%d (largura %d px); desloca %d px" % (ys.min(), ys.max(), xs.min(), xs.max(), xs.max() - xs.min() + 1, dy))
+
+
+def medir_cabeca(topo_px, pe_px):
+    """Proporção da cabeça no parado de frente: do topo do desenho (cabelo) ao queixo (o ponto mais baixo de 'Cabeça facetada'), sobre a altura toda."""
+    bpy.context.view_layer.update()
+    cran = [o for o in CORPO if o.name.startswith("Cabeça facetada")]
+    if not cran:
+        return None
+    queixo = max((1.0 - world_to_camera_view(cena, cam, o.matrix_world @ v.co).y) * H for o in cran for v in o.data.vertices)
+    cab_objs = [o for o in heroi if OSSO_DE.get(o) == "cabeca" and o.type == "MESH"]
+    topo_px = min(topo_px, min((1.0 - world_to_camera_view(cena, cam, o.matrix_world @ v.co).y) * H for o in cab_objs for v in o.data.vertices))
+    if topo_px < 0:
+        print("AVISO: a cabeça passa %.1f px do topo do quadro (cortada)" % -topo_px)
+    alt = pe_px - topo_px + 1
+    cab = queixo - topo_px
+    # massa da cabeça sem as pontas das mechas (o crânio e o volume do cabelo): é o que lê como "tamanho da cabeça" a 1x
+    massa = [o for o in cab_objs if not o.name.startswith(("Mecha", "Contorno — Mecha"))]
+    topo_m = min((1.0 - world_to_camera_view(cena, cam, o.matrix_world @ v.co).y) * H for o in massa for v in o.data.vertices)
+    print("MEDIDA altura_px=%.1f cabeca_px=%.1f cabeca_pct=%.1f (com as mechas) massa_px=%.1f massa_pct=%.1f (sem as pontas; meta do elenco 35-40)"
+          % (alt, cab, 100.0 * cab / alt, queixo - topo_m, 100.0 * (queixo - topo_m) / alt))
+    return cab / alt
+
+
+medir_cabeca(ys.min() - dy, ys.max() - dy)
 
 
 # ANIM DO PERFIL (opcional): um perfil pode trazer anim_<nome>.py na própria pasta; ela substitui a do Hazaki com o mesmo nome
@@ -562,6 +695,8 @@ def renderizar_animacao(nome):
             ossos.zerar(arm)
             arm.location = LOC0
             arm.rotation_euler = (0, 0, math.radians(ang))
+            if ARMA_DIRECAO or ARMA_ESCALA_ANIM:
+                posar_arma(nome)                                         # antes da pose: guarda_ponta() e os efeitos já veem a arma no lugar
             if usa_ang:
                 mod.posar(arm, q, n, ang)
             else:
@@ -577,9 +712,11 @@ def renderizar_animacao(nome):
             renderizar(tmp, normal=True)
             nor = normais.pos_normal(ler(tmp, True), mascara)
             polis = efeito(arm, q, n, ang) if efeito else []
-            if polis:
+            if polis or ESTILO_2D:
                 cor = ler(str(base) + "_cor.png", True)
-                pintar_poligonos(cor, nor, mascara, polis)
+                estilo2d.aplicar(cor, mascara, ESTILO_2D)               # contorno escuro + rim: só no corpo, antes do rastro
+                if polis:
+                    pintar_poligonos(cor, nor, mascara, polis)
                 gravar_normal(cor, str(base) + "_cor.png")
             gravar_normal(nor, str(base) + "_normal.png")
     arm.location = LOC0
@@ -587,8 +724,101 @@ def renderizar_animacao(nome):
     print("ANIM_OK %s: %d quadros x %d direções" % (nome, n, len(DIRECOES)))
 
 
-for nome in animacoes():
-    renderizar_animacao(nome)
+# ============================================================ 7. RETRATO 64x64 (padrão do elenco): busto em 3/4 voltado para a direita, do PRÓPRIO rig
+# Mesma câmera e mesmo enquadramento para todos os perfis: ortográfica, elevação baixa, a escala sai do CRÂNIO ('Cabeça facetada' = cranio_px de
+# altura) e o topo do desenho da cabeça (cabelo) fica a topo_px da borda; os ombros são cortados embaixo. Mesma luz do jogo (os materiais são os da
+# folha), casca do contorno afinada para ~1 px na escala do retrato, e o mesmo acabamento 2D (contorno escuro + rim). Fundo transparente.
+RETRATO_PADRAO = {
+    "tam": 64, "ang": 45.0, "elev": 18.0, "cranio_px": 33.0, "topo_px": 4, "centro_x": 0.5,
+    "anim": "parado", "quadro": 0, "arma": False, "cranio": "Cabeça facetada", "pasta": NOME,
+}
+
+
+def retrato():
+    r = dict(RETRATO_PADRAO)
+    r.update(RETRATO or {})
+    T = int(r["tam"])
+    destino = AQUI.parents[2] / "projeto" / "assets" / "personagens" / r["pasta"] / "retrato.png"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    # pose: o quadro escolhido (parado 0) na direção do retrato
+    mod = carregar_anim(r["anim"])
+    ossos.zerar(arm)
+    arm.location = LOC0
+    arm.rotation_euler = (0, 0, math.radians(r["ang"]))
+    if ARMA_DIRECAO or ARMA_ESCALA_ANIM:
+        posar_arma(r["anim"])
+    if len(inspect.signature(mod.posar).parameters) >= 4:
+        mod.posar(arm, int(r["quadro"]), mod.N_QUADROS, r["ang"])
+    else:
+        mod.posar(arm, int(r["quadro"]), mod.N_QUADROS)
+    if perfil and hasattr(perfil, "quadro"):
+        perfil.quadro(r["anim"], int(r["quadro"]), mod.N_QUADROS)
+    escondidas = []
+    if not r["arma"]:
+        for o in ARMA:
+            OCULTAS.add(o)                       # as cascas: renderizar() acende/apaga todas a cada render e precisa saber que estas ficam fora
+            if o not in CASCAS and not o.hide_render:
+                o.hide_render = True
+                escondidas.append(o)
+    bpy.context.view_layer.update()
+    # câmera do retrato (guarda a do jogo para voltar)
+    salvo = (cam.location.copy(), cam.rotation_euler.copy(), cam_data.ortho_scale, cam_data.shift_x, cam_data.shift_y,
+             cena.render.resolution_x, cena.render.resolution_y)
+    el = math.radians(r["elev"])
+    cam.location = (0.0, -20.0 * math.cos(el), 20.0 * math.sin(el))
+    cam.rotation_euler = (math.pi / 2 - el, 0.0, 0.0)
+    cena.render.resolution_x = cena.render.resolution_y = T
+    cam_data.shift_x = cam_data.shift_y = 0.0
+    cam_data.ortho_scale = max(W, H) / PPU
+    bpy.context.view_layer.update()
+    cabeca = [o for o in heroi if OSSO_DE.get(o) == "cabeca" and not o.hide_render]
+    cran = [o for o in CORPO if o.name.startswith(r["cranio"])]
+
+    def caixa(objs):
+        bpy.context.view_layer.update()
+        p = [world_to_camera_view(cena, cam, o.matrix_world @ v.co) for o in objs if o.type == "MESH" for v in o.data.vertices]
+        xs_, ys_ = [q.x * T for q in p], [(1.0 - q.y) * T for q in p]
+        return min(xs_), max(xs_), min(ys_), max(ys_)
+
+    _, _, c0, c1 = caixa(cran)
+    cam_data.ortho_scale *= (c1 - c0) / float(r["cranio_px"])      # crânio com cranio_px de altura
+    x0, x1, y0, _ = caixa(cabeca)
+    cam_data.shift_y += (r["topo_px"] - y0) / T                     # topo do cabelo a topo_px da borda de cima
+    cam_data.shift_x -= (T * r["centro_x"] - 0.5 * (x0 + x1)) / T   # cabeça centrada (centro_x = fração da largura)
+    ppu_r = T / cam_data.ortho_scale
+    k = PPU / ppu_r                                                  # casca do contorno com ~1 px também no retrato
+    for c, (b0, d0) in DELTA_CASCA.items():
+        c.data.vertices.foreach_set("co", b0 + d0 * k)
+        c.data.update()
+    caminho = TMP / "retrato.png"
+    renderizar(caminho)
+    px = ler(caminho, True)
+    mascara = px[:, :, 3] > 0.5
+    px[..., 3] = np.where(mascara, 1.0, 0.0)                         # alfa binário, como a folha
+    px[~mascara] = 0.0
+    est = dict(ESTILO_2D or ESTILO_ELENCO)
+    est["abre_baixo"] = True                                         # o corte dos ombros na borda de baixo não ganha contorno
+    estilo2d.aplicar(px, mascara, est)
+    gravar_normal(px, str(destino))
+    # volta tudo como estava
+    for c, (b0, d0) in DELTA_CASCA.items():
+        c.data.vertices.foreach_set("co", b0 + d0)
+        c.data.update()
+    for o in escondidas:
+        o.hide_render = False
+    OCULTAS.clear()
+    cam.location, cam.rotation_euler, cam_data.ortho_scale, cam_data.shift_x, cam_data.shift_y = salvo[:5]
+    cena.render.resolution_x, cena.render.resolution_y = salvo[5], salvo[6]
+    arm.location = LOC0
+    arm.rotation_euler = (0, 0, 0)
+    print("RETRATO_OK %s (%dx%d, %.1f px/m, %s)" % (destino, T, T, ppu_r, r["anim"]))
+
+
+if not SO_RETRATO:
+    for nome in animacoes():
+        renderizar_animacao(nome)
+if SO_RETRATO or (ESTILO_2D and not (SO_ANIM or SEM_RETRATO)):      # perfil que ainda não adotou o padrão só faz retrato com --retrato
+    retrato()
 
 ossos.zerar(arm)
 for c in CASCAS:
@@ -596,7 +826,7 @@ for c in CASCAS:
 for o in CORPO:
     o.data.materials[0] = MAT_COR[o][0]
 arm.rotation_euler = (0, 0, 0)
-if not SO_ANIM:
+if not (SO_ANIM or SO_RETRATO):
     bpy.ops.wm.save_as_mainfile(filepath=str(SAIDA.parent / (NOME + "_rig.blend")), compress=True)
 shutil.rmtree(TMP, ignore_errors=True)
 print("HAZAKI_OK")

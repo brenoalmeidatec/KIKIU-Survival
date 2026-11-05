@@ -116,3 +116,13 @@ A cena `../qa/qa_hazaki_final.gd` só troca a textura do herói; o jogo não mud
 ## Tempo medido (montagem 2)
 - `gerar.py` com as 7 animações: **32 s** de parede (Blender 4.5.14, `-b -t 6`, contando a abertura do Blender). Gravado em `tempo_render_s` do JSON (a montagem 1 registrou 22 s).
 - `montar_folha.py` e `gifs.py` não foram cronometrados separadamente.
+
+## Brendan no padrão do elenco (2026-11-01, #586)
+Esta pasta é o piloto: `perfil.py` (carregado sozinho quando o `gerar.py` roda sem `--perfil`) traz as cores e os parâmetros do padrão novo
+(ver `../LEIA-ME.md`, seção "Padrão do elenco"). Sem o `perfil.py`, o `gerar.py` volta ao Hazaki de antes.
+- Cor: vermelho samurai `#c0202c`/`#e03a36` no casaco, mangas e lenço; calça, couro e braçadeiras pretos; dourado `#d0a040`; cabelo preto-azulado `#282c3e` (preto puro virava um capacete).
+- Cabeça 1,42 (era 1,22) e mechas um fio mais baixas: `massa_pct` 38,8 (era 35,6; crânio de 14 para 16 px), topo do cabelo na linha 2 no parado/andar.
+- Katana 1,5x mais comprida, 1,15x mais grossa, 30% mais clara; de pé ao lado do corpo no parado/andar/dano; menor no rolamento (0,7) e na morte (0,8).
+- Contorno de 1 px + rim light (`estilo2d.py`), retrato em `projeto/assets/personagens/hazaki/retrato.png`.
+- Bordas (`medir.py`, direções que tocam a coluna 0 ou 31): parado 2, andar 4, rolamento 4, combo 8, escudo 6, dano 2, morte 8. A lâmina maior encosta mais no topo do quadro: 31 quadros com pixel na linha 0 (combo 12, dano 6, morte 6, escudo 5, rolamento 2), contra 1 antes; parado e andar não encostam (topo na linha 2).
+- Render completo (7 animações + retrato): 33 s com `-t 4`.

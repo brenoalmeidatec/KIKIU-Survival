@@ -99,8 +99,8 @@ def construir(ns):
     for s in (-1, 1):
         n = "esquerdo" if s < 0 else "direito"
         reg(box("Olho " + n, (s * .115, -.262, 2.745), (.075, .025, .052), M["Olho ciano"], .007), "cabeca")
-        reg(segment("Orelha " + n, (s * .21, .02, 2.92), (s * .30, .05, 3.50), .17, .0, M["Pelo"], 5), "cabeca")
-        reg(segment("Orelha interna " + n, (s * .21, -.04, 2.96), (s * .29, .01, 3.36), .10, .0, M["Orelha interna"], 5), "cabeca")
+        reg(segment("Orelha " + n, (s * .21, .02, 2.92), (s * .31, .05, 3.20), .20, .0, M["Pelo"], 5), "cabeca")
+        reg(segment("Orelha interna " + n, (s * .21, -.04, 2.96), (s * .30, .01, 3.10), .12, .0, M["Orelha interna"], 5), "cabeca")
 
     novos = [o for o in bpy.data.objects if o not in antes]
     return novos, osso_de, pontos

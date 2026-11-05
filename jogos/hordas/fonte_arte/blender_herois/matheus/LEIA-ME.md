@@ -51,3 +51,10 @@ python ../hazaki/montar_folha.py . matheus      # folha + prévia x4
 ```
   Atenção: sem `--anim`, a shuriken entra também em dano, morte, escudo e rolamento (o perfil vale para todas). Se for regerar tudo, reveja esses quadros antes.
 - Estado: a prévia mostra a shuriken na mão nos três quadros; o arremesso ainda lê fraco a 32x44 (o voo sai em 3 a 5 px). Pendente de olho do Alisson/Isac.
+
+## Padrão do elenco #586 + revisão de arte (01/11) — vale no lugar do que está dito acima sobre a katana
+- **Sem katana** em nenhuma animação (`ajustar` apaga cabo, guarda, lâmina, ponta e fio; a bainha vazia do quadril fica). A arma do Matthew é só a shuriken.
+- **Duas shurikens grandes** (~8-10 px, aço #e8eef6 com miolo dourado #e0b020, inclinadas 15 graus para a câmera): uma na mão esquerda (osso `antebraco_e`) e uma no peito, no lugar da fivela da faixa branca (osso `torso`). O tamanho 1,5x já está na geometria (`ARMA_ESCALA = 1.0`, `ARMA_PECAS = ("Shuriken",)`).
+- `quadro()` do perfil ergue o braço esquerdo à frente do peito no parado e no andar (guarda de arremesso); no retrato (33ª chamada do parado, ou `--retrato`) a mão sobe um pouco mais. O `efeito` do combo (shuriken voando) usa raio 0,30.
+- `CABECA = 1.30` (massa 39,8%). Azul royal + faixa branca = cor-assinatura. Retrato 64x64 em `assets/personagens/matheus/retrato.png` (`RETRATO = {"pasta": "matheus", "arma": True}`).
+- Regerar: `blender -b -t 4 -P gerar.py` (7 animações + retrato), `python ../hazaki/montar_folha.py . matheus`, copiar `matheus_final_*` para `prototipos/cara_nova/sprites/matheus_*`.

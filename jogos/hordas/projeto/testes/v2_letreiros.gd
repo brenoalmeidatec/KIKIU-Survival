@@ -82,7 +82,10 @@ func testar() -> void:
 	ok(opacidade(s, v, "altar", "cadeado") <= QUASE_TRANSPARENTE, "o cadeado do altar apaga quando o herói está sobre ele")
 	ok(opacidade(s, v, "altar", "nome") > 0.999, "o nome do altar segue inteiro (o herói não o cobre)")
 	ok(opacidade(s, v, "altar", "trava") > 0.999, "a linha do altar segue inteira (o herói não a cobre)")
-	# a cabeça fica abaixo da linha das Ruínas (a margem transparente do topo do quadro não conta): a linha segue inteira
+	# a cabeça fica abaixo da linha das Ruínas (a margem transparente do topo do quadro não conta): a linha segue inteira.
+	# Em y 306 o topo da cabeça (a partir da linha 4 do quadro no pior quadro do parado/andar, com a cabeça 1,42 do elenco #586) fica em y 232, logo abaixo da linha (212 a 229).
+	s._pos = Vector2(780, 306)
+	andar(v, 40)
 	ok(v._caixa_corpo(s._pos).position.y > s._pos.y - s._quadro_h * 2.0 + 6.0, "a caixa do corpo começa abaixo do topo do quadro (não caiu no quadro inteiro)")
 	ok(opacidade(s, v, "medio", "trava") > 0.999, "a linha das Ruínas segue inteira: a cabeça do herói fica abaixo dela")
 	ok(opacidade(s, v, "medio", "nome") > 0.999, "o nome das Ruínas segue inteiro")
@@ -97,7 +100,7 @@ func testar() -> void:
 	s._dir = 0
 	s._quadro = 0
 	ok(not apagou, "andando (quadros 0 a 4, oito direções), a linha das Ruínas não apaga")
-	# a cabeça (a partir de y 220) cruza a linha de baixo das Ruínas (y 212 a 229): ela apaga, e o nome de cima (y 195 a 212) segue inteiro
+	# a cabeça (a partir de y 216) cruza a linha de baixo das Ruínas (y 212 a 229): ela apaga, e o nome de cima (y 195 a 212) segue inteiro
 	s._pos = Vector2(780, 290)
 	andar(v, 40)
 	ok(opacidade(s, v, "medio", "trava") <= QUASE_TRANSPARENTE, "a cabeça cruza a linha das Ruínas: ela apaga")

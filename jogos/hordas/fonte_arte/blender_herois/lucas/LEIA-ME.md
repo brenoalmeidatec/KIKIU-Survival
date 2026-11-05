@@ -60,3 +60,6 @@ ele passaria dos 32 px; assim cabe em 32 px na maioria das direções. O jogo to
 - O Salão agora mostra a folha do herói do personagem ativo (`v2/salao.gd`), mas o retrato de `v2/personagens_tela.gd` ainda usa o Hazaki.
 - Sem rosto detalhado: em 32x44 o rosto são 2 olhos e a pele; o capuz e o lenço dão a identidade.
 - Os quadros de cor e normal têm a mesma silhueta (conferido em `montar_folha.py`).
+
+## Padrão do elenco (issue #586)
+`gerar_elenco.py` é o gerar.py do padrão novo: roda o `gerar.py` com trocas de texto (roxo saturado, lenço lilás, adagas das mãos 1,5x e mais claras, contorno escuro de 1 px + rim light do `../hazaki/estilo2d.py`, retrato 64x64 em `assets/personagens/lucas/retrato.png`). O `gerar.py` não foi editado de propósito: o lobo do LightWolf (`../lightwolf_lobo/gerar.py`) faz trocas de texto nele. Uso: `blender -b -t 4 -P gerar_elenco.py` (`-- --retrato` só o retrato), depois `python montar_folha.py`.

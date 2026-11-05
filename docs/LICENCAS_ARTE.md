@@ -272,3 +272,10 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Impactos das armas no estilo do pixelfx, Claude do Breno, 04/11/2026
 
 - `jogos/hordas/projeto/assets/v2/armas_anim/pfx_*.png`: desenhos novos gerados por `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`. Nenhuma imagem de terceiros. As receitas de simulação e de desenho são adaptadas do pixelfx (https://github.com/patch-gg/pixelfx, licença MIT conferida em 04/11/2026, Copyright (c) 2026 Patch e Copyright (c) 2026 Hugo Duprez), com o crédito no cabeçalho do script. A fonte Patch Pixel não é usada.
+
+## Elenco #586: padrão visual dos 9 heróis, retratos 64x64 e retrato duplo do LightWolf, Claude do Alisson (notebook, worktree alisson/elenco-padrao), 01/11/2026
+
+- `jogos/hordas/fonte_arte/blender_herois/hazaki/gerar.py` e o módulo novo `hazaki/estilo2d.py` (contorno de 1 px e rim light, só numpy), mais os `perfil.py`/`gerar.py` de hazaki, joao, matheus, beto, lukako, fabio, lucas, nicao e lightwolf_lobo: folhas de sprites regeradas por script no Blender 4.5 com cor-assinatura, cabeça maior, arma 1,5x e acabamento 2D. As armas novas (naginata do John, shurikens do Matthew, kusarigama com gancho e corrente do Bert, leque aberto e coque com kanzashi da Lukako, yumi com corda e aljava do Fabian) são primitivas do próprio script. Arte PRÓPRIA, sem modelo, textura ou referência de terceiros.
+- Derivados no jogo, sem mudança à mão: `jogos/hordas/projeto/prototipos/cara_nova/sprites/<heroi>{.json,_albedo.png,_normal.png}` e os retratos novos `jogos/hordas/projeto/assets/personagens/<heroi>/retrato.png` (64x64, mesmo enquadramento para todos). Os `rosto.png` antigos não foram tocados.
+- `jogos/hordas/fonte_arte/blender_herois/lightwolf_retrato/gerar.py`: retrato "D.Va" do LightWolf (#584), o mecha e o Lobo numa cena só, montada a partir dos próprios `.blend` do projeto. Saídas `assets/personagens/lightwolf/retrato_dupla.png` (256x256) e `retrato_dupla_128.png` (128x128). Arte PRÓPRIA.
+- Sem licença de terceiros a declarar, e sem crédito obrigatório nos Créditos por isso.
