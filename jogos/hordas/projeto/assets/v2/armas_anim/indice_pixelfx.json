@@ -1,0 +1,2482 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py (nao edite a mao)",
+ "folhas": {
+  "adaga_aco": {
+   "armas": [
+    "adagas_voadoras"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "adaga_aco_voo.png",
+     "quadro": [
+      14,
+      14
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      7,
+      7
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_adaga_aco_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "disco_ferro": {
+   "armas": [
+    "bumerangue_ferro"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "disco_ferro_voo.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      10,
+      10
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_disco_ferro_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "laminas": {
+   "armas": [
+    "laminas"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "laminas_voo.png",
+     "quadro": [
+      24,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      12,
+      12
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_laminas_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "chuva_de_ferro": {
+   "armas": [
+    "chuva_de_ferro"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "chuva_de_ferro_voo.png",
+     "quadro": [
+      28,
+      28
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      14,
+      14
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_chuva_de_ferro_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "flecha_roxa": {
+   "armas": [
+    "flechas_sombrias"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_flecha_roxa_voo.png",
+     "quadro": [
+      42,
+      8
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      36,
+      4
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_flecha_roxa_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "shuriken_sombria": {
+   "armas": [
+    "estrelas_sombra"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "shuriken_sombria_voo.png",
+     "quadro": [
+      14,
+      14
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      7,
+      7
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_shuriken_sombria_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "lanca_gelo": {
+   "armas": [
+    "lanca_geada"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_lanca_gelo_voo.png",
+     "quadro": [
+      48,
+      6
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      40,
+      3
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_lanca_gelo_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "chuva_de_lacas": {
+   "armas": [
+    "chuva_de_lacas"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_chuva_de_lacas_voo.png",
+     "quadro": [
+      58,
+      12
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      48,
+      6
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_chuva_de_lacas_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "dardo_verde": {
+   "armas": [
+    "dardos_peconhentos"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_dardo_verde_voo.png",
+     "quadro": [
+      34,
+      8
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      30,
+      4
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_dardo_verde_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "feixe_dourado": {
+   "armas": [
+    "raio_solar"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_feixe_dourado_voo.png",
+     "quadro": [
+      82,
+      6
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      66,
+      3
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_feixe_dourado_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "urso_solar": {
+   "armas": [
+    "urso_solar"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_urso_solar_voo.png",
+     "quadro": [
+      60,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      49,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_urso_solar_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "tempestade_primordial": {
+   "armas": [
+    "tempestade_primordial"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_tempestade_primordial_voo.png",
+     "quadro": [
+      90,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      72,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_tempestade_primordial_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "anel_de_brasas": {
+   "armas": [
+    "anel_de_brasas"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "anel_de_brasas_voo.png",
+     "quadro": [
+      24,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      12,
+      12
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "pfx_anel_de_brasas_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    },
+    "aura": {
+     "arquivo": "pfx_anel_de_brasas_aura.png",
+     "quadro": [
+      128,
+      82
+     ],
+     "n": 6,
+     "fps": 10,
+     "loop": true,
+     "ancora": [
+      64,
+      46
+     ]
+    }
+   }
+  },
+  "bola_fogo": {
+   "armas": [
+    "bola_fogo"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_bola_fogo_voo.png",
+     "quadro": [
+      44,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      37,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_bola_fogo_impacto.png",
+     "quadro": [
+      112,
+      96
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      56,
+      68
+     ]
+    }
+   }
+  },
+  "bola_incendiaria": {
+   "armas": [
+    "bola_incendiaria"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_bola_incendiaria_voo.png",
+     "quadro": [
+      58,
+      20
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      48,
+      10
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_bola_incendiaria_impacto.png",
+     "quadro": [
+      144,
+      122
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      72,
+      87
+     ]
+    }
+   }
+  },
+  "bola_chumbo": {
+   "armas": [
+    "bolas_chumbo"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "pfx_bola_chumbo_voo.png",
+     "quadro": [
+      42,
+      16
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      36,
+      8
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_bola_chumbo_impacto.png",
+     "quadro": [
+      72,
+      60
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      36,
+      43
+     ]
+    }
+   }
+  },
+  "raio": {
+   "armas": [
+    "raio"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_raio_impacto.png",
+     "quadro": [
+      64,
+      56
+     ],
+     "n": 10,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      32,
+      28
+     ]
+    }
+   }
+  },
+  "meteoro_flamejante": {
+   "armas": [
+    "meteoro_flamejante"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_meteoro_flamejante_queda.png",
+     "quadro": [
+      72,
+      30
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      60,
+      15
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_meteoro_flamejante_impacto.png",
+     "quadro": [
+      128,
+      104
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      64,
+      66
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_meteoro_flamejante_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "fogo_do_ceu": {
+   "armas": [
+    "fogo_do_ceu"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_fogo_do_ceu_queda.png",
+     "quadro": [
+      64,
+      26
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      54,
+      13
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_fogo_do_ceu_impacto.png",
+     "quadro": [
+      120,
+      98
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      60,
+      62
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_fogo_do_ceu_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "pedreira_ardente": {
+   "armas": [
+    "pedreira_ardente"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_pedreira_ardente_queda.png",
+     "quadro": [
+      62,
+      26
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      53,
+      13
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_pedreira_ardente_impacto.png",
+     "quadro": [
+      152,
+      124
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      76,
+      79
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_pedreira_ardente_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "estrela_cadente": {
+   "armas": [
+    "estrelas_cadentes"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_estrela_cadente_queda.png",
+     "quadro": [
+      66,
+      18
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      56,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_estrela_cadente_impacto.png",
+     "quadro": [
+      104,
+      84
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      52,
+      54
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_estrela_cadente_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "juizo_final": {
+   "armas": [
+    "juizo_final"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_juizo_final_queda.png",
+     "quadro": [
+      86,
+      36
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      71,
+      18
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_juizo_final_impacto.png",
+     "quadro": [
+      200,
+      164
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      100,
+      104
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_juizo_final_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "cometa_roxo": {
+   "armas": [
+    "cometa_negro"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_cometa_roxo_queda.png",
+     "quadro": [
+      90,
+      42
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      74,
+      21
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_cometa_roxo_impacto.png",
+     "quadro": [
+      176,
+      144
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      88,
+      91
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_cometa_roxo_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "eclipse_negro": {
+   "armas": [
+    "eclipse_negro"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_eclipse_negro_queda.png",
+     "quadro": [
+      82,
+      34
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      68,
+      17
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_eclipse_negro_impacto.png",
+     "quadro": [
+      200,
+      164
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      100,
+      104
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_eclipse_negro_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "pedra_vulcanica": {
+   "armas": [
+    "pedras_vulcanicas"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_pedra_vulcanica_queda.png",
+     "quadro": [
+      42,
+      12
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      38,
+      6
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_pedra_vulcanica_impacto.png",
+     "quadro": [
+      64,
+      52
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      32,
+      33
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_pedra_vulcanica_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "pedra_cinza": {
+   "armas": [
+    "chuva_pedras"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_pedra_cinza_queda.png",
+     "quadro": [
+      50,
+      16
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      44,
+      8
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_pedra_cinza_impacto.png",
+     "quadro": [
+      80,
+      64
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      40,
+      41
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_pedra_cinza_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "cometa_gelo": {
+   "armas": [
+    "cometa_gelado"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_cometa_gelo_queda.png",
+     "quadro": [
+      62,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      53,
+      12
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_cometa_gelo_impacto.png",
+     "quadro": [
+      152,
+      124
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      76,
+      79
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_cometa_gelo_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "cometa_duplo": {
+   "armas": [
+    "cometa_duplo"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_cometa_duplo_queda.png",
+     "quadro": [
+      76,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      63,
+      12
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_cometa_duplo_impacto.png",
+     "quadro": [
+      144,
+      118
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      72,
+      74
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_cometa_duplo_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "espinho_verde": {
+   "armas": [
+    "chuva_espinhos"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_espinho_verde_queda.png",
+     "quadro": [
+      36,
+      16
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      33,
+      8
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_espinho_verde_impacto.png",
+     "quadro": [
+      64,
+      52
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      32,
+      33
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_espinho_verde_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "raio_meteorico": {
+   "armas": [
+    "raio_meteorico"
+   ],
+   "anims": {
+    "queda": {
+     "arquivo": "pfx_raio_meteorico_queda.png",
+     "quadro": [
+      74,
+      32
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      62,
+      16
+     ]
+    },
+    "impacto": {
+     "arquivo": "pfx_raio_meteorico_impacto.png",
+     "quadro": [
+      152,
+      124
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      76,
+      79
+     ]
+    },
+    "marca": {
+     "arquivo": "pfx_raio_meteorico_marca.png",
+     "quadro": [
+      48,
+      32
+     ],
+     "n": 4,
+     "fps": 8,
+     "loop": false,
+     "ancora": [
+      24,
+      16
+     ]
+    }
+   }
+  },
+  "runa": {
+   "armas": [
+    "runa"
+   ],
+   "anims": {
+    "armar": {
+     "arquivo": "runa_armar.png",
+     "quadro": [
+      72,
+      46
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": false,
+     "ancora": [
+      36,
+      27
+     ]
+    },
+    "loop": {
+     "arquivo": "runa_loop.png",
+     "quadro": [
+      72,
+      46
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      36,
+      27
+     ]
+    },
+    "explosao": {
+     "arquivo": "pfx_runa_explosao.png",
+     "quadro": [
+      120,
+      102
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      60,
+      73
+     ]
+    }
+   }
+  },
+  "circulo_runico": {
+   "armas": [
+    "circulo_runico"
+   ],
+   "anims": {
+    "armar": {
+     "arquivo": "circulo_runico_armar.png",
+     "quadro": [
+      100,
+      72
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": false,
+     "ancora": [
+      50,
+      43
+     ]
+    },
+    "loop": {
+     "arquivo": "circulo_runico_loop.png",
+     "quadro": [
+      100,
+      72
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      50,
+      43
+     ]
+    },
+    "explosao": {
+     "arquivo": "pfx_circulo_runico_explosao.png",
+     "quadro": [
+      168,
+      144
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      84,
+      102
+     ]
+    }
+   }
+  },
+  "fx_explode": {
+   "armas": [
+    "fx_explode"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_explode_impacto.png",
+     "quadro": [
+      104,
+      88
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      52,
+      63
+     ]
+    }
+   }
+  },
+  "fx_cabaca": {
+   "armas": [
+    "fx_cabaca"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_cabaca_impacto.png",
+     "quadro": [
+      136,
+      116
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      68,
+      82
+     ]
+    }
+   }
+  },
+  "fx_pancada": {
+   "armas": [
+    "fx_pancada"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_pancada_impacto.png",
+     "quadro": [
+      104,
+      84
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      52,
+      54
+     ]
+    }
+   }
+  },
+  "fx_aliado": {
+   "armas": [
+    "fx_aliado"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_aliado_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "fx_morte": {
+   "armas": [
+    "fx_morte"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_morte_impacto.png",
+     "quadro": [
+      56,
+      48
+     ],
+     "n": 9,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      28,
+      34
+     ]
+    }
+   }
+  },
+  "fx_dano_heroi": {
+   "armas": [
+    "fx_dano_heroi"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_dano_heroi_impacto.png",
+     "quadro": [
+      48,
+      44
+     ],
+     "n": 5,
+     "fps": 30,
+     "loop": false,
+     "ancora": [
+      24,
+      22
+     ]
+    }
+   }
+  },
+  "fx_cura": {
+   "armas": [
+    "fx_cura"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_cura_impacto.png",
+     "quadro": [
+      48,
+      64
+     ],
+     "n": 12,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      24,
+      52
+     ]
+    }
+   }
+  },
+  "fx_fusao": {
+   "armas": [
+    "fx_fusao"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_fusao_impacto.png",
+     "quadro": [
+      176,
+      112
+     ],
+     "n": 10,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      88,
+      56
+     ]
+    }
+   }
+  },
+  "fx_queda_heroi": {
+   "armas": [
+    "fx_queda_heroi"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_queda_heroi_impacto.png",
+     "quadro": [
+      88,
+      74
+     ],
+     "n": 13,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      44,
+      53
+     ]
+    }
+   }
+  },
+  "fx_ui_anuncio": {
+   "armas": [
+    "fx_ui_anuncio"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_ui_anuncio_impacto.png",
+     "quadro": [
+      208,
+      72
+     ],
+     "n": 10,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      104,
+      36
+     ]
+    }
+   }
+  },
+  "fx_ui_pronta": {
+   "armas": [
+    "fx_ui_pronta"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "pfx_fx_ui_pronta_impacto.png",
+     "quadro": [
+      96,
+      96
+     ],
+     "n": 10,
+     "fps": 24,
+     "loop": false,
+     "ancora": [
+      48,
+      48
+     ]
+    }
+   }
+  },
+  "anel_onda_branca": {
+   "armas": [
+    "onda_choque"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_onda_branca_expandir.png",
+     "quadro": [
+      128,
+      84
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      42
+     ]
+    }
+   }
+  },
+  "anel_dourado": {
+   "armas": [
+    "pulso_sagrado"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_dourado_expandir.png",
+     "quadro": [
+      128,
+      89
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      44
+     ]
+    }
+   }
+  },
+  "anel_gelo": {
+   "armas": [
+    "anel_gelado"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_gelo_expandir.png",
+     "quadro": [
+      128,
+      60
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      30
+     ]
+    }
+   }
+  },
+  "anel_vermelho": {
+   "armas": [
+    "grito_guerra"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_vermelho_expandir.png",
+     "quadro": [
+      128,
+      70
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      35
+     ]
+    }
+   }
+  },
+  "terremoto_poeira": {
+   "armas": [
+    "terremoto"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_terremoto_poeira_expandir.png",
+     "quadro": [
+      150,
+      69
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      75,
+      34
+     ]
+    }
+   }
+  },
+  "anel_eletrico": {
+   "armas": [
+    "martelo_trovao"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_eletrico_expandir.png",
+     "quadro": [
+      128,
+      63
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      31
+     ]
+    }
+   }
+  },
+  "redemoinho_verde": {
+   "armas": [
+    "rajada_vento"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_redemoinho_verde_expandir.png",
+     "quadro": [
+      128,
+      73
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      36
+     ]
+    }
+   }
+  },
+  "anel_espinhos_verdes": {
+   "armas": [
+    "anel_espinhos"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_espinhos_verdes_expandir.png",
+     "quadro": [
+      128,
+      86
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      43
+     ]
+    }
+   }
+  },
+  "anel_lunar": {
+   "armas": [
+    "anel_luar"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_anel_lunar_expandir.png",
+     "quadro": [
+      128,
+      89
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      64,
+      44
+     ]
+    }
+   }
+  },
+  "estrondo": {
+   "armas": [
+    "estrondo"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_estrondo_expandir.png",
+     "quadro": [
+      140,
+      95
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      70,
+      47
+     ]
+    }
+   }
+  },
+  "terra_partida": {
+   "armas": [
+    "terra_partida"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_terra_partida_expandir.png",
+     "quadro": [
+      150,
+      106
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      75,
+      53
+     ]
+    }
+   }
+  },
+  "juramento_sagrado": {
+   "armas": [
+    "juramento_sagrado"
+   ],
+   "anims": {
+    "expandir": {
+     "arquivo": "pfx_juramento_sagrado_expandir.png",
+     "quadro": [
+      140,
+      94
+     ],
+     "n": 8,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      70,
+      47
+     ]
+    }
+   }
+  },
+  "nuvem_veneno": {
+   "armas": [
+    "nuvem_veneno"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nuvem_veneno_entrada.png",
+     "quadro": [
+      100,
+      64
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      50,
+      32
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nuvem_veneno_loop.png",
+     "quadro": [
+      100,
+      64
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      50,
+      32
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nuvem_veneno_saida.png",
+     "quadro": [
+      100,
+      64
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      50,
+      32
+     ]
+    }
+   }
+  },
+  "nevoa_gelada": {
+   "armas": [
+    "nevoeiro_gelado"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nevoa_gelada_entrada.png",
+     "quadro": [
+      120,
+      74
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      60,
+      37
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nevoa_gelada_loop.png",
+     "quadro": [
+      120,
+      74
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      60,
+      37
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nevoa_gelada_saida.png",
+     "quadro": [
+      120,
+      74
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      60,
+      37
+     ]
+    }
+   }
+  },
+  "nuvem_cinzas": {
+   "armas": [
+    "cinzas_vulcanicas"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nuvem_cinzas_entrada.png",
+     "quadro": [
+      160,
+      104
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      80,
+      52
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nuvem_cinzas_loop.png",
+     "quadro": [
+      160,
+      104
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      80,
+      52
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nuvem_cinzas_saida.png",
+     "quadro": [
+      160,
+      104
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      80,
+      52
+     ]
+    }
+   }
+  },
+  "fumaca_sonolenta": {
+   "armas": [
+    "fumaca_sonolenta"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_fumaca_sonolenta_entrada.png",
+     "quadro": [
+      110,
+      57
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      55,
+      28
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_fumaca_sonolenta_loop.png",
+     "quadro": [
+      110,
+      57
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      55,
+      28
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_fumaca_sonolenta_saida.png",
+     "quadro": [
+      110,
+      57
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      55,
+      28
+     ]
+    }
+   }
+  },
+  "chuva_acida": {
+   "armas": [
+    "chuva_acida"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_chuva_acida_entrada.png",
+     "quadro": [
+      120,
+      80
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      60,
+      40
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_chuva_acida_loop.png",
+     "quadro": [
+      120,
+      80
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      60,
+      40
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_chuva_acida_saida.png",
+     "quadro": [
+      120,
+      80
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      60,
+      40
+     ]
+    }
+   }
+  },
+  "nuvem_neve": {
+   "armas": [
+    "nevasca"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nuvem_neve_entrada.png",
+     "quadro": [
+      140,
+      91
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      70,
+      45
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nuvem_neve_loop.png",
+     "quadro": [
+      140,
+      91
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      70,
+      45
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nuvem_neve_saida.png",
+     "quadro": [
+      140,
+      91
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      70,
+      45
+     ]
+    }
+   }
+  },
+  "nuvem_esporos": {
+   "armas": [
+    "nuvem_espora"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nuvem_esporos_entrada.png",
+     "quadro": [
+      120,
+      77
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      60,
+      38
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nuvem_esporos_loop.png",
+     "quadro": [
+      120,
+      77
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      60,
+      38
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nuvem_esporos_saida.png",
+     "quadro": [
+      120,
+      77
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      60,
+      38
+     ]
+    }
+   }
+  },
+  "nuvem_sangue": {
+   "armas": [
+    "cortina_sangue"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nuvem_sangue_entrada.png",
+     "quadro": [
+      70,
+      50
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      35,
+      25
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nuvem_sangue_loop.png",
+     "quadro": [
+      70,
+      50
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      35,
+      25
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nuvem_sangue_saida.png",
+     "quadro": [
+      70,
+      50
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      35,
+      25
+     ]
+    }
+   }
+  },
+  "nevoa_espectral": {
+   "armas": [
+    "nevoa_espectral"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nevoa_espectral_entrada.png",
+     "quadro": [
+      100,
+      65
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      50,
+      32
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nevoa_espectral_loop.png",
+     "quadro": [
+      100,
+      65
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      50,
+      32
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nevoa_espectral_saida.png",
+     "quadro": [
+      100,
+      65
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      50,
+      32
+     ]
+    }
+   }
+  },
+  "nevasca_congelante": {
+   "armas": [
+    "nevasca_congelante"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_nevasca_congelante_entrada.png",
+     "quadro": [
+      145,
+      114
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      72,
+      57
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_nevasca_congelante_loop.png",
+     "quadro": [
+      145,
+      114
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      72,
+      57
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_nevasca_congelante_saida.png",
+     "quadro": [
+      145,
+      114
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      72,
+      57
+     ]
+    }
+   }
+  },
+  "cinzas_acidas": {
+   "armas": [
+    "cinzas_acidas"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_cinzas_acidas_entrada.png",
+     "quadro": [
+      150,
+      130
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      75,
+      65
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_cinzas_acidas_loop.png",
+     "quadro": [
+      150,
+      130
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      75,
+      65
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_cinzas_acidas_saida.png",
+     "quadro": [
+      150,
+      130
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      75,
+      65
+     ]
+    }
+   }
+  },
+  "peste_negra": {
+   "armas": [
+    "peste_negra"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_peste_negra_entrada.png",
+     "quadro": [
+      130,
+      121
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      65,
+      60
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_peste_negra_loop.png",
+     "quadro": [
+      130,
+      121
+     ],
+     "n": 6,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      65,
+      60
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_peste_negra_saida.png",
+     "quadro": [
+      130,
+      121
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      65,
+      60
+     ]
+    }
+   }
+  },
+  "furacao_glacial": {
+   "armas": [
+    "furacao_glacial"
+   ],
+   "anims": {
+    "entrada": {
+     "arquivo": "pfx_furacao_glacial_entrada.png",
+     "quadro": [
+      160,
+      130
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      80,
+      65
+     ]
+    },
+    "loop": {
+     "arquivo": "pfx_furacao_glacial_loop.png",
+     "quadro": [
+      160,
+      130
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      80,
+      65
+     ]
+    },
+    "saida": {
+     "arquivo": "pfx_furacao_glacial_saida.png",
+     "quadro": [
+      160,
+      130
+     ],
+     "n": 3,
+     "fps": 10,
+     "loop": false,
+     "ancora": [
+      80,
+      65
+     ]
+    }
+   }
+  },
+  "aura_fogo": {
+   "armas": [
+    "aura_fogo"
+   ],
+   "anims": {
+    "aura": {
+     "arquivo": "pfx_aura_fogo_aura.png",
+     "quadro": [
+      128,
+      82
+     ],
+     "n": 6,
+     "fps": 10,
+     "loop": true,
+     "ancora": [
+      64,
+      46
+     ]
+    }
+   }
+  }
+ }
+}

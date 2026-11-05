@@ -490,7 +490,9 @@ func _ready() -> void:
 	w.combate.processar_mortes()
 	ok(not el.vivo and not el.contorno.visible, "a elite morre e o contorno some")
 	ok(w.combate.baus.ativos() == 1, "a elite solta um baú")
-	var bau_pos: Vector2 = w.combate.baus.lista.filter(func(b): return b.ativo)[0].pos
+	var bau_ativo: Dictionary = w.combate.baus.lista.filter(func(b): return b.ativo)[0]
+	bau_ativo.forcar = 3  # a roleta: sem isto o sorteio depende do RNG que os efeitos consumiram antes
+	var bau_pos: Vector2 = bau_ativo.pos
 	passos(30)
 	var estado_antes := _total_cartas()
 	h.entrada_forcada = Vector2.ZERO
