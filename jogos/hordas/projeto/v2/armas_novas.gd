@@ -94,6 +94,8 @@ var x_dur := PackedFloat32Array()
 var x_esc := PackedFloat32Array()
 var x_folha: Array = []
 var x_chao := PackedByteArray()
+var x_flip := PackedFloat32Array()  # -1: o impacto espelhado, com os estilhaços saindo para o lado do golpe
+var x_cor := PackedColorArray()
 var x_ativos := 0
 var _xi := 0
 var impactos := 0  # quantos impactos tocaram (testes)
@@ -123,6 +125,8 @@ func montar(p) -> void:
 	x_esc.resize(MAX_FX)
 	x_chao.resize(MAX_FX)
 	x_folha.resize(MAX_FX)
+	x_flip.resize(MAX_FX)
+	x_cor.resize(MAX_FX)
 	x_dur.fill(0.0)
 
 
@@ -470,7 +474,8 @@ func vel_anim(h) -> float:
 
 
 ## Toca a folha `f` (impacto ou marca no chão) uma vez em `p`. Só efeito: o dano já saiu no evento que chamou isto. Pool fixo, sem nó.
-func tocar_fx(f: Dictionary, p: Vector2, esc := 1.0, chao := false) -> void:
+## `flip` -1 espelha; `cor` tinge a folha cinza dos aliados e do acerto do herói.
+func tocar_fx(f: Dictionary, p: Vector2, esc := 1.0, chao := false, flip := 1.0, cor := Color.WHITE) -> void:
 	if f.is_empty():
 		return
 	var i := _xi
@@ -481,6 +486,8 @@ func tocar_fx(f: Dictionary, p: Vector2, esc := 1.0, chao := false) -> void:
 	x_esc[i] = esc
 	x_folha[i] = f
 	x_chao[i] = 1 if chao else 0
+	x_flip[i] = flip
+	x_cor[i] = cor
 	x_ativos += 1
 	impactos += 1
 
@@ -504,7 +511,7 @@ func _desenhar_fx(ci: CanvasItem, chao: bool) -> void:
 		var esc := x_esc[i]
 		if not chao:  # o soco do impacto: incha 14% nos primeiros 0,16 s e assenta (só o desenho; a área do dano é a mesma)
 			esc *= 1.0 + 0.14 * sin(PI * clampf(x_t[i] / 0.16, 0.0, 1.0))
-		Anim.desenhar_suave(ci, f, Anim.quadro_em_f(f, x_t[i]), x_pos[i], 0.0, Vector2(esc, esc))
+		Anim.desenhar_suave(ci, f, Anim.quadro_em_f(f, x_t[i]), x_pos[i], 0.0, Vector2(esc * x_flip[i], esc), x_cor[i])
 
 
 ## PREPARO do tiro: fica na boca (acompanha o herói), sem colidir; quando acaba, sai voando na direção guardada.
@@ -522,6 +529,11 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 	var p: Vector2 = it.p
 	# O virote da torre e o estilhaço da granada só enxergam os monstros perto DELES (`lista`): o herói pode estar longe dali.
 	var alvos: Array = perto if it.lista == null else it.lista
+	if bool(it.fa.get("voo", {}).get("gira", false)) and Anim.suave:  # o que gira não tem rastro na folha: as faíscas ficam para trás e caem
+		it.mira = float(it.mira) - dt
+		if float(it.mira) <= 0.0:
+			it.mira = 0.05
+			pai.fx.particula(p, (it.v as Vector2) * -0.08, 0.2, 2.0, Color(a.cor.lerp(Color.WHITE, 0.4), 0.9), 260.0)
 	if str(a.tipo) == "torre":  # o rastro do virote: uma faísca a cada ~2 quadros, que apaga rápido
 		it.mira = float(it.mira) - dt
 		if float(it.mira) <= 0.0:
@@ -546,11 +558,11 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		var fa: Dictionary = it.fa
 		if fa.has("impacto"):  # o impacto toca no ponto do acerto (o evento real), não no fim da animação do voo
 			tocar_fx(fa.impacto, p, 2.0 if crit else 1.0)
-		if Anim.suave:  # brilhos no acerto; o crítico estoura com anéis e soca a câmera
+			pai.fx.faiscas(p, dir, 6 if crit else 4, a.cor, 190.0)  # os estilhaços seguem a direção exata do golpe e caem
+		elif Anim.suave:  # sem folha: brilhos no acerto
 			pai.fx.brilhos(p, 12.0, a.cor, 3)
-			if crit:
-				pai.fx.explosao(p, 24.0, COR_CRIT, 1.0, 0.45)
-				pai.mundo.cam.socar(0.012)
+		if crit and Anim.suave:
+			pai.mundo.cam.socar(0.012)
 		if estilhaco:
 			_numero_estilhaco(m, dano, dir, a, it)
 		pai._acertou("projetil")
@@ -558,7 +570,7 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 			_cadeia_eletrica(m, dano * 0.6, int(st.cadeia), alvos)
 		var ex := float(st.get("explosao", 0.0))
 		if ex > 0.0:
-			pai.explodir(m.pos, dano, ex, a.cor, m)
+			pai.explodir(m.pos, dano, ex, a.cor, m, fa.has("impacto"))
 		if st.has("puxa"):  # a tempestade: cada impacto puxa os inimigos próximos para o ponto
 			_puxar(m.pos, float(st.get("puxa_raio", 90.0)), float(st.puxa))
 		if float(it.aux) >= 1.0 and str(a.tipo) == "projetil":  # ricochete (número `ricochete` da arma): muda de rumo para o vizinho mais perto
@@ -693,9 +705,7 @@ func _anel(a: Dictionary, h) -> void:
 	if it.is_empty():
 		return
 	it.r = 0.0
-	fumaca_impacto(h.pos, 30.0, a.cor, 0.5)  # o sopro da onda saindo: poeira rasteira na cor dela
 	if prep <= 0.0:
-		pai.fx.explosao(h.pos, float(st.raio), a.cor, 0.0, _dur_onda(st))
 		_empurrao_onda(st)
 	if prep > 0.0:  # PREPARO: o anel junta força no herói (o primeiro quadro da folha pulsa), sem hitbox
 		it.fk = F_PREPARO
@@ -711,11 +721,6 @@ func _empurrao_onda(st: Dictionary) -> void:
 	pai.mundo.cam.socar(clampf(float(st.raio) / 4000.0, 0.01, 0.03))
 
 
-## Duração da explosão que acompanha a onda do anel: o anel de energia do shader chega à borda em 40% dela, junto da frente real.
-func _dur_onda(st: Dictionary) -> float:
-	return clampf(float(st.raio) / maxf(float(st.vel), 1.0) / 0.4, 0.5, 2.0)
-
-
 func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
@@ -725,16 +730,14 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 		if float(it.ft) > 0.0:
 			return
 		it.fk = F_ATIVO
-		pai.fx.explosao(it.p, float(st.raio), a.cor, 0.0, _dur_onda(st))  # a onda sai: os anéis de energia abrem junto dela até a borda
-		_empurrao_onda(st)
+		_empurrao_onda(st)  # a onda sai: quem desenha a frente é a folha `expandir`
 		if Anim.de(str(a.id) + "_queda").has("queda"):  # a peça bateu no chão: a onda nasce aqui, com tremor e poeira
 			pai.mundo.cam.tremer(4.0 if Anim.suave else 1.5, 0.25 if Anim.suave else 0.1)
 			if Anim.suave:  # o martelo bate: soco de zoom e clarão
 				pai.mundo.cam.socar(0.045)
 				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)  # Piscadas: o próprio clarao() recusa com a opção ligada
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
-			fumaca_impacto(it.p, 40.0, a.cor)
-			pai.fx.explosao(it.p, 44.0, a.cor)
+			tocar_fx(Anim.de("fx_pancada").get("impacto", {}), it.p)
 			pai.fx.marca_chao(it.p, 34.0, a.cor)
 	it.r = float(it.r) + float(st.vel) * dt
 	var c: Vector2 = it.p
@@ -775,8 +778,8 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 		return
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
-	pai.explodir(it.p, _dano(st), float(st.raio), a.cor)
 	var fa: Dictionary = it.fa
+	pai.explodir(it.p, _dano(st), float(st.raio), a.cor, null, fa.has("impacto"))
 	if fa.has("impacto"):  # o impacto e a marca tocam no instante da queda, o mesmo do dano
 		var q: Vector2 = fa.impacto.quadro
 		tocar_fx(fa.impacto, it.p, maxf(1.0, roundf(float(st.raio) * 2.0 / q.x)))
@@ -791,7 +794,6 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 		elif float(st.raio) >= 40.0:
 			pai.mundo.cam.tremer(1.0, 0.08)
 		if Anim.suave:  # a segunda onda, mais larga e lenta, e o clarão branco no centro (só desenho: o dano já saiu acima)
-			pai.fx.onda(it.p, Color(1, 1, 1, 0.55), float(st.raio) * 0.8, 0.4)
 			pai.fx.luz_rapida(it.p + Vector2(0, -6), Color(1, 1, 1), 1.2, float(st.raio) * 2.0, 0.18)
 	if st.has("cadeia") and not bool(it.get("filho", false)):  # o juízo: cada queda chama outro meteoro no inimigo mais perto
 		var alvo = _mais_perto(it.p, 400.0, pai.mundo.monstros)
@@ -1335,10 +1337,7 @@ func _explodir_granada(it: Dictionary) -> void:
 			f.est = 1  # estoura de novo onde acabar
 			f.t = float(randi() % 3)  # a cor do fogo
 	# o clarão, a onda, o estouro, a luz, a casca que voa, a fumaça que sobe, as brasas no chão e o tremor
-	pai.fx.folha("cristal", p, raio * 1.1, cor, 0.25)
-	pai.fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.3)
-	pai.fx.onda(p, Color(1.0, 0.95, 0.75, 0.6), raio * 0.55, 0.16)
-	pai.fx.estouro(p + Vector2(0, -6), cor, 10)
+	tocar_fx(Anim.de("fx_cabaca").get("impacto", {}), p)
 	pai.fx.luz_rapida(p + Vector2(0, -8), cor, 2.2, raio * 3.0, 0.25)
 	_lascas(p, 6.0, 9, 150.0, COR_CABACA, Color(0.45, 0.25, 0.08))
 	_fumaca_subindo(p, 8, raio, 8.0)

@@ -13,6 +13,7 @@ extends RefCounted
 ## deb = entulho (torrões que quicam e ficam no chão, poeira), rt = s desde a última pancada (as rachaduras no chão; -1 = nenhuma).
 ## O dano cai quando a animação cruza o quadro do impacto (não quando o ataque começa), em área no ponto `ip` guardado no início do golpe.
 
+const Anim := preload("res://v2/anim_golpes.gd")  # as folhas de impacto (fx_*)
 const FOLHA := "res://assets/v2/armas/golem_barro_dir.png"
 ## O Colosso de Pedra (1,3 vez o golem) tem folha PRÓPRIA, o mesmo modelo 1,3 vez maior renderizado já no tamanho final (gerar_golem.py com GOLEM_ESCALA=1.3):
 ## o jogo a desenha em 1x, pixel do mesmo tamanho do resto, em vez de ampliar a pequena por um fator quebrado. Sem a folha grande, amplia a pequena por inteiro.
@@ -273,9 +274,7 @@ static func _impacto(nv, it: Dictionary) -> void:
 	var raio := RAIO_IMPACTO * esc
 	pai._dano_area(p, raio, nv._dano(a.st), EMPURRA, ATORDOA, a.cor, "aliado")
 	var fx = pai.fx
-	fx.onda(p, Color(0.9, 0.65, 0.42, 0.9), raio, 0.3)
-	fx.onda(p, Color(1.0, 0.8, 0.5, 0.6), raio * 0.55, 0.2)
-	fx.folha("anel", p, raio * 1.15, Color(0.85, 0.6, 0.4, 0.8), 0.3)
+	nv.tocar_fx(Anim.de("fx_pancada").get("impacto", {}), p)
 	fx.luz_rapida(p + Vector2(0, -6), Color(1.0, 0.62, 0.3), 2.0, raio * 2.4, 0.25)
 	it.rt = 0.0
 	_torroes(nv, it, p, 16, 100.0 * esc, esc)

@@ -7,6 +7,8 @@ extends "res://v2/ator.gd"
 ## são poucos e viram nós sob demanda (`virar_no`), com sprite, olhos e sombra próprios; ao renascer como comum voltam ao lote.
 
 const Colisao := preload("res://v2/colisao.gd")
+const StatusCorpo := preload("res://v2/status_corpo.gd")
+const Anim := preload("res://v2/anim_golpes.gd")
 const VEL_VAGA := 24.0
 const VEL_CACA := 54.0
 const RAIO_VER := 170.0  # começa a perseguir
@@ -52,6 +54,10 @@ var morrendo := false  # a vida zerou e a morte está na fila do combate (não l
 var cd := PackedFloat32Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # por golpe secundário: até quando não leva outro acerto dele
 var ultimo_proj := 0  # id do último projétil (onda ou lança) que o acertou: cada um acerta uma vez
 var queima_t := 0.0  # s de fogo que faltam
+var marca_t := 0.0  # s que o veneno, o choque ou o sangue ficam no corpo (só visual: v2/status_corpo.gd)
+var marca_k := 0
+var v_estado := 0  # o status que o shader desenha no corpo neste quadro
+var _mat_corpo: ShaderMaterial = null
 var queima_dps := 0.0
 var queima_fonte := ""  # quem pôs o fogo (combate.fonte_dano), para o dano por golpe da tela de fim
 var lento_t := 0.0  # s de lentidão que faltam
@@ -173,6 +179,8 @@ func reviver(p: Vector2) -> void:
 	ultimo_proj = 0
 	queima_t = 0.0
 	lento_t = 0.0
+	marca_t = 0.0
+	v_estado = 0
 	elite = false
 	mod_elite = ""
 	chefe = false
@@ -227,6 +235,8 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 		_queimar(dt)
 	if lento_t > 0.0:
 		lento_t -= dt
+	if marca_t > 0.0:
+		marca_t -= dt
 	if _batida > 0.0:
 		_batida -= dt
 	var v := Vector2.ZERO
@@ -275,16 +285,32 @@ func visual() -> void:
 	v_jx = float(rng.randi_range(-1, 1)) if (atordoa_t > 0.0 and k > 0.0) else 0.0
 	v_jy = afundar_px(k)
 	_escolher_quadro(vel_v)
-	var queimando := queima_t > 0.0
-	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
+	v_estado = _estado_corpo()
+	var tinge := v_estado == StatusCorpo.NADA  # com o status no corpo, quem pinta é o shader
+	var queimando := queima_t > 0.0 and tinge
+	var lento := lento_t > 0.0 and tinge
+	if queimando or lento or tinta != Color.WHITE:
 		var cf := tinta
 		if queimando:
 			cf = cf.lerp(Color(1.5, 0.8, 0.5), 0.55)
-		if lento_t > 0.0:
+		if lento:
 			cf = cf.lerp(Color(0.6, 0.95, 1.4), 0.5)
 		v_cor = cf
 	elif v_cor != Color.WHITE:
 		v_cor = Color.WHITE
+
+
+## O status que toma o corpo agora (o fogo vence, depois a marca da arma, depois o gelo da lentidão). Perfil Baixo: nenhum, fica a tinta.
+func _estado_corpo() -> int:
+	if not Anim.suave:
+		return StatusCorpo.NADA
+	if queima_t > 0.0:
+		return StatusCorpo.FOGO
+	if marca_t > 0.0:
+		return marca_k
+	if lento_t > 0.0:
+		return StatusCorpo.GELO
+	return StatusCorpo.NADA
 
 
 ## Linha, espelho e coluna da folha, a partir da velocidade que a IA quis. Folha de 2 linhas: frente se o movimento é mais vertical, senão
@@ -336,18 +362,36 @@ func _visual_no(v: Vector2) -> void:
 		_sincronizar_contorno()
 	if barra_vida_elite != null:
 		barra_vida_elite.sincronizar(self)
-	var queimando := queima_t > 0.0
-	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
+	_corpo_no()
+	var tinge := v_estado == StatusCorpo.NADA
+	var queimando := queima_t > 0.0 and tinge
+	var lento := lento_t > 0.0 and tinge
+	if queimando or lento or tinta != Color.WHITE:
 		var cf := tinta
 		if queimando:
 			cf = cf.lerp(Color(1.5, 0.8, 0.5), 0.55)
-		if lento_t > 0.0:
+		if lento:
 			cf = cf.lerp(Color(0.6, 0.95, 1.4), 0.5)
 		sprite.modulate = cf.lerp(Color(5.0, 5.0, 5.0), carga * carga) if carga > 0.0 else cf
 	elif carga > 0.0:
 		sprite.modulate = Color.WHITE.lerp(Color(5.0, 5.0, 5.0), carga * carga)
 	elif sprite.modulate != Color.WHITE:
 		sprite.modulate = Color.WHITE
+
+
+## O status no corpo de elite e chefe: o mesmo desenho do lote, num material só deles, ligado enquanto dura.
+func _corpo_no() -> void:
+	var novo := _estado_corpo()
+	if novo != StatusCorpo.NADA:
+		if _mat_corpo == null:
+			_mat_corpo = StatusCorpo.material_no(float(sid & 63))
+		sprite.material = _mat_corpo
+		_mat_corpo.set_shader_parameter("estado", float(novo))
+		var r: Rect2 = sprite.region_rect
+		_mat_corpo.set_shader_parameter("regiao", Vector4(r.position.x, r.position.y, r.size.x, r.size.y))
+	elif v_estado != StatusCorpo.NADA:
+		sprite.material = null
+	v_estado = novo
 
 
 # ------------------------------------------------------------------ elite e chefe: nós sob demanda
@@ -588,6 +632,12 @@ func queimar(dps: float, t: float) -> void:
 		queima_fonte = str(mundo.combate.fonte_dano)
 	queima_dps = maxf(atual, dps)
 	queima_t = maxf(queima_t, t)
+
+
+## Veneno, choque ou sangue no corpo por `t` s. Só desenho: o dano é da arma.
+func marcar(estado: int, t: float) -> void:
+	marca_k = estado
+	marca_t = maxf(marca_t, t)
 
 
 func deixar_lento(t: float) -> void:
