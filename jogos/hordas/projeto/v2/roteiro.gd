@@ -47,6 +47,8 @@ extends RefCounted
 ##   --roteiro=lw_tiros    (05/11/2026, para VÍDEO com --write-movie, sem fotos) com --heroi=lightwolf: o mecha atira 1,5 s para a direita num arco de monstros
 ##                         (o traçante das bolinhas, com vãos para elas voarem inteiras) e 1 s para cima à esquerda, solta a E Mísseis inteira (3 s na tela), aperta o Q,
 ##                         e o Lobo livre atira 1,5 s para a direita (a cadência nova). Sai sozinho no fim; os passos que esperaram até o prazo vão para lw_atrasos.
+##   --roteiro=lw_misseis  (05/11/2026, para VÍDEO com --write-movie) com --heroi=lightwolf: o mecha parado solta a E Mísseis na diagonal (para baixo à direita)
+##                         contra 5 alvos parados e fecha 1 s depois; imprime `LW_M quadro slot x y dir16 chao16` de cada míssil a cada quadro.
 ##   --roteiro=lw_q        (a explosão do Q do mecha, para vídeo no Movie Maker) o LightWolf parado, 24 monstros em volta, aperta o Q (Autodestruição)
 ##                         aos 0,5 s e segue 5,5 s depois do estouro (o fusível, a bola de fogo, a onda no chão e a cratera até sumir) e fecha. Sem fotos:
 ##                         grave com --write-movie (cada quadro). Imprime LW_Q com o segundo do aperto e o do estouro.
@@ -85,6 +87,7 @@ var playtest := false
 var pt := {}  # estado do robô de playtest (_pt_iniciar)
 var pt_disparos := 0  # quantos avisos já tinham disparado quando o chefe nasceu (a foto do disparo)
 var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do disparo sai 0,12 s depois)
+const PixelRotRoteiro := preload("res://v2/pixel_rot.gd")  # as 16 direções do desenho dos projéteis (roteiro lw_misseis)
 const LW_CARTAS := ["sifao", "ampla", "cabo"]  # as cartas só do LightWolf (dados/v2_cartas.json, herois: lightwolf)
 var lw_expl0 := 0  # o roteiro do LightWolf: quantas explosões já tinham saído antes do Q
 var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da matriz de frente e de lado (volta depois)
@@ -185,6 +188,8 @@ func atualizar(dt: float) -> void:
 				_r_lw_tiros()
 			"lw_q":
 				_r_lw_q()
+			"lw_misseis":
+				_r_lw_misseis()
 			"impulso":
 				_r_impulso()
 			"impulso_ordem":
@@ -620,6 +625,63 @@ func _r_lw_tiros() -> void:
 			if t_passo > 1.5:
 				h.ataque_forcado = false
 				print("LW_TIROS fim atrasos=%d" % lw_atrasos)
+				mundo.get_tree().quit()
+
+
+## Os mísseis da E para o vídeo: o mecha parado mira para baixo à direita (5 alvos parados num arco de 15 a 75 graus) e, no meio da E, para a direita
+## (2 alvos a -15 e 5 graus, a mira do vídeo da rodada 4); solta a E inteira e fecha 1 s depois. A cada quadro imprime `LW_M quadro slot x y dir16 chao16`
+## de cada míssil desenhado (posição desenhada inteira, a direção quantizada do desenho e a do chão), para medir o vídeo quadro a quadro. Sem `_ang_visual`
+## (o código antes da rodada 5) imprime a direção do chão nos dois campos. Com --fotos=PASTA salva também o viewport do mundo de cada quadro (mNNNNN.png).
+func _r_lw_misseis() -> void:
+	var h = mundo.heroi
+	var ad = mundo.combate.adagas
+	for k in lw_alvos.size():
+		if is_instance_valid(lw_alvos[k][0]):
+			lw_alvos[k][0].pos = lw_alvos[k][1]
+	if passo > 0:
+		if pasta != "" and passo < 3:  # --fotos=PASTA: o viewport do mundo (960x540, 1 px de arte = 1 px) do quadro anterior, para medir sem a escala da janela
+			mundo.sv.get_texture().get_image().save_png(pasta.path_join("m%05d.png" % (Engine.get_frames_drawn() - 1)))
+		var idx := int(ad._proj_nomes.get("missil", -1))
+		for i in ad.MAX:
+			if ad.a_rest[i] > 0.0 and ad.a_proj[i] == idx and ad.a_visual_oculto[i] == 0:
+				var pv: Vector2 = ad._pos_visual(i).round()
+				var chao := (ad.a_dir[i] as Vector2).angle()
+				var d16: Vector2i = PixelRotRoteiro.direcao16(ad._ang_visual(i) if ad.has_method("_ang_visual") else chao)
+				var c16: Vector2i = PixelRotRoteiro.direcao16(chao)
+				print("LW_M %d %d %d %d %d %d" % [Engine.get_frames_drawn(), i, int(pv.x), int(pv.y), d16.y * 4 + d16.x, c16.y * 4 + c16.x])
+	match passo:
+		0:
+			_preparar()
+			Config.temporario("pausar_fora", false)  # gravando, outra janela na frente pausaria a partida no meio
+			lw_alvos.clear()
+			for i in 7:
+				var a := deg_to_rad(15.0 + 15.0 * float(i) if i < 5 else -15.0 + 20.0 * float(i - 5))
+				var r := 170.0 if i % 2 == 0 else 210.0
+				var m = mundo.nascer_monstro("inimigo_espantalho", h.pos + Vector2(cos(a) * r, sin(a) * r), false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				lw_alvos.append([m, m.pos])
+			mundo.mouse_forcado = h.centro() + Vector2(160, 120)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.3:
+				h.hab_recarga = 0.0
+				h.hab_nega_t = 0.0
+				if not h.habilidade():
+					lw_atrasos += 1
+				print("LW_M aperto quadro=%d cam=%s" % [Engine.get_frames_drawn(), mundo.cam.pos])
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 1.5:
+				mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+			if (h.estado != h.Estado.HABILIDADE and t_passo > 0.5) or t_passo > 6.0:
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo > 1.0:
+				print("LW_M fim atrasos=%d" % lw_atrasos)
 				mundo.get_tree().quit()
 
 

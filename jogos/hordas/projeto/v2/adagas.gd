@@ -34,8 +34,14 @@ extends RefCounted
 ## para ela (veja `_pos_visual`). Sem sorteio, sem nó, sem som: só desenho, e o perfil Baixo e "Reduzir piscadas" têm a versão deles (veja estalos_visual.gd).
 ## Acerto das bolinhas rápidas (o canhão voa a 840 px/s, ~14 px por quadro a 60 Hz): `_mover` testa o SEGMENTO do passo (posição anterior até a atual) contra o círculo do
 ## monstro, não o ponto de chegada, e `_selecionar_candidatos` usa o mesmo segmento (com o `dt` que chegou): nenhuma bolinha atravessa um monstro, nem com quadro lento.
+## Desenho dos projéteis com imagem (adaga, plasma, míssil e as folhas `<proj>_heroi`): pixel art não gira por ângulo livre (v2/pixel_rot.gd). A imagem aponta numa
+## das 16 direções (passos de 22,5 graus), com as cópias pré-giradas de v2/sprite_giro.gd (geradas em `montar`, não no meio da partida) e a posição inteira.
+## A direção é a do movimento DESENHADO (`_ang_visual`, a derivada de `_pos_visual_em`), não a do chão: o míssil que desce do pod aponta o nariz para
+## baixo enquanto desce. O míssil não esmaece no fim do alcance (`_fade`): some inteiro, alfa 0/1.
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
+const PixelRot := preload("res://v2/pixel_rot.gd")
+const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
 const EstalosVisual := preload("res://v2/estalos_visual.gd")
 
@@ -47,6 +53,8 @@ const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px,
 const PROJ_PADRAO := "adaga"
 const VISUAL_DIST := 60.0  # deslocamento da boca projetada converge para a trajetória lógica
 const VISUAL_DUR := 0.2
+const NARIZ_PASSO := 2.0  # px de voo antes e depois de agora com que `_ang_visual` mede a direção do desenho
+const FADE_PX := 24.0  # nos últimos px do alcance a imagem esmaece (`_fade`; o míssil não)
 ## O TRAÇANTE da bolinha do mecha (pedido do Alisson de 05/11/2026: "ainda falta algo, acho que rastros"): uma linha de pixels inteiros atrás da bolinha, pelo mesmo
 ## caminho DESENHADO dela (a descida da boca ao chão, `_pos_visual_em`), com TRACO px (a 840 px/s ela anda ~14 px por quadro: o traço cobre ~1,4 quadro de voo e as
 ## rajadas viram riscos, não pontos). Cores opacas, do quente ao escuro (TRACO_CORES, da cabeça para a cauda); os primeiros TRACO_GROSSO px ganham um segundo pixel ao lado
@@ -109,6 +117,9 @@ var _cand: Array = []
 var _cand_visual: Array = []  # previsão visual separada: nunca acrescenta alvos ao narrowphase físico
 var _proj_lista: Array = []  # [{nome, tex (código) ou anim (folha), compr, alt}], o índice 0 é sempre a adaga
 var _proj_nomes := {}  # nome -> índice em _proj_lista
+## As texturas procedurais (adaga, bala, plasma, míssil), geradas UMA vez por processo: o cache de cópias pré-giradas de sprite_giro.gd é
+## estático e indexado pela textura, então gerar textura nova a cada `montar` (a cada Combate) somava cópias que nunca saíam do cache.
+static var _texs := {}
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
 var misseis_visual := MisseisVisual.new()
@@ -121,10 +132,17 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	tex_brilho = tex
 	_proj_lista.clear()
 	_proj_nomes.clear()
-	_registrar("adaga", _img_adaga(), COMPR, 5.0)
-	_registrar("bala", _img_bala(), 5.0, 5.0)
-	_registrar("plasma", _img_plasma(), 11.0, 7.0)
-	_registrar("missil", _img_missil(), 24.0, 9.0)
+	if _texs.is_empty():
+		_texs = {"adaga": _img_adaga(), "bala": _img_bala(), "plasma": _img_plasma(), "missil": _img_missil()}
+	_registrar("adaga", _texs.adaga, COMPR, 5.0)
+	_registrar("bala", _texs.bala, 5.0, 5.0)
+	_registrar("plasma", _texs.plasma, 11.0, 7.0)
+	_registrar("missil", _texs.missil, 24.0, 9.0)
+	for id in AnimGolpes.ids():  # as folhas `<proj>_heroi` (lidas do índice, não de lista fixa): as cópias nascem ao montar, não no primeiro arremesso
+		if str(id).ends_with("_heroi"):
+			var voo: Dictionary = AnimGolpes.de(str(id)).get("voo", {})
+			if not voo.is_empty():
+				_preparar_folha(voo)
 	misseis_visual.montar()
 	estalos.montar()
 	_traco_px.resize(TRACO_BUF)
@@ -652,7 +670,7 @@ func _desenhar_corpo() -> void:
 		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
 		var p: Vector2 = a_pos[i]
-		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
+		var fade := _fade(i)
 		var e: Dictionary = _proj_lista[a_proj[i]]
 		if _bolinha(a_proj[i]):  # ponto simétrico na grade de 1 px, sem giro (girar borraria a bolinha); a direção fica no rastro
 			no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)  # o giro do projétil anterior não vale aqui
@@ -663,12 +681,16 @@ func _desenhar_corpo() -> void:
 			continue
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		p = _pos_visual(i)  # a sombra acima permanece na trajetória lógica do chão
+		var ang := PixelRot.angulo16(_dir_desenho(i))  # a imagem aponta para onde o DESENHO anda, numa das 16 direções e sem girar pixel (sprite_giro.gd)
 		if e.has("anim"):
 			var f: Dictionary = e.anim
-			AnimGolpes.desenhar(no_corpo, f, AnimGolpes.quadro_em(f, _relogio), p, (a_dir[i] as Vector2).angle(), Vector2.ONE, Color(1, 1, 1, fade))
+			var q := Vector2i(f.quadro as Vector2)
+			SpriteGiro.desenhar(
+				no_corpo, f.tex, q, Vector2i(f.ancora as Vector2), int(f.n), AnimGolpes.quadro_em(f, _relogio), p, ang, Vector2.ONE, Color(1, 1, 1, fade)
+			)
 			continue
-		no_corpo.draw_set_transform(p.round(), (a_dir[i] as Vector2).angle(), Vector2.ONE)
-		no_corpo.draw_texture(e.tex, Vector2(-float(e.compr) * 0.5, -float(e.alt) * 0.5), Color(1, 1, 1, fade))
+		var tam := Vector2i((e.tex as Texture2D).get_size())
+		SpriteGiro.desenhar(no_corpo, e.tex, tam, tam / 2, 1, 0, p, ang, Vector2.ONE, Color(1, 1, 1, fade))
 	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if estalos.vivos() > 0:
 		estalos.desenhar(no_corpo)  # por cima das bolinhas: o estalo nasce onde a bolinha some, e o clarão de boca onde ela nasce
@@ -679,12 +701,12 @@ func _desenhar_brilho() -> void:
 		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
 		var p: Vector2 = _pos_visual(i)
-		var dir: Vector2 = a_dir[i]
+		var dir := Vector2.from_angle(PixelRot.angulo16(PixelRot.direcao16(_ang_visual(i))))  # o rastro sai da cauda da imagem: a direção quantizada do desenho
 		var cor: Color = a_cor[i]
-		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
+		var fade := _fade(i)
 		if _visual_mecha(a_proj[i]):
-			if str(_proj_lista[a_proj[i]].nome) == "missil":
-				no_brilho.draw_line((p - dir * 19.0).round(), (p - dir * 10.0).round(), Color(1.0, 0.55, 0.14, 0.65 * fade), 2.0)
+			if _missil(a_proj[i]):  # o fogo do motor; o míssil não esmaece (`_fade`)
+				no_brilho.draw_line((p - dir * 19.0).round(), (p - dir * 10.0).round(), Color(1.0, 0.55, 0.14, 0.65), 2.0)
 			continue  # a bolinha da rajada leva o rastro no corpo (_desenhar_corpo), pixel a pixel
 		no_brilho.draw_line((p - dir * 16.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.4 * fade), 3.0)
 		no_brilho.draw_line((p - dir * 9.0).round(), (p + dir * 4.0).round(), Color(1, 1, 1, 0.8 * fade), 1.0)
@@ -751,6 +773,39 @@ func _img_missil() -> Texture2D:
 ## A bala do mecha (a bolinha da rajada): desenhada sem giro, centrada no pixel da posição.
 func _bolinha(proj: int) -> bool:
 	return str(_proj_lista[proj].nome) == "bala" and _visual_mecha(proj)
+
+
+func _missil(proj: int) -> bool:
+	return str(_proj_lista[proj].nome) == "missil"
+
+
+## O alfa da imagem do projétil `i` no fim do alcance: de 1 a 0 nos últimos FADE_PX. O míssil fica em 1 até o alcance acabar e some inteiro
+## naquele quadro (alfa 0/1 da grade de pixel; a bolinha do canhão faz o mesmo encurtando o traçante, e a explosão do acerto é a do misseis_visual).
+func _fade(i: int) -> float:
+	if _missil(a_proj[i]):
+		return 1.0
+	return clampf(a_rest[i] / FADE_PX, 0.0, 1.0)
+
+
+## A direção (rad) em que o DESENHO do projétil `i` anda agora: a derivada de `_pos_visual_em` (diferença central de NARIZ_PASSO px de voo), não
+## `a_dir` (a do chão). Na descida da boca do pod até a trajetória (VISUAL_DIST) o míssil anda e desce ao mesmo tempo: o nariz aponta para onde a
+## imagem vai, sem escorregar de lado. Sem descida (acabou, ou o projétil não tem boca) é a própria `a_dir`. Quem desenha quantiza em 16 direções.
+func _ang_visual(i: int) -> float:
+	var d := _pos_visual_em(i, -NARIZ_PASSO) - _pos_visual_em(i, NARIZ_PASSO)
+	if d.length_squared() < 0.000001:
+		return (a_dir[i] as Vector2).angle()
+	return d.angle()
+
+
+## A direção (das 16, `PixelRot.direcao16`) com que `_desenhar_corpo` desenha a imagem do projétil `i`: a de `_ang_visual`, quantizada.
+## O corpo desenha por ela (SpriteGiro quantiza de novo, sem mudar nada), e o teste v2_misseis_desenho mede esta mesma direção.
+func _dir_desenho(i: int) -> Vector2i:
+	return PixelRot.direcao16(_ang_visual(i))
+
+
+## Gera as cópias pré-giradas de uma folha animada (`voo` de `<proj>_heroi`) para o desenho em 16 direções; sem efeito se já gerou.
+func _preparar_folha(f: Dictionary) -> void:
+	SpriteGiro.preparar(f.tex, Vector2i(f.quadro as Vector2), Vector2i(f.ancora as Vector2), int(f.n))
 
 
 func _visual_mecha(proj: int) -> bool:
@@ -907,6 +962,9 @@ func _img_plasma() -> Texture2D:
 func _registrar(nome: String, tex: Texture2D, compr: float, alt: float) -> int:
 	_proj_lista.append({"nome": nome, "tex": tex, "compr": compr, "alt": alt})
 	_proj_nomes[nome] = _proj_lista.size() - 1
+	if nome != "bala":  # a bolinha do mecha é desenhada sem giro (`_bolinha`); outro herói com "bala" cairia no `variante` sob demanda
+		var tam := Vector2i(tex.get_size())
+		SpriteGiro.preparar(tex, tam, tam / 2)  # as cópias pré-giradas nascem aqui, ao montar, e não no meio da partida
 	return _proj_lista.size() - 1
 
 
@@ -916,6 +974,7 @@ func _indice_proj(nome: String) -> int:
 		return _proj_nomes[nome]
 	var folhas := AnimGolpes.de(nome + "_heroi")
 	if folhas.has("voo"):
+		_preparar_folha(folhas.voo)
 		_proj_lista.append({"nome": nome, "anim": folhas.voo})
 		_proj_nomes[nome] = _proj_lista.size() - 1
 	else:
