@@ -35,6 +35,8 @@ extends RefCounted
 const Armas := preload("res://v2/armas.gd")
 const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: o analógico de mira (STICK) e o controle (Glifos) não seguem o cursor no Q
 const Glifos := preload("res://v2/glifos.gd")  # no controle não há cursor: o Q segue o corpo
+const ExplosaoParticulas := preload("res://v2/explosao_particulas.gd")  # a sucção no fim do fusível (rodada 7)
+const SUCCAO_S := 0.2  # s do mundo (0,16 s de relógio) da sucção antes do estouro
 const ExplosaoMecha := preload("res://v2/explosao_mecha.gd")  # o desenho da explosão da Autodestruição: bola, onda no chão e cratera
 const Piscadas := preload("res://v2/piscadas.gd")  # o aviso do mecha vazio: liga e desliga abaixo de 2 Hz, aceso parado com "Reduzir piscadas"
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
@@ -481,7 +483,7 @@ func _explodir_mecha() -> void:
 	var centro := _origem + Vector2(0, -16)
 	explosoes += 1
 	if explosao_visual != null:
-		explosao_visual.explodir(_origem, mundo.cam.retangulo(float(comum.limpa.margem)))
+		explosao_visual.explodir(_origem, mundo.cam.retangulo(float(comum.limpa.margem)), _leve())  # perfil Baixo: sem as partículas e os anéis da rodada 7
 	if not _leve():
 		c.fx.estouro(centro, Color(0.55, 0.78, 1.0), 34)
 		c.fx.luz_rapida(centro, cor, 3.0, float(e.raio) * 2.5, 0.5)
@@ -1092,6 +1094,11 @@ func _desenhar_autodestruicao(_h) -> void:
 			no.draw_colored_polygon(_elipse(corpo, r), Color(cor.r, cor.g, cor.b, (0.04 + 0.09 * e) / float(i + 1)))
 	var alvo := float(_c.explosao.raio)
 	no.draw_polyline(_elipse(_origem, lerpf(alvo * 0.15, alvo, e)), Color(cor.r, cor.g, cor.b, 0.15 + 0.35 * e), 1.5)
+	# a SUCÇÃO (rodada 7): nos últimos SUCCAO_S s do fusível, um anel de pontos de 1 px converge para o casco em 4 degraus (calmo: fecha uma vez e fica; Baixo: 4 pontos)
+	var falta := float(_c.dur) - _t
+	if falta <= SUCCAO_S and explosao_visual != null and explosao_visual.particulas != null:
+		var n: int = 4 if _leve() else int(explosao_visual.particulas.n_succao)
+		ExplosaoParticulas.desenhar_succao(no, corpo, 1.0 - falta / SUCCAO_S, n, Piscadas.ligado())
 
 
 ## O mecha vazio está à mostra (o fusível da Autodestruição, antes do estouro)? Testes e `_desenhar_casco`.

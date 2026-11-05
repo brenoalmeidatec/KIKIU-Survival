@@ -153,6 +153,12 @@ func _t_normal() -> void:
 	var miolo_base := _miolo(v.cratera[1].get_image(), float(v.raio_cratera))
 	var miolo_fim := _miolo(v.cratera[v.cratera.size() - 1].get_image(), float(v.raio_cratera))
 	ok(miolo_fim * 4 >= miolo_base * 3, "o miolo da cratera continua no último degrau (%d de %d px)" % [miolo_fim, miolo_base])
+	# a folha nova (rodada 7): no normal, 36 quadros na grade de 1 px, e as partículas nascem
+	ok(v.cheia(), "no normal a bola é a folha nova da rodada 7")
+	ok(v.bola_cheia.size() >= 32, "a folha tem pelo menos 32 quadros (%d)" % v.bola_cheia.size())
+	for k in v.bola_cheia.size():
+		_opacos(v.bola_cheia[k], "folha %d" % k)
+	ok(v.particulas != null and v.particulas.emitidas > 40, "as partículas da explosão nasceram (%d)" % (v.particulas.emitidas if v.particulas != null else 0))
 	# as camadas
 	ok(v.no_bola != null and v.no_bola.get_parent() == w.glow, "a bola é desenhada na camada glow (por cima dos atores)")
 	ok(v.no_chao != null and v.no_chao.get_parent() == w.no_mundo and v.no_chao.z_index < 0, "a cratera é desenhada no chão, embaixo dos atores")
@@ -229,5 +235,8 @@ func _t_baixo() -> void:
 		ok(false, "sem o visual da explosão")
 	else:
 		ok(v.quadro_bola() >= 0 and v.cratera_viva() and v.raio_onda() >= 0.0, "perfil Baixo: a bola, a onda e a cratera ficam (o essencial)")
+		ok(not v.cheia(), "perfil Baixo: a bola calma de 25 quadros, não a folha nova")
+		passos(20)
+		ok(v.particulas.vivas() == 0 and v.particulas.emitidas == 0, "perfil Baixo: nenhuma partícula da rodada 7 (%d)" % v.particulas.emitidas)
 		ok(not _luz_do_estouro(), "perfil Baixo: sem a luz local (nem os cascos) do estouro")
 	Config.g_temporario("particulas_sim", "muitas")
