@@ -163,7 +163,7 @@ func _t_normal() -> void:
 	ok(w.cam.tremor_t > 0.0 and w.cam.tremor_amp >= float(e.tremor) - 0.01, "a câmera treme (%.1f px)" % w.cam.tremor_amp)
 	ok(float(e.tremor) <= 5.0 and w.cam.tremor_dur <= 0.4, "o tremor é leve e curto (%.1f px, %.2f s)" % [float(e.tremor), w.cam.tremor_dur])
 	# a onda no chão: na velocidade da limpeza, até cobrir a câmera
-	var vel := float(c.especial.comum.limpa.vel)
+	var vel := float(c.especial.bloco_de("lightwolf").get("limpa", {}).get("vel", c.especial.comum.limpa.vel))  # o Q tem a frente mais lenta (rodada 6)
 	ok(is_equal_approx(v.vel_onda, vel), "a onda no chão anda na velocidade da frente de onda da limpeza (%.0f)" % v.vel_onda)
 	var rect: Rect2 = w.cam.retangulo(float(c.especial.comum.limpa.margem))
 	ok(v.onda_max >= rect.size.x * 0.5 - 1.0, "a onda vai até a borda da câmera (%.0f px)" % v.onda_max)

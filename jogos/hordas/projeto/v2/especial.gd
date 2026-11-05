@@ -140,7 +140,9 @@ func montar(c, camada: Node) -> void:
 	camada.add_child(no)
 	if blocos.has("autodestruicao"):
 		explosao_visual = ExplosaoMecha.new()
-		explosao_visual.montar(camada, mundo.get("no_mundo"), blocos.autodestruicao.explosao, float(comum.limpa.vel))
+		explosao_visual.montar(
+			camada, mundo.get("no_mundo"), blocos.autodestruicao.explosao, float(blocos.autodestruicao.get("limpa", {}).get("vel", comum.limpa.vel))
+		)
 		var nm = mundo.get("no_mundo")
 		if nm != null:  # o mecha vazio no fusível: arte opaca no mundo (y-sort com os atores), blend normal; o brilho aditivo segue em `no`
 			no_casco = Node2D.new()
@@ -830,9 +832,10 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, emp: float, atordoa:
 # ------------------------------------------------------------------ eventos (herói e combate chamam)
 
 
-## O Q em andamento (ou logo depois dele) não enche a carga: nem o dano das adagas e da onda dele, nem os abates dele.
+## O Q em andamento (ou logo depois dele) não enche a carga: nem o dano das adagas e da onda dele, nem os abates dele. Também não enchem as mortes da limpeza que
+## ainda esperam a frente de onda (a da Autodestruição dura ~1 s de relógio e passa da graça): sem isso o fim da onda de mortes carregava o chamado do Lobo.
 func ocupado() -> bool:
-	return _id != "" or _onda_t >= 0.0 or _graca > 0.0
+	return _id != "" or _onda_t >= 0.0 or _graca > 0.0 or combate.limpando or combate.limpa_pendentes() > 0
 
 
 ## Soma `pontos` à carga do herói (para na carga máxima). Só com o jogo rolando, fora do próprio Q e com o herói vivo. Avisa uma vez ao chegar a 100.

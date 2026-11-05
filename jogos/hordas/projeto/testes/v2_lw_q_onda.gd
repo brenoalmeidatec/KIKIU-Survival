@@ -155,7 +155,7 @@ func _t_onda() -> void:
 	var espalho := float(int(mortes[mortes.size() - 1][0]) - int(mortes[0][0])) / 60.0
 	ok(pico <= 2, "no máximo 2 mortes do cerco no mesmo quadro (pico %d): o cerco não acende num bloco" % pico)
 	ok(espalho >= 0.3, "as mortes se espalham por pelo menos 0,3 s de relógio (%.2f s)" % espalho)
-	ok(espalho <= 0.6, "e acabam em até 0,6 s de relógio: leem como UM impacto (%.2f s)" % espalho)
+	ok(espalho <= 1.25, "e acabam em até 1,25 s do mundo (a espalha de 1,2 s, rodada 6; ~1 s de relógio): leem como UM impacto (%.2f s)" % espalho)
 	# em onda: quem morre depois está mais longe (ou à mesma distância)
 	var fora_de_ordem := 0
 	for i in range(1, mortes.size()):
