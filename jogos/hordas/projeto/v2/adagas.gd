@@ -825,18 +825,17 @@ func _pos_visual_em(i: int, atras: float) -> Vector2:
 
 
 ## O traçante da bolinha `i` desenhada em `pv` (já arredondada): pixels inteiros pelo caminho desenhado, das cores quentes às escuras, 2 px de espessura
-## perto da bolinha e 1 px na cauda; só o comprimento já voado (nasce na boca). Perfil Baixo: TRACO_BAIXO px, fino.
+## perto da bolinha e 1 px na cauda; só o comprimento já voado (nasce na boca). Perfil Baixo: TRACO_BAIXO px, fino. No fim da vida (`fade` < 1) o
+## traço ENCURTA em vez de esmaecer: os pixels ficam sempre opacos (alfa 0/1 da grade de pixel).
 func _tracante(i: int, pv: Vector2, fade: float, baixo: bool) -> void:
-	for k in _tracar(i, pv, baixo):
-		var c: Color = TRACO_CORES[_traco_cor[k]]
-		c.a = fade
-		no_corpo.draw_rect(Rect2(_traco_px[k], Vector2.ONE), c)
+	for k in _tracar(i, pv, baixo, fade):
+		no_corpo.draw_rect(Rect2(_traco_px[k], Vector2.ONE), TRACO_CORES[_traco_cor[k]])
 
 
 ## Monta em `_traco_px` / `_traco_cor` (buffers fixos, reaproveitados: nada aloca por quadro) os pixels do traçante da bolinha `i` desenhada em `pv`;
-## devolve quantos. Separado do desenho para o teste medir o traço sem renderizar.
-func _tracar(i: int, pv: Vector2, baixo: bool) -> int:
-	var compr := mini(TRACO_BAIXO if baixo else TRACO, int(a_visual_dist[i]))
+## devolve quantos. `corte` (0 a 1, o `fade` da bolinha) encurta o traço no fim da vida. Separado do desenho para o teste medir sem renderizar.
+func _tracar(i: int, pv: Vector2, baixo: bool, corte := 1.0) -> int:
+	var compr := int(float(mini(TRACO_BAIXO if baixo else TRACO, int(a_visual_dist[i]))) * clampf(corte, 0.0, 1.0))
 	var n := 0
 	if compr <= TRACO_INICIO:
 		return 0

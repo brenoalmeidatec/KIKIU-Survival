@@ -283,8 +283,9 @@ func _t_pool() -> void:
 	ok(ad.lancadas > 100, "o pior caso atirou de verdade (%d projéteis)" % ad.lancadas)
 	# se o pool enchesse, `_livre` tomaria a vaga de um projétil ainda em voo; com 3/4 de teto isso não chega perto de acontecer.
 	# O piso (o teste estressou de verdade) era > 20 com a E de 0,9 s (21 medido): a E de 3,75 s espalha os mísseis (~8 no ar) e o mecha não atira
-	# durante ela, então o pico agora é o do canhão sozinho (20 medido em 05/11); o teto, que é o que protege o pool, não mudou.
-	ok(maior >= 18 and maior <= ad.MAX * 3 / 4, "pior caso cabe no pool com folga (%d de %d em voo)" % [maior, ad.MAX])
+	# durante ela, então o pico agora é o do canhão sozinho (20 medido em 05/11, determinístico: o piso é o medido, sem folga para baixo); o teto,
+	# que é o que protege o pool, não mudou.
+	ok(maior >= 20 and maior <= ad.MAX * 3 / 4, "pior caso cabe no pool com folga (%d de %d em voo)" % [maior, ad.MAX])
 	h.m_vel_ataque = 1.0
 	h.nivel = 1
 

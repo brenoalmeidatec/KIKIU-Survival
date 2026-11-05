@@ -652,6 +652,10 @@ func tracante() -> void:
 		var baixo: int = ad._tracar(0, pv, true)
 		ok(px.size() >= 16, "direção %d: traço de ~20 px com a parte grossa (%d pixels)" % [ang, px.size()])
 		ok(baixo >= 1 and baixo <= ad.TRACO_BAIXO and baixo < px.size() - 10, "direção %d: perfil Baixo, traço curto e fino (%d px)" % [ang, baixo])
+		# fim da vida: o traço encurta (alfa fica 0/1) em vez de esmaecer; sem vida, some
+		var metade: int = ad._tracar(0, pv, false, 0.5)
+		ok(metade >= 1 and metade < n * 3 / 4, "direção %d: no fim da vida o traço encurta (%d de %d px)" % [ang, metade, n])
+		ok(ad._tracar(0, pv, false, 0.0) == 0, "direção %d: sem vida, sem traço" % ang)
 	ad.limpar()
 
 
