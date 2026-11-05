@@ -3,6 +3,7 @@ extends Control
 ## com uma marca em cada nível de chefe: losango laranja = mini-chefe, caveira vermelha = chefão (o fim do mapa). Com o chefe do nível em
 ## campo a ponta da barra pisca em vermelho (o nível está travado até ele morrer). Os números vêm do diretor (v2/diretor.gd) via hud.gd.
 
+const FxUi := preload("res://v2/fx_ui.gd")
 const Paleta := preload("res://v2/paleta.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a ponta travada fica vermelha e parada
 const BARRA_X := 6.0
@@ -23,10 +24,16 @@ var fracao := 0.0
 var chefes: Array = []  # [{nivel, mini}]
 var travado := false
 var _pisca := 0.0
+var _fx = null
 
 
 ## Atualiza a placa (hud.gd chama a cada quadro); só redesenha quando algo muda ou quando a ponta está piscando.
 func mostrar(n: int, t: int, f: float, lista: Array, trava: bool, dt: float) -> void:
+	if n > nivel and is_inside_tree():  # subiu de nível no mapa: o anel de luz abre na ponta da barra
+		if _fx == null:
+			_fx = FxUi.new()
+			add_child(_fx)
+		_fx.tocar("fx_ui_pronta", Vector2(_x_do_nivel(n, size.x - BARRA_X * 2.0), _barra_y()), Color.WHITE)
 	var mudou := n != nivel or t != total or absf(f - fracao) > 0.001 or trava != travado or lista.size() != chefes.size()
 	nivel = n
 	total = maxi(t, 1)

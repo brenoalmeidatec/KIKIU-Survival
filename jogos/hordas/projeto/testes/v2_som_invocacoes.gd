@@ -62,6 +62,9 @@ class NovasTeste:
 	func _dano(_st):
 		return 1.0
 
+	func tocar_fx(_f, _p, _esc := 1.0, _chao := false, _flip := 1.0, _cor := Color.WHITE) -> void:
+		pass
+
 
 func ok(cond: bool, msg: String) -> void:
 	if not cond:

@@ -7,6 +7,7 @@ extends Control
 ## Visual premium (#152): uma faixa de cinema desenhada em `_draw` (escura, some nas pontas, com filetes e losangos na cor do
 ## anúncio) no lugar da caixa; o NinePatch `Moldura` fica escondido.
 
+const FxUi := preload("res://v2/fx_ui.gd")
 const CENTRO_X := 480.0
 const LARGURA_MAX := 640.0
 const ALTURA := 44.0
@@ -35,6 +36,7 @@ const PRIORITARIOS_INICIO := ["ÁPICE"]
 const LIDO_T := 0.6  # s de anúncio na tela a partir dos quais ele conta como lido (não volta à fila se for interrompido)
 
 ## Anúncios esperando: cada um é {texto, cor, intensidade}.
+var _fx  # o estouro de faíscas atrás do letreiro
 var fila: Array = []
 ## O texto na tela agora ("" quando não há anúncio). Público para os testes.
 var texto_ativo := ""
@@ -52,6 +54,8 @@ var _y0 := 0.0
 
 
 func _ready() -> void:
+	_fx = FxUi.new()
+	add_child(_fx)
 	_y = position.y
 	_y0 = _y
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -140,6 +144,7 @@ func _mostrar(anuncio: Dictionary) -> void:
 	pivot_offset = size * 0.5
 	position = Vector2(roundf(CENTRO_X - largura * 0.5), _y)
 	visible = true
+	_fx.tocar("fx_ui_anuncio", Vector2(largura * 0.5, size.y * 0.5), _cor)
 	queue_redraw()
 
 
