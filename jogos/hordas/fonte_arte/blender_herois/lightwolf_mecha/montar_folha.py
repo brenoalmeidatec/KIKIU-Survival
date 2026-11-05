@@ -3,7 +3,7 @@
     python montar_folha.py
 
 Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava nesta pasta:
-  lightwolf_mecha_final_albedo.png e lightwolf_mecha_final_normal.png: grade de 8 linhas x 38 colunas, quadros 128x192 (cor e normal, mesma silhueta)
+  lightwolf_mecha_final_albedo.png e lightwolf_mecha_final_normal.png: grade de 8 linhas x 44 colunas, quadros 128x192 (cor e normal, mesma silhueta)
   lightwolf_mecha_final.json: formato do jogo (quadro, linhas, colunas, pe_y) + animação -> colunas, quadros e tempo por quadro
   lightwolf_mecha_final_previa_x3.png: cópia de prévia (albedo ampliado 3x, sobre fundo escuro)
 
@@ -40,6 +40,7 @@ ANIMACOES = [
     ("escudo", 2, 0.10),
     ("dano", 2, 0.10),
     ("morte", 6, 0.12),
+    ("andar_tiro", 6, 0.11),
 ]
 # tempo por quadro (s) quando o quadro tem ritmo próprio; os mesmos números do S_POR_QUADRO de cada anim_<nome>.py
 TEMPOS = {
@@ -55,9 +56,12 @@ TEMPOS = {
 COLUNAS = [("parado", 0)] + [("andar", i) for i in range(6)] + [("parado", i) for i in (1, 2, 3)]
 COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(12)]
 COLUNAS += [("escudo", i) for i in range(2)] + [("dano", i) for i in range(2)] + [("morte", i) for i in range(6)]
+COLUNAS += [("andar_tiro", i) for i in range(6)]  # 05/11: no FIM, para as 38 colunas de antes não mudarem de lugar
 
 AVISOS = {
     "combo": "tiro esquerdo (quadros 0 a 5) e direito (6 a 11); clarão no quadro 1 de cada tiro, alinhado a acerto_em=0.2; medir.py confere as quatro bordas com o contorno",
+    "andar_tiro": "pernas do andar (mesma fase, quadro a quadro) e braços na mira do combo, sem recuo e sem clarão; desvio_boca[quadro][linha][lado] = px inteiros "
+    "que somar à boca de bocas_projeteis.canhoes (arredondada) para cair no cano deste quadro (o sobe-e-desce do passo, medido no Blender)",
     "morte": "cai de lado, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido",
 }
 
@@ -108,6 +112,28 @@ def colunas_de(anim):
     return [c for c, (a, _) in enumerate(COLUNAS) if a == anim]
 
 
+def desvio_boca(anim, ref="combo", tolerancia=3.0):
+    """Por quadro de `anim`, linha e braço: px inteiros a somar à boca da tabela (arredondada) para chegar ao cano deste quadro. Mede-se a
+    diferença entre o quadro e o quadro 0 do `ref` com o MESMO método (quadros/<anim>/bocas.json do gerar.py) e soma-se à tabela antiga, que foi
+    conferida contra o clarão desenhado; antes, confere que o método reproduz a tabela no `ref` (até `tolerancia` px)."""
+    with open(os.path.join(AQUI, "quadros", ref, "bocas.json"), encoding="utf-8") as f:
+        base = json.load(f)
+    with open(os.path.join(AQUI, "quadros", anim, "bocas.json"), encoding="utf-8") as f:
+        med = json.load(f)
+    n = len(med[DIRECOES[0]])
+    saida = [[[None, None] for _ in DIRECOES] for _ in range(n)]
+    for li, d in enumerate(DIRECOES):
+        for lado in (0, 1):
+            tab = BOCAS_PROJETEIS["canhoes"][li][lado]
+            b0 = base[d][0][lado]
+            if max(abs(tab[0] - b0[0]), abs(tab[1] - b0[1])) > tolerancia:
+                raise SystemExit("boca medida de %s0 %s/%d longe da tabela: %s x %s" % (ref, d, lado, b0, tab))
+            for q in range(n):
+                m = med[d][q][lado]
+                saida[q][li][lado] = [round(tab[k] + m[k] - b0[k]) - round(tab[k]) for k in (0, 1)]
+    return saida
+
+
 def main():
     albedo = montar("cor")
     normal = montar("normal")
@@ -147,12 +173,13 @@ def main():
         if anim in AVISOS:
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
+    info["animacoes"]["andar_tiro"]["desvio_boca"] = desvio_boca("andar_tiro")
     info["animacoes"]["combo"]["golpes"] = 2
     info["animacoes"]["combo"]["sem_clarao"] = {"1": 2, "7": 8}
     info["animacoes"]["combo"]["quadros_por_golpe"] = 6
     info["animacoes"]["combo"]["golpes_tipo"] = ["batida", "pancada"]
     info["animacoes"]["combo"]["quadros_do_golpe"] = ["antecipacao", "antecipacao_funda", "golpe", "impacto", "segura", "volta"]
-    with open(os.path.join(AQUI, "lightwolf_mecha_final.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(AQUI, "lightwolf_mecha_final.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(info, f, ensure_ascii=False, indent=1)
         f.write("\n")
     print("folha %dx%d (%d colunas x %d linhas)" % (albedo.width, albedo.height, len(COLUNAS), len(DIRECOES)))

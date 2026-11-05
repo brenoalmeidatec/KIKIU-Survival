@@ -4,11 +4,15 @@
 
     blender -b -t 6 -P gerar.py                       # todas as animações (anim_*.py desta pasta)
     blender -b -t 6 -P gerar.py -- --anim=andar       # só uma
+    blender -b -t 6 -P gerar.py -- --anim=combo --so-bocas   # só mede as bocas dos canhões (sem render; grava quadros/<anim>/bocas.json)
+Toda animação grava também quadros/<anim>/bocas.json: o centro projetado da "Boca ciano" de cada canhão, por direção e quadro, relativo aos
+pés (64, 120) — é dali que o montar_folha.py tira as bocas dos quadros novos (canhoes_andar_tiro) e confere a tabela antiga (combo 0).
 Saída: quadros/<anim>/<direcao>_<i>_{cor,normal}.png (W x H, ver LEIA-ME.md) e lightwolf_mecha_rig.blend.
 Diferença para o Hazaki: o quadro é maior (64x96): a marreta de 3,2 passa da cabeça e os golpes a levam longe do corpo.
 """
 import importlib
 import inspect
+import json
 import math
 import os
 import random
@@ -29,6 +33,7 @@ import ossos  # noqa: E402
 CODEX = AQUI.parent / "codex_estudo" / "criar_estudo.py"
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SO_ANIM = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--anim=")), None)
+SO_BOCAS = "--so-bocas" in ARGS
 SAIDA = AQUI / "quadros"
 
 W, H = 128, 192           # mecha grande: preserva o PPU e deixa folga para tiros e rolamento
@@ -419,6 +424,19 @@ def pintar_poligonos(cor, normal, mascara, poligonos):
         normal[dentro] = (0.5, 0.5, 1.0, 1.0)
 
 
+def bocas_canhoes(arm):
+    """Centro projetado (px do quadro, relativo aos pés 64,120) da boca ciano de cada canhão: [[x_e, y_e], [x_d, y_d]] (_e = esquerda da tela)."""
+    bpy.context.view_layer.update()
+    r = []
+    for lado in ("esquerda", "direita"):
+        o = next(o for o in arm.children if o.name == "Boca ciano " + lado)
+        vs = [o.matrix_world @ v.co for v in o.data.vertices]
+        c = sum(vs, Vector((0.0, 0.0, 0.0))) / len(vs)
+        x, y = projetar(c)
+        r.append([round(x - 64.0, 2), round(y - 120.0, 2)])
+    return r
+
+
 def renderizar_animacao(nome):
     mod = importlib.import_module("anim_" + nome)
     n = mod.N_QUADROS
@@ -426,6 +444,7 @@ def renderizar_animacao(nome):
     pasta.mkdir(parents=True, exist_ok=True)
     usa_ang = len(inspect.signature(mod.posar).parameters) >= 4          # posar(arm, quadro, n, ang): ang = giro do herói na direção
     efeito = getattr(mod, "efeito", None)                                # efeito(arm, quadro, n, ang) -> polígonos 2D do golpe (ver pintar_poligonos)
+    bocas = {d: [] for d, _ in DIRECOES}
     for q in range(n):
         for dname, ang in DIRECOES:
             ossos.zerar(arm)
@@ -436,6 +455,9 @@ def renderizar_animacao(nome):
             else:
                 mod.posar(arm, q, n)
             bpy.context.view_layer.update()
+            bocas[dname].append(bocas_canhoes(arm))
+            if SO_BOCAS:
+                continue
             base = pasta / ("%s_%d" % (dname, q))
             renderizar(str(base) + "_cor.png")
             cor = ler(str(base) + "_cor.png", False)
@@ -449,6 +471,8 @@ def renderizar_animacao(nome):
                 pintar_poligonos(cor, nor, mascara, polis)
                 gravar_normal(cor, str(base) + "_cor.png")
             gravar_normal(nor, str(base) + "_normal.png")
+    with open(pasta / "bocas.json", "w", encoding="utf-8") as f:
+        json.dump(bocas, f)
     arm.location = LOC0
     arm.rotation_euler = (0, 0, 0)
     print("ANIM_OK %s: %d quadros x %d direções" % (nome, n, len(DIRECOES)))

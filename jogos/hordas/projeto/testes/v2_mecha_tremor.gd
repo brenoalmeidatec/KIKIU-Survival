@@ -36,11 +36,13 @@ func zerar() -> void:
 		w.avancar(PASSO)
 
 
-## A pose pela coluna da folha do mecha: P (parado), A (andar), C (tiro, combo); outra folha: a própria coluna.
+## A pose pela coluna da folha do mecha: P (parado), A (andar), C (tiro, combo), T (andar atirando, o andar_tiro de 05/11); outra folha: a própria coluna.
 func pose(h) -> String:
 	if not bool(h.tipo.info.get("corpo_fixo_ao_atirar", false)):
 		return str(h.coluna)
 	var c: int = h.coluna
+	if (h.tipo.info.get("animacoes", {}).get("andar_tiro", {}).get("colunas", []) as Array).has(float(c)):
+		return "T"
 	if c >= 1 and c <= 6:
 		return "A"
 	return "C" if c >= 16 and c <= 27 else "P"
