@@ -3,8 +3,9 @@ extends "res://testes/isolamento_v2.gd"
 # cratera por alguns s"). Só o DESENHO e o peso: v2/explosao_mecha.gd (bola, onda no chão, cratera) chamada por v2/especial.gd `_explodir_mecha`, números em
 # dados/v2_especial.json > autodestruicao > explosao. Confere: os dados; os quadros na grade de 1 px (alfa só 0 ou 1, tamanho inteiro); a bola na camada glow e a
 # cratera no nó do mundo embaixo dos atores (z < 0); o estouro (bola no 1º quadro, tremor de câmera, hit-stop dos dados); a onda no chão na velocidade da limpeza
-# até cobrir a câmera; a cratera que fica `cratera.dur` s e esfarela sem piscar (quadro só avança, cada esfarelar tira pixels e nenhum volta); "Reduzir piscadas"
-# (a bola começa sem o miolo branco); "Tremor e clarões" em 0 (a câmera não treme); e o perfil Baixo (a bola, a onda e a cratera ficam).
+# até cobrir a câmera; a cratera que fica `cratera.dur` s e esfarela sem piscar (quadro só avança, cada esfarelar tira pixels e nenhum volta, o miolo dura até o
+# último degrau); "Reduzir piscadas" (a bola começa sem o miolo branco); "Tremor e clarões" em 0 (a câmera não treme); e o perfil Baixo (a bola, a onda e a
+# cratera ficam; a luz local e os cascos do estouro não).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_lightwolf_q_explosao.tscn  (imprime "v2_lightwolf_q_explosao falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
@@ -93,6 +94,29 @@ func _opacos(tex: Texture2D, nome: String) -> int:
 	return n
 
 
+## Pixels opacos no miolo da cratera (elipse de 0,4 do raio no centro do quadro).
+func _miolo(im: Image, rx: float) -> int:
+	var cx := im.get_width() / 2
+	var cy := im.get_height() / 2
+	var n := 0
+	for y in im.get_height():
+		for x in im.get_width():
+			var dx := float(x - cx) / rx
+			var dy := float(y - cy) / (rx * 0.62)
+			if dx * dx + dy * dy < 0.16 and im.get_pixel(x, y).a > 0.5:
+				n += 1
+	return n
+
+
+## A luz local do estouro do mecha (energia 3,0 em especial.gd `_explodir_mecha`) está acesa?
+func _luz_do_estouro() -> bool:
+	var fx = w.combate.fx
+	for i in fx._luzes.size():
+		if fx._luzes[i].enabled and is_equal_approx(fx._luzes_e[i], 3.0):
+			return true
+	return false
+
+
 func _t_normal() -> void:
 	await novo()
 	var c = w.combate
@@ -101,6 +125,7 @@ func _t_normal() -> void:
 	ok(e.has("cratera") and float(e.cratera.get("dur", 0.0)) >= 3.0, "a cratera fica alguns segundos (dados)")
 	ok(float(e.hit_stop) >= 0.1, "hit-stop de pelo menos 0,1 s no estouro (%.2f)" % float(e.hit_stop))
 	var v = explodir()
+	ok(_luz_do_estouro(), "fora do perfil Baixo o estouro acende a luz local")
 	ok(v != null, "o especial tem o visual da explosão do mecha (explosao_visual)")
 	if v == null:
 		return
@@ -124,6 +149,10 @@ func _t_normal() -> void:
 				if a.get_pixel(x, y).a < 0.5 and b.get_pixel(x, y).a > 0.5:
 					volta += 1
 	ok(volta == 0, "nenhum pixel da cratera reaparece ao esfarelar (%d)" % volta)
+	# o último degrau ainda se lê como cratera: o miolo esfarela por último (fica pelo menos 3/4 dele até o fim, não uns pontos soltos no chão)
+	var miolo_base := _miolo(v.cratera[1].get_image(), float(v.raio_cratera))
+	var miolo_fim := _miolo(v.cratera[v.cratera.size() - 1].get_image(), float(v.raio_cratera))
+	ok(miolo_fim * 4 >= miolo_base * 3, "o miolo da cratera continua no último degrau (%d de %d px)" % [miolo_fim, miolo_base])
 	# as camadas
 	ok(v.no_bola != null and v.no_bola.get_parent() == w.glow, "a bola é desenhada na camada glow (por cima dos atores)")
 	ok(v.no_chao != null and v.no_chao.get_parent() == w.no_mundo and v.no_chao.z_index < 0, "a cratera é desenhada no chão, embaixo dos atores")
@@ -200,4 +229,5 @@ func _t_baixo() -> void:
 		ok(false, "sem o visual da explosão")
 	else:
 		ok(v.quadro_bola() >= 0 and v.cratera_viva() and v.raio_onda() >= 0.0, "perfil Baixo: a bola, a onda e a cratera ficam (o essencial)")
+		ok(not _luz_do_estouro(), "perfil Baixo: sem a luz local (nem os cascos) do estouro")
 	Config.g_temporario("particulas_sim", "muitas")

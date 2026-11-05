@@ -9,6 +9,7 @@ extends RefCounted
 ##  - ONDA NO CHÃO: um anel de 1 px (pontos inteiros numa elipse achatada em ACHATA) que sai do mecha na MESMA velocidade da frente de onda da limpeza
 ##    (comum.limpa.vel) e vai até cobrir o retângulo da câmera mais a margem: é o desenho do alcance real do dano (a tela inteira). Os monstros morrem
 ##    quando ela passa (a limpeza usa distância redonda; a elipse chega um pouco depois na vertical, no máximo ~0,1 s).
+##    Desenhada no mesmo nó da cratera (chão, z -60): passa por baixo dos monstros e do herói e escurece com o CanvasModulate do mapa.
 ##  - CRATERA: buraco escuro com borda de terra, chamuscado e rachaduras, de raio `explosao.cratera.raio` (achatada em ACHATA), no nó do mundo com z -60
 ##    (embaixo dos monstros e do herói, em cima dos decalques do chão). As rachaduras ficam acesas em azul por `cratera.quente` s (uma troca só), e nos
 ##    últimos `cratera.esfarela` s ela esfarela: os pixels somem por uma máscara FIXA (cada pixel some uma vez e não volta), CRATERA_ESFARELA degraus, de
@@ -173,6 +174,14 @@ func _desenhar_bola() -> void:
 	if k >= 0:
 		var tex: Texture2D = bola[k]
 		no_bola.draw_texture(tex, centro + Vector2(-raio_bola, -raio_bola - BOLA_SOBE))
+
+
+## O chão: a cratera e, por cima dela, a onda de 1 px (as duas embaixo dos monstros e do herói).
+func _desenhar_chao() -> void:
+	var k := quadro_cratera()
+	if k >= 0:
+		var tex: Texture2D = cratera[k]
+		no_chao.draw_texture(tex, centro - Vector2(tex.get_width() / 2, tex.get_height() / 2))
 	var r := raio_onda()
 	if r > 0.0:
 		var cor := CIANO_CLARO if r < onda_max * 0.5 else CIANO
@@ -182,16 +191,8 @@ func _desenhar_bola() -> void:
 			var a := TAU * float(i) / float(n)
 			var q := (centro + Vector2(cos(a) * r, sin(a) * r * ACHATA)).round()
 			if q != ultimo:
-				no_bola.draw_rect(Rect2(q, Vector2(2, 1)), cor)
+				no_chao.draw_rect(Rect2(q, Vector2(2, 1)), cor)
 				ultimo = q
-
-
-func _desenhar_chao() -> void:
-	var k := quadro_cratera()
-	if k < 0:
-		return
-	var tex: Texture2D = cratera[k]
-	no_chao.draw_texture(tex, centro - Vector2(tex.get_width() / 2, tex.get_height() / 2))
 
 
 # ------------------------------------------------------------------ os quadros (desenhados uma vez)
@@ -357,11 +358,12 @@ func _gerar_cratera() -> void:
 	cratera.append(ImageTexture.create_from_image(quente))
 	cratera.append(ImageTexture.create_from_image(base))
 	for k in CRATERA_ESFARELA:
-		var limiar := float(k + 1) / float(CRATERA_ESFARELA + 1)
+		var limiar := 0.12 + 0.43 * float(k) / float(CRATERA_ESFARELA - 1)  # 0,12 .. 0,55: o último degrau ainda é o fundo inteiro (meio raio)
 		var im := base.duplicate() as Image
 		for rk in dmap:
-			# de fora para dentro: a borda e o chamuscado esfarelam primeiro, o fundo por último
-			var v := _h(rk.x, rk.y, 31) * 0.6 + (1.0 - clampf(float(dmap[rk]) / 1.25, 0.0, 1.0)) * 0.4
+			# de fora para dentro: a borda e o chamuscado esfarelam primeiro, o fundo por último. A distância pesa mais que o ruído para o miolo
+			# continuar legível até o último degrau (com o ruído pesando 0,6 o último degrau virava pontos soltos e a cratera "sumia" ~0,7 s antes de acabar)
+			var v := _h(rk.x, rk.y, 31) * 0.25 + (1.0 - clampf(float(dmap[rk]) / 1.25, 0.0, 1.0)) * 0.75
 			if v < limiar:
 				im.set_pixel(rk.x, rk.y, Color(0, 0, 0, 0))
 		cratera.append(ImageTexture.create_from_image(im))
