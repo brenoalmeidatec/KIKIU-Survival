@@ -272,3 +272,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Impactos das armas no estilo do pixelfx, Claude do Breno, 04/11/2026
 
 - `jogos/hordas/projeto/assets/v2/armas_anim/pfx_*.png`: desenhos novos gerados por `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`. Nenhuma imagem de terceiros. As receitas de simulação e de desenho são adaptadas do pixelfx (https://github.com/patch-gg/pixelfx, licença MIT conferida em 04/11/2026, Copyright (c) 2026 Patch e Copyright (c) 2026 Hugo Duprez), com o crédito no cabeçalho do script. A fonte Patch Pixel não é usada.
+
+## Ícone do IMPULSO do mecha do LightWolf, Claude do Alisson (notebook), 05/11/2026
+
+- `jogos/hordas/projeto/assets/v2/habilidade_shift/lightwolf.png` (32x32, alfa 0/1): arte própria em pixel, desenhada caractere a caractere em `jogos/hordas/fonte_arte/habilidade_shift/gerar_icone.py` (a mochila de propulsores do mecha vista de trás, seta de subida e duas chamas). Nenhuma imagem, ícone ou referência de terceiros; a habilidade se inspira só na função dos propulsores da D.Va (Overwatch), sem copiar nome, arte ou som. Licença: a do projeto.

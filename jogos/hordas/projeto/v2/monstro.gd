@@ -257,11 +257,12 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 		var feito: Vector2 = mundo.mover_monstro(self, desl)
 		if _caca_longe and v != Vector2.ZERO:
 			_checar_bloqueio(dt, v, feito)
-	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 80% da penetração por quadro; passa por mundo.mover, a colisão manda)
+	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 80% da penetração por quadro; passa por mundo.mover, a colisão manda).
+	# Raio 0 = o herói passa por cima (o mecha voando no impulso, v2/impulso.gd): não afasta ninguém
 	var dxh := pos.x - heroi_pos.x
 	var dyh := pos.y - heroi_pos.y
 	var lim := heroi_raio + raio
-	if dxh * dxh + dyh * dyh < lim * lim:
+	if heroi_raio > 0.0 and dxh * dxh + dyh * dyh < lim * lim:
 		var dist := sqrt(dxh * dxh + dyh * dyh)
 		var fora := Vector2(dxh, dyh) / dist if dist > 0.01 else Vector2.from_angle(ang_cerco)
 		mundo.mover(self, fora * (lim - dist) * 0.8)

@@ -8,6 +8,8 @@ extends "res://v2/ator.gd"
 ##    pouco (lunge) e anda devagar enquanto golpeia. A esquiva cancela o fim do golpe.
 ##  - ESQUIVA (ação "esquiva", Espaço): rolamento com fôlego (cargas que voltam com o tempo) e invulnerabilidade no começo (porte do
 ##    movimento.json da v1).
+##  - IMPULSO (a mesma ação "correr", só no MECHA do LightWolf, v2/impulso.gd): o aperto faz o mecha voar ~3 s (flutua, passa por cima de objetos baixos e de monstros,
+##    ferindo sem matar), com recarga e slot próprio na HUD. Para ele o Shift NÃO corre; para os outros heróis e para o Lobo, nada muda.
 ##  - CORRER (ação "correr", Shift/L3): ~1,6x a velocidade de andar, gasta o MESMO fôlego da esquiva por segundo. Fôlego zerado = CANSADO:
 ##    não corre nem esquiva até recuperar ~30%, e anda mais devagar. A recuperação começa depois de um atraso sem gastar e é mais rápida
 ##    parado. Atacar cancela a corrida. A câmera adianta um pouco na direção da corrida.
@@ -99,6 +101,19 @@ var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (v
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
 var golpe_calor_t := 0.0  # Médio/Difícil: ao zerar fôlego, o ataque principal espera o calor baixar.
 var correndo := false
+# ---- impulso do mecha do LightWolf (v2/impulso.gd; contrato imp_* lido pela HUD, v2/hud_habilidades.gd)
+var imp_nome := ""  # "" = sem impulso nesta forma (todo herói menos o mecha): o slot do Shift some
+var imp_t := 0.0  # s de voo que faltam (> 0 = voando)
+var imp_dur := 0.0  # a duração do voo de agora
+var imp_recarga := 0.0
+var imp_recarga_max := 0.0
+var imp_nega_t := 0.0  # o aperto foi negado (recarga): o slot treme em vermelho
+var imp_relogio := 0.0  # s desde o começo do voo
+var imp_dir := Vector2.RIGHT  # a direção do voo (vira a giro rad/s)
+var alt_px := 0  # px inteiros que o desenho sobe (o voo); a sombra, a posição e a física ficam no chão
+var _imp_ant := false  # o botão estava apertado no quadro anterior (o impulso é por aperto)
+var _imp_saindo := false  # o voo acabou em cima de um objeto baixo: segue passando por eles até sair
+var _imp_larg := 0.0  # a largura de objeto baixo do último voo (px)
 var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
 
 # ---- modificadores das melhorias (progresso.gd)
@@ -265,6 +280,13 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	folego = folego_max
 	cansado = false
 	correndo = false
+	imp_t = 0.0
+	imp_relogio = 0.0
+	imp_recarga = 0.0
+	imp_recarga_max = 0.0
+	imp_nega_t = 0.0
+	alt_px = 0
+	_imp_saindo = false
 	escudo_ativo = false
 	escudo_t = 0.0
 	def_reserva = -1.0
@@ -707,6 +729,9 @@ func atualizar(dt: float) -> void:
 	if esp_nega_t > 0.0:
 		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
 	_secundario_relogios(dt)
+	var imp = mundo.combate.impulso
+	if imp != null:
+		imp.relogios(self, dt)
 	var parado := v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA)
 	_recuperar(dt, parado)
 	_recuperar_defesa(dt, parado)
@@ -742,6 +767,8 @@ func atualizar(dt: float) -> void:
 			desl = mundo.combate.especial.quadro(self, dt, v)
 		Estado.HABILIDADE:
 			desl = mundo.combate.habilidade.quadro(self, dt, v)
+	if imp_t > 0.0:  # o voo do impulso troca o andar (o canhão e a E seguem; v2/impulso.gd)
+		desl = imp.quadro(self, dt, v)
 	if emp.length_squared() > 4.0:
 		desl += emp * dt
 		emp *= exp(-AMORTECE_EMP * dt)
@@ -753,7 +780,9 @@ func atualizar(dt: float) -> void:
 		_cancelar_aparo()
 	var antes := pos
 	if desl != Vector2.ZERO:
-		mundo.mover(self, desl)
+		mundo.mover(self, desl, imp.larg_ignora(self) if imp != null else 0.0)
+	if imp != null:
+		imp.depois_de_mover(self)
 	vel = (pos - antes) / maxf(dt, 0.0001)
 	_camera_adiantada(dt)
 	if mundo.combate.escudo != null:
@@ -792,7 +821,7 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 	var k := vel_andar()
 	if cansado:
 		k *= float(mundo.combate.cfg.folego.lento_cansado)
-	elif _quer_correr() and folego > 0.0:
+	elif _quer_correr() and folego > 0.0 and imp_nome == "":  # o mecha não corre: o Shift dele é o impulso
 		correndo = true
 		k = vel_correr()
 		_gastar(float(mundo.combate.cfg.corrida.gasto) * dt)
@@ -819,6 +848,8 @@ func _sec_apertado() -> bool:
 func _quer_secundario() -> bool:
 	var c = mundo.combate
 	if c.escudo == null or not c.escudo.posse_para(str(chave)) or c.jogo != "jogando" or c.pausado or _pausa_aberta():
+		return false
+	if imp_t > 0.0:  # voando no impulso a Matriz não ergue (o canhão atira)
 		return false
 	var apertado := _sec_apertado()
 	if not apertado or def_quebrado:
@@ -1065,7 +1096,7 @@ func _quer_correr() -> bool:
 
 ## Pode esquivar agora? (não cansado e com fôlego para um rolamento)
 func pode_esquivar() -> bool:
-	return not cansado and folego >= float(mundo.combate.cfg.esquiva.gasto)
+	return not cansado and imp_t <= 0.0 and folego >= float(mundo.combate.cfg.esquiva.gasto)  # voando não esquiva
 
 
 ## Gasta fôlego; zerar deixa cansado. Gastar adia a recuperação, menos no ataque principal (adia = false): com golpes a cada ~0,35 s
@@ -1102,7 +1133,7 @@ func _recuperar(dt: float, parado: bool) -> void:
 
 func _camera_adiantada(dt: float) -> void:
 	var alvo := Vector2.ZERO
-	if correndo and vel.length() > 1.0:
+	if (correndo or imp_t > 0.0) and vel.length() > 1.0:  # o voo do impulso também adianta a câmera
 		alvo = vel.normalized() * float(mundo.combate.cfg.corrida.avanco_camera)
 	avanco_camera = avanco_camera.lerp(alvo, 1.0 - exp(-3.5 * dt))
 
@@ -1436,7 +1467,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		if sprite.rotation != 0.0:
 			sprite.rotation = 0.0
 			sprite.offset = _off_base
-		sprite.position = desloca
+		alt_px = mundo.combate.impulso.alt(self) if mundo.combate.impulso != null else 0
+		sprite.position = desloca + Vector2(0.0, -float(alt_px))  # o voo sobe o desenho em px inteiros; a sombra fica no chão
 	sprite.scale = Vector2.ONE
 	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:

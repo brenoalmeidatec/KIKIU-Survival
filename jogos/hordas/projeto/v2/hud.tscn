@@ -431,9 +431,9 @@ script = ExtResource("16_ultimate")
 
 [node name="Habilidades" type="Control" parent="Raiz"]
 layout_mode = 0
-offset_left = 693.0
+offset_left = 585.0
 offset_top = 423.0
-offset_right = 867.0
+offset_right = 831.0
 offset_bottom = 497.0
 script = ExtResource("12_habilidades")
 

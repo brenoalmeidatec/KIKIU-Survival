@@ -233,14 +233,16 @@ func _bocas_no_mundo() -> PackedVector2Array:
 
 
 ## A boca relativa (px inteiros) da vaga `i` neste quadro: a do tiro enquanto a folha desenha a mesma linha; a mira virou, a do mesmo braço na linha nova.
+## O desenho do herói subido (`alt_px`, o mecha voando no impulso, v2/impulso.gd) sobe a boca junto.
 func _boca_rel_agora(i: int) -> Vector2:
 	var h = boca_heroi[i]
+	var sobe := Vector2(0.0, -float(h.get("alt_px") if "alt_px" in h else 0))
 	var linha: int = h.linha_de(h.dir_olhar)
 	var tabela: Array = boca_tabela[i]
 	if linha == boca_linha[i] or tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
-		return boca_rel[i]
+		return boca_rel[i] + sobe
 	var xy: Array = tabela[linha][boca_lado[i]]
-	return Vector2(float(xy[0]), float(xy[1])).round() if xy.size() == 2 else boca_rel[i]
+	return (Vector2(float(xy[0]), float(xy[1])).round() if xy.size() == 2 else boca_rel[i]) + sobe
 
 
 ## Tudo o que ainda desenha: impactos e clarões de boca (é o que mantém o desenho de v2/adagas.gd acordado).

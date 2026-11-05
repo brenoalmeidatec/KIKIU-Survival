@@ -454,7 +454,9 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 		"recarga acabou: o secundário volta pronto, sem cortina, com o nome do aparo"
 	)
 	var area := Rect2(slots.position, slots.size * slots.scale)
-	ok(area.position == Vector2(693, 423) and area.size == Vector2(261, 111), "E e secundário ocupam o canto de baixo à direita")
+	# o nó ganhou à esquerda o card do Shift (o impulso do mecha do LightWolf, 70 px + 2 de vão, x1,5 = 108 px): E e secundário ficam onde sempre estiveram
+	ok(area.position == Vector2(585, 423) and area.size == Vector2(369, 111), "E, secundário e o card do impulso ocupam o canto de baixo à direita (%s)" % area)
+	ok(area.position.x + slots.X_E * slots.scale.x == 693.0 and area.end.x == 954.0, "o E e o secundário continuam em x 693 a 954 (261 px)")
 	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")
 	ok(not area.intersects(ZONA_MINIMAPA), "E e secundário não cobrem o minimapa")
 	var xp = hud.get_node("Raiz/Xp")
