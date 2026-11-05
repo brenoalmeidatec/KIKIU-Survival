@@ -79,7 +79,7 @@ func _ready() -> void:
 	w.set_process(false)
 	w.combate.audio.mudo = true
 	var h = w.heroi
-	var imp = w.combate.impulso
+	var imp = w.combate.get("impulso")  # get: no código sem impulso o teste chega às asserções (e falha nelas) em vez de parar no parse
 	var c: Dictionary = w.combate.cfg.get("impulso", {})
 
 	# 1. dados e quem tem
@@ -89,6 +89,11 @@ func _ready() -> void:
 	ok(not Herois.cfg_para(Dados.json("v2_combate"), "lightwolf_lobo").has("impulso"), "o Lobo não tem impulso")
 	for id in ["hazaki", "nicao", "lucas"]:
 		ok(not Herois.cfg_para(Dados.json("v2_combate"), id).has("impulso"), "%s não tem impulso" % id)
+	ok(imp != null, "o combate monta o impulso (v2/impulso.gd)")
+	if falhas > 0:  # sem o impulso o resto não tem o que medir: fecha aqui com as falhas contadas
+		print("v2_impulso falhas=%d" % falhas)
+		get_tree().quit()
+		return
 	zerar()
 	ok(h.imp_nome == "IMPULSO", "o mecha publica o impulso para a HUD (%s)" % h.imp_nome)
 
@@ -195,7 +200,8 @@ func _ready() -> void:
 	var baixo := [{"tipo": "elipse", "centro": [0.0, 0.0], "raio": [5.0, 2.5]}]  # as "pedras" (10 px)
 	var lapide := [{"tipo": "elipse", "centro": [0.0, 0.0], "raio": [10.5, 5.2]}]  # a lápide (21 px)
 	var grande := [{"tipo": "elipse", "centro": [0.0, 0.0], "raio": [30.0, 15.0]}]  # o muro (60 px)
-	ok(Colisao.largura_objeto(baixo) == 10.0 and Colisao.largura_objeto(grande) == 60.0, "a largura do objeto é a caixa em x das formas")
+	var col_s = load("res://v2/colisao.gd")  # carregado e sem tipo: a chamada resolve na hora de rodar (no código sem largura_objeto o teste falha na asserção, não no parse)
+	ok(col_s.call("largura_objeto", baixo) == 10.0 and col_s.call("largura_objeto", grande) == 60.0, "a largura do objeto é a caixa em x das formas")
 	for caso in [["pedras", baixo, true], ["lápide", lapide, true], ["muro", grande, false]]:
 		zerar()
 		Colisao.adicionar_objeto(h.pos + Vector2(80, 0), caso[1])
@@ -288,6 +294,8 @@ func _ready() -> void:
 	var d0: float = (dentro.pos - h.pos).length()
 	w.avancar(PASSO)
 	ok((dentro.pos - h.pos).length() < d0 + 10.0, "voando, o corpo do mecha não empurra o monstro para fora")
+	# o anel de cerco da IA segue com o raio real do mecha: a roda não fecha em cima dele e ele não pousa dentro dela
+	ok(is_equal_approx(dentro.heroi_raio_atual, float(h.raio)), "voando, o cerco da IA usa o raio real (%.1f, raio %.1f)" % [dentro.heroi_raio_atual, h.raio])
 
 	# 7. Lobo e outros heróis: o Shift continua correndo
 	zerar()
@@ -314,7 +322,9 @@ func _ready() -> void:
 	slots.sincronizar(h)
 	ok(not slots.imp_pronta and slots.imp_recarga_px > 0 and slots.imp_recarga_s > 0.0, "HUD: na recarga, a cortina e os segundos")
 	ok(slots.arte_imp() != null and slots.arte_imp().get_size() == Vector2(32, 32), "HUD: o ícone próprio do impulso (32x32)")
-	ok(HudHabilidades.X_E == HudHabilidades.TAM_IMP.x + HudHabilidades.ESPACO_CARD, "HUD: o card E começa depois do card do impulso")
+	var hud_s = load("res://v2/hud_habilidades.gd")  # carregado e sem tipo, como col_s
+	var k_hud: Dictionary = hud_s.get_script_constant_map()
+	ok(k_hud.get("X_E", -1.0) == k_hud.get("TAM_IMP", Vector2.ZERO).x + k_hud.get("ESPACO_CARD", 0.0), "HUD: o card E começa depois do card do impulso")
 	w.combate.mecha.virar_lobo(h, 20.0)
 	passos(1)
 	slots.sincronizar(h)

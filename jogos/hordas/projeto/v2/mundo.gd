@@ -963,9 +963,10 @@ func avancar(dt: float) -> void:
 			var p1 := Time.get_ticks_usec()
 			if herois.size() <= 1:  # solo: um alvo só, sem busca
 				var hp: Vector2 = heroi.pos
-				var hr: float = 0.0 if heroi.imp_t > 0.0 else heroi.raio  # o mecha no impulso passa POR CIMA: o corpo dele não afasta ninguém (v2/impulso.gd)
+				var hr: float = heroi.raio
+				var por_cima: bool = heroi.imp_t > 0.0  # o mecha no impulso passa POR CIMA: o corpo dele não afasta ninguém (v2/impulso.gd)
 				for mo in monstros:
-					mo.atualizar(dtm, hp, hr)
+					mo.atualizar(dtm, hp, hr, por_cima)
 			else:
 				for mo in monstros:
 					var alvo = alvo_mais_perto(mo.pos)

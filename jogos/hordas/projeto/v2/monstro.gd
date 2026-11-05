@@ -228,7 +228,9 @@ func apanhar(dano_tirado: float, empurrao: Vector2, atordoamento: float) -> bool
 
 ## Um passo do monstro: temporizadores, IA, empurrões e o movimento (mundo.mover). O desenho não é daqui: o monstro em lote é desenhado
 ## por v2/horda.gd (que chama `visual` para quem está na tela) e o monstro com nós (elite, chefe) por `_visual_no`.
-func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
+## `por_cima` = o herói passa POR CIMA (o mecha voando no impulso, v2/impulso.gd): o corpo dele não afasta ninguém, mas o anel
+## de cerco da IA segue com o raio real (a roda não fecha em cima dele e ele não pousa dentro dela).
+func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0, por_cima := false) -> void:
 	if recarga > 0.0:
 		recarga -= dt
 	if queima_t > 0.0:
@@ -258,11 +260,11 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 		if _caca_longe and v != Vector2.ZERO:
 			_checar_bloqueio(dt, v, feito)
 	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 80% da penetração por quadro; passa por mundo.mover, a colisão manda).
-	# Raio 0 = o herói passa por cima (o mecha voando no impulso, v2/impulso.gd): não afasta ninguém
+	# `por_cima` (o mecha voando no impulso): não afasta ninguém
 	var dxh := pos.x - heroi_pos.x
 	var dyh := pos.y - heroi_pos.y
 	var lim := heroi_raio + raio
-	if heroi_raio > 0.0 and dxh * dxh + dyh * dyh < lim * lim:
+	if not por_cima and dxh * dxh + dyh * dyh < lim * lim:
 		var dist := sqrt(dxh * dxh + dyh * dyh)
 		var fora := Vector2(dxh, dyh) / dist if dist > 0.01 else Vector2.from_angle(ang_cerco)
 		mundo.mover(self, fora * (lim - dist) * 0.8)

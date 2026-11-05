@@ -8,7 +8,7 @@ extends RefCounted
 ##  - FLUTUA: o desenho sobe `alt_px` px inteiros (sobe e desce em `subida` s), a sombra fica no chão; o clarão do cano e a boca das bolinhas sobem junto (Heroi.alt_px).
 ##  - OBSTÁCULO BAIXO: objeto com largura de colisão até `larg_obstaculo` px não segura o mecha voando (v2/colisao.gd diz quais); se o voo acabar em cima de um,
 ##    o mecha segue passando por objetos baixos até sair de todos (sem pulo de empurrão). Os grandes seguram como sempre.
-##  - POR CIMA DOS MONSTROS: o corpo do mecha não afasta ninguém (mundo.gd passa raio 0 aos monstros) e os empurrões que ele leva não o tiram da rota.
+##  - POR CIMA DOS MONSTROS: o corpo do mecha não afasta ninguém (mundo.gd avisa os monstros com `por_cima`; o anel de cerco da IA segue com o raio real) e os empurrões que ele leva não o tiram da rota.
 ##    Cada monstro atravessado (raio do herói + raio dele + `alcance`) leva `dano` (vezes o dano do herói) a cada `intervalo` s; o toque NUNCA mata: para em 1 de vida
 ##    (chefe e elite também) e não empurra. Conta como fonte "impulso" na tela de fim.
 ##  - Contrato com o canhão e a Matriz (como a D.Va): o canhão atira e a E (mísseis) sai durante o voo; a Matriz não ergue (se estava erguida, cai) e a esquiva não sai.
