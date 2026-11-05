@@ -54,6 +54,9 @@ extends RefCounted
 ##                         objeto BAIXO do mapa (lápide, runa, crânio, braseiro, caixa de oferenda, rocha, pedras ou poste: o de caminho mais limpo), com 8 monstros de
 ##                         vida alta em fila à direita; aperta o Shift e atira para a direita: voa 3 s por cima da fila e do objeto, depois fica 1,7 s parado (o slot
 ##                         do Shift em recarga) e sai. Imprime IMPULSO a cada 0,25 s (x, alt_px, toques, vida do 1º monstro) e IMPQ a cada quadro (o mecha na tela).
+##   --roteiro=lw_mira     (rodada 5, para vídeo no Movie Maker; com --heroi=lightwolf, ~10,5 s) a mira andando e atirando: o mouse virando com o
+##                         mecha andando e atirando, o andar virando com o mouse parado e o tiro segurado, o andar de costas sem tiro e a diagonal
+##                         baixo-direita atirando. Imprime MIRA a cada quadro (quadro desenhado, trecho, fonte, olhar, mouse, golpe_dir, rajadas).
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -86,6 +89,8 @@ var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da 
 var lw_boca := Vector2.INF  # o roteiro do LightWolf: onde a foto 1b_boca viu o clarão de boca (a 1c procura o do outro cano)
 var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
 var seq_n := 0  # o roteiro andar_seq: quantas fotos seguidas já saíram no trecho atual
+var lw_mira_g := 0  # o roteiro lw_mira: o contador de rajadas (adagas._grupo) no último quadro
+var lw_mira_p := 0  # o roteiro lw_mira: o trecho do último quadro (o B guarda o ponto do mouse ao entrar)
 var lw_alvos: Array = []  # o roteiro lw_tiros: [monstro, posição] dos alvos parados
 
 
@@ -180,6 +185,8 @@ func atualizar(dt: float) -> void:
 				_r_lw_q()
 			"impulso":
 				_r_impulso()
+			"lw_mira":
+				_r_lw_mira()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -443,6 +450,7 @@ func _r_andar_seq() -> void:
 	var tr: Array = TRECHOS[passo - 1]
 	mundo.mouse_forcado = h.centro() + (tr[4] as Vector2) * 4000.0
 	h.entrada_forcada = tr[1]
+	h.fonte = h.Fonte.MOUSE  # a mira é o mouse (refeito a cada quadro, como um mouse que mexe): começar ou virar o andar trocava para ANDA e o diag_tiro não mirava na diagonal
 	h.ataque_forcado = tr[2]
 	if t_passo < 1.0:
 		return
@@ -452,6 +460,82 @@ func _r_andar_seq() -> void:
 		passo += 1
 		t_passo = 0.0
 		seq_n = 0
+
+
+## Vídeo da mira andando e atirando (rodada 5, para o Movie Maker; veja o cabeçalho). Trechos: A) andando para a direita e depois para a
+## esquerda, atirando, com o mouse virando a cada 0,4 s; B) atirando com o mouse PARADO num ponto do mundo e o andar virando a cada 0,75 s
+## (sem evento de mouse: a fonte só fica MOUSE se o tiro segurado a mantiver); C) andando para a esquerda sem atirar, mouse à direita (de
+## costas); D) na diagonal baixo-direita atirando. Imprime MIRA a cada quadro (quadro desenhado, trecho, fonte, ângulos e se saiu rajada).
+func _r_lw_mira() -> void:
+	var h = mundo.heroi
+	const VIRAS := [Vector2.UP, Vector2.RIGHT, Vector2(-0.70710678, 0.70710678), Vector2(0.70710678, -0.70710678), Vector2.LEFT, Vector2.DOWN]
+	const ANDAS := [Vector2.DOWN, Vector2.LEFT, Vector2.UP, Vector2.RIGHT]
+	const DUR := [0.0, 4.0, 3.0, 2.0, 1.5]
+	if passo >= 1:
+		_mira_log()
+	if passo == 0:
+		_preparar()
+		Config.temporario("pausar_fora", false)  # gravando, outra janela na frente pausaria a partida
+		mundo.cam.cravar(h.pos)
+		passo = 1
+		t_passo = 0.0
+		lw_mira_g = mundo.combate.adagas._grupo
+	if passo >= DUR.size():
+		h.ataque_forcado = false
+		h.entrada_forcada = Vector2.ZERO
+		mundo.get_tree().quit()
+		return
+	match passo:
+		1:
+			h.entrada_forcada = Vector2.RIGHT if t_passo < 2.0 else Vector2.LEFT
+			h.ataque_forcado = true
+			mundo.mouse_forcado = h.centro() + (VIRAS[int(t_passo / 0.4) % VIRAS.size()] as Vector2) * 4000.0
+			h.fonte = h.Fonte.MOUSE  # o mouse mexe neste trecho (o _input faria isto)
+		2:
+			if lw_mira_p != 2:
+				mundo.mouse_forcado = h.centro() + Vector2(60, -40)  # o mouse para num ponto do mundo
+				h.fonte = h.Fonte.MOUSE
+			h.entrada_forcada = ANDAS[int(t_passo / 0.75) % ANDAS.size()]
+			h.ataque_forcado = true
+		3:
+			h.entrada_forcada = Vector2.LEFT
+			h.ataque_forcado = false
+			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+			h.fonte = h.Fonte.MOUSE
+		4:
+			h.entrada_forcada = Vector2(0.70710678, 0.70710678)
+			h.ataque_forcado = true
+			mundo.mouse_forcado = h.centro() + Vector2(0.70710678, 0.70710678) * 4000.0
+			h.fonte = h.Fonte.MOUSE
+	lw_mira_p = passo
+	if t_passo >= float(DUR[passo]):
+		passo += 1
+		t_passo = 0.0
+
+
+## Uma linha MIRA por quadro do roteiro lw_mira, no começo do quadro seguinte: é o estado que o último quadro desenhado mostrou.
+func _mira_log() -> void:
+	var h = mundo.heroi
+	var g: int = mundo.combate.adagas._grupo
+	var m: Vector2 = mundo.mouse_mundo() - h.centro()
+	print(
+		(
+			"MIRA f=%d p=%d fonte=%d olhar=%.1f mouse=%.1f golpe=%.1f tiro=%d col=%d lin=%d pr=%s"
+			% [
+				Engine.get_frames_drawn(),
+				passo,
+				int(h.fonte),
+				rad_to_deg(h.dir_olhar.angle()),
+				rad_to_deg(m.angle()),
+				rad_to_deg(h.golpe_dir.angle()),
+				g - lw_mira_g,
+				h.coluna,
+				h.linha,
+				str(h.pr)
+			]
+		)
+	)
+	lw_mira_g = g
 
 
 ## Vídeo do canhão, dos Mísseis e da pistola do Lobo (veja o cabeçalho): um passo por estado, com prazo em cada espera.
