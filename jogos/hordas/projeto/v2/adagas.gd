@@ -38,11 +38,15 @@ extends RefCounted
 ## das 16 direções (passos de 22,5 graus), com as cópias pré-giradas de v2/sprite_giro.gd (geradas em `montar`, não no meio da partida) e a posição inteira.
 ## A direção é a do movimento DESENHADO (`_ang_visual`, a derivada de `_pos_visual_em`), não a do chão: o míssil que desce do pod aponta o nariz para
 ## baixo enquanto desce. O míssil não esmaece no fim do alcance (`_fade`): some inteiro, alfa 0/1.
+## O míssil também deixa RASTRO (05/11/2026, v2/misseis_rastro.gd, só desenho): a chama do bocal (opaca, fixa) no corpo e uma fumaça de puffs de 2 a 4 px, um a cada ESPACO px de voo no bocal da imagem DESENHADA
+## (`_fumaca`, então segue a descida do pod), em pool fixo e sem sorteio; perfil Baixo: só a chama. Os puffs ficam no ar depois do impacto até acabarem (`atualizar` segue ativo enquanto houver).
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
 const PixelRot := preload("res://v2/pixel_rot.gd")
+const Piscadas := preload("res://v2/piscadas.gd")
 const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
+const MisseisRastro := preload("res://v2/misseis_rastro.gd")
 const EstalosVisual := preload("res://v2/estalos_visual.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
@@ -123,6 +127,8 @@ static var _texs := {}
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
 var misseis_visual := MisseisVisual.new()
+var rastro := MisseisRastro.new()  # a fumaça atrás do bocal dos mísseis (pool fixo; a chama do bocal é desenhada no corpo)
+var a_fum := PackedFloat32Array()  # a distância voada em que o míssil deixa o próximo puff de fumaça
 var estalos := EstalosVisual.new()  # o estalo das bolinhas do mecha (acerto e fim do alcance)
 
 
@@ -144,6 +150,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 			if not voo.is_empty():
 				_preparar_folha(voo)
 	misseis_visual.montar()
+	rastro.montar()
+	a_fum.resize(MAX)
 	estalos.montar()
 	_traco_px.resize(TRACO_BUF)
 	_traco_cor.resize(TRACO_BUF)
@@ -193,6 +201,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 
 func limpar() -> void:
 	misseis_visual.limpar()
+	rastro.limpar()
+	a_fum.fill(0.0)
 	estalos.limpar()
 	a_rest.fill(0.0)
 	a_grupo.fill(0)
@@ -323,6 +333,7 @@ func _nova(
 	a_cor[i] = cor
 	a_visual_offset[i] = Vector2.ZERO
 	a_visual_dist[i] = 0.0
+	a_fum[i] = MisseisRastro.INICIO
 	a_visual_t[i] = 0.0
 	a_visual_compr[i] = VISUAL_DIST
 	a_visual_ultima[i] = Vector2.ZERO
@@ -341,10 +352,11 @@ func _nova(
 
 func atualizar(dt: float) -> void:
 	misseis_visual.atualizar(dt)
+	rastro.atualizar(dt)
 	estalos.atualizar(dt)
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	_relogio += dt
-	var ativo := misseis_visual.ativas() > 0 or estalos.vivos() > 0
+	var ativo := misseis_visual.ativas() > 0 or rastro.vivos() > 0 or estalos.vivos() > 0
 	for i in MAX:
 		if a_rest[i] > 0.0:
 			ativo = true
@@ -366,6 +378,7 @@ func atualizar(dt: float) -> void:
 		a_visual_dist[i] += antes.distance_to(a_pos[i])
 		a_visual_t[i] = maxf(0.0, a_visual_t[i] - dt)
 		_atualizar_visual(i)
+		_fumaca(i)
 	_desenha = true
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
@@ -665,6 +678,8 @@ func _pausar_grupo(i: int) -> void:
 func _desenhar_corpo() -> void:
 	if misseis_visual.ativas() > 0:
 		misseis_visual.desenhar(no_corpo, float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3)
+	if rastro.vivos() > 0:
+		rastro.desenhar(no_corpo, Piscadas.ligado())  # por baixo de toda imagem: a fumaça nunca tapa o míssil
 	var baixo := float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3 if mundo != null and mundo.has_method("_nivel_particulas") else false
 	for i in MAX:
 		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
@@ -682,6 +697,8 @@ func _desenhar_corpo() -> void:
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		p = _pos_visual(i)  # a sombra acima permanece na trajetória lógica do chão
 		var ang := PixelRot.angulo16(_dir_desenho(i))  # a imagem aponta para onde o DESENHO anda, numa das 16 direções e sem girar pixel (sprite_giro.gd)
+		if _missil(a_proj[i]):
+			MisseisRastro.chama(no_corpo, p.round(), Vector2.from_angle(ang))  # a chama do bocal, atrás da imagem
 		if e.has("anim"):
 			var f: Dictionary = e.anim
 			var q := Vector2i(f.quadro as Vector2)
@@ -705,9 +722,7 @@ func _desenhar_brilho() -> void:
 		var cor: Color = a_cor[i]
 		var fade := _fade(i)
 		if _visual_mecha(a_proj[i]):
-			if _missil(a_proj[i]):  # o fogo do motor; o míssil não esmaece (`_fade`)
-				no_brilho.draw_line((p - dir * 19.0).round(), (p - dir * 10.0).round(), Color(1.0, 0.55, 0.14, 0.65), 2.0)
-			continue  # a bolinha da rajada leva o rastro no corpo (_desenhar_corpo), pixel a pixel
+			continue  # o míssil leva a chama e a fumaça no corpo (MisseisRastro), opacas; a bolinha da rajada leva o rastro no corpo (_desenhar_corpo), pixel a pixel
 		no_brilho.draw_line((p - dir * 16.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.4 * fade), 3.0)
 		no_brilho.draw_line((p - dir * 9.0).round(), (p + dir * 4.0).round(), Color(1, 1, 1, 0.8 * fade), 1.0)
 		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.3 * fade))
@@ -777,6 +792,18 @@ func _bolinha(proj: int) -> bool:
 
 func _missil(proj: int) -> bool:
 	return str(_proj_lista[proj].nome) == "missil"
+
+
+## A fumaça do míssil `i`: um puff a cada MisseisRastro.ESPACO px de voo, no bocal da imagem DESENHADA (`_pos_visual`, então segue a descida do pod até o alvo), nunca com o desenho
+## oculto. Perfil Baixo (efe_particulas <= 0,3): nenhum puff, fica só a chama. Sem RNG e sem nó: o ritmo vem da distância voada.
+func _fumaca(i: int) -> void:
+	if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0 or a_visual_dist[i] < a_fum[i] or not _missil(a_proj[i]):
+		return
+	a_fum[i] = a_visual_dist[i] + MisseisRastro.ESPACO
+	if float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3:
+		return
+	var dir := Vector2.from_angle(PixelRot.angulo16(_dir_desenho(i)))
+	rastro.emitir(_pos_visual(i).round() - dir * MisseisRastro.ATRAS)
 
 
 ## O alfa da imagem do projétil `i` no fim do alcance: de 1 a 0 nos últimos FADE_PX. O míssil fica em 1 até o alcance acabar e some inteiro
