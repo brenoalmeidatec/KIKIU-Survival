@@ -5,7 +5,8 @@ extends RefCounted
 ##  - APERTO da ação "correr" (Shift/L3; em teste, `correr_forcado`) com o impulso pronto: por `dur` s o mecha VOA em `vel` px/s. A direção vira, a `giro` rad/s,
 ##    para onde as teclas de andar apontam, ou para a mira quando nenhuma está apertada. Soltar não para: o voo acaba sozinho no fim de `dur`, ao virar Lobo
 ##    (quebra ou Q) e em qualquer estado que não seja LIVRE, GOLPE ou HABILIDADE. A recarga (`recarga` s) começa quando o voo acaba. Aperto na recarga = negado.
-##  - FLUTUA: o desenho sobe `alt_px` px inteiros (sobe e desce em `subida` s), a sombra fica no chão; o clarão do cano e a boca das bolinhas sobem junto (Heroi.alt_px).
+##  - FLUTUA: o desenho sobe `alt_px` px inteiros (sobe e desce em `subida` s, com curva) e boia 1 px no topo; a sombra fica no chão, mas encolhe e clareia ao subir
+##    (Ator.ar); os propulsores nas costas (v2/propulsor.gd) acendem durante o voo, mais fortes na decolagem; o clarão do cano e a boca das bolinhas sobem junto (Heroi.alt_px).
 ##  - OBSTÁCULO BAIXO: objeto com largura de colisão até `larg_obstaculo` px não segura o mecha voando (v2/colisao.gd diz quais); se o voo acabar em cima de um,
 ##    o mecha segue passando por objetos baixos até sair de todos (sem pulo de empurrão). Os grandes seguram como sempre.
 ##  - POR CIMA DOS MONSTROS: o corpo do mecha não afasta ninguém (mundo.gd avisa os monstros com `por_cima`; o anel de cerco da IA segue com o raio real) e os empurrões que ele leva não o tiram da rota.
@@ -132,6 +133,8 @@ func encerrar(h) -> void:
 		return
 	h.imp_t = 0.0
 	h.imp_relogio = 0.0
+	if h.propulsor != null:
+		h.propulsor.esconder()  # os jatos nas costas somem com o voo
 	h.imp_recarga = float(cfg().get("recarga", 5.0)) if para(h) else float(h.imp_recarga_max)
 	h.imp_recarga_max = maxf(h.imp_recarga, 0.001)
 	h._imp_saindo = not Colisao.livre(h.pos, h.raio)
@@ -226,17 +229,34 @@ func _poeira(h, c: Dictionary, dt: float) -> void:
 		combate.poeira(h)
 
 
-## Px inteiros que o desenho do herói sobe agora: sobe em `subida` s no começo do voo e desce nos últimos `subida` s.
+## Px inteiros que o desenho do herói sobe agora: `alt_px` x a curva da subida, mais a FLUTUAÇÃO de `flutua_px` px (um seno lento, só no topo: sem
+## tremer, são 1 ou 2 degraus por segundo). Tudo em px inteiros; sem sorteio (a flutuação é função do relógio do voo).
 func alt(h) -> int:
-	return roundi(float(cfg().get("alt_px", 5)) * _subida(h))
+	var c := cfg()
+	var k := _subida(h)
+	var flutua := float(c.get("flutua_px", 1.0)) * sin(TAU * float(c.get("flutua_hz", 0.56)) * h.imp_relogio) * k * k
+	return roundi(float(c.get("alt_px", 14)) * k + flutua)
 
 
-## Quanto do voo está no ar agora (0 no chão, 1 lá em cima): sobe em `subida` s no começo e desce nos últimos `subida` s.
+## A força da chama dos propulsores (v2/propulsor.gd): 2 na decolagem (primeiros `propulsor.decolagem_s` s do voo), 0 na descida (últimos `subida` s), 1 no cruzeiro.
+func forca(h) -> int:
+	var c := cfg()
+	if h.imp_relogio < float(c.get("propulsor", {}).get("decolagem_s", 0.5)):
+		return 2
+	return 0 if h.imp_t < float(c.get("subida", 0.35)) else 1
+
+
+## Quanto do voo está no ar agora (0 no chão, 1 lá em cima), com curva: a decolagem arranca rápido e assenta no topo (ease-out), o pouso é suave dos dois
+## lados (smoothstep). Sobe em `subida` s no começo e desce nos últimos `subida` s.
 func _subida(h) -> float:
 	if h.imp_t <= 0.0:
 		return 0.0
-	var s := maxf(float(cfg().get("subida", 0.15)), 0.001)
-	return minf(clampf(h.imp_relogio / s, 0.0, 1.0), clampf(h.imp_t / s, 0.0, 1.0))
+	var s := maxf(float(cfg().get("subida", 0.35)), 0.001)
+	var sobe := clampf(h.imp_relogio / s, 0.0, 1.0)
+	var desce := clampf(h.imp_t / s, 0.0, 1.0)
+	if sobe <= desce:
+		return 1.0 - (1.0 - sobe) * (1.0 - sobe)
+	return desce * desce * (3.0 - 2.0 * desce)
 
 
 ## Px inteiros que a ORDEM DE DESENHO do mecha desce abaixo dos pés agora (Ator.ordem_px; o desenho e a física não mudam). No ar ele fica por
@@ -255,7 +275,7 @@ func ordem(h, dt := 0.0) -> int:
 	if o > 0 and mundo != null and mundo.get("cenario") != null:
 		var y0: float = h.pr.y
 		var meio_w := float(c.get("corpo_meia_larg", float(h.tipo.get("w", 0.0)) * 0.5))  # o corpo desenhado, não o quadro de 128 px da folha
-		var folga := float(c.get("vel", 0.0)) * float(h.m_vel_mov) * float(c.get("subida", 0.15))
+		var folga := float(c.get("vel", 0.0)) * float(h.m_vel_mov) * float(c.get("subida", 0.35))
 		var faixa := float(o)
 		for a in mundo.cenario.ativos:
 			if a.larg_col <= h._imp_larg:
@@ -269,7 +289,7 @@ func ordem(h, dt := 0.0) -> int:
 		o = maxi(o, 0)
 	o = maxi(o, 0)
 	if dt > 0.0:
-		var s := maxf(float(c.get("subida", 0.15)), 0.001)
+		var s := maxf(float(c.get("subida", 0.35)), 0.001)
 		var passo := ceili(maximo * dt / s) + 1
 		o = clampi(o, int(h.ordem_px) - passo, int(h.ordem_px) + passo)
 		if h.imp_t <= 0.0:

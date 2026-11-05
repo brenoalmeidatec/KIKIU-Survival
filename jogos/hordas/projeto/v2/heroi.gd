@@ -46,6 +46,7 @@ extends "res://v2/ator.gd"
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 const Foguinho := preload("res://v2/foguinho.gd")
+const Propulsor := preload("res://v2/propulsor.gd")  # os jatos nas costas do mecha no impulso
 const PixelRot := preload("res://v2/pixel_rot.gd")  # pixel art só gira em passos de 90 graus
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a invencibilidade vira tom fixo
 const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a defesa do escudo recarrega sozinha?
@@ -257,6 +258,7 @@ var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
 var morte_t := 0.0  # s de jogo desde a morte (só anda em _visual_morto, no dt do herói: hit-stop e pausa o congelam)
 var _mat_morte: ShaderMaterial = null
+var propulsor = null  # os jatos nas costas durante o impulso (v2/propulsor.gd): criado no primeiro voo; null antes
 var foguinho = null  # o brilho no peito (v2/foguinho.gd): só visual, sem colisão; `foguinho.no` é o Sprite2D
 
 
@@ -287,6 +289,9 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	imp_recarga_max = 0.0
 	imp_nega_t = 0.0
 	alt_px = 0
+	ar = 0.0
+	if propulsor != null:
+		propulsor.esconder()
 	_imp_saindo = false
 	escudo_ativo = false
 	escudo_t = 0.0
@@ -1495,11 +1500,17 @@ func _visual(dt: float, v: Vector2) -> void:
 			sprite.offset = _off_base
 		var imp = mundo.combate.impulso
 		alt_px = imp.alt(self) if imp != null else 0
+		ar = clampf(float(alt_px) / float(imp.cfg().get("alt_px", 14)), 0.0, 1.0) if imp != null and alt_px > 0 else 0.0  # a sombra no chão encolhe e clareia (v2/sombras.gd)
 		_ordenar(imp.ordem(self, dt) if imp != null else 0)
 		# o voo sobe o DESENHO em px inteiros (a sombra fica no chão) pelo offset; a posição do sprite desce ordem_px: é o y da ordem de desenho
 		# (com raiz.y_sort_enabled o sprite entra no y-sort do mundo pelo próprio y, v2/impulso.gd > ordem). No chão, ordem_px 0: tudo como antes.
 		sprite.position = desloca + Vector2(0.0, float(ordem_px))
 		sprite.offset = _off_base - Vector2(0.0, float(ordem_px + alt_px))
+		if imp != null and imp_t > 0.0:  # os jatos nas costas, no mesmo contrato do foguinho (abaixo)
+			if propulsor == null:
+				propulsor = Propulsor.new()
+				propulsor.montar(raiz)
+			propulsor.seguir(self, imp, sprite.position + sprite.offset - _off_base, sprite.position.y if raiz.y_sort_enabled else INF)
 	sprite.scale = Vector2.ONE
 	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:
