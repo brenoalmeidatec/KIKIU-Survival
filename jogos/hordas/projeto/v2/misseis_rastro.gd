@@ -6,7 +6,9 @@ extends RefCounted
 ## Grade de pixel: os puffs são quadradinhos de 2 a 4 px em posição inteira, sem rotação e SEM alfa parcial. Em vez de esmaecer, o puff vive em DEGRAUS: nasce pequeno e quente
 ## (2 px âmbar), vira fumaça clara (3 px), cresce até o cinza médio (4 px), segue 4 px num cinza escuro, encolhe para uma sobra mínima (3 px) e some inteiro. Cada degrau dura 1/5 de DUR e
 ## o puff sobe 1 px a cada dois degraus. DUR = 0,6 s de MUNDO = 0,48 s na tela (a partida anda a 1,25x).
-## "Reduzir piscadas": só os degraus cinza, 3 trocas em vez de 5, todas do claro para o escuro e nunca de volta (desbotar não é piscar); a chama do bocal é fixa em qualquer opção.
+## "Reduzir piscadas": o puff fica de UMA cor só (cinza médio, 4 px) e PARADO (não sobe) durante a vida inteira, sem degraus. Medido no desenho real (testes/v2_misseis_rastro.gd, `_piscadas`): com os degraus claro->escuro, a salva
+## reacendia as mesmas células perto do pod (puff novo claro sobre o antigo já escuro) e a célula trocava de luminância até 8 vezes em 1 s (teto 3), e mesmo com cor única os puffs das várias rajadas, que passam pelo mesmo caminho a cada ~0,3 s, ligavam e desligavam a célula a ~3 Hz
+## por causa da subida de 1 px (que tirava a borda do puff antes do próximo chegar); parado e de cor única o pior caso cai a 4 trocas (2 Hz, o teto da regra) em ~2% das células, um quadro apagado onde a vida do puff quase empata com a cadência da salva. A chama do bocal é fixa em qualquer opção.
 ## Perfil Baixo (efe_particulas <= 0,3): nenhum puff nasce (`adagas._fumaca`); fica só a chama do bocal, que é um desenho a mais do míssil e não uma partícula.
 
 const MAX := 128  # ~8 mísseis no ar x (0,6 s x 270 px/s / ESPACO) = ~16 puffs vivos cada: cabe; cheio, o próximo toma o lugar do mais antigo
@@ -17,7 +19,7 @@ const ATRAS := 18.0  # do centro da imagem (24 px) ao ponto onde o puff nasce: 1
 const DEGRAUS := 5
 const TAMANHOS := [2, 3, 4, 4, 3]
 const CORES := [Color(1.0, 0.78, 0.38), Color(0.9, 0.87, 0.84), Color(0.68, 0.65, 0.68), Color(0.46, 0.44, 0.5), Color(0.3, 0.28, 0.34)]
-const CALMO := [1, 1, 2, 2, 3]  # com "Reduzir piscadas": o degrau de CORES/TAMANHOS usado em cada degrau da vida (sem o âmbar, três trocas)
+const CALMO := [2, 2, 2, 2, 2]  # com "Reduzir piscadas": o degrau de CORES/TAMANHOS usado em cada degrau da vida (sempre o cinza médio: nem âmbar, nem claro, nem escuro)
 const CHAMA_NUCLEO := Color(1.0, 0.92, 0.55)
 const CHAMA_PONTA := Color(1.0, 0.5, 0.1)
 
@@ -73,7 +75,7 @@ func degrau(falta: float, calmo: bool) -> int:
 	return CALMO[d] if calmo else d
 
 
-func desenhar(no: Node2D, calmo: bool) -> void:
+func desenhar(no, calmo: bool) -> void:  # `no` é um Node2D (o corpo do adagas); sem tipo para o teste poder gravar os draw_rect de verdade
 	for i in MAX:
 		if resta[i] <= 0.0:
 			continue
@@ -81,7 +83,7 @@ func desenhar(no: Node2D, calmo: bool) -> void:
 		var e := degrau(resta[i], calmo)
 		var t: int = TAMANHOS[e]
 		var c: Color = CORES[e]
-		var p: Vector2 = pos[i] + Vector2(0.0, -float(d / 2))  # sobe 1 px a cada dois degraus da vida (inteiro: não mexe na grade)
+		var p: Vector2 = pos[i] if calmo else pos[i] + Vector2(0.0, -floorf(float(d) * 0.5))  # sobe 1 px a cada dois degraus da vida (inteiro: não mexe na grade); calmo: parado
 		match t:
 			2:
 				no.draw_rect(Rect2(p - Vector2(1, 1), Vector2(2, 2)), c)
@@ -95,7 +97,7 @@ func desenhar(no: Node2D, calmo: bool) -> void:
 
 ## A chama do bocal: um núcleo 2x2 colado na cauda da imagem e uma ponta de 1 px atrás dele, nos 16 ângulos do míssil. `centro` é o centro da imagem (inteiro), `dir` o vetor
 ## da direção quantizada do desenho. Fixa: nunca pisca nem muda com o tempo. Desenhada ANTES da imagem, que fica por cima e não perde leitura.
-static func chama(no: Node2D, centro: Vector2, dir: Vector2) -> void:
+static func chama(no, centro: Vector2, dir: Vector2) -> void:
 	var nuc := (centro - dir * 13.0).round()
 	no.draw_rect(Rect2(nuc - Vector2.ONE, Vector2(2, 2)), CHAMA_NUCLEO)
 	no.draw_rect(Rect2((centro - dir * 16.0).round(), Vector2.ONE), CHAMA_PONTA)

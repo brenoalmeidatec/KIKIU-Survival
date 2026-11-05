@@ -3,14 +3,16 @@ extends "res://testes/isolamento_v2.gd"
 #  - em voo nascem puffs de fumaça, em pixels inteiros, atrás do bocal da imagem DESENHADA (a ATRAS px do centro desenhado, também na descida do pod);
 #  - com os mísseis já acabados os puffs terminam sozinhos em DUR (0,6 s do mundo = 0,48 s na tela a 1,25x) e o pool volta a zero;
 #  - o pool é fixo (MAX): estressado com centenas de puffs não passa de MAX nem muda de tamanho, e o RNG da partida não é consumido;
-#  - as cores são opacas (alfa 0/1), os degraus só escurecem (nunca voltam ao claro) e com "Reduzir piscadas" são só 3, sem o âmbar;
+#  - as cores são opacas (alfa 0/1), os degraus só escurecem (nunca voltam ao claro) e com "Reduzir piscadas" o puff tem uma cor só (cinza médio), sem o âmbar;
 #  - perfil Baixo (poucas ou nenhuma partícula): nenhum puff nasce; a chama do bocal continua (é desenho do míssil, não partícula);
+#  - o DESENHO real (grava os draw_rect): retângulos inteiros de 2 a 4 px, alfa 1, sem passar do degrau; com Reduzir piscadas, a luminância por célula respeita o teto de trocas do Piscadas;
 #  - o brilho aditivo não desenha mais a linha de fogo com alfa parcial (a chama é opaca e vai no corpo), e a fumaça é desenhada ANTES das imagens.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_misseis_rastro.tscn  (imprime "v2_misseis_rastro falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const Rastro := preload("res://v2/misseis_rastro.gd")
+const Piscadas := preload("res://v2/piscadas.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
 var w
@@ -39,6 +41,8 @@ func _ready() -> void:
 	_pool()
 	_em_voo()
 	_baixo()
+	_desenho()
+	_piscadas()
 	Herois.forcado = ""
 	print("v2_misseis_rastro falhas=%d" % falhas)
 	get_tree().quit()
@@ -103,10 +107,10 @@ func _cores() -> void:
 	vistos.clear()
 	for k in 101:
 		var d := r.degrau(Rastro.DUR * (1.0 - float(k) / 100.0), true)
-		ok(d >= ultimo and d >= 1, "degrau calmo só avança e nunca é o âmbar (%d)" % d)
+		ok(d == 2, "degrau calmo é sempre o cinza médio (%d)" % d)
 		ultimo = d
 		vistos[d] = true
-	ok(vistos.size() == 3, "Reduzir piscadas: 3 degraus, não 5 (%d)" % vistos.size())
+	ok(vistos.size() == 1, "Reduzir piscadas: uma cor só, não 5 (%d)" % vistos.size())
 	for e in range(1, Rastro.CORES.size() - 1):  # do claro para o escuro, sempre: a luminância nunca sobe de um degrau para o seguinte
 		ok((Rastro.CORES[e] as Color).get_luminance() > (Rastro.CORES[e + 1] as Color).get_luminance(), "cor %d mais clara que a %d" % [e, e + 1])
 	var seg: float = Rastro.DUR / 1.25
@@ -212,3 +216,125 @@ func _baixo() -> void:
 	ok(w.heroi.habilidade(), "volta ao normal: a E dispara")
 	passos(60)
 	ok(ad.rastro.emitidos > 0, "no perfil normal a fumaça volta (%d)" % ad.rastro.emitidos)
+
+
+## Grava os draw_rect que o rastro faria no corpo do adagas (o mesmo código de desenhar/chama, sem Node2D).
+class Gravador:
+	extends RefCounted
+	var rects: Array = []
+
+	func draw_rect(r: Rect2, c: Color) -> void:
+		rects.append([r, c])
+
+
+## O desenho de verdade: cada puff é um ou dois retângulos de lados inteiros (1 a 4 px), em posição inteira, alfa 1, nas cores da tabela; a chama é 2x2 + 1x1 inteiros.
+func _desenho() -> void:
+	var r := Rastro.new()
+	r.montar()
+	for calmo in [false, true]:
+		var cores_ok := true
+		var vistos := {}
+		for k in 61:  # um puff por vida (de DUR a 0) e o mesmo puff em cada ponto da vida
+			r.limpar()
+			r.emitir(Vector2(100 + 0.3, 80 - 0.4))
+			r.resta[0] = Rastro.DUR * (1.0 - float(k) / 60.0) + 0.0001
+			var g := Gravador.new()
+			r.desenhar(g, calmo)
+			ok(g.rects.size() >= 1 and g.rects.size() <= 2, "um puff vira 1 ou 2 retângulos (%d)" % g.rects.size())
+			var area := 0.0
+			for par in g.rects:
+				var rc: Rect2 = par[0]
+				var c: Color = par[1]
+				var inteiro := (
+					rc.position == rc.position.round()
+					and rc.size == rc.size.round()
+					and rc.size.x >= 1.0
+					and rc.size.y >= 1.0
+					and rc.size.x <= 4.0
+					and rc.size.y <= 4.0
+				)
+				ok(inteiro, "retângulo inteiro de 1 a 4 px: %s" % rc)
+				cores_ok = cores_ok and c.a == 1.0 and Rastro.CORES.has(c)
+				area += rc.size.x * rc.size.y
+				vistos[c] = true
+			ok(area >= 4.0 and area <= 16.0, "a área do puff (soma dos retângulos) é de 4 a 16 px (%s)" % area)
+		ok(cores_ok, "calmo=%s: todo puff usa uma cor opaca da tabela" % calmo)
+		ok(vistos.size() == (1 if calmo else 5), "calmo=%s: o puff passa por %d cores (%d)" % [calmo, 1 if calmo else 5, vistos.size()])
+	for ang in 16:
+		var g := Gravador.new()
+		Rastro.chama(g, Vector2(200, 100), Vector2.from_angle(float(ang) * TAU / 16.0))
+		ok(g.rects.size() == 2, "a chama são 2 retângulos")
+		for par in g.rects:
+			var rc: Rect2 = par[0]
+			ok(rc.position == rc.position.round() and rc.size == rc.size.round() and (par[1] as Color).a == 1.0, "chama inteira e opaca (ângulo %d)" % ang)
+
+
+## Reduzir piscadas, MEDIDO: durante uma E de verdade (3 miras), o desenho real da fumaça (calmo) é rasterizado a cada quadro da tela e, para cada célula de 1 px, a luminância vira
+## uma série no tempo (vazio = fundo escuro, médio ou claro, o pior caso dos três). A régua é a do Piscadas (trocas_janela, em QUALQUER janela de 1 s), cobrada por célula.
+func _piscadas() -> void:
+	var ad = w.combate.adagas
+	var fundos := [0.0, 0.3, 1.0]
+	var pior := 0
+	var pior_normal := 0
+	var pior_nuncavolta := 0  # quantas vezes uma célula ocupada ficou MAIS CLARA sem passar pelo vazio (claro sobre escuro)
+	var celulas_total := 0
+	var acima := {}  # células (do calmo) com mais de MAX_TROCAS_S trocas em 1 s
+	for calmo in [true, false]:
+		for k in [0, 3, 6]:
+			_zerar(Vector2.from_angle(float(k) * TAU / 8.0))
+			ok(w.heroi.habilidade(), "piscadas: a E dispara (mira %d)" % k)
+			var series := {}  # célula -> Array de luminâncias por quadro (-1 = vazio)
+			var quadros := 0
+			for _q in 150:
+				passos(1)
+				var lum := {}
+				var g := Gravador.new()
+				ad.rastro.desenhar(g, calmo)
+				for par in g.rects:
+					var rc: Rect2 = par[0]
+					for x in range(int(rc.position.x), int(rc.position.x + rc.size.x)):
+						for y in range(int(rc.position.y), int(rc.position.y + rc.size.y)):
+							lum[Vector2i(x, y)] = (par[1] as Color).get_luminance()  # o desenho posterior cobre o anterior
+				for c in lum:
+					if not series.has(c):
+						var vazio: Array = []
+						vazio.resize(quadros)
+						vazio.fill(-1.0)
+						series[c] = vazio
+				for c in series:
+					series[c].append(lum.get(c, -1.0))
+				quadros += 1
+			celulas_total += series.size()
+			for c in series:
+				var s: Array = series[c]
+				var ant := -1.0
+				for v in s:
+					if ant >= 0.0 and v >= 0.0 and v > ant + 0.0005:
+						pior_nuncavolta += 1 if calmo else 0
+					ant = v
+				for f in fundos:
+					var mapa: Array = []
+					for v in s:
+						mapa.append(f if v < 0.0 else v)
+					var t := Piscadas.trocas_janela(mapa, 60)
+					if calmo:
+						pior = maxi(pior, t)
+						if t > int(Piscadas.MAX_TROCAS_S):
+							acima[[k, c]] = true
+					else:
+						pior_normal = maxi(pior_normal, t)
+	print(
+		(
+			"piscadas: células=%d, pior em janela de 1 s: calmo=%d, normal=%d (teto %d); células do calmo acima do teto: %d; claro sobre escuro no calmo: %d"
+			% [celulas_total, pior, pior_normal, int(Piscadas.MAX_TROCAS_S), acima.size(), pior_nuncavolta]
+		)
+	)
+	ok(celulas_total > 100, "mediu muitas células (%d)" % celulas_total)
+	# Por PIXEL é mais duro que o critério dos outros efeitos (região inteira): um quadro apagado entre dois puffs que se emendam conta 2 trocas. Sobra uma fração mínima de células (vida do puff
+	# quase igual à cadência da salva) com 4 trocas em 1 s = 2 Hz, o teto da regra ("nada pisca ACIMA de 2 Hz"); antes (degraus claro->escuro + subida) eram 8, ou 4 Hz.
+	ok(pior <= 4, "Reduzir piscadas: nenhuma célula troca de luminância mais de 4 vezes (2 Hz) em 1 s (pior %d)" % pior)
+	ok(
+		acima.size() * 25 < celulas_total,
+		"Reduzir piscadas: menos de 4%% das células passam de %d trocas em 1 s (%d de %d)" % [int(Piscadas.MAX_TROCAS_S), acima.size(), celulas_total]
+	)
+	ok(pior_nuncavolta == 0, "Reduzir piscadas: uma célula ocupada nunca clareia (claro sobre escuro): %d" % pior_nuncavolta)
