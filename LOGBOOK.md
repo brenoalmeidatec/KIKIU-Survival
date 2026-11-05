@@ -2963,6 +2963,30 @@ _Claude do Alisson (notebook)_
 - **CI da 1ª rodada:** quebrou a `v2_oclusao`, porque os monstros de teste são Dictionary e não têm `esc`, e a `v2_golpes_visuais`, que esperava o sprite ampliado 2x. As duas foram corrigidas. A `armas_novas` ("runas machucou os inimigos", dano 0) falhou uma vez no CI e passou no PC: parece instável. Se voltar a falhar, investigar.
 - **Pendente:** coroa e gemas do chefão desenhadas por código em blocos grossos (`chefe_visual.gd`), fora da grade de 1 px; dragão aliado e golem colosso sem folha grande; 2ª rodada da varredura (katana, HUD Q/E, armas, partículas). Ninguém jogou em movimento.
 
+## 2026-11-04: impactos das armas no estilo do pixelfx (Claude do Breno, PC do trabalho)
+- **Feito:** cinco impactos novos (Bola de Fogo, Raio, Adagas, Cometa Gelado, Chuva de Pedras), em `gerar_pixelfx.py`, `pfx_*_impacto.png` e `indice_pixelfx.json`. No código, só o grupo `"pixelfx"` em `Anim.GRUPOS`; tirar essa palavra volta tudo. Guia: `docs/visual_2_5d/estilo_pixelfx.md`. Teste novo: `v2_fx_armas_pixelfx` (9 falhas sem o grupo, 0 com ele).
+- **FPS:** `v2/fps_pixelfx_{antes,depois}.txt`, `--build=tudo`, perfil Baixo, 160 atores. Deu 10 fps nos dois, mas o número parece preso em 10 nesta máquina sem GPU; a mediana do render foi de 87,6 para 87,7 ms.
+- **Pendente:** aprovação do Breno; ninguém jogou em movimento. O PC do Breno não foi medido.
+- **Para o Claude do Alisson:** mexi em `v2/anim_golpes.gd` (uma palavra) a pedido do Breno, para levar o estilo às armas. Se ele aprovar, o próximo passo é tirar as camadas antigas por cima da folha nova em `armas.explodir` e `_cair_raio`, que são da sua área. Pode cruzar com o #618 só nessa linha, se ela mudar lá.
+
+## 2026-11-04 (tarde): estilo pixelfx em todas as armas (Claude do Breno, PC do trabalho)
+- **Feito:** a pedido do Breno, 89 folhas `pfx_*` cobrem impactos, explosões, anéis, nuvens e auras das armas e fusões, com física (gravidade, quique, atrito, empuxo). As camadas antigas por cima saíram de `armas.gd`, `armas_novas.gd`, `golem.gd` e `andante.gd`. `tocar_fx` ganhou `flip` e `cor`. Folhas sem arma usam ids `fx_*`.
+- **FPS:** `v2/fps_pixelfx_{antes,depois}.txt`, `--build=tudo`, perfil Baixo: mediana do render de 87,6 para 67,7 ms e chamadas de desenho de 1165 para 900. O FPS ficou em 10 nos dois, número que parece preso nesta máquina sem GPU.
+- **Pendente:** ninguém jogou em movimento; o PC do Breno não foi medido.
+- **Para o Claude do Alisson:** mexi em código da sua área a pedido do Breno, e pode cruzar com #615 e #618 em `armas.gd`. `fx.explosao` e `fumaca_impacto` seguem existindo, com menos chamadas.
+
+## 2026-11-04 (noite): pixelfx em quase tudo e status no corpo (Claude do Breno, PC do trabalho)
+- **Feito:** fogo, gelo, veneno, choque e sangue no shader do sprite (`v2/status_corpo.gd`), cobrindo a silhueta. Trilhas, marcas, acerto da katana, morte, dano no herói, cura e traço do raio no estilo; partículas com gravidade e quique. Guia atualizado em `docs/visual_2_5d/estilo_pixelfx.md`.
+- **Juízo Final:** não havia travamento; os quadros repetidos eram erro na minha montagem.
+- **FPS:** `docs/visual_2_5d/fps_pixelfx_{antes,depois}.txt`, mediana do render 87,6 ms antes e 78,2 ms depois. As medições saíram de `v2/` porque essa pasta entra no export.
+- **Pendente:** cortes da katana, menus e HUD. Ninguém jogou; o PC do Breno não foi medido.
+- **Para o Claude do Alisson:** `horda.gd` agora usa o alfa da instância para o status. `fx_status` não prende mais chama.
+
+## 2026-11-04 (noite, 2): katana, fusão e HUD no pixelfx (Claude do Breno, PC do trabalho)
+- **Feito:** folhas `corte_pfx*` (a partir das do Blender), `fx_fusao`, `fx_queda_heroi`, faíscas de rastro nos projéteis que giram e `v2/fx_ui.gd` no letreiro, na ultimate e na barra de nível. Status conferido na tela em monstro com nó (cena `status_elite` de `testes/fotos/golpes_gif`).
+- **Pendente:** tela de título e menus não mudaram. Status em chefe usa o mesmo código da elite, sem captura própria.
+- **Para o Claude do Alisson:** a troca de `corte_hazaki` por `corte_pfx` em `efeitos.gd` e `v2_pixel_rotacao.gd` cruza com o #611.
+
 **Números de dano empilhados (01/11/2026, alisson/numeros-dano):** nas capturas do LightWolf (lw_3_misseis, lw_4_salto) os números se amontoavam sobre o herói e o mecha. Causa: em `v2/efeitos.gd > numero` cada acerto abria um número novo, e um míssil e a explosão dele, ou uma salva num bando em volta do herói, davam 6 a 14 números no mesmo quadro, quase no mesmo ponto (só um sorteio de ±12 px). Conserto no lugar único por onde todos passam: acertos da mesma cor e tamanho que pedem lugar a menos de 30 x 20 px de um número nascido há menos de 0,3 s se SOMAM nele (soma exata; o dano de jogo não muda, `usados.numeros` segue contando os pedidos e `usados.somados` os que entraram na soma); o que não soma sobe 14 px (até 3 vezes) se cairia em cima de outro número recente. Não soma: `exato` (armas_novas já agrupa por monstro), texto não numérico e cura ("+"). Nada novo em dados/ (o arquivo de efeitos usa constantes). Teste novo `testes/v2_numeros_dano.tscn` (falha 7 vezes na main, 0 no branch) e linha em tempos_testes.txt; regressões v2_cabaca, v2_combate, v2_ruptura, v2_especial, v2_habilidade, v2_herois, v2_dificuldade, v2_piscadas e v2_sentinela com `falhas=0`. Fotos em notas/o9_previas/numeros (antes: numeros_antes). Pendente: olhar em jogo real, com combate longo, se somar a 0,3 s esconde demais o ritmo dos acertos (ajuste: NUM_JUNTA_* no topo de efeitos.gd).
 
 **Números de dano, correção da CI (01/11/2026, Claude do Alisson, notebook):** a CI do #597 reprovou o `v2_partida` (baú/roleta, 6 falhas), que passa na main e no #598. Causa: quando o número entrava na soma, o `numero()` retornava sem chamar `randf_range()`, e isso mudava a sequência do `randf()` global de que o jogo e os testes dependem. Agora o sorteio de lado acontece antes da soma, para todo número. Pela fila: v2_partida, v2_numeros_dano e v2_combate com falhas=0. Continua sem merge (mudança visual, espera o Alisson).

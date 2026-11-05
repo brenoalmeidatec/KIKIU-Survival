@@ -38,23 +38,23 @@ const FOLHAS := {
 	"anel": [preload("res://assets/v2/efeitos/efeito_anel_folha.png"), 18.0],
 	"espiral": [preload("res://assets/v2/efeitos/efeito_espiral_folha.png"), 12.0],
 }
-const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
-const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
+const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_pfx.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
+const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_pfx_ciano.png")  # variante: so a energia ciano, 12 quadros
 # o corte so gira em 16 direcoes (passos de 22,5 graus): 0, 90, 180 e 270 sao a mesma folha com o UV trocado no shader, e os outros tres
 # angulos de cada folha (22,5, 45 e 67,5) vem prontos, girados com RotSprite (fonte_arte/blender_corte/girar_corte.py), sem pixel solto
 const CORTE_DIRECOES := 16
 const FOLHAS_CORTE_GIRADAS := [
 	[
 		FOLHA_CORTE,
-		preload("res://assets/v2/efeitos/corte_hazaki_r1.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_r2.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_r3.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_r1.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_r2.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_r3.png"),
 	],
 	[
 		FOLHA_CORTE_CIANO,
-		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r1.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r2.png"),
-		preload("res://assets/v2/efeitos/corte_hazaki_ciano_r3.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_ciano_r1.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_ciano_r2.png"),
+		preload("res://assets/v2/efeitos/corte_pfx_ciano_r3.png"),
 	],
 ]
 const PixelRot := preload("res://v2/pixel_rot.gd")
@@ -232,6 +232,7 @@ var fator_part := 1.0  # opção "partículas" da aba Gráficos (0 a 1)
 # partículas
 var p_pos := PackedVector2Array()
 var p_vel := PackedVector2Array()
+var p_chao := PackedFloat32Array()  # o y em que a partícula com peso bate e quica
 var p_vida := PackedFloat32Array()
 var p_max := PackedFloat32Array()
 var p_tam := PackedFloat32Array()
@@ -344,6 +345,7 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	camada.add_child(txt)
 	p_pos.resize(MAX_PART)
 	p_vel.resize(MAX_PART)
+	p_chao.resize(MAX_PART)
 	p_vida.resize(MAX_PART)
 	p_max.resize(MAX_PART)
 	p_tam.resize(MAX_PART)
@@ -612,7 +614,7 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 			var aa := ang + lerpf(-meio, meio, (float(k) + _rng.randf()) / float(n))
 			var pt := origem + Vector2.from_angle(aa) * alcance * _rng.randf_range(0.8, 1.15)
 			var tang := Vector2.from_angle(aa + PI * 0.5 * lado) * _rng.randf_range(40.0, 110.0)
-			particula(pt, tang, _rng.randf_range(0.3, 0.55), _rng.randf_range(10.0, 16.0), Color(claro.r, claro.g, claro.b, 0.95), -24.0, true)
+			particula(pt, tang, _rng.randf_range(0.22, 0.4), 2.0, Color(claro.r, claro.g, claro.b, 0.95), 300.0)
 		_corte_eco(origem, ang, alcance * ECO_ESCALA, arco_graus * 1.1, lado, Color(claro.r * 0.75, claro.g * 0.75, claro.b * 0.75), dur * 0.9)
 		var ponta := origem + Vector2.from_angle(ang + meio * lado) * alcance * 0.95  # onde o arco termina: a estrela que pisca no fim da varrida
 		folha("estrela", ponta, alcance * 0.45, claro, dur * 0.8)
@@ -859,6 +861,7 @@ func particula(pos: Vector2, vel: Vector2, vida: float, tam: float, cor: Color, 
 		p_ativas += 1
 	p_pos[i] = pos
 	p_vel[i] = vel
+	p_chao[i] = pos.y + 8.0 + float(i & 7)  # sem sorteio: o enfeite não mexe no RNG da partida
 	p_vida[i] = vida
 	p_max[i] = vida
 	p_tam[i] = tam
@@ -880,9 +883,7 @@ func faiscas(pos: Vector2, dir: Vector2, n: int, cor: Color, vel := 170.0, desen
 		var tam := 2.0 if randf() < 0.6 else 3.0
 		var tinta := cor.lerp(Color.WHITE, randf() * 0.6)
 		if desenhar:
-			particula(pos, v, vida, tam, tinta, 120.0)
-	if desenhar:
-		particula(pos, Vector2.ZERO, 0.11, 22.0, Color(1, 0.95, 0.8, 0.9), 0.0, true)
+			particula(pos, v, vida, tam, tinta, 420.0)
 
 
 ## O estouro da morte do monstro: ossos/cinzas para todo lado e almas que sobem.
@@ -896,16 +897,13 @@ func estouro(pos: Vector2, cor: Color, n: int, desenhar := true) -> void:
 		var tam := 2.0 if randf() < 0.7 else 3.0
 		var tinta := cor.lerp(Color(0.85, 0.85, 0.8), randf() * 0.7)
 		if desenhar:
-			particula(pos, v, vida, tam, tinta, 150.0)
+			particula(pos, v, vida, tam, tinta, 420.0)
 	for i in maxi(2, roundi(5 * fator_part)):
 		var origem := pos + Vector2(randf_range(-5, 5), randf_range(-4, 2))
 		var vel := Vector2(randf_range(-14, 14), randf_range(-30, -12))
 		var vida := randf_range(0.45, 0.8)
 		if desenhar:
 			particula(origem, vel, vida, 9.0, Color(0.5, 0.9, 1.0, 0.6), -20.0, true)
-	if desenhar:
-		particula(pos, Vector2.ZERO, 0.16, 34.0, Color(1, 0.9, 0.75, 0.85), 0.0, true)
-		onda(pos, Color(1, 0.9, 0.8, 0.8), 26.0, 0.18)
 
 
 func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:
@@ -1052,6 +1050,9 @@ func atualizar(dt: float) -> void:
 			var vel := p_vel[i]
 			vel.y += p_sobe[i] * dt
 			vel *= exp(-3.0 * dt)
+			if p_sobe[i] > 0.0 and vel.y > 0.0 and p_pos[i].y >= p_chao[i]:  # bate, perde energia e o atrito segura
+				vel.y *= -0.4
+				vel.x *= 0.6
 			p_vel[i] = vel
 			p_pos[i] += vel * dt
 	# números
