@@ -264,7 +264,7 @@ func _t_tiro() -> void:
 
 
 ## Pior caso do pool (adagas.MAX): velocidade de ataque no alto (5 cartas de +15% e o ÁPICE x1,5 dão ~2,1), nível no teto do alcance, sem
-## alvo (nenhuma bolinha acaba cedo) e a E (12 mísseis) junto. Nenhuma carta do LightWolf soma projéteis (chuva e mira são do Luke e cia.).
+## alvo (nenhuma bolinha acaba cedo) e a E (24 mísseis em 3,75 s; o canhão para durante ela e volta depois) junto. Nenhuma carta do LightWolf soma projéteis (chuva e mira são do Luke e cia.).
 func _t_pool() -> void:
 	zerar()
 	var h = w.heroi
@@ -273,7 +273,7 @@ func _t_pool() -> void:
 	h.nivel = 40
 	var maior := 0
 	h.ataque_forcado = true
-	for i in 240:
+	for i in 420:  # 0,33 s de canhão, os 3,75 s da E e 2,9 s de canhão de novo (eram 240 quadros com a E de 0,9 s)
 		if i == 20:
 			h.habilidade()
 		w.avancar(PASSO)
@@ -281,8 +281,11 @@ func _t_pool() -> void:
 	h.ataque_forcado = false
 	print("v2_lightwolf medido: pool pior caso %d de %d" % [maior, ad.MAX])
 	ok(ad.lancadas > 100, "o pior caso atirou de verdade (%d projéteis)" % ad.lancadas)
-	# se o pool enchesse, `_livre` tomaria a vaga de um projétil ainda em voo; com 3/4 de teto isso não chega perto de acontecer
-	ok(maior > 20 and maior <= ad.MAX * 3 / 4, "pior caso cabe no pool com folga (%d de %d em voo)" % [maior, ad.MAX])
+	# se o pool enchesse, `_livre` tomaria a vaga de um projétil ainda em voo; com 3/4 de teto isso não chega perto de acontecer.
+	# O piso (o teste estressou de verdade) era > 20 com a E de 0,9 s (21 medido): a E de 3,75 s espalha os mísseis (~8 no ar) e o mecha não atira
+	# durante ela, então o pico agora é o do canhão sozinho (20 medido em 05/11, determinístico: o piso é o medido, sem folga para baixo); o teto,
+	# que é o que protege o pool, não mudou.
+	ok(maior >= 20 and maior <= ad.MAX * 3 / 4, "pior caso cabe no pool com folga (%d de %d em voo)" % [maior, ad.MAX])
 	h.m_vel_ataque = 1.0
 	h.nivel = 1
 

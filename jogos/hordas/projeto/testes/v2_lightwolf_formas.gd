@@ -115,8 +115,8 @@ func _t_dados() -> void:
 	ok(int(c.heroi.vel) == 130 and int(c.heroi.recuo_dano) == 150, "Lobo: vel 130 e recuo 150")
 	var p: Dictionary = c.golpe.passos[0]
 	ok(
-		c.golpe.passos.size() == 1 and str(p.proj) == "plasma" and float(p.dano) == 34.0 and int(p.perfura) == 3,
-		"Lobo: pistola de plasma, dano 34, atravessa 3"
+		c.golpe.passos.size() == 1 and str(p.proj) == "plasma" and float(p.dano) == 16.0 and int(p.perfura) == 3,
+		"Lobo: pistola de plasma, dano 16, atravessa 3"
 	)
 	var esp: Dictionary = Dados.json("v2_especial")
 	ok(str(esp.herois.get("lightwolf_lobo", "")) == "chamar" and esp.has("chamar"), "o Q do Lobo é o CHAMAR")
@@ -163,7 +163,25 @@ func _t_quebra() -> void:
 	passos(60)
 	h.ataque_forcado = false
 	var tiros: int = c.adagas.lancadas - antes
-	ok(tiros >= 3 and tiros <= 4, "pistola: ~3 tiros por segundo (%d em 1 s)" % tiros)
+	ok(tiros >= 7 and tiros <= 8, "pistola rápida (05/11): ~7,5 tiros por segundo, 2,6x os 2,86 de antes (%d em 1 s)" % tiros)
+	# DPS do Lobo no alvo único a 60 px (o alvo fica parado no lugar, sem atordoar; com crítico e variação): ~128 medido (16 x 7,5/s); era ~100 (34 x 2,86/s)
+	passos(30)
+	var alvo = w.nascer_monstro("inimigo_espantalho", h.pos + Vector2(60, 0), false)
+	alvo.vida = 99999.0
+	alvo.vida_max = 99999.0
+	var dano0: float = c.dano_causado
+	h.invenc = 99.0
+	h.ataque_forcado = true
+	for i in 120:
+		w.avancar(PASSO)
+		alvo.atordoa_t = 0.0
+		alvo.pos = h.pos + Vector2(60, 0)
+	h.ataque_forcado = false
+	passos(30)
+	h.invenc = 0.0
+	var dps: float = (c.dano_causado - dano0) / 2.0
+	print("v2_lightwolf_formas medido: Lobo dps=%.1f (tiros/s=%d)" % [dps, tiros])
+	ok(dps >= 112.0 and dps <= 170.0, "DPS do Lobo no alvo único ~128, era ~100 (%.1f): mais que o mecha (~57), com 40 de vida" % dps)
 	var negados: int = h.esp_negados
 	ok(not h.especial() and h.esp_negados == negados + 1, "chamar sem a carga cheia é negado")
 

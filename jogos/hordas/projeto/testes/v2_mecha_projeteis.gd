@@ -593,6 +593,72 @@ func boca_e_velocidade() -> void:
 	ok(e.bocas_emitidas == 0 and e.bocas_ativas() == 0, "reiniciar limpa os clarões de boca")
 
 
+## O TRAÇANTE da bolinha (05/11/2026, "acho que rastros"): uma linha contínua de pixels inteiros atrás da bolinha, pelo caminho desenhado, nascendo na boca e
+## crescendo até ~20 px (2 px de espessura perto da bolinha); no perfil Baixo, curto (<= 6 px) e fino. O rastro antigo era 6 pixels soltos em linha reta.
+func tracante() -> void:
+	zerar()
+	var h = w.heroi
+	var c = w.combate
+	var ad = c.adagas
+	ok(ad.TRACO >= 16 and ad.TRACO_BAIXO <= 6, "traçante de %d px (Baixo %d)" % [ad.TRACO, ad.TRACO_BAIXO])
+	for ang in 8:
+		var dir := Vector2.from_angle(float(ang) * PI / 4.0)
+		var um: Dictionary = c.cfg.golpe.passos[0].duplicate(true)
+		um.n = 1
+		um.leque = 0
+		ad.limpar()
+		c.golpear(h, h.pos + h.ORIGEM_GOLPE, dir, um, 0)
+		var boca: Vector2 = ad._pos_visual(0)
+		var pv0: Vector2 = boca.round()
+		ok(ad._tracar(0, pv0, false) == 0, "direção %d: no quadro do disparo não há traço atrás do cano" % ang)
+		ad.atualizar(PASSO)
+		ad.atualizar(PASSO)
+		var pv: Vector2 = ad._pos_visual(0).round()
+		var voado: float = ad.a_visual_dist[0]
+		ok(
+			ad._pos_visual_em(0, voado).distance_to(boca) < 1.5,
+			"direção %d: o caminho desenhado volta à boca (%.2f px)" % [ang, ad._pos_visual_em(0, voado).distance_to(boca)]
+		)
+		var n: int = ad._tracar(0, pv, false)
+		var px := {}
+		for k in n:
+			var q: Vector2 = ad._traco_px[k]
+			ok(q == q.round(), "direção %d: pixel do traço em posição inteira" % ang)
+			px[Vector2i(q)] = true
+		# contínuo: todo pixel do traço se liga (vizinhança de 8) à bolinha desenhada (o losango de raio 2 em volta de pv), sem furo no meio
+		var aberto: Array = []
+		var visto := {}
+		for dx in range(-2, 3):
+			for dy in range(-2, 3):
+				if absi(dx) + absi(dy) <= 2:
+					var b := Vector2i(pv) + Vector2i(dx, dy)
+					visto[b] = true
+					aberto.append(b)
+		var ligados := 0
+		while not aberto.is_empty():
+			var a: Vector2i = aberto.pop_back()
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					var v := a + Vector2i(dx, dy)
+					if px.has(v) and not visto.has(v):
+						visto[v] = true
+						ligados += 1
+						aberto.append(v)
+		var soltos := 0
+		for v in px:
+			if not visto.has(v):
+				soltos += 1
+		ok(soltos == 0 and ligados > 0, "direção %d: o traço é contínuo e encosta na bolinha (%d pixels soltos)" % [ang, soltos])
+		var baixo: int = ad._tracar(0, pv, true)
+		ok(px.size() >= 16, "direção %d: traço de ~20 px com a parte grossa (%d pixels)" % [ang, px.size()])
+		ok(baixo >= 1 and baixo <= ad.TRACO_BAIXO and baixo < px.size() - 10, "direção %d: perfil Baixo, traço curto e fino (%d px)" % [ang, baixo])
+		# fim da vida: o traço encurta (alfa fica 0/1) em vez de esmaecer; sem vida, some
+		var metade: int = ad._tracar(0, pv, false, 0.5)
+		ok(metade >= 1 and metade < n * 3 / 4, "direção %d: no fim da vida o traço encurta (%d de %d px)" % [ang, metade, n])
+		ok(ad._tracar(0, pv, false, 0.0) == 0, "direção %d: sem vida, sem traço" % ang)
+	ad.limpar()
+
+
 ## Regressão (revisão do PR #620): o clarão ficava PRESO NO MUNDO onde o tiro saiu. Andando e atirando (~72 px/s), a boca anda ~23 px entre dois tiros do mesmo
 ## braço: o tiro novo nunca renovava o clarão velho, abria outra vaga, e com "Reduzir piscadas" ficavam até 3 discos âmbar parados atrás do mecha, com tiros saindo
 ## sem brilho (vagas cheias). Agora: no máximo UM clarão por braço, sempre no pixel da boca desenhada (h.pr + a boca da folha arredondada), em todos os quadros,
@@ -804,10 +870,12 @@ func _ready() -> void:
 		ok(lado_ok, "todas as bolinhas do braço %d saem do lado dele" % idx)
 	zerar()
 	var hab: Dictionary = Dados.json("v2_habilidade").misseis
-	ok(int(hab.n) == 12 and is_equal_approx(float(hab.dur), 0.9), "a E mantém doze mísseis em 0,9 s")
+	ok(int(hab.n) == 24 and is_equal_approx(float(hab.dur), 3.75), "a E solta vinte e quatro mísseis em 3,75 s do mundo (3 s na tela)")
 	h.habilidade()
 	passos(55)
-	ok(ad.lancadas == 12, "a E real lança exatamente doze mísseis")
+	ok(ad.lancadas >= 5 and ad.lancadas <= 7, "aos 0,9 s a E ainda está atirando (%d de 24)" % ad.lancadas)
+	passos(180)
+	ok(ad.lancadas == 24, "a E real lança exatamente vinte e quatro mísseis")
 	for i in ad.MAX:
 		if ad.a_rest[i] > 0.0:
 			ok(ad.a_vel[i] == float(hab.vel), "velocidade do míssil preservada")
@@ -860,6 +928,7 @@ func _ready() -> void:
 	estalos_rajada()
 	boca_e_velocidade()
 	boca_andando()
+	tracante()
 	boca_virando()
 	var reduzir: bool = Config.reduzir_piscadas
 	Config.reduzir_piscadas = true

@@ -47,7 +47,17 @@ const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px,
 const PROJ_PADRAO := "adaga"
 const VISUAL_DIST := 60.0  # deslocamento da boca projetada converge para a trajetória lógica
 const VISUAL_DUR := 0.2
-const RASTRO_BOLINHA := [0.9, 0.7, 0.5, 0.35, 0.2, 0.1]  # alfa de cada pixel do rastro da bolinha do mecha, do mais perto ao mais longe (6 px: a 840 px/s ela anda ~14 px por quadro)
+## O TRAÇANTE da bolinha do mecha (pedido do Alisson de 05/11/2026: "ainda falta algo, acho que rastros"): uma linha de pixels inteiros atrás da bolinha, pelo mesmo
+## caminho DESENHADO dela (a descida da boca ao chão, `_pos_visual_em`), com TRACO px (a 840 px/s ela anda ~14 px por quadro: o traço cobre ~1,4 quadro de voo e as
+## rajadas viram riscos, não pontos). Cores opacas, do quente ao escuro (TRACO_CORES, da cabeça para a cauda); os primeiros TRACO_GROSSO px ganham um segundo pixel ao lado
+## (2 px de espessura perto da bolinha, 1 px na cauda: afina). Nasce na boca e cresce com o voo (nunca desenha atrás do cano). Perfil Baixo (efe_particulas <= 0,3):
+## TRACO_BAIXO px, fino, o mesmo tamanho do rastro antigo. Contínuo: não pisca. Só desenho no `no_corpo`, sem nó e sem sorteio.
+const TRACO := 20
+const TRACO_BAIXO := 6
+const TRACO_GROSSO := 8
+const TRACO_INICIO := 3  # começa fora do contorno do losango (raio 2)
+const TRACO_CORES := [Color(1.0, 0.98, 0.82), Color(1.0, 0.86, 0.42), Color(1.0, 0.66, 0.2), Color(0.9, 0.42, 0.1), Color(0.62, 0.24, 0.06)]
+const TRACO_BUF := 2 * (TRACO + TRACO_GROSSO) + 2  # teto de pixels de um traçante (na descida da boca o desenho anda até ~2 px por px de chão)
 const NUM_RAJADAS := 16  # rajadas com número já mostrado lembradas ao mesmo tempo (no máximo ~9 rajadas/s x ~0,6 s de voo em voo juntas)
 
 var combate
@@ -78,6 +88,8 @@ var a_grupo := PackedInt64Array()  # arremesso principal; tamanho fixo MAX, sem 
 var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina desse grupo
 var a_rajada := PackedInt64Array()  # o lancar da rajada com `numero_rajada` (0 = cada acerto mostra o seu número, o normal)
 var _grupo := 0
+var _traco_px := PackedVector2Array()  # buffer fixo do traçante (TRACO_BUF), reaproveitado por bolinha
+var _traco_cor := PackedInt32Array()
 var _num_rajadas := PackedInt64Array()  # anel das rajadas que já mostraram o número (veja o cabeçalho)
 var _num_i := 0
 var _pausa_recarga := 0.0
@@ -115,6 +127,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_registrar("missil", _img_missil(), 24.0, 9.0)
 	misseis_visual.montar()
 	estalos.montar()
+	_traco_px.resize(TRACO_BUF)
+	_traco_cor.resize(TRACO_BUF)
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
 	a_vel.resize(MAX)
@@ -633,6 +647,7 @@ func _pausar_grupo(i: int) -> void:
 func _desenhar_corpo() -> void:
 	if misseis_visual.ativas() > 0:
 		misseis_visual.desenhar(no_corpo, float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3)
+	var baixo := float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3 if mundo != null and mundo.has_method("_nivel_particulas") else false
 	for i in MAX:
 		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
@@ -643,10 +658,7 @@ func _desenhar_corpo() -> void:
 			no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)  # o giro do projétil anterior não vale aqui
 			no_corpo.draw_rect(Rect2((p + Vector2(-2, 6)).round(), Vector2(5, 1)), Color(0, 0, 0, 0.3 * fade))  # sombra da largura da bolinha
 			var pv := _pos_visual(i).round()
-			var cor: Color = a_cor[i]
-			for k in RASTRO_BOLINHA.size():  # o rastro: um pixel inteiro por passo atrás da bolinha, apagando (a direção sem girar nada)
-				var q := (pv - (a_dir[i] as Vector2) * float(k + 3)).round()  # começa fora do contorno (raio 2 do losango)
-				no_corpo.draw_rect(Rect2(q, Vector2.ONE), Color(cor.r, cor.g, cor.b, RASTRO_BOLINHA[k] * fade))
+			_tracante(i, pv, fade, baixo)
 			no_corpo.draw_texture(e.tex, pv - Vector2(2, 2), Color(1, 1, 1, fade))
 			continue
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
@@ -701,7 +713,7 @@ func _img_adaga() -> Texture2D:
 ## A bolinha da rajada do canhão do LightWolf: losango 5x5 px, miolo branco puro, cruz âmbar e contorno marrom quase preto de 1 px.
 ## O contorno é o que a separa do chão de pedra iluminado de laranja (âmbar sobre âmbar sumia na captura da rodada 2); a cor de arma do
 ## herói continua âmbar, como pede o DESIGN. Simétrica de propósito: é desenhada sem giro (`_bolinha`), então fica sempre na grade de 1 px;
-## o rastro (RASTRO_BOLINHA) mostra a direção.
+## o traçante (TRACO, `_tracante`) mostra a direção.
 func _img_bala() -> Texture2D:
 	var im := Image.create(5, 5, false, Image.FORMAT_RGBA8)
 	var contorno := Color(0.16, 0.08, 0.03)
@@ -796,12 +808,57 @@ func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -
 
 
 func _pos_visual(i: int) -> Vector2:
+	return _pos_visual_em(i, 0.0)
+
+
+## Onde o desenho do projétil `i` estava `atras` px de voo antes de agora (0 = agora): a mesma conta de `_pos_visual`, com a distância e o tempo
+## daquele ponto (a bolinha anda reto no chão, a vel constante); o traçante usa para seguir a curva da descida da boca em vez de uma reta.
+func _pos_visual_em(i: int, atras: float) -> Vector2:
+	var chao: Vector2 = a_pos[i] - (a_dir[i] as Vector2) * atras
 	if a_visual_compr[i] <= 0.0:
-		return a_pos[i]
-	var k := clampf(minf(1.0 - a_visual_dist[i] / a_visual_compr[i], a_visual_t[i] / VISUAL_DUR), 0.0, 1.0)
+		return chao
+	var t_vis := a_visual_t[i] + (atras / a_vel[i] if a_vel[i] > 0.0 else 0.0)
+	var k := clampf(minf(1.0 - (a_visual_dist[i] - atras) / a_visual_compr[i], t_vis / VISUAL_DUR), 0.0, 1.0)
 	if a_visual_compr[i] >= VISUAL_DIST:
 		k = k * k * (3.0 - 2.0 * k)
-	return a_pos[i] + a_visual_offset[i] * k
+	return chao + a_visual_offset[i] * k
+
+
+## O traçante da bolinha `i` desenhada em `pv` (já arredondada): pixels inteiros pelo caminho desenhado, das cores quentes às escuras, 2 px de espessura
+## perto da bolinha e 1 px na cauda; só o comprimento já voado (nasce na boca). Perfil Baixo: TRACO_BAIXO px, fino. No fim da vida (`fade` < 1) o
+## traço ENCURTA em vez de esmaecer: os pixels ficam sempre opacos (alfa 0/1 da grade de pixel).
+func _tracante(i: int, pv: Vector2, fade: float, baixo: bool) -> void:
+	for k in _tracar(i, pv, baixo, fade):
+		no_corpo.draw_rect(Rect2(_traco_px[k], Vector2.ONE), TRACO_CORES[_traco_cor[k]])
+
+
+## Monta em `_traco_px` / `_traco_cor` (buffers fixos, reaproveitados: nada aloca por quadro) os pixels do traçante da bolinha `i` desenhada em `pv`;
+## devolve quantos. `corte` (0 a 1, o `fade` da bolinha) encurta o traço no fim da vida. Separado do desenho para o teste medir sem renderizar.
+func _tracar(i: int, pv: Vector2, baixo: bool, corte := 1.0) -> int:
+	var compr := int(float(mini(TRACO_BAIXO if baixo else TRACO, int(a_visual_dist[i]))) * clampf(corte, 0.0, 1.0))
+	var n := 0
+	if compr <= TRACO_INICIO:
+		return 0
+	var dir: Vector2 = a_dir[i]
+	var lado := Vector2(0, 1) if absf(dir.x) >= absf(dir.y) else Vector2(1, 0)  # o segundo pixel fica de lado ao eixo principal do voo
+	var agora := _pos_visual(i)
+	var ultimo := pv
+	var n_cor := TRACO_CORES.size()
+	for meio in range(TRACO_INICIO * 2, compr * 2 + 1):  # passo de meio px de chão: na descida da boca o desenho anda mais que o chão, e o traço não fura
+		var d := meio >> 1
+		var q := (_pos_visual_em(i, float(meio) * 0.5) - agora).round() + pv  # relativo à bolinha desenhada: o traço encosta nela
+		if q == ultimo or n + 2 > TRACO_BUF:
+			continue
+		ultimo = q
+		var ci := mini(n_cor - 1, (d - TRACO_INICIO) * n_cor / maxi(1, compr - TRACO_INICIO + 1))
+		_traco_px[n] = q
+		_traco_cor[n] = ci
+		n += 1
+		if not baixo and d < TRACO_INICIO + TRACO_GROSSO:
+			_traco_px[n] = q + lado
+			_traco_cor[n] = ci
+			n += 1
+	return n
 
 
 ## Boca já além do contato ou alvo tardio: não desenha uma volta para trás. A física segue e o desenho volta ao alcançar a última posição.
