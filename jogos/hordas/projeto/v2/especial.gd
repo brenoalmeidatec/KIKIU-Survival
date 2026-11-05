@@ -1097,11 +1097,13 @@ func casco_visivel() -> bool:
 	return _id == "autodestruicao" and _fase == 0 and not _g_tipo.is_empty() and h != null and h.estado == h.Estado.ESPECIAL
 
 
-## O aviso de autodestruição está aceso agora? Liga e desliga a `alerta.hz` (tempo do mundo; dados abaixo de 2 Hz no relógio); com "Reduzir piscadas", aceso parado.
+## O aviso de autodestruição está aceso agora? Liga e desliga a `alerta.hz` por segundo de RELÓGIO (o `_t` do mundo dividido pelo ritmo da partida,
+## combate.velocidade: mexer em velocidade_partida não leva o aviso acima de 2 Hz); com "Reduzir piscadas", aceso parado.
 func casco_alerta() -> bool:
 	if not casco_visivel():
 		return false
-	return Piscadas.ligado() or Piscadas.pisca(_t, float(_c.alerta.hz))
+	var vel := maxf(float(combate.velocidade), 0.01) if combate != null else 1.0
+	return Piscadas.ligado() or Piscadas.pisca(_t / vel, float(_c.alerta.hz))
 
 
 ## O mecha vazio no fusível (no nó do mundo, blend normal, y-sort com os atores): o quadro do instante do aperto, OPACO (a arte é alfa 0/1, modulação de alfa 1), na
