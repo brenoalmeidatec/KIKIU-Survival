@@ -26,3 +26,6 @@ Chama (`burning`, `queima_t`), relógio (`slowed`, `lento_t`) e estrelas (`stunn
 
 ## Clima por mapa (`v2/clima.gd`)
 Os efeitos de `weather` e o `scifi/glitch` não entram como folha (são gigantes): a lógica foi portada para código e desenhada em espaço de tela, com quantidade fixa, num CanvasLayer 1 do mundo (acima do cenário, abaixo do brilho dos projéteis). Quais efeitos cada mapa tem, e quantos, fica em `dados/v2_clima.json` (o `_ajuda` de lá explica os campos). Perfil Baixo desliga tudo; Médio usa metade; o glitch segue "Tremor e clarões". Teste: `testes/v2_clima.tscn`.
+
+## Impactos das armas
+Os impactos das armas no estilo do pixelfx não passam pelo `fx_folha`: são folhas de `assets/v2/armas_anim/` (`indice_pixelfx.json`), tocadas por `armas_novas.tocar_fx`. Guia: `docs/visual_2_5d/estilo_pixelfx.md`.

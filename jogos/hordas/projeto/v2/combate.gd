@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const ApiceTela := preload("res://v2/apice_tela.gd")
 const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
+const StatusCorpo := preload("res://v2/status_corpo.gd")
 const FxFolha := preload("res://v2/fx_folha.gd")  # folhas do pixelfx (docs/PIXELFX.md)
 const FxStatus := preload("res://v2/fx_status.gd")  # chama, relógio e estrelas sobre quem queima, está lento ou atordoado
 const Orbes := preload("res://v2/orbes.gd")
@@ -54,6 +55,8 @@ var mundo
 var cfg: Dictionary = {}
 var fx
 var apice_tela  # varredura reutilizável do ÁPICE; anel no mundo e luz na UI, sem criar nós ao ganhar bônus
+var _marcas: Dictionary = Dados.json("v2_pixelfx").get("marcas", {})  # arma -> status que ela deixa no corpo (só desenho)
+var _marca_dur := float(Dados.json("v2_pixelfx").get("marca_dur", 0.6))
 var fx_folha  # folhas do pixelfx em pool fixo (v2/fx_folha.gd): os módulos de status e coleta tocam por aqui
 var fx_status  # os status visíveis (v2/fx_status.gd): acha quem queima, está lento ou atordoado e prende o efeito do fx_folha
 var orbes
@@ -702,7 +705,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, COR_CRIT, m)
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
 		fx.flash(m, 0.1)
-		fx.folha("estrela", ponto, 15.0 if crit else 11.0, cor, 0.14)  # camada 1: a centelha de 2 quadros em todo acerto
+		armas.novas.tocar_fx(Anim.de("fx_aliado").get("impacto", {}), ponto, 1.0, false, 1.0, cor)  # camada 1: a cruz de acerto
 		if crit or pancada or passo.nome == "estocada":  # camada 2: a marca branca sustentada só no golpe forte
 			fx.flash(m, 0.45, Color.WHITE, 3)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
@@ -743,8 +746,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 func _estouro_chao(h, alc: float, passo: Dictionary) -> void:
 	var cor := _cor(passo.cor)
 	var p: Vector2 = h.pos + Vector2(0, -2)
-	fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), alc, 0.3)
-	fx.onda(p, Color(1, 1, 1, 0.6), alc * 0.6, 0.2)
+	armas.novas.tocar_fx(Anim.de("fx_pancada").get("impacto", {}), p)
 	fx.estouro(p, Color(0.75, 0.68, 0.55), 12)
 	fx.luz_rapida(p + Vector2(0, -6), cor, 1.8, alc * 2.6, 0.3)
 	audio.tocar("impacto", 0.5, 2.0, 0.05)
@@ -768,6 +770,7 @@ func matar(m, leve := false) -> void:
 	if leve:  # morte da limpeza da tela: só uma fração das partículas (são dezenas de mortes juntas)
 		parts *= _lp_part
 	fx.estouro(c, Color(0.9, 0.9, 0.85), roundi(parts))
+	armas.novas.tocar_fx(Anim.de("fx_morte").get("impacto", {}), m.pos)
 	audio.tocar("morte", randf_range(0.9, 1.12) * (0.7 if grande else 1.0), -1.0, 0.03)
 	mundo.abates += 1
 	mundo.combo += 1
@@ -784,7 +787,7 @@ func matar(m, leve := false) -> void:
 		elites.ao_morrer(m)
 	if m.chefe:
 		mundo.cam.tremer(4.0, 0.4)
-		fx.onda(m.pos, Color(1.0, 0.9, 0.7, 0.9), 120.0, 0.6)
+		armas.novas.tocar_fx(Anim.de("fx_fusao").get("impacto", {}), m.pos, 2.0, false, 1.0, Color(1.0, 0.9, 0.7))
 		hit_stop(0.25)
 	mundo.devolver_monstro(m)
 	if m.chefe:
@@ -881,6 +884,9 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	especial.dano(util)
 	contar_dano(fonte_dano, util)
 	ferimentos += 1
+	var marca: String = _marcas.get(fonte_dano, "")
+	if marca != "":
+		m.marcar(StatusCorpo.ESTADOS[marca], _marca_dur)
 	dano_causado += dn
 	if numero:
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, critico)
@@ -1014,6 +1020,7 @@ func heroi_apanhou(valor: float) -> void:
 	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
+	armas.novas.tocar_fx(Anim.de("fx_dano_heroi").get("impacto", {}), h.pos + Vector2(0, -16))
 	audio.tocar("dano_heroi", randf_range(0.95, 1.05), 0.0, 0.05)
 	hit_stop(0.06)
 
@@ -1021,7 +1028,7 @@ func heroi_apanhou(valor: float) -> void:
 func heroi_morreu() -> void:
 	var h = mundo.heroi
 	audio.tocar("derrota", 1.0, 0.0, 0.0)
-	fx.onda(h.pos + Vector2(0, -10), Color(1.0, 0.4, 0.35, 0.9), 60.0, 0.5)
+	armas.novas.tocar_fx(Anim.de("fx_queda_heroi").get("impacto", {}), h.pos)
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
 	jogo = "morrendo"
@@ -1035,8 +1042,6 @@ func heroi_morreu() -> void:
 func nivel_subiu(nivel: int) -> void:
 	var h = mundo.heroi
 	audio.tocar("nivel", 1.0, 0.0, 0.0)
-	fx.onda(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0, 0.95), 110.0, 0.45)
-	fx.onda(h.pos + Vector2(0, -12), Color(1.0, 0.95, 0.7, 0.8), 70.0, 0.3)
 	fx.luz_rapida(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0), 1.8, 190.0, 0.5)
 	fx.flash(h, 0.3, Color(0.7, 1.0, 1.0), 0, 0.8)
 	fx_folha.tocar("level-up", h.pos)  # a coluna de luz do pixelfx nos pés do herói (sem o texto da folha: só os primeiros quadros)
@@ -1063,7 +1068,6 @@ func onda_forte(numero: int) -> void:
 func elite_apareceu(nome: String, m, cor: Color) -> void:
 	mundo.elite_apareceu.emit(nome)
 	audio.tocar("elite", 1.0, 0.0, 0.1)
-	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 70.0, 0.5)
 
 
 func chefe_apareceu(m, mk: Dictionary) -> void:
@@ -1072,7 +1076,6 @@ func chefe_apareceu(m, mk: Dictionary) -> void:
 	mundo.chefe_apareceu.emit(str(mk.nome), float(mk.vida))
 	anunciar(str(a.texto).replace("{nome}", str(mk.nome)), cor)
 	audio.tocar("chefe", 0.7, 0.0, 0.3)
-	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 110.0, 0.7)
 	mundo.cam.tremer(3.0, 0.4)
 
 
@@ -1084,11 +1087,9 @@ func evolucao_feita(ev: Dictionary) -> void:
 	audio.tocar("evolucao", 1.0, 0.0, 0.0)
 	hit_stop(FUSAO_PARADA_S)  # um instante parado e a câmera lenta: a fusão precisa ser lida, não passar voando
 	camera_lenta("fusao", FUSAO_LENTA_S, FUSAO_ESCALA)
-	fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.95), 130.0, 0.6)
-	fx.onda(h.pos + Vector2(0, -12), Color(1, 1, 1, 0.8), 80.0, 0.4)
+	armas.novas.tocar_fx(Anim.de("fx_fusao").get("impacto", {}), h.pos, 1.0, false, 1.0, cor)
 	fx.luz_rapida(h.pos + Vector2(0, -12), cor, 2.4, 240.0, 0.7)
 	fx.flash(h, 0.4, cor, 0, 0.9)
-	fx.estouro(h.pos + Vector2(0, -16), cor, 20)
 	mundo.cam.tremer(3.0, 0.3)
 
 
@@ -1121,8 +1122,7 @@ func _apice_executar() -> void:
 	audio.tocar("evolucao", 1.2, 0.0, 0.0)
 	var centro: Vector2 = h.pos + Vector2(0, -12)
 	apice_tela.iniciar(centro, mundo.cam.retangulo(), cor, dourado, A.tela, _perfil_baixo())
-	fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), 150.0, 0.7)
-	fx.onda(centro, Color(dourado.r, dourado.g, dourado.b, 0.8), 96.0, 0.45)
+	armas.novas.tocar_fx(Anim.de("fx_fusao").get("impacto", {}), centro, 1.0, false, 1.0, dourado)
 	if not _perfil_baixo():
 		fx.luz_rapida(centro, dourado, 1.8, 220.0, 0.6)
 		fx.estouro(h.pos + Vector2(0, -16), dourado, 24)

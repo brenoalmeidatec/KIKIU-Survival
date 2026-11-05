@@ -1,5 +1,6 @@
 extends RefCounted
-## Status visíveis sobre o monstro (e sobre o herói, quando é ele quem sofre): chama (queima_t), relógio (lento_t) e estrelas (atordoa_t),
+## Ícones de status sobre o monstro (e sobre o herói, quando é ele quem sofre): relógio (lento_t) e estrelas (atordoa_t). O fogo não é ícone: toma o
+## corpo inteiro pelo shader do sprite (v2/status_corpo.gd). Os ícones são
 ## tocados por `combate.fx_folha` (v2/fx_folha.gd, folhas em dados/v2_pixelfx.json). O jogo só tem estes três status; congelado, envenenado e
 ## sangrando não existem como mecânica e por isso não têm efeito aqui.
 ## O monstro comum é desenhado em lote e não tem nó, então o efeito prende numa âncora: um Node2D de um pool fixo (MAX_MONSTROS, criado na
@@ -14,7 +15,7 @@ const FOGO := 0
 const LENTO := 1
 const ATORDOA := 2
 const IDS := ["burning", "slowed", "stunned"]
-const LIMITE := [6, 4, 4]  # efeitos por tipo, somando os monstros (o herói lento fica de fora: usa o 8 do registro)
+const LIMITE := [0, 6, 6]  # efeitos por tipo, somando os monstros (o herói lento fica de fora: usa o 8 do registro)
 const ATORDOA_MIN := 0.4  # só vale atordoamento longo (muralha, batida, escudo perfeito); o corte comum de 0,3 s não acende estrelas
 const FATIAS := 6  # a lista de monstros é varrida inteira em ~6 quadros
 
@@ -80,7 +81,6 @@ func atualizar(_dt: float) -> void:
 func _passo(i: int, fx) -> void:
 	var m = _m[i]
 	var viva: bool = m.vivo and not m.morrendo and m.ativo  # fora da tela não se desenha: solta, e a varredura pega de volta ao voltar
-	_ajustar(i, FOGO, viva and m.queima_t > 0.0, fx)
 	_ajustar(i, LENTO, viva and m.lento_t > 0.0, fx)
 	# o atordoamento começa só se for longo, mas continua até acabar (não pisca quando o resto passa de 0,4 s para baixo)
 	_ajustar(i, ATORDOA, viva and m.atordoa_t > 0.0 and (_alca[i * 3 + ATORDOA] != 0 or m.atordoa_t >= ATORDOA_MIN), fx)
@@ -148,10 +148,9 @@ func _varrer() -> void:
 		var m = ms[_cursor]
 		if not m.vivo or m.morrendo or not m.ativo:
 			continue
-		var quer_fogo: bool = m.queima_t > 0.0 and _cont[FOGO] < LIMITE[FOGO]
 		var quer_lento: bool = m.lento_t > 0.0 and _cont[LENTO] < LIMITE[LENTO]
 		var quer_atordoa: bool = m.atordoa_t >= ATORDOA_MIN and _cont[ATORDOA] < LIMITE[ATORDOA]
-		if not (quer_fogo or quer_lento or quer_atordoa) or _m.has(m):
+		if not (quer_lento or quer_atordoa) or _m.has(m):
 			continue
 		var v := _m.find(null)
 		if v < 0:
