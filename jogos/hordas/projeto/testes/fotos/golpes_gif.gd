@@ -13,6 +13,11 @@ const Heroi := preload("res://v2/heroi.gd")
 const PASSO := 1.0 / 60.0
 const RECORTE := Vector2i(220, 160)
 const CENAS := [
+	"status",
+	"status_elite",
+	"hud",
+	"fusao",
+	"morte",
 	"corte",
 	"estocada",
 	"combo",
@@ -137,6 +142,56 @@ func _cena(nome: String) -> void:
 	_zerar()
 	var n := 36
 	match nome:
+		"status":  # fogo, gelo, veneno, choque e sangue tomando o corpo, com os bichos andando
+			_monstros(5)
+			var k := 0
+			for m in w.monstros:
+				m.atordoa_t = 0.0
+				m.lento_t = 0.0
+				m.cacador = true
+				match k:
+					0:
+						m.queimar(1.0, 99.0)
+					1:
+						m.deixar_lento(99.0)
+					2:
+						m.marcar(3, 99.0)
+					3:
+						m.marcar(4, 99.0)
+					4:
+						m.marcar(5, 99.0)
+				k += 1
+			n = 40
+		"status_elite":  # os status em quem tem nó (elite e chefe), por outro caminho de desenho
+			_monstros(3)
+			var e := 0
+			for m in w.monstros:
+				m.virar_no()
+				m.atordoa_t = 0.0
+				m.cacador = true
+				match e:
+					0:
+						m.queimar(1.0, 99.0)
+					1:
+						m.deixar_lento(99.0)
+					2:
+						m.marcar(4, 99.0)
+				e += 1
+			n = 30
+		"hud":  # o letreiro e o anel do slot da ultimate (captura a interface, não o mundo)
+			w.combate.anunciar("TESTE DO LETREIRO", Color(1.0, 0.8, 0.3))
+			n = 14
+		"fusao":  # a onda da fusão e a queda do herói
+			w.combate.evolucao_feita(_ev("juizo_final"))
+			n = 26
+		"morte":  # a morte dos monstros e a cura do herói
+			_monstros(5)
+			for m in w.monstros:
+				m.vida = 1.0
+			_golpe("raio", 3)
+			w.heroi.vida = 10.0
+			w.heroi.curar(20.0)
+			n = 30
 		"corte":
 			_monstros(3)
 			w.heroi.ataque_forcado = true
@@ -235,9 +290,9 @@ func _cena(nome: String) -> void:
 	for i in n:
 		passos(2)
 		await RenderingServer.frame_post_draw
-		var img: Image = w.sv.get_texture().get_image()
+		var img: Image = (w.ui if nome == "hud" else w.sv).get_texture().get_image()
 		var tam := img.get_size()
-		var centro := Vector2i(tam.x / 2 + 30, tam.y / 2 - 26)
+		var centro := Vector2i(tam.x / 2, 170) if nome == "hud" else Vector2i(tam.x / 2 + 30, tam.y / 2 - 26)
 		var r := Rect2i(centro - RECORTE / 2, RECORTE).intersection(Rect2i(Vector2i.ZERO, tam))
 		img.get_region(r).save_png(dir.path_join("q%03d.png" % i))
 	w.heroi.ataque_forcado = null

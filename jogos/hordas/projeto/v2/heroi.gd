@@ -77,6 +77,7 @@ const CENTRO_CORPO := Vector2(0, -20)  # do pé ao meio do corpo (mira e câmera
 const ORIGEM_GOLPE := Vector2(0, -10)  # de onde o arco do golpe parte (altura do tronco, no chão do 2.5D)
 
 # ---- API pública (HUD)
+var _cura_fx := 0
 var vida := 100.0
 var vida_max := 100.0:
 	set(v):
@@ -511,8 +512,15 @@ func vulneravel() -> bool:
 	return not (estado == Estado.ESQUIVA and esq_t < esq_inv)
 
 
+## `_cura_fx`: as curas pequenas e seguidas (roubo de vida, regeneração) tocam o efeito no máximo a cada 0,4 s.
 func curar(v: float) -> void:
+	var ganhou := vida < vida_max
 	vida = minf(vida_max, vida + v)
+	var agora := Time.get_ticks_msec()
+	if ganhou and v > 0.0 and agora >= _cura_fx and mundo != null and mundo.combate != null and mundo.combate.armas != null:
+		_cura_fx = agora + 400
+		var c = mundo.combate
+		c.armas.novas.tocar_fx(c.Anim.de("fx_cura").get("impacto", {}), pos)
 
 
 ## O que a vida máxima tem a mais que a do começo (cartas, melhorias, Santuário). No Lobo conta a vida do MECHA (+20 da carta é +20, não a fração dele).

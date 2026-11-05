@@ -98,7 +98,7 @@ func checar_folhas() -> void:
 					ok(tex.get_size() == esperado, "%s/%s mede n x quadro (%s, esperado %s)" % [nome, an, tex.get_size(), esperado])
 				n += 1
 			for arma in d.folhas[nome].armas:
-				ok(existe(str(arma)), "%s serve %s, que existe nos dados" % [nome, arma])
+				ok(existe(str(arma)) or str(arma).begins_with("fx_"), "%s serve %s, que existe nos dados" % [nome, arma])  # fx_*: efeito solto, sem carta
 	ok(n >= 83, "as folhas dos 4 grupos (%d animações)" % n)
 	var ids := ["bola_fogo", "adagas_voadoras", "meteoro_flamejante", "chuva_pedras", "onda_choque", "nuvem_veneno", "laminas"]
 	ids += ["corvos", "revoada_de_trovoes", "runa", "circulo_runico", "raio", "aura_fogo", "anel_de_brasas", "ventania", "onda", "fura"]
@@ -288,7 +288,7 @@ func checar_perigo() -> void:
 	passos(25)
 	ok(novas().impactos == imp0 and w.heroi.vida == v0, "nada toca nem fere antes do disparo")
 	passos(10)
-	ok(novas().impactos == imp0 + 2, "a pedra e o estouro tocam a folha no disparo (%d)" % (novas().impactos - imp0))
+	ok(novas().impactos == imp0 + 3, "a pedra, o estouro e o sangue do herói tocam a folha no disparo (%d)" % (novas().impactos - imp0))
 	ok(w.heroi.vida < v0, "o dano do aviso saiu no mesmo instante")
 	w.heroi.imortal = true
 

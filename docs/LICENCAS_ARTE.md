@@ -268,3 +268,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Pixel de um tamanho só: filtros e escala (alisson/pixel-filtros-ui)
 
 - Nenhuma arte nova nem de terceiros. O coração do curandeiro (`jogos/hordas/projeto/v2/ritmo.gd`) passa a usar `jogos/hordas/projeto/assets/v2/icones_cartas/16/vida.png`, que já estava no repositório (derivado de `icones_cartas/vida.png`, folhas próprias de ícones registradas acima), em 1:1, em vez de `icones_cartas/vida.png` (32x32) a escala 0,5. A mancha dos pés das sombras (`v2/sombras.gd`) é gerada por código (3 degraus de alfa), sem arquivo. Licença: a do projeto.
+
+## Impactos das armas no estilo do pixelfx, Claude do Breno, 04/11/2026
+
+- `jogos/hordas/projeto/assets/v2/armas_anim/pfx_*.png`: desenhos novos gerados por `jogos/hordas/fonte_arte/armas_anim/gerar_pixelfx.py`. Nenhuma imagem de terceiros. As receitas de simulação e de desenho são adaptadas do pixelfx (https://github.com/patch-gg/pixelfx, licença MIT conferida em 04/11/2026, Copyright (c) 2026 Patch e Copyright (c) 2026 Hugo Duprez), com o crédito no cabeçalho do script. A fonte Patch Pixel não é usada.
