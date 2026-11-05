@@ -268,7 +268,7 @@ func _separadores() -> void:
 			_seps_est.append(a.raiz.position.y)
 		_seps_est.sort()
 	_seps = _seps_est.duplicate()
-	_seps.append(mundo.heroi.raiz.position.y)
+	_seps.append(mundo.heroi.y_ordem())  # o y da ORDEM do herói: voando no impulso ele desce abaixo dos pés (v2/impulso.gd > ordem)
 	for m in mundo.monstros:
 		if not m.lote:
 			_seps.append(m.raiz.position.y)

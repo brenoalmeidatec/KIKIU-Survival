@@ -54,6 +54,8 @@ extends RefCounted
 ##                         objeto BAIXO do mapa (lápide, runa, crânio, braseiro, caixa de oferenda, rocha, pedras ou poste: o de caminho mais limpo), com 8 monstros de
 ##                         vida alta em fila à direita; aperta o Shift e atira para a direita: voa 3 s por cima da fila e do objeto, depois fica 1,7 s parado (o slot
 ##                         do Shift em recarga) e sai. Imprime IMPULSO a cada 0,25 s (x, alt_px, toques, vida do 1º monstro) e IMPQ a cada quadro (o mecha na tela).
+##   --roteiro=impulso_ordem (com --heroi=lightwolf; ~6,5 s) a ordem de desenho do mecha no ar: voa por cima de uma fila um pouco mais para baixo na tela,
+##                         raspa por trás do tronco de uma árvore e pousa em cima de outra fila; depois 2 s na recarga. Imprime IMPO a cada quadro.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -180,6 +182,8 @@ func atualizar(dt: float) -> void:
 				_r_lw_q()
 			"impulso":
 				_r_impulso()
+			"impulso_ordem":
+				_r_impulso_ordem()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -569,6 +573,7 @@ func _r_lw_q() -> void:
 const IMP_BAIXOS := ["lapide", "runa", "cranio", "braseiro", "caixa_oferenda", "rocha", "pedras", "poste_lanterna"]
 var imp_fila: Array = []  # o roteiro impulso: os monstros da fila
 var imp_log_t := 0.0
+var imp_arvore = null  # o roteiro impulso_ordem: a árvore em que o voo raspa
 
 
 func _r_impulso() -> void:
@@ -636,6 +641,95 @@ func _r_impulso() -> void:
 				% [mundo.t, h.pos.x, h.pos.y, h.alt_px, h.imp_t, h.imp_recarga, mundo.combate.impulso.toques, v1]
 			)
 		)
+
+
+## Roteiro impulso_ordem: a ordem de desenho do mecha no ar (rodada 5). Uma árvore do mapa (objeto grande, o de caminho mais limpo) a 420 px à direita
+## do mecha, que fica 14 px acima do pé dela; entre os dois, uma fila de 4 monstros 8 a 22 px mais para baixo na tela; e uma segunda fila onde o voo
+## acaba (o pouso em cima dela). Aperta o Shift sem atirar: voa por cima da 1ª fila, raspa na árvore (por trás do tronco) e pousa na 2ª fila; depois
+## fica 2 s parado (o "x.x S" da recarga na HUD) e sai. Imprime IMPO a cada quadro: quadro, o mecha na tela, alt_px, ordem_px, o pé da árvore na tela, a recarga, frente=<monstros da fila
+## encostando no corpo desenhado do mecha e ordenados NA FRENTE dele> e sil=<alfa da silhueta de oclusão>.
+func _r_impulso_ordem() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			var arvore = null
+			var melhor := INF
+			var centro: Vector2 = mundo.limite_andavel.get_center()
+			for o in mundo.cenario.objetos:
+				var lc: float = float(o.get("larg_col")) if o.get("larg_col") != null else 99.0  # código antigo (sem larg_col): só a altura
+				if lc <= 22.0 or o.alt <= 100.0:
+					continue
+				var faixa := Rect2(o.pos + Vector2(-480, -80), Vector2(980, 160))
+				var n := 0
+				for q in mundo.cenario.objetos:
+					if q != o and faixa.has_point(q.pos):
+						n += 1
+				var nota: float = float(n) * 10000.0 + o.pos.distance_to(centro)
+				if nota < melhor:
+					melhor = nota
+					arvore = o
+			imp_arvore = arvore
+			var base: Vector2 = arvore.pos + Vector2(-420, -14) if arvore != null else h.pos
+			print("IMPO arvore=%s em %s" % [str(arvore.chave) if arvore != null else "nenhuma", str(arvore.pos) if arvore != null else "-"])
+			h.definir_pos(base)
+			mundo.cam.cravar(base)
+			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+			imp_fila.clear()
+			var lugares := []
+			for i in 4:
+				lugares.append(base + Vector2(50.0 + 34.0 * float(i), 8.0 + 14.0 * float(i % 2)))
+			for i in 6:
+				lugares.append(base + Vector2(600.0 + 34.0 * float(i), 8.0 + 14.0 * float(i % 2)))
+			for i in lugares.size():
+				var m = mundo.nascer_monstro("inimigo_cao_ossos" if i % 2 == 0 else "inimigo_aranha_tecela", lugares[i], false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				m.atordoa_t = 999.0
+				m.recarga = 999.0
+				imp_fila.append(m)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo >= 0.6:
+				h.correr_forcado = true
+				passo = 2
+				t_passo = 0.0
+		2:
+			h.correr_forcado = false
+			if h.imp_t <= 0.0 and t_passo > 0.5:
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo >= 2.0:
+				mundo.get_tree().quit()
+				return
+	var rel: Vector2 = h.pr - mundo.cam.centro_base()
+	var pe_arv: Vector2 = (imp_arvore.pos - mundo.cam.centro_base()) if imp_arvore != null else Vector2.ZERO
+	# quantos monstros da fila, encostando no corpo desenhado do mecha, saem NA FRENTE dele no y-sort (fatia da horda acima do y de ordem do herói)
+	var y_h: float = h.raiz.position.y + (h.sprite.position.y if h.raiz.y_sort_enabled else 0.0)
+	var corpo: Rect2 = mundo.oclusao._corpo(h.pos - Vector2(0.0, float(h.alt_px)), h.tipo, 1.0)
+	var frente := 0
+	for m in imp_fila:
+		if float(m.chave_y) > y_h and corpo.intersects(mundo.oclusao._corpo(m.pos, m.tipo, float(m.esc))):
+			frente += 1
+	print(
+		(
+			"IMPO %d %.1f %.1f %d %d %.1f %.1f %.2f frente=%d sil=%.2f"
+			% [
+				Engine.get_frames_drawn(),
+				rel.x,
+				rel.y,
+				h.alt_px,
+				int(h.get("ordem_px")) if h.get("ordem_px") != null else 0,
+				pe_arv.x,
+				pe_arv.y,
+				h.imp_recarga,
+				frente,
+				mundo.oclusao.alfa()
+			]
+		)
+	)
 
 
 ## A posição de um clarão de boca recém-aceso (restam pelo menos metade dos 0,1 s) a 20 px ou mais de `longe` (Vector2.INF = qualquer um); Vector2.INF se não há.

@@ -20,6 +20,7 @@ const ESPACO_CARD := 2.0
 const TAM_IMP := Vector2(70.0, 74.0)  # o card do impulso: mais estreito, para o nó (x 585 a 954 na tela) não encostar na barra de XP (que acaba em x 580)
 const X_E := TAM_IMP.x + ESPACO_CARD  # onde começa o card E (o do impulso fica antes dele)
 const COR_IMP := Color(0.75, 0.95, 1.0)  # o azul claro do mecha (o mesmo de v2/mecha.gd)
+const TEXTO_RECARGA_IMP := Paleta.TEXTO_APAGADO  # o "x.x S" da recarga do impulso: o cinza do DESATIVADO dava ~2,5:1 no fundo do card; este passa de 4,5:1
 const PASTA_ICONE_IMP := "res://assets/v2/habilidade_shift/"  # <chave do herói>.png: o ícone do impulso (arte própria em pixel, docs/LICENCAS_ARTE.md)
 const TAM_ICON := Vector2(44.0, 44.0)  # o ícone (32 px) com 6 px de folga; era 48 e encolheu para o selo da tecla caber com 16 px de altura
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
@@ -273,7 +274,7 @@ func _desenhar_impulso(fonte: Font) -> void:
 	if imp_ativo:  # o voo que falta: a barrinha embaixo do ícone encolhe até o fim
 		draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 4.0), Vector2((TAM_ICON.x - 4.0) * float(imp_voo_px) / 20.0, 2.0)), COR_IMP)
 	var rotulo := imp_nome if imp_pronta else ("%.1f S" % imp_recarga_s if imp_recarga_s > 0.0 else "RECARGA")
-	draw_string(fonte, Vector2(0.0, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else DESATIVADO)
+	draw_string(fonte, Vector2(0.0, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else TEXTO_RECARGA_IMP)
 	Glifos.desenhar_selo(self, "correr", TAM_IMP.x * 0.5, TAM_IMP.y - Glifos.ALTURA_SELO, cor, imp_pronta, DESATIVADO)
 
 
