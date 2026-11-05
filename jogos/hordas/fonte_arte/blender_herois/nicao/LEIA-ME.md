@@ -75,3 +75,11 @@ Candidatos a módulo compartilhado com o Hazaki, se um terceiro herói chegar: `
 - **Q (terremoto, `dados/v2_especial.json`):** a pancada inteira (passo 1 do combo, 6 quadros em 1,05 s); o quadro de impacto cobre o `golpe` de 0,55 s.
 - **Secundário (escudo):** a guarda (colunas 28 e 29). Rolamento, dano e morte já tinham folha própria.
 - **Retrato do HUD:** a chave `retrato` do `nicao.json` (`regiao` no quadro parado de frente, `escala`) recorta o corpo (38x42) e o HUD o desenha em 2x, centrado na caixa de 90x108. `montar_folha.py` já a emite.
+
+## Strafe (andar de lado com o corpo para a mira, 05/11)
+`anim_strafe.py`: 6 quadros a 0,11 s (o ritmo do andar, para o jogo trocar andar <-> strafe sem travar a fase), dois "passo-junta" de 3 (junta, abre, apoia) para **+x do herói** (a direita da tela na linha `baixo`); o outro lado é a mesma animação tocada ao contrário (`heroi.gd`, sentido = lado). Pernas por abdução (bota reta no chão), joelho dobra só na perna no ar, braços e marreta na pose do meio do passo do andar com o IK das duas mãos depois do tronco. Folha: colunas **38 a 43** (`animacoes.strafe`, com `lado`, `limiar_cos` 0,5 e `histerese` 0,08), grade 8 x 44; as colunas 0 a 37 ficaram idênticas byte a byte.
+```
+blender -b -t 4 -P gerar.py -- --anim=strafe   # ~20 s; só grava quadros/strafe/
+python montar_folha.py
+```
+Conferido: alfa 0/1, silhueta da normal = da cor, nada na borda, nenhum pixel solto, nenhuma cor fora da folha antiga, pé na mesma linha do andar. Abertura na linha `baixo`: ~9 px entre as botas no quadro "abre". Nas linhas de perfil (`esquerda`/`direita`) o passo vai em profundidade e quase não aparece (a largura não muda): é o limite da câmera, não do rig. O pé de apoio anda ~2 px por quadro no espaço do corpo; se o herói anda mais rápido que ~18 px/s ele ainda desliza no chão, como no andar.

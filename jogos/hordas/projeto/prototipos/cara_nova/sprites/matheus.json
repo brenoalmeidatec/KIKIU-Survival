@@ -29,7 +29,7 @@
  "tempo_render_s": 32,
  "grade": {
   "linhas": 8,
-  "colunas": 50,
+  "colunas": 56,
   "quadro": [
    32,
    44
@@ -85,7 +85,13 @@
   "morte4",
   "morte5",
   "morte6",
-  "morte7"
+  "morte7",
+  "strafe0",
+  "strafe1",
+  "strafe2",
+  "strafe3",
+  "strafe4",
+  "strafe5"
  ],
  "animacoes": {
   "parado": {
@@ -256,6 +262,23 @@
     0.3
    ],
    "aviso": "cai DE LADO, deitada atravessada na tela (cabeca para a esquerda ou a direita), encolhida; nos quadros deitados o corpo (botas, katana) passa 3 a 5 px dos 32 e e cortado pela celula (anim_morte.py, medir.py)"
+  },
+  "strafe": {
+   "colunas": [
+    50,
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.09,
+   "fps": 11.1,
+   "aviso": "cima, baixo_dir e cima_esq encostam na borda (katana e braco, como no andar; medir.py)",
+   "limiar_cos": 0.5,
+   "histerese": 0.08,
+   "sentido_frente": "+x do heroi"
   }
  },
  "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."

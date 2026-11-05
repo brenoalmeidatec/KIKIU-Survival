@@ -29,6 +29,7 @@ nessa ordem, colunas = quadros (o jogo usa `[parado, andar0..]`; cada animação
 | `escudo` | 4 | `anim_escudo.py`: a katana cruza na frente do tronco (diagonal, ponta para cima), braço esquerdo em apoio; 2 quadros de entrada e 2 de guarda (o corpo cede no 3º) |
 | `dano` | 4 | `anim_dano.py`: impacto (cabeça jogada), recuo máximo, reação e volta com ease |
 | `morte` | 8 | `anim_morte.py`: leva o golpe, cede os joelhos, tomba DE LADO (rola em torno do eixo frente-trás), BATE (q3), rebate 1 px, assenta e fica deitado 2 quadros, encolhido; nas 8 direções termina atravessado na tela (cabeça para a esquerda ou a direita), nunca de cabeça para baixo |
+| `strafe` | 6 | `anim_strafe.py`: andar de LADO, passo-junta (junta, abre, apoia) x 2, mesmo ritmo do andar; corpo de frente para a mira, pernas abrem no x do herói (girar y). Para a frente = passo para o +x do herói; o jogo toca ao contrário para o -x |
 
 Cada `anim_<nome>.py` pode declarar `S_POR_QUADRO` (segundos de cada quadro: impacto rápido, hold e repouso longos); o `montar_folha.py` copia isso para `s_quadros` no JSON.
 
@@ -81,7 +82,7 @@ Gerada por `python montar_folha.py` (depois do `gerar.py`): `hazaki_final_albedo
 `hazaki_final.json` (formato que `v2/sprites.gd` e `v2/heroi.gd` leem, mais `animacoes`) e `hazaki_final_previa_x4.png` (prévia ampliada 4x).
 Os GIFs (`python gifs.py <pasta>`) estão em `docs/visual_2_5d/blender_herois/hazaki/`.
 
-Grade: **8 linhas** (a ordem de `linhas`: baixo, esquerda, direita, cima, baixo_esq, baixo_dir, cima_esq, cima_dir) x **50 colunas**, quadro 32x44.
+Grade: **8 linhas** (a ordem de `linhas`: baixo, esquerda, direita, cima, baixo_esq, baixo_dir, cima_esq, cima_dir) x **56 colunas**, quadro 32x44.
 As colunas 0 a 6 são as da folha do piloto (parado + andar0 a andar5); as colunas novas vão no fim, na ordem de `nomes_colunas` do JSON.
 
 | colunas | animação | quadros | s por quadro (sugerido) |
@@ -93,6 +94,7 @@ As colunas 0 a 6 são as da folha do piloto (parado + andar0 a andar5); as colun
 | 34 a 37 | escudo | 4 | 0,10 |
 | 38 a 41 | dano | 4 | 0,08 |
 | 42 a 49 | morte | 8 | 0,12 (ritmo por quadro em `s_quadros`) |
+| 50 a 55 | strafe (`limiar_cos` 0,5 e `histerese` 0,08 no JSON) | 6 | 0,09 |
 
 - **`colunas` do JSON tem só as 7 do andar de propósito**: `heroi.gd` anda com `colunas.size() - 1` quadros, e colunas novas ali fariam o passo
   rodar pelo combo e pela morte. As animações novas estão em `animacoes` (coluna inicial e final, quadros, tempo por quadro sugerido, `s_quadros` quando o quadro tem ritmo próprio, aviso). O jogo ainda
@@ -105,6 +107,7 @@ As colunas 0 a 6 são as da folha do piloto (parado + andar0 a andar5); as colun
   - `combo`: todas, menos baixo e cima (o rastro da lâmina é cortado pela célula).
   - `dano`: baixo, direita, cima, baixo_dir e cima_esq.
   - `morte`: baixo, direita, cima, baixo_esq e cima_dir (largura de 25 a 32 px).
+  - `strafe`: cima, baixo_dir e cima_esq.
 - **Reprodutibilidade:** o `gerar.py` é determinístico. Re-renderizar nesta montagem deu os 800 PNGs pixel-idênticos aos commitados, e a folha, a prévia e os GIFs saíram byte a byte iguais. Diferença só de bytes do PNG (encode) não vai para o commit.
 
 ## QA no Salão (montagem 2)
