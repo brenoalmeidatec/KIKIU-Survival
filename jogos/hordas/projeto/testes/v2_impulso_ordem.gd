@@ -171,12 +171,18 @@ func _ready() -> void:
 		zerar(p4)
 		var r_a: Rect2 = arvore.sprite.get_rect()
 		var w_h := float(h.tipo.get("w", 0.0))
-		ok(Rect2(pe_a + r_a.position, r_a.size).intersects(Rect2(p4 + Vector2(-w_h * 0.5, -40.0), Vector2(w_h, 40.0))), "pré-condição: a caixa do sprite da árvore (com a copa) encosta na do mecha a 100 px do tronco")
+		ok(
+			Rect2(pe_a + r_a.position, r_a.size).intersects(Rect2(p4 + Vector2(-w_h * 0.5, -40.0), Vector2(w_h, 40.0))),
+			"pré-condição: a caixa do sprite da árvore (com a copa) encosta na do mecha a 100 px do tronco"
+		)
 		var m4 = monstro_em(p4 + Vector2(0.0, 20.0))
 		apertar()
 		passos(20)
 		ok(h.imp_t > 0.0 and h.alt_px > 0, "voando a 100 px do tronco")
-		ok(float(m4.chave_y) < chave_heroi(h), "a 100 px do tronco, o monstro 20 px abaixo fica ATRÁS do mecha no ar (monstro %.1f, herói %.1f)" % [float(m4.chave_y), chave_heroi(h)])
+		ok(
+			float(m4.chave_y) < chave_heroi(h),
+			"a 100 px do tronco, o monstro 20 px abaixo fica ATRÁS do mecha no ar (monstro %.1f, herói %.1f)" % [float(m4.chave_y), chave_heroi(h)]
+		)
 		# encosta no tronco num quadro (teleporte na horizontal: o y dos pés não muda, só a ordem pode mudar a chave)
 		var ant4 := chave_heroi(h)
 		var maior4 := 0.0
