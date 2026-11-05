@@ -794,7 +794,7 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	s.offset = a.sprite.offset if a.sprite != null else a.offset
 	s.region_rect = a.regiao
 	s.flip_h = a.espelha
-	s.position = a.raiz.position
+	s.position = a.raiz.position + Vector2(0.0, float(a.ordem_px))  # ordem_px: o herói voando (o offset do sprite sobe o mesmo tanto)
 	var esc_px := _esc_px(a.esc)
 	_fl_esc[i] = esc_px
 	s.scale = Vector2.ONE * esc_px
@@ -1096,14 +1096,14 @@ func atualizar(dt: float) -> void:
 			0:
 				var a = _fl_alvo[i]
 				if a != null:
-					s.position = a.raiz.position
+					s.position = a.raiz.position + Vector2(0.0, float(a.ordem_px))  # ordem_px: o herói voando (o offset do sprite sobe o mesmo tanto)
 					s.region_rect = a.regiao
 					s.flip_h = a.espelha
 				mat.set_shader_parameter("k", Piscadas.FLASH_ALFA if Piscadas.ligado() else 1.0 - k * k)  # com a opção: alfa parado, sem esmaecer em degraus
 			3:
 				var a = _fl_alvo[i]
 				if a != null:
-					s.position = a.raiz.position
+					s.position = a.raiz.position + Vector2(0.0, float(a.ordem_px))  # ordem_px: o herói voando (o offset do sprite sobe o mesmo tanto)
 					s.region_rect = a.regiao
 					s.flip_h = a.espelha
 				mat.set_shader_parameter("k", 1.0 if k < 0.65 else (1.0 - k) / 0.35)

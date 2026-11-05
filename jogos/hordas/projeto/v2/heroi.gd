@@ -376,6 +376,7 @@ func resetar(p: Vector2) -> void:
 	sprite.position = Vector2.ZERO
 	sprite.offset = _off_base
 	sprite.material = null
+	_ordenar(0)
 	morte_t = 0.0
 	_pose_tiro_t = 0.0
 	foguinho.resetar()
@@ -782,7 +783,7 @@ func atualizar(dt: float) -> void:
 	if desl != Vector2.ZERO:
 		mundo.mover(self, desl, imp.larg_ignora(self) if imp != null else 0.0)
 	if imp != null:
-		imp.depois_de_mover(self)
+		imp.depois_de_mover(self, desl, pos - antes)
 	vel = (pos - antes) / maxf(dt, 0.0001)
 	_camera_adiantada(dt)
 	if mundo.combate.escudo != null:
@@ -1456,6 +1457,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		_rup_punch = maxf(0.0, _rup_punch - dt / 0.12)
 		if _rup_punch >= 0.5:
 			desloca -= (dir_olhar * RECUO_DISPARO_PX).round()
+	if estado == Estado.ESQUIVA:
+		_ordenar(0)  # esquivando não se voa
 	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
 		sprite.position = Vector2.ZERO  # o rolamento já está desenhado na folha: sem girar o sprite
 		sprite.offset = _off_base
@@ -1470,8 +1473,13 @@ func _visual(dt: float, v: Vector2) -> void:
 		if sprite.rotation != 0.0:
 			sprite.rotation = 0.0
 			sprite.offset = _off_base
-		alt_px = mundo.combate.impulso.alt(self) if mundo.combate.impulso != null else 0
-		sprite.position = desloca + Vector2(0.0, -float(alt_px))  # o voo sobe o desenho em px inteiros; a sombra fica no chão
+		var imp = mundo.combate.impulso
+		alt_px = imp.alt(self) if imp != null else 0
+		_ordenar(imp.ordem(self) if imp != null else 0)
+		# o voo sobe o DESENHO em px inteiros (a sombra fica no chão) pelo offset; a posição do sprite desce ordem_px: é o y da ordem de desenho
+		# (com raiz.y_sort_enabled o sprite entra no y-sort do mundo pelo próprio y, v2/impulso.gd > ordem). No chão, ordem_px 0: tudo como antes.
+		sprite.position = desloca + Vector2(0.0, float(ordem_px))
+		sprite.offset = _off_base - Vector2(0.0, float(ordem_px + alt_px))
 	sprite.scale = Vector2.ONE
 	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:
@@ -1488,8 +1496,21 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color.WHITE.lerp(Color(1.0, 0.85, 0.65), rup_carga)  # o corpo esquenta com a carga
 	else:
 		sprite.modulate = Color.WHITE
-	foguinho.seguir(desloca)
+	foguinho.seguir(sprite.position + sprite.offset - _off_base, sprite.position.y if raiz.y_sort_enabled else INF)
 	foguinho.atualizar(dt)
+
+
+## A ordem de desenho do herói desce `o` px abaixo dos pés (o voo do impulso; 0 = a do chão). Com o > 0 a raiz entra no y-sort do mundo pelos
+## filhos (o sprite e o foguinho, no y do sprite), não pela própria posição, que segue nos pés (sombra, luzes, flash e sensores leem a raiz).
+func _ordenar(o: int) -> void:
+	ordem_px = o
+	if raiz.y_sort_enabled != (o > 0):
+		raiz.y_sort_enabled = o > 0
+
+
+## O y que o y-sort do mundo usa para o herói agora (a horda reparte as fatias por ele e a oclusão compara com ele).
+func y_ordem() -> float:
+	return raiz.position.y + (sprite.position.y if raiz.y_sort_enabled else 0.0)
 
 
 ## Gancho do visual da morte: põe o shader de dissolução no corpo (só agora, então o herói vivo não paga nada por ele).
@@ -1517,6 +1538,7 @@ func morte_k() -> float:
 
 
 func _visual_morto(dt: float) -> void:
+	_ordenar(0)  # morto não voa: a ordem de desenho volta à do chão
 	var anim := _tem_anim("morte")  # a queda do Blender (deitada de lado) toca primeiro; o dissolve entra quando ela chega ao quadro de repouso
 	var c_lenta := 1.0
 	if anim:

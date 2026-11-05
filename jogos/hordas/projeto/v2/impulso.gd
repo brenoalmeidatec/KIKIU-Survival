@@ -15,7 +15,10 @@ extends RefCounted
 ##  - HUD: o herói publica imp_nome ("" = sem impulso nesta forma: o slot do Shift some), imp_t, imp_dur, imp_recarga, imp_recarga_max e imp_nega_t (v2/hud_habilidades.gd).
 ## Sem nó novo: um dicionário de "último toque" por monstro, zerado a cada voo.
 ##
-## API: montar(c), cfg(), para(h), relogios(h, dt), quadro(h, dt, v) -> Vector2, depois_de_mover(h), larg_ignora(h), encerrar(h), alt(h) -> int, limpar().
+##  - OBJETO GRANDE: segura e o mecha desliza nele (a colisão de sempre); na encostada sai um estalo de poucas faíscas (sem flash; nada no perfil Baixo).
+##  - ORDEM DE DESENHO no ar: o mecha é desenhado por cima de quem sobrevoa (ordem(h), Ator.ordem_px), mas não de árvore e objeto grande.
+## API: montar(c), cfg(), para(h), relogios(h, dt), quadro(h, dt, v) -> Vector2, depois_de_mover(h, desl, andou), larg_ignora(h), encerrar(h), alt(h) -> int,
+## ordem(h) -> int, limpar().
 
 const Colisao := preload("res://v2/colisao.gd")
 
@@ -26,6 +29,7 @@ var poupados := 0  # toques que não feriram porque o monstro já estava em 1 de
 var voos := 0  # quantos impulsos saíram
 var _ultimo := {}  # monstro -> instante (relógio do voo) do último toque nele; zerado a cada voo
 var _poeira_t := 0.0
+var _raspando := false  # o voo estava encostado num objeto grande no quadro anterior (o estalo sai só na encostada)
 
 
 func montar(c) -> void:
@@ -135,12 +139,38 @@ func larg_ignora(h) -> float:
 	return 0.0
 
 
-## Depois de mover (Heroi.atualizar): o contato com os monstros atravessados e o fim do "saindo de cima".
-func depois_de_mover(h) -> void:
+## Depois de mover (Heroi.atualizar): o contato com os monstros atravessados, o estalo ao raspar num objeto grande e o fim do "saindo de cima".
+## `desl` é o que o voo pediu neste quadro e `andou`, o que a colisão deixou.
+func depois_de_mover(h, desl := Vector2.ZERO, andou := Vector2.ZERO) -> void:
 	if h._imp_saindo and h.imp_t <= 0.0:
 		h._imp_saindo = not Colisao.livre(h.pos, h.raio)
 	if h.imp_t > 0.0:
 		_contato(h)
+		_raspar(h, desl, andou)
+	else:
+		_raspando = false
+
+
+## O ESTALO do contato: no quadro em que o voo encosta num objeto grande (a colisão comeu parte do passo e o corpo toca uma forma sólida), umas
+## poucas faíscas (`estalo_faiscas`) saem do ponto de contato, uma vez por encostada; o deslize continua. Sem flash nem luz (nada pisca) e, no
+## perfil Baixo (partículas abaixo de 0,5), nada: o perfil não ganha partícula nova.
+func _raspar(h, desl: Vector2, andou: Vector2) -> void:
+	var comido := desl - andou
+	var raspa := desl.length_squared() > 0.25 and comido.length_squared() > desl.length_squared() * 0.0625
+	raspa = raspa and not Colisao.livre(h.pos, h.raio + 1.0, h._imp_larg)
+	if raspa and not _raspando and combate.fx.fator_part >= 0.5:
+		var n := int(cfg().get("estalo_faiscas", 0))
+		if n > 0:
+			var cor_a: Array = cfg().get("cor", [0.75, 0.95, 1.0])
+			var dir := -comido.normalized()
+			combate.fx.faiscas(
+				h.pos + comido.normalized() * float(h.raio) - Vector2(0.0, float(alt(h))),
+				dir,
+				n,
+				Color(float(cor_a[0]), float(cor_a[1]), float(cor_a[2])),
+				90.0
+			)
+	_raspando = raspa
 
 
 func _contato(h) -> void:
@@ -166,7 +196,11 @@ func _contato(h) -> void:
 		if cabe < 1.0:
 			poupados += 1
 			continue
-		combate.ferir(m, minf(dano, cabe), d.normalized() if d != Vector2.ZERO else h.imp_dir, 0.0, 0.0, cor)
+		# sem o flash branco do acerto: ele sai na camada de brilho, POR CIMA de tudo, e o monstro sobrevoado piscaria em cima do mecha (lia
+		# como "o mecha passou por trás", vídeo da rodada 4); fica só o número de dano
+		var dn := maxi(1, roundi(minf(dano, cabe)))
+		combate.ferir(m, float(dn), d.normalized() if d != Vector2.ZERO else h.imp_dir, 0.0, 0.0, cor, false)
+		combate.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, false)
 		toques += 1
 	combate.fonte_dano = antes
 
@@ -183,9 +217,38 @@ func _poeira(h, c: Dictionary, dt: float) -> void:
 
 ## Px inteiros que o desenho do herói sobe agora: sobe em `subida` s no começo do voo e desce nos últimos `subida` s.
 func alt(h) -> int:
+	return roundi(float(cfg().get("alt_px", 5)) * _subida(h))
+
+
+## Quanto do voo está no ar agora (0 no chão, 1 lá em cima): sobe em `subida` s no começo e desce nos últimos `subida` s.
+func _subida(h) -> float:
 	if h.imp_t <= 0.0:
-		return 0
-	var c := cfg()
-	var s := maxf(float(c.get("subida", 0.15)), 0.001)
-	var k := minf(clampf(h.imp_relogio / s, 0.0, 1.0), clampf(h.imp_t / s, 0.0, 1.0))
-	return roundi(float(c.get("alt_px", 5)) * k)
+		return 0.0
+	var s := maxf(float(cfg().get("subida", 0.15)), 0.001)
+	return minf(clampf(h.imp_relogio / s, 0.0, 1.0), clampf(h.imp_t / s, 0.0, 1.0))
+
+
+## Px inteiros que a ORDEM DE DESENHO do mecha desce abaixo dos pés agora (Ator.ordem_px; o desenho e a física não mudam). No ar ele fica por
+## cima de quem sobrevoa: monstros, elites e objetos baixos com os pés até `ordem_px` px mais para baixo na tela são desenhados ATRÁS dele (e a
+## silhueta de oclusão não acende por eles). Acompanha a subida e a descida (nada de salto de ordem no pouso: quem estava atrás volta para a frente
+## de baixo para cima nos `subida` s finais). Objeto GRANDE (largura de colisão acima de `larg_obstaculo`, que segura o voo) não é sobrevoado: com
+## um deles na frente, com o desenho encostando no do mecha (as caixas dos dois sprites), a ordem para 1 px acima do pé dele, a mesma do chão (o mecha não passa por cima
+## do tronco nem atravessa ele ao raspar).
+func ordem(h) -> int:
+	var o := roundi(float(cfg().get("ordem_px", 0)) * _subida(h))
+	if o <= 0 or mundo == null or mundo.get("cenario") == null:
+		return maxi(o, 0)
+	var y0: float = h.pr.y
+	var w := float(h.tipo.get("w", 0.0))
+	var corpo := Rect2(h.pr + Vector2(-w * 0.5, -float(h.tipo.get("pe", 0.0)) - float(alt(h))), Vector2(w, float(h.tipo.get("h", 0.0))))
+	for a in mundo.cenario.ativos:
+		if a.larg_col <= h._imp_larg:
+			continue
+		var p: Vector2 = a.raiz.position
+		if p.y <= y0 or p.y > y0 + float(o):
+			continue
+		var r: Rect2 = a.sprite.get_rect()
+		if not corpo.intersects(Rect2(p + r.position, r.size)):  # o desenho dele não encosta no do mecha: a ordem entre os dois não aparece
+			continue
+		o = mini(o, ceili(p.y - y0) - 1)
+	return maxi(o, 0)

@@ -24,6 +24,8 @@ var estatico := true
 var raio := 7.0  # raio do corpo no chão (colisão, v2/colisao.gd)
 var escala := 1.0  # tamanho do sprite (elite e chefe são maiores)
 var ativo := false  # na tela (com margem): só ele tem sombra e gasta conta por quadro
+var larg_col := 0.0  # objeto de cenário: a largura da colisão (Colisao.largura_objeto; 0 = atravessável). O voo do impulso só passa por cima de objeto até o limite
+var ordem_px := 0  # px que a ORDEM DE DESENHO (y-sort) desce abaixo dos pés, sem mexer no desenho: só o herói voando no impulso (v2/impulso.gd); 0 nos outros
 var olho: Sprite2D = null  # brilho dos olhos (monstros), na camada sem escurecimento
 
 # sombra (sombras.gd): altura do sprite, escala, comprimento máximo da sombra e o necessário para espelhar o sprite na silhueta

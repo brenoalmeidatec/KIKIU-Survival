@@ -108,8 +108,10 @@ func _ready() -> void:
 	var andou: float = h.pos.x - p0.x
 	ok(andou > 200.0 and andou < 240.0, "em 1 s voa ~220 px na direção da mira (%.1f)" % andou)
 	ok(absf(h.pos.y - p0.y) < 1.0, "sem tecla de andar o voo segue a mira (direita): dy %.2f" % (h.pos.y - p0.y))
-	ok(h.alt_px == 5 and h.sprite.position.y == -5.0, "voando o desenho sobe 5 px inteiros (alt %d, sprite y %.1f)" % [h.alt_px, h.sprite.position.y])
-	ok(is_equal_approx(fmod(h.sprite.position.y, 1.0), 0.0), "a subida é em px inteiros")
+	# onde o corpo é DESENHADO em relação aos pés (posição + offset do sprite): a posição do sprite agora também leva o y da ordem de desenho no ar
+	var desenho_y: float = h.sprite.position.y + h.sprite.offset.y - h._off_base.y
+	ok(h.alt_px == 5 and desenho_y == -5.0, "voando o desenho sobe 5 px inteiros (alt %d, desenho y %.1f)" % [h.alt_px, desenho_y])
+	ok(is_equal_approx(fmod(desenho_y, 1.0), 0.0) and h.sprite.position == h.sprite.position.round(), "a subida é em px inteiros")
 	ok(h.folego >= f0, "o voo não gasta fôlego (%.2f -> %.2f)" % [f0, h.folego])
 	# a direção vira para o movimento (giro limitado: não vira na hora)
 	h.entrada_forcada = Vector2.DOWN
