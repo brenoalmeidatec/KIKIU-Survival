@@ -214,3 +214,6 @@ v2_mecha_contato 5
 
 # v2_misseis_desenho: ~40 s pela fila no notebook em 05/11/2026 (total 138 s menos ~90 s de espera de vaga; estimativa grossa, o passo da espera é de 30 s).
 v2_misseis_desenho 40
+
+# v2_misseis_rastro: ~20 s pela fila no notebook em 05/11/2026 (inclui inicialização; o Godot mediu 20,6 s na primeira rodada).
+v2_misseis_rastro 20
