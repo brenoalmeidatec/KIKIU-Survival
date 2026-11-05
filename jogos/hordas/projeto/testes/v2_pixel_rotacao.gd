@@ -13,17 +13,17 @@ const Efeitos := preload("res://v2/efeitos.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const PASSO := 1.0 / 60.0
-const FOLHA_FONTE := "res://assets/v2/efeitos/corte_hazaki.png"
+const FOLHA_FONTE := "res://assets/v2/efeitos/corte_pfx.png"
 const FOLHAS_R := [
-	"res://assets/v2/efeitos/corte_hazaki_r1.png",
-	"res://assets/v2/efeitos/corte_hazaki_r2.png",
-	"res://assets/v2/efeitos/corte_hazaki_r3.png",
+	"res://assets/v2/efeitos/corte_pfx_r1.png",
+	"res://assets/v2/efeitos/corte_pfx_r2.png",
+	"res://assets/v2/efeitos/corte_pfx_r3.png",
 ]
-const FOLHA_FONTE_CIANO := "res://assets/v2/efeitos/corte_hazaki_ciano.png"
+const FOLHA_FONTE_CIANO := "res://assets/v2/efeitos/corte_pfx_ciano.png"
 const FOLHAS_R_CIANO := [
-	"res://assets/v2/efeitos/corte_hazaki_ciano_r1.png",
-	"res://assets/v2/efeitos/corte_hazaki_ciano_r2.png",
-	"res://assets/v2/efeitos/corte_hazaki_ciano_r3.png",
+	"res://assets/v2/efeitos/corte_pfx_ciano_r1.png",
+	"res://assets/v2/efeitos/corte_pfx_ciano_r2.png",
+	"res://assets/v2/efeitos/corte_pfx_ciano_r3.png",
 ]
 
 var falhas := 0

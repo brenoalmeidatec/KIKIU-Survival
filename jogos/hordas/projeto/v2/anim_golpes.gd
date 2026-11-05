@@ -9,7 +9,7 @@ extends RefCounted
 const PixelRot := preload("res://v2/pixel_rot.gd")
 const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const PASTA := "res://assets/v2/armas_anim/"
-const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "evo_met_aneis", "evo_nuvens", "magias", "martelo", "perigo"]  # os índices lidos (lista fixa: listar res:// não serve no jogo exportado)
+const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "evo_met_aneis", "evo_nuvens", "magias", "martelo", "perigo", "pixelfx"]  # os índices lidos (lista fixa: listar res:// não serve no jogo exportado)
 
 static var _armas := {}
 static var _lidas := false
