@@ -1391,8 +1391,11 @@ func _visual(dt: float, v: Vector2) -> void:
 	var anda_atira := _anda_atirando(v)
 	if (estado == Estado.LIVRE and andando) or anda_atira:
 		# andando e atirando, as pernas seguem o passo de verdade: no golpe o herói anda a mov_golpe da velocidade (_golpe), e o ciclo também
-		_anim += dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
-		c = 1 + int(_anim / _passo_andar()) % (int(tipo.info.colunas.size()) - 1)
+		# andando contra a mira (de costas) no andar_tiro, o ciclo toca ao contrário: o pé de apoio vai para a frente e o mecha recua
+		# sem moonwalk. A fase é contínua nos dois sentidos (nunca salta de quadro ao virar), por isso o índice usa posmod.
+		var sentido := -1.0 if anda_atira and v.dot(dir_olhar) < 0.0 else 1.0
+		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
+		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
 		_parado_t = 0.0
 	else:
 		_anim = 0.0
@@ -1606,7 +1609,7 @@ func _coluna_acao(dt: float, anda_atira := false) -> int:
 		if _dano_t >= 0.5:
 			_dano_t = -1.0
 	if anda_atira:
-		return _coluna_anim("andar_tiro", int(_anim / _passo_andar()) % (tipo.info.animacoes.andar_tiro.colunas as Array).size())
+		return _coluna_anim("andar_tiro", posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes.andar_tiro.colunas as Array).size()))
 	if estado == Estado.GOLPE and _tem_anim("combo"):
 		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo := mini(golpe_i, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))

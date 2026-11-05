@@ -3,7 +3,8 @@ extends "res://testes/isolamento_v2.gd"
 ## o v2/heroi.gd segurava o quadro de mira do combo (combo 0) e as pernas ficavam congeladas: o mecha deslizava. Agora a folha tem o
 ## `andar_tiro` (6 quadros: pernas do andar na mesma fase, braços na mira; fonte_arte/blender_herois/lightwolf_mecha/anim_andar_tiro.py) e:
 ##  1. andando e atirando, TODO quadro é do andar_tiro (golpe e intervalo entre rajadas juntos: nunca volta o pisca mira/andar de 04/11),
-##     e as pernas percorrem o ciclo, sempre para a frente (o quadro só avança 1 na fase, nunca volta nem pula);
+##     e as pernas percorrem o ciclo, sempre para a frente (o quadro só avança 1 na fase, nunca volta nem pula); de costas (passo contra a
+##     mira) o ciclo toca ao contrário, recuando 1 quadro por vez (revisão de 05/11: antes era moonwalk);
 ##  2. parado atirando continua no combo; andando sem atirar continua no andar;
 ##  3. o clarão de boca e a bolinha nascem no cano do quadro que a folha desenha (tabela + desvio_boca do andar_tiro), e esse desvio existe.
 const Mundo := preload("res://v2/mundo.tscn")
@@ -96,6 +97,28 @@ func _ready() -> void:
 	ok(vistos.size() == at.size(), "andando e atirando, as pernas percorrem o ciclo inteiro (%d de %d quadros)" % [vistos.size(), at.size()])
 	ok(trocas >= 6 and trocas <= 20, "andando e atirando, o passo troca no ritmo do andar (%d trocas em 2 s)" % trocas)
 	ok(tropecos == 0, "o ciclo só avança um quadro por vez (%d tropeços)" % tropecos)
+
+	# 1b. de costas (andando para a esquerda, mirando e atirando para a direita): o ciclo toca AO CONTRÁRIO, um quadro por vez (sem moonwalk:
+	# tocado para a frente, o pé de apoio iria para trás enquanto o corpo recua, e o mecha deslizaria de costas)
+	var cc := colunas(Vector2.LEFT, true, 120)
+	var fora_c := 0
+	var vistos_c := {}
+	var recuos := 0
+	var outros := 0
+	for i in cc.size():
+		if not at.has(cc[i]):
+			fora_c += 1
+			continue
+		vistos_c[cc[i]] = true
+		if i > 0 and cc[i] != cc[i - 1] and at.has(cc[i - 1]):
+			if at.find(cc[i]) == posmod(at.find(cc[i - 1]) - 1, at.size()):
+				recuos += 1
+			else:
+				outros += 1
+	print("de costas atirando: %d fora, %d distintos, %d recuos, %d trocas fora do recuo" % [fora_c, vistos_c.size(), recuos, outros])
+	ok(fora_c == 0, "de costas atirando, todo quadro é do andar_tiro (%d fora)" % fora_c)
+	ok(vistos_c.size() == at.size(), "de costas, as pernas percorrem o ciclo inteiro (%d de %d)" % [vistos_c.size(), at.size()])
+	ok(recuos >= 6 and outros == 0, "de costas, o ciclo só recua um quadro por vez (%d recuos, %d outras trocas: moonwalk ou tropeço)" % [recuos, outros])
 
 	# 2. controles: parado atirando = combo; andando sem atirar = andar
 	var combo: Array = Array(anims.combo.colunas).map(func(x): return int(x))

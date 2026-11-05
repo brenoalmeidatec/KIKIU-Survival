@@ -6,7 +6,7 @@
     blender -b -t 6 -P gerar.py -- --anim=andar       # só uma
     blender -b -t 6 -P gerar.py -- --anim=combo --so-bocas   # só mede as bocas dos canhões (sem render; grava quadros/<anim>/bocas.json)
 Toda animação grava também quadros/<anim>/bocas.json: o centro projetado da "Boca ciano" de cada canhão, por direção e quadro, relativo aos
-pés (64, 120) — é dali que o montar_folha.py tira as bocas dos quadros novos (canhoes_andar_tiro) e confere a tabela antiga (combo 0).
+pés (64, 120) — é dali que o montar_folha.py tira as bocas dos quadros novos (animacoes.andar_tiro.desvio_boca) e confere a tabela antiga (combo 0).
 Saída: quadros/<anim>/<direcao>_<i>_{cor,normal}.png (W x H, ver LEIA-ME.md) e lightwolf_mecha_rig.blend.
 Diferença para o Hazaki: o quadro é maior (64x96): a marreta de 3,2 passa da cabeça e os golpes a levam longe do corpo.
 """

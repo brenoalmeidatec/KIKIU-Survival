@@ -41,7 +41,9 @@ extends RefCounted
 ##                         (o CHAMAR apertado) e 9_volta (o mecha de volta), e 10_carta (escolha com uma carta só dele). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=andar_seq   (o "tremendo todo" de 04/11) fotos SEGUIDAS, uma por quadro de render, do herói escolhido (o LightWolf com
 ##                         --heroi=lightwolf) sem monstros: anda_00..29 (andando para a direita, sem atirar), anda_tiro_00..39 (andando e
-##                         atirando para a direita) e tiro_00..29 (parado atirando). Para medir quadro a quadro o corpo contra o cenário.
+##                         atirando para a direita), tiro_00..29 (parado atirando), costas_tiro_00..39 (andando para a ESQUERDA atirando para
+##                         a direita: o andar_tiro de costas, ciclo ao contrário) e diag_tiro_00..39 (andando e atirando na diagonal baixo-direita).
+##                         Para medir quadro a quadro o corpo contra o cenário.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -402,10 +404,18 @@ func _r_lightwolf() -> void:
 ## andando atirando e parado atirando; cada um espera a câmera assentar (1 s) antes da primeira foto.
 func _r_andar_seq() -> void:
 	var h = mundo.heroi
-	const TRECHOS := [["anda", Vector2.RIGHT, false, 30], ["anda_tiro", Vector2.RIGHT, true, 40], ["tiro", Vector2.ZERO, true, 30]]
+	# [nome, entrada, atira, fotos, mira]: a mira fica a 4000 px do herói nessa direção (refeita a cada quadro, o ângulo não muda andando)
+	const D := Vector2(0.70710678, 0.70710678)
+	const TRECHOS := [
+		["anda", Vector2.RIGHT, false, 30, Vector2.RIGHT],
+		["anda_tiro", Vector2.RIGHT, true, 40, Vector2.RIGHT],
+		["tiro", Vector2.ZERO, true, 30, Vector2.RIGHT],
+		["costas_tiro", Vector2.LEFT, true, 40, Vector2.RIGHT],
+		["diag_tiro", D, true, 40, D],
+	]
 	if passo == 0:
 		_preparar()
-		mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+		Config.temporario("pausar_fora", false)  # gravando (Movie Maker), outra janela na frente pausaria a partida no meio da sequência
 		passo = 1
 		t_passo = 0.0
 		seq_n = 0
@@ -413,6 +423,7 @@ func _r_andar_seq() -> void:
 		mundo.get_tree().quit()
 		return
 	var tr: Array = TRECHOS[passo - 1]
+	mundo.mouse_forcado = h.centro() + (tr[4] as Vector2) * 4000.0
 	h.entrada_forcada = tr[1]
 	h.ataque_forcado = tr[2]
 	if t_passo < 1.0:

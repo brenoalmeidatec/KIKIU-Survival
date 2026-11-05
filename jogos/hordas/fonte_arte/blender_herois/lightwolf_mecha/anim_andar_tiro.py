@@ -3,7 +3,7 @@ quadro, então o jogo troca andar <-> andar_tiro sem tropeçar o passo); da cint
 dois braços estendidos, canhões horizontais e paralelos para a frente). Pedido do Alisson (05/11): "ainda falta animações enquanto anda e
 atira ao mesmo tempo" (antes o heroi.gd segurava a pose de mira parada e as pernas deslizavam).
 O tronco NÃO gira com o quadril: o giro do quadril é desfeito no torso (a mira fica no eixo, cabeça e canhões não balançam de lado); o que
-sobra é o sobe-e-desce do apoio (ossos.pisar), que o gerar.py mede por quadro e o montar_folha.py grava em bocas_projeteis.canhoes_andar_tiro.
+sobra é o sobe-e-desce do apoio (ossos.pisar), que o gerar.py mede por quadro e o montar_folha.py grava em animacoes.andar_tiro.desvio_boca.
 Sem recuo e sem clarão na geometria: o quadro não sabe quando o tiro sai; o clarão é o BOCA de v2/estalos_visual.gd, na boca medida.
 """
 import math
