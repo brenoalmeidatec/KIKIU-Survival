@@ -2,7 +2,7 @@ extends "res://testes/isolamento_v2.gd"
 # Teste automático do IMPULSO do mecha do LightWolf (o Shift dele; v2/impulso.gd, heroi.gd, colisao.gd, mundo.gd, hud_habilidades.gd, adagas.gd, estalos_visual.gd,
 # dados/v2_herois.json > lightwolf > cfg > impulso). Confere: só o mecha tem (Hazaki e Lobo não, e para eles o Shift continua correndo); o aperto voa 3 s na
 # direção do movimento ou da mira, a uns 220 px/s, soltar não para e a recarga de 5 s começa no fim (aperto na recarga é negado); o mecha não corre nem gasta
-# fôlego; durante o voo o canhão atira, a Matriz não ergue e a esquiva não sai; o desenho sobe 5 px inteiros (a sombra e a posição ficam no chão) e a boca
+# fôlego; durante o voo o canhão atira, a Matriz não ergue e a esquiva não sai; o desenho sobe 14 px inteiros (boiando 1 px no topo; a sombra e a posição ficam no chão) e a boca
 # do cano sobe junto; objeto baixo (largura <= 22 px) não segura o voo, objeto grande segura, e andando o baixo segura; o voo acabado em cima de um objeto baixo
 # sai sem pulo; cada monstro atravessado leva dano a cada 0,5 s, nunca morre (para em 1 de vida, elite também), não é empurrado e não afasta o mecha;
 # a HUD mostra o card do Shift só para o mecha (pronto, voando, recarga) e o nó não encosta na barra de XP.
@@ -85,7 +85,7 @@ func _ready() -> void:
 	# 1. dados e quem tem
 	ok(not c.is_empty(), "o mecha tem o bloco cfg.impulso")
 	ok(float(c.get("dur", 0)) == 3.0 and float(c.get("recarga", 0)) == 5.0, "voo de 3 s e recarga de 5 s (pedido do Alisson)")
-	ok(int(c.get("larg_obstaculo", 0)) == 22 and int(c.get("alt_px", 0)) == 5, "objeto baixo até 22 px e o desenho sobe 5 px")
+	ok(int(c.get("larg_obstaculo", 0)) == 22 and int(c.get("alt_px", 0)) == 14, "objeto baixo até 22 px e o desenho sobe 14 px")
 	ok(not Herois.cfg_para(Dados.json("v2_combate"), "lightwolf_lobo").has("impulso"), "o Lobo não tem impulso")
 	for id in ["hazaki", "nicao", "lucas"]:
 		ok(not Herois.cfg_para(Dados.json("v2_combate"), id).has("impulso"), "%s não tem impulso" % id)
@@ -110,7 +110,10 @@ func _ready() -> void:
 	ok(absf(h.pos.y - p0.y) < 1.0, "sem tecla de andar o voo segue a mira (direita): dy %.2f" % (h.pos.y - p0.y))
 	# onde o corpo é DESENHADO em relação aos pés (posição + offset do sprite): a posição do sprite agora também leva o y da ordem de desenho no ar
 	var desenho_y: float = h.sprite.position.y + h.sprite.offset.y - h._off_base.y
-	ok(h.alt_px == 5 and desenho_y == -5.0, "voando o desenho sobe 5 px inteiros (alt %d, desenho y %.1f)" % [h.alt_px, desenho_y])
+	ok(
+		absi(h.alt_px - 14) <= 1 and desenho_y == -float(h.alt_px),
+		"voando o desenho sobe ~14 px inteiros, com 1 px de flutuação (alt %d, desenho y %.1f)" % [h.alt_px, desenho_y]
+	)
 	ok(is_equal_approx(fmod(desenho_y, 1.0), 0.0) and h.sprite.position == h.sprite.position.round(), "a subida é em px inteiros")
 	ok(h.folego >= f0, "o voo não gasta fôlego (%.2f -> %.2f)" % [f0, h.folego])
 	# a direção vira para o movimento (giro limitado: não vira na hora)
@@ -193,8 +196,8 @@ func _ready() -> void:
 	if w.combate.adagas._fator_impactos() >= 0.5:
 		ok(boca_chao.is_finite() and boca_voo.is_finite(), "o clarão do cano aparece no chão e no voo")
 		ok(
-			boca_voo.is_finite() and boca_chao.is_finite() and is_equal_approx(boca_voo.y - boca_chao.y, -5.0),
-			"o clarão sobe 5 px com o mecha (%s -> %s)" % [boca_chao, boca_voo]
+			boca_voo.is_finite() and boca_chao.is_finite() and is_equal_approx(boca_voo.y - boca_chao.y, -float(h.alt_px)),
+			"o clarão sobe alt_px com o mecha (%s -> %s)" % [boca_chao, boca_voo]
 		)
 
 	# 5. obstáculos: baixo passa voando, grande segura; andando o baixo segura

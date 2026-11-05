@@ -105,8 +105,8 @@ func _ready() -> void:
 	ok(chave_fila(fila) > chave_heroi(h), "no chão a fila mais para baixo é desenhada na frente (fila %.1f, herói %.1f)" % [chave_fila(fila), chave_heroi(h)])
 	ok(w.oclusao.coberto(), "no chão a fila na frente acende a silhueta (pré-condição do teste)")
 	apertar()
-	passos(20)
-	ok(h.imp_t > 0.0 and h.alt_px == int(c.get("alt_px", 5)), "voando, lá em cima (imp_t %.2f, alt %d)" % [h.imp_t, h.alt_px])
+	passos(30)
+	ok(h.imp_t > 0.0 and absi(h.alt_px - int(c.get("alt_px", 14))) <= 1, "voando, lá em cima (imp_t %.2f, alt %d)" % [h.imp_t, h.alt_px])
 	ok(h.pos.distance_to(centro) < 2.0, "o mecha ficou no lugar (m_vel_mov 0): %s" % h.pos)
 	ok(chave_fila(fila) < chave_heroi(h), "no ar a fila que ele sobrevoa fica ATRÁS dele (fila %.1f, herói %.1f)" % [chave_fila(fila), chave_heroi(h)])
 	passos(12)
@@ -125,7 +125,7 @@ func _ready() -> void:
 		var k := chave_heroi(h)
 		maior_queda = maxf(maior_queda, ant - k)
 		ant = k
-	var s := float(c.get("subida", 0.15))
+	var s := float(c.get("subida", 0.35))
 	var lim := ceilf(float(faixa) * PASSO / s) + 1.0
 	ok(maior_queda <= lim, "a ordem desce aos poucos no pouso (maior salto %.1f px/quadro, limite %.1f)" % [maior_queda, lim])
 	passos(12)
@@ -193,7 +193,7 @@ func _ready() -> void:
 			var k4 := chave_heroi(h)
 			maior4 = maxf(maior4, absf(k4 - ant4))
 			ant4 = k4
-		var lim4 := ceilf(float(faixa) * PASSO / float(c.get("subida", 0.15))) + 1.0
+		var lim4 := ceilf(float(faixa) * PASSO / float(c.get("subida", 0.35))) + 1.0
 		ok(maior4 <= lim4, "chegar perto do tronco não salta de ordem num quadro (maior salto %.1f px, limite %.1f)" % [maior4, lim4])
 		ok(chave_heroi(h) < pe_a.y, "colado no tronco, a ordem volta à do chão (herói %.1f, pé %.1f)" % [chave_heroi(h), pe_a.y])
 		# e sai de perto num quadro (300 px, longe até da copa): a ordem volta a subir aos poucos
