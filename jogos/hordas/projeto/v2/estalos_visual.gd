@@ -16,7 +16,9 @@ extends RefCounted
 ## os contadores dos estalos não mudam). A vaga é do BRAÇO (o herói + o lado 0/1), não de um ponto do mundo: guarda a boca relativa aos pés do herói (a linha
 ## de 8 direções e o braço, já arredondada) e é desenhada a cada quadro em h.pr + essa boca, o mesmo pixel em que a folha desenha o cano. Andando e atirando o
 ## clarão vai junto com o cano (nunca fica para trás no chão) e não pula 1 px em relação a ele. A mira virou com o brilho aceso (a folha já desenha o cano em outra
-## das 8 linhas): o mesmo brilho passa para a boca daquele braço na linha nova (a tabela da folha, guardada com a vaga), sem apagar e reacender. Cada braço atira ~2,9 vezes por segundo: no modo normal cada tiro
+## das 8 linhas): com "Reduzir piscadas" o mesmo brilho parado passa para a boca daquele braço na linha nova (a tabela da folha, guardada com a vaga), sem apagar e
+## reacender; no modo normal o clarão é do TIRO e apaga na hora (`_boca_visivel`): com a mira contínua (golpe.mira_continua, rodada 5) os braços viram no mesmo
+## quadro que o mouse, e o clarão de 0,1 s de uma bala que saiu para a direita não pode reaparecer no cano da linha nova sem bala. Cada braço atira ~2,9 vezes por segundo: no modo normal cada tiro
 ## reinicia o clarão daquele braço (o mesmo que a folha faz com o clarão dela); com "Reduzir piscadas" não há flash nem miolo branco: UM brilho âmbar parado por
 ## braço, que cada tiro só renova (alfa 1 enquanto o braço atira, apaga em BOCA_APAGA_S depois do último tiro): no máximo 2 trocas por rajada contínua.
 ## A folha do mecha já traz um clarão branco no quadro do disparo (combo 1 e 7; com "Reduzir piscadas" a folha usa poses sem ele): o BOCA é desenhado por cima, centrado na mesma boca.
@@ -200,6 +202,8 @@ func atualizar(dt: float) -> void:
 		tempo[i] = maxf(0.0, tempo[i] - dt)
 	for i in BOCA_VAGAS:
 		boca_tempo[i] = maxf(0.0, boca_tempo[i] - dt)
+		if boca_tempo[i] > 0.0 and not _boca_visivel(i, Piscadas.ligado()):
+			boca_tempo[i] = 0.0  # modo normal e a mira virou depois do tiro: o clarão era daquele tiro, apaga (não migra)
 		if boca_tempo[i] <= 0.0:
 			boca_heroi[i] = null  # a vaga livre não segura o herói
 			boca_tabela[i] = []
@@ -228,8 +232,17 @@ func _bocas_no_mundo() -> PackedVector2Array:
 	var r := PackedVector2Array()
 	r.resize(BOCA_VAGAS)
 	for i in BOCA_VAGAS:
-		r[i] = (boca_heroi[i].pr as Vector2) + _boca_rel_agora(i) if boca_tempo[i] > 0.0 and boca_heroi[i] != null else Vector2.INF
+		r[i] = (boca_heroi[i].pr as Vector2) + _boca_rel_agora(i) if _boca_visivel(i, Piscadas.ligado()) else Vector2.INF
 	return r
+
+
+## A vaga `i` desenha neste quadro? Acesa e com dono; no modo normal (não `calmo`), só enquanto a folha desenha a MESMA linha do tiro que a
+## acendeu: virou a mira, o clarão do tiro velho não vai para o cano da linha nova (seria brilho na direção nova sem bala). O tiro seguinte
+## já sai na linha nova e acende de novo. Com "Reduzir piscadas" o brilho parado acompanha o braço (apagar e reacender a cada virada piscaria).
+func _boca_visivel(i: int, calmo: bool) -> bool:
+	if boca_tempo[i] <= 0.0 or boca_heroi[i] == null:
+		return false
+	return calmo or boca_heroi[i].linha_de(boca_heroi[i].dir_olhar) == boca_linha[i]
 
 
 ## A boca relativa (px inteiros) da vaga `i` neste quadro: a do tiro enquanto a folha desenha a mesma linha; a mira virou, a do mesmo braço na linha nova.
@@ -288,7 +301,7 @@ func desenhar(no: Node2D) -> void:
 		no.draw_texture(tex, pos[i] - Vector2(meio, meio), cor)
 	var meio_b := floorf(float(LADO[BOCA]) * 0.5)
 	for i in BOCA_VAGAS:
-		if boca_tempo[i] <= 0.0 or boca_heroi[i] == null:
+		if not _boca_visivel(i, calmo):
 			continue
 		var lugar: Vector2 = (boca_heroi[i].pr as Vector2) + _boca_rel_agora(i)  # segue o cano: o herói pode ter andado ou virado a mira desde o tiro
 		no.draw_texture(quadros[BOCA][quadro_boca(boca_tempo[i], calmo)], lugar - Vector2(meio_b, meio_b), Color(1, 1, 1, alfa_boca(i, calmo)))

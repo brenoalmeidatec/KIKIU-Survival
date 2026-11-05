@@ -7,7 +7,11 @@ extends "res://testes/isolamento_v2.gd"
 ##     enquanto o tiro estiver segurado, e a mira acompanha o ponto do mouse com o herói andando;
 ##  3. andando SEM atirar com a mira contra o passo (de costas), o andar tocava para a frente (moonwalk). Agora recua um quadro por vez, como o
 ##     andar_tiro de costas (v2_lw_anda_atira).
-## E o controle: os heróis corpo a corpo (Hazaki) seguem com a direção do golpe travada no começo dele.
+##  4. (revisão da rodada 5) com os braços virando no mesmo quadro, o clarão de boca (BOCA, 0,1 s) de uma bala que acabou de sair migrava para o
+##     cano da linha NOVA: brilho na direção nova sem bala. Agora, no modo normal, o clarão só desenha na linha do tiro que o acendeu (virou, apaga;
+##     o tiro seguinte acende na linha nova). Com "Reduzir piscadas" o brilho parado continua acompanhando o braço (v2_mecha_projeteis);
+##  5. o Lobo (lightwolf_lobo) segue SEM mira_continua até alguém gravar o andar dele de costas atirando (a folha não tem andar_tiro).
+## E o controle: os heróis corpo a corpo (Hazaki) seguem com a direção do golpe travada do começo ao fim dele (olhar e golpe_dir).
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Heroi := preload("res://v2/heroi.gd")
@@ -83,6 +87,44 @@ func viradas(cada: int) -> Array:
 	h.ataque_forcado = false
 	h.entrada_forcada = Vector2.ZERO
 	return [atrasos, linhas, tortas, balas]
+
+
+## 4. Modo normal: andando e atirando, o mouse vira a cada `cada` quadros. Conta os quadros em que um clarão de boca é desenhado (boca_pos finito)
+## numa linha que não é a do tiro que o acendeu, e os quadros em que a linha virou com um clarão aceso do quadro anterior (o caso exercitado).
+func bocas_virando(cada: int) -> Array:
+	zerar()
+	var h = w.heroi
+	var e = w.combate.adagas.estalos
+	e.limpar()
+	h.entrada_forcada = Vector2.RIGHT
+	h.ataque_forcado = true
+	w.avancar(PASSO)
+	h.fonte = Heroi.Fonte.MOUSE
+	var dirs := [Vector2.RIGHT, Vector2(-1, 1).normalized(), Vector2.UP, Vector2.LEFT, Vector2(1, 1).normalized(), Vector2.DOWN]
+	var migradas := 0
+	var exercitado := 0
+	var acesas := 0
+	var linha_ant: int = h.linha_de(h.dir_olhar)
+	var aceso_ant := false
+	for i in 240:
+		w.mouse_forcado = h.centro() + (dirs[(i / cada) % dirs.size()] as Vector2) * 4000.0
+		w.avancar(PASSO)
+		var linha: int = h.linha_de(h.dir_olhar)
+		if linha != linha_ant and aceso_ant:
+			exercitado += 1
+		var aceso := false
+		for k in e.BOCA_VAGAS:
+			if not (e.boca_pos[k] as Vector2).is_finite():
+				continue
+			aceso = true
+			acesas += 1
+			if e.boca_linha[k] != linha:
+				migradas += 1
+		linha_ant = linha
+		aceso_ant = aceso
+	h.ataque_forcado = false
+	h.entrada_forcada = Vector2.ZERO
+	return [migradas, exercitado, acesas]
 
 
 func _ready() -> void:
@@ -195,7 +237,29 @@ func _ready() -> void:
 	ok(av >= 6, "de frente, o andar segue avançando (%d avanços)" % av)
 	h.entrada_forcada = Vector2.ZERO
 
-	# controle: o Hazaki (corpo a corpo) segue com a direção do golpe travada no começo do golpe
+	# 4. modo normal: o clarão de boca não migra para o cano da linha nova (brilho sem bala)
+	var args_antes: Dictionary = w.args.duplicate()
+	var reduzir: bool = Config.reduzir_piscadas
+	w.args["particulas"] = "muitas"
+	Config.reduzir_piscadas = false
+	var bt := [0, 0, 0]
+	for cada in [5, 7, 9, 11, 13]:
+		var r := bocas_virando(cada)
+		for k in 3:
+			bt[k] += r[k]
+	print("clarão de boca virando a mira: %d quadros desenhado fora da linha do tiro, %d viradas com o clarão aceso, %d quadros acesos" % bt)
+	ok(bt[2] > 100 and bt[1] >= 10, "o caso foi exercitado (%d viradas com o clarão aceso, %d quadros acesos)" % [bt[1], bt[2]])
+	ok(bt[0] == 0, "modo normal: virou a mira, o clarão do tiro velho não aparece no cano da linha nova (%d quadros)" % bt[0])
+	Config.reduzir_piscadas = reduzir
+	w.args = args_antes
+
+	# 5. o Lobo fica sem mira_continua até ter vídeo
+	var lobo: Dictionary = Herois.heroi("lightwolf_lobo")  # forma, não herói de escolha: lê o registro (o cfg dele sobrescreve o do mecha ao virar Lobo)
+	ok(str(lobo.get("forma_de", "")) == "lightwolf", "achou o registro do Lobo")
+	var cfg_lobo: Dictionary = Herois.cfg_para(Dados.json("v2_combate"), "lightwolf_lobo")  # o cfg que o mecha.gd põe no combate ao virar Lobo
+	ok(not bool(cfg_lobo.golpe.get("mira_continua", false)), "a pistola do Lobo segue sem mira_continua (sem vídeo do andar de costas atirando)")
+
+	# controle: o Hazaki (corpo a corpo) segue com a direção do golpe travada do começo ao fim do golpe
 	montar("hazaki")
 	h = w.heroi
 	ok(not bool(w.combate.cfg.golpe.get("mira_continua", false)), "a katana do Hazaki não tem mira_continua")
@@ -209,9 +273,20 @@ func _ready() -> void:
 			break
 	ok(comecou, "o Hazaki começou um golpe")
 	var d0: Vector2 = h.golpe_dir
+	var o0: Vector2 = h.dir_olhar
+	var n0: int = h.golpes
 	w.mouse_forcado = h.centro() + Vector2(0, -4000)
-	w.avancar(PASSO)
-	ok(h.estado != Heroi.Estado.GOLPE or h.golpe_dir == d0, "o golpe do Hazaki não vira no meio (compromisso de direção)")
+	var no_golpe := 0
+	var virou := 0
+	for i in 60:  # até o golpe acabar (ou o próximo do combo começar): todos os quadros, olhar e golpe_dir
+		w.avancar(PASSO)
+		if h.estado != Heroi.Estado.GOLPE or h.golpes != n0:
+			break
+		no_golpe += 1
+		if h.golpe_dir != d0 or h.dir_olhar != o0:
+			virou += 1
+	ok(no_golpe >= 3, "o golpe do Hazaki seguiu alguns quadros depois de virar o mouse (%d)" % no_golpe)
+	ok(virou == 0, "o golpe do Hazaki não vira no meio, olhar e golpe_dir (compromisso de direção; %d quadros virados)" % virou)
 	h.ataque_forcado = false
 	_fim()
 

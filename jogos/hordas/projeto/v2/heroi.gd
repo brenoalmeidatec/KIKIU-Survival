@@ -1192,7 +1192,7 @@ func _golpe_para_mira() -> void:
 	dir_olhar = golpe_dir
 
 
-## O golpe deste herói segue a mira enquanto sai (dados > golpe.mira_continua: o canhão do mecha e a pistola do Lobo)? Sem o campo, a direção
+## O golpe deste herói segue a mira enquanto sai (dados > golpe.mira_continua: o canhão do mecha; a pistola do Lobo ainda não, sem vídeo)? Sem o campo, a direção
 ## fica travada do começo ao fim do golpe (o compromisso do corpo a corpo). Com ele, braços e balas viram no mesmo quadro que o mouse (ou o
 ## analógico): antes a rajada de 0,16 s segurava a mira velha e a bala do quadro de acerto saía para trás (vídeo da rodada 4, 05/11).
 func mira_continua() -> bool:

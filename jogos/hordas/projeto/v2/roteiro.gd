@@ -489,7 +489,8 @@ func _r_lw_mira() -> void:
 		1:
 			h.entrada_forcada = Vector2.RIGHT if t_passo < 2.0 else Vector2.LEFT
 			h.ataque_forcado = true
-			mundo.mouse_forcado = h.centro() + (VIRAS[int(t_passo / 0.4) % VIRAS.size()] as Vector2) * 4000.0
+			# o índice para no último trecho de 0,4 s: no quadro em que t_passo chega a 4,0 o índice 10 escolheria LEFT por 1 quadro (falso do roteiro)
+			mundo.mouse_forcado = h.centro() + (VIRAS[mini(int(t_passo / 0.4), 9) % VIRAS.size()] as Vector2) * 4000.0
 			h.fonte = h.Fonte.MOUSE  # o mouse mexe neste trecho (o _input faria isto)
 		2:
 			if lw_mira_p != 2:
@@ -500,6 +501,10 @@ func _r_lw_mira() -> void:
 		3:
 			h.entrada_forcada = Vector2.LEFT
 			h.ataque_forcado = false
+			if lw_mira_p != 3:
+				# o mouse "mexe" no mesmo quadro em que o andar vira (sem tiro, a virada passaria a fonte para ANDA antes do roteiro voltar para MOUSE:
+				# o mecha olharia para o passo por 1 quadro, um falso do roteiro). Igual a um mouse que mexe depois da virada.
+				h._anda_ant = Vector2.LEFT
 			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
 			h.fonte = h.Fonte.MOUSE
 		4:
