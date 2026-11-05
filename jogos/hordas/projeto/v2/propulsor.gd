@@ -160,7 +160,7 @@ static func _simples() -> bool:
 ## A textura de uma chama: `incl10` a inclinação em décimos de px por linha, `f` a força, `q` o quadro, `mult` o fator do comprimento (atrás do corpo). Guardada: o mesmo desenho serve a todos os voos.
 static func _textura(incl10: int, f: int, q: int, n: Dictionary, mult := 1.0) -> ImageTexture:
 	var simples := _simples()
-	var chave := (((incl10 + 20) * 100 + f * 10 + q) * 2 + (1 if simples else 0)) * 4 + roundi((mult - 1.0) * 4.0)
+	var chave := (((incl10 + 20) * 100 + f * 10 + q) * 2 + (1 if simples else 0)) * 1000 + clampi(roundi(mult * 100.0), 0, 999)  # mult em centésimos: sem colisão entre fatores
 	if _texturas.has(chave):
 		return _texturas[chave]
 	var img := Image.create(METADE * 2 + 1, ALTURA, false, Image.FORMAT_RGBA8)
