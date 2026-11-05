@@ -6,7 +6,9 @@ extends "res://testes/isolamento_v2.gd"
 #  - as cópias pré-giradas do míssil, da adaga e do plasma ficam prontas ao montar (nada gerado no meio da partida), com âncora inteira e o alfa
 #    que a arte já tinha (o míssil é 0/1 em todas);
 #  - o nariz do míssil segue o movimento DESENHADO: na descida da boca do pod até a trajetória do chão, a direção do desenho (`_ang_visual`) bate com
-#    o deslocamento medido de `_pos_visual` quadro a quadro, e não com `a_dir` (a do chão), nas 8 miras;
+#    o deslocamento medido de `_pos_visual` quadro a quadro, e não com `a_dir` (a do chão), nas 8 miras; e a direção QUANTIZADA que vai para o
+#    desenho (`_dir_desenho`) é a do caminho medido ou a vizinha (`_nariz_desenhado`, tolerância fixada antes de medir);
+#  - o cache estático das cópias não cresce a cada Combate novo (`_cache_estavel`);
 #  - o míssil some sem alfa parcial: `_fade` fica em 1 até o fim do alcance (a adaga segue esmaecendo, como antes).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_misseis_desenho.tscn  (imprime "v2_misseis_desenho falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -38,6 +40,7 @@ func _ready() -> void:
 	w.combate.audio.mudo = true
 	_varredura()
 	_copias()
+	_cache_estavel()
 	_nariz()
 	_some_sem_alfa()
 	Herois.forcado = ""
@@ -73,7 +76,8 @@ func _varredura() -> void:
 	ok(src.find("AnimGolpes.desenhar(") < 0, "a folha animada não passa por AnimGolpes.desenhar (que gira por ângulo livre)")
 	var corpo := _corpo(src, "_desenhar_corpo")
 	ok(corpo.find("SpriteGiro.desenhar(") >= 0, "o corpo desenha a imagem por SpriteGiro.desenhar (16 direções)")
-	ok(corpo.find("_ang_visual(") >= 0 and corpo.find("a_dir[i] as Vector2).angle()") < 0, "o corpo aponta a imagem pela direção do desenho, não pela do chão")
+	var pelo_desenho := corpo.find("_ang_visual(") >= 0 or (corpo.find("_dir_desenho(") >= 0 and _corpo(src, "_dir_desenho").find("_ang_visual(") >= 0)
+	ok(pelo_desenho and corpo.find("a_dir[i] as Vector2).angle()") < 0, "o corpo aponta a imagem pela direção do desenho, não pela do chão")
 	var brilho := _corpo(src, "_desenhar_brilho")
 	ok(brilho.find("direcao16(") >= 0, "o fogo do motor (brilho) usa a mesma direção quantizada")
 
@@ -131,6 +135,7 @@ func _zerar(mira: Vector2) -> void:
 ## O nariz: em cada uma das 8 miras, a E solta mísseis que descem do pod; quadro a quadro, a direção do desenho tem de bater com o caminho
 ## que a imagem fez (`_pos_visual` de um quadro para o outro). Na descida esse caminho se afasta da direção do chão (é o defeito do vídeo).
 func _nariz() -> void:
+	_nariz_desenhado()
 	var ad = w.combate.adagas
 	if not ad.has_method("_ang_visual"):
 		ok(false, "adagas.gd não tem a direção do desenho (_ang_visual): o míssil aponta para a direção do chão")
@@ -173,6 +178,79 @@ func _nariz() -> void:
 	ok(errados == 0, "a direção do desenho segue o caminho da imagem (%d quadros fora de 15 graus; pior %.1f)" % [errados, rad_to_deg(pior)])
 	ok(descida > 20, "houve descida do pod em que o caminho desenhado se afasta mais de 20 graus do chão (%d quadros)" % descida)
 	ok(descida_quant >= descida / 2, "na descida a direção quantizada do desenho não é a do chão (%d de %d)" % [descida_quant, descida])
+
+
+## A direção (0 a 15, passos de 22,5 graus) de um ângulo, calculada aqui no teste e não pelo código testado.
+func _d16(rad: float) -> int:
+	return posmod(roundi(rad / (TAU / 16.0)), 16)
+
+
+## O nariz MEDIDO no que é desenhado: a direção quantizada que `_desenhar_corpo` entrega ao SpriteGiro (`_dir_desenho`, a mesma chamada que o corpo
+## faz) contra a direção (quantizada aqui) do deslocamento medido de `_pos_visual` de um quadro para o outro. Tolerância fixada ANTES de medir:
+## a mesma direção ou a vizinha (22,5 graus), porque o deslocamento é a corda entre dois quadros e o desenho é a direção do instante.
+## No código antigo não há `_dir_desenho`: o corpo desenhava pela direção do chão, `a_dir[i].angle()`, e é ela que entra na conta (falha por medida).
+func _nariz_desenhado() -> void:
+	var ad = w.combate.adagas
+	var novo: bool = ad.has_method("_dir_desenho")
+	var idx := int(ad._proj_nomes["missil"])
+	var medidos := 0
+	var fora := 0
+	var exemplo := ""
+	for k in 8:
+		_zerar(Vector2.from_angle(float(k) * TAU / 8.0))
+		ok(w.heroi.habilidade(), "mira %d: a E dispara (nariz desenhado)" % k)
+		var antes := {}  # slot -> [pos desenhada, distância voada]
+		for _q in 90:
+			passos(1)
+			for i in ad.MAX:
+				if ad.a_rest[i] <= 0.0 or ad.a_proj[i] != idx or ad.a_visual_oculto[i] != 0:
+					antes.erase(i)
+					continue
+				var pv: Vector2 = ad._pos_visual(i)
+				var dist: float = ad.a_visual_dist[i]
+				if antes.has(i) and dist > float(antes[i][1]):
+					var mov: Vector2 = pv - (antes[i][0] as Vector2)
+					if mov.length() >= 2.0:
+						medidos += 1
+						var desenho := -1
+						if novo:
+							var d: Vector2i = ad._dir_desenho(i)
+							desenho = d.y * 4 + d.x
+						else:
+							desenho = _d16((ad.a_dir[i] as Vector2).angle())
+						var dif := absi(desenho - _d16(mov.angle()))
+						if mini(dif, 16 - dif) > 1:
+							fora += 1
+							if exemplo == "":
+								exemplo = "mira %d slot %d: desenho %d, caminho %d" % [k, i, desenho, _d16(mov.angle())]
+				antes[i] = [pv, dist]
+	ok(medidos > 200, "mediu o nariz desenhado de muitos mísseis (%d quadros)" % medidos)
+	ok(fora == 0, "a direção que vai para o desenho é a do caminho medido ou a vizinha (%d quadros fora; %s)" % [fora, exemplo])
+	if novo:
+		var src := FileAccess.get_file_as_string(ARQ)
+		ok(_corpo(src, "_desenhar_corpo").find("_dir_desenho(i)") >= 0, "o corpo desenha pela mesma `_dir_desenho` que o teste mediu")
+
+
+## O cache das cópias pré-giradas (sprite_giro.gd, estático) não cresce a cada Combate novo: as texturas procedurais (adaga, plasma, míssil)
+## nascem uma vez por processo e a bolinha do mecha (desenhada sem giro) não ganha cópia. Antes cada partida somava 4 texturas e 12 cópias.
+func _cache_estavel() -> void:
+	var sg = load("res://v2/sprite_giro.gd")
+	if sg == null:
+		ok(false, "v2/sprite_giro.gd existe (cache)")
+		return
+	var ad = w.combate.adagas
+	var g0: int = sg.geradas
+	var n0: int = (sg._cache as Dictionary).size()
+	for _vez in 3:
+		var camada := Node2D.new()
+		add_child(camada)
+		var outro = load(ARQ).new()
+		outro.montar(w.combate, camada, ad.tex_brilho)
+		camada.free()
+	ok(sg.geradas == g0, "remontar 3 vezes não gera cópia nova (%d -> %d)" % [g0, sg.geradas])
+	ok((sg._cache as Dictionary).size() == n0, "remontar 3 vezes não aumenta o cache (%d -> %d)" % [n0, (sg._cache as Dictionary).size()])
+	var bala: Texture2D = ad._proj_lista[int(ad._proj_nomes["bala"])].tex
+	ok(not sg.preparada(bala), "a bolinha do mecha (sem giro) não ganha cópias pré-giradas")
 
 
 ## O fim do alcance: o míssil fica com alfa 1 até o último quadro; a adaga ainda esmaece (comportamento antigo dela).

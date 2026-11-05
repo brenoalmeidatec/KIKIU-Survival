@@ -3135,3 +3135,16 @@ Branch `alisson/lw-r5-missil`, saindo de 369857c9 (#620). Responde ao que o víd
 - Não vi em vídeo o perfil Baixo nem "Reduzir piscadas" (nada aqui pisca; só a direção e o alfa mudaram). Não vi Matheus/Fabio/Luke/Lobo em movimento, só a folha de contato parada.
 - O míssil na diagonal de 22,5°/67,5° usa a cópia pré-girada do #615 (voto 2x2): legível, mas é arte gerada por algoritmo; se o Isac quiser, desenhar à mão as 3 cópias de 24x9.
 - `v2_misseis_desenho` não está em `ferramentas/tempos_testes.txt` (vale o tempo padrão do CI). CI deste push não acompanhado.
+
+### 05/11/2026 — LightWolf rodada 5, míssil: ressalvas da revisão independente (Claude do Alisson, notebook)
+
+Mesma branch `alisson/lw-r5-missil`. A revisão deu "aprovo com ressalvas", sem bloqueio. Corrigido:
+- **Teste do nariz medido no desenho:** `v2_misseis_desenho` ganhou `_nariz_desenhado`, que compara a direção quantizada que `_desenhar_corpo` entrega ao SpriteGiro (`_dir_desenho(i)` em `v2/adagas.gd`, a mesma chamada do corpo) com a direção (quantizada pelo próprio teste) do deslocamento medido de `_pos_visual` quadro a quadro. Tolerância fixada antes de medir: mesma direção ou a vizinha. No código antigo o teste usa o que ele desenhava (`a_dir.angle()`) e falha por medida: 310 quadros fora. A checagem antiga de 15 graus continua lá, igual.
+- **Vazamento do cache estático do SpriteGiro:** as texturas procedurais (adaga, bala, plasma, míssil) agora nascem uma vez por processo (`static var _texs`), então remontar o Combate não soma cópias. A bala do mecha (desenhada sem giro) não ganha cópia. Teste `_cache_estavel`: 3 remontagens, sem cópia nova e sem crescer o cache. No head anterior (9cadb34d) deu `21 -> 57` cópias e `7 -> 19` entradas.
+- **Lista de folhas `<proj>_heroi`:** sai do índice (`AnimGolpes.ids()`, função nova de 3 linhas), não de lista fixa.
+- `v2_misseis_desenho 40` em `ferramentas/tempos_testes.txt` (estimativa grossa, ver o comentário lá).
+- Contra o código antigo (369857c9, cópia no scratchpad com hash conferido): falhas=10. Contra o head anterior: falhas=4. No novo: falhas=0.
+
+**Fica para o Alisson decidir (não mexi):** a regra de alfa 0/1 fora do míssil. A adaga, o plasma (com cauda de alfa 0,7 na arte) e as folhas shuriken/kunai/flecha seguem esmaecendo nos últimos 24 px; o fogo do motor (0,65) e a sombra (0,35) do míssil seguem com alfa parcial constante. Se a regra vale para todos, `_fade` passa a retornar 1 para todo projétil com imagem.
+
+**Não verificado:** o desenho não mudou (o corpo passa `angulo16(_dir_desenho(i))`, que o SpriteGiro quantiza para a mesma direção de antes, e as texturas têm os mesmos pixels), por isso não gravei clipe novo. CI do push não acompanhado.

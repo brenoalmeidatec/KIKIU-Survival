@@ -117,6 +117,9 @@ var _cand: Array = []
 var _cand_visual: Array = []  # previsão visual separada: nunca acrescenta alvos ao narrowphase físico
 var _proj_lista: Array = []  # [{nome, tex (código) ou anim (folha), compr, alt}], o índice 0 é sempre a adaga
 var _proj_nomes := {}  # nome -> índice em _proj_lista
+## As texturas procedurais (adaga, bala, plasma, míssil), geradas UMA vez por processo: o cache de cópias pré-giradas de sprite_giro.gd é
+## estático e indexado pela textura, então gerar textura nova a cada `montar` (a cada Combate) somava cópias que nunca saíam do cache.
+static var _texs := {}
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
 var misseis_visual := MisseisVisual.new()
@@ -129,14 +132,17 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	tex_brilho = tex
 	_proj_lista.clear()
 	_proj_nomes.clear()
-	_registrar("adaga", _img_adaga(), COMPR, 5.0)
-	_registrar("bala", _img_bala(), 5.0, 5.0)
-	_registrar("plasma", _img_plasma(), 11.0, 7.0)
-	_registrar("missil", _img_missil(), 24.0, 9.0)
-	for nome in ["shuriken", "kunai", "flecha"]:  # as folhas `<nome>_heroi`: as cópias pré-giradas nascem ao montar, não no primeiro arremesso
-		var voo: Dictionary = AnimGolpes.de(nome + "_heroi").get("voo", {})
-		if not voo.is_empty():
-			_preparar_folha(voo)
+	if _texs.is_empty():
+		_texs = {"adaga": _img_adaga(), "bala": _img_bala(), "plasma": _img_plasma(), "missil": _img_missil()}
+	_registrar("adaga", _texs.adaga, COMPR, 5.0)
+	_registrar("bala", _texs.bala, 5.0, 5.0)
+	_registrar("plasma", _texs.plasma, 11.0, 7.0)
+	_registrar("missil", _texs.missil, 24.0, 9.0)
+	for id in AnimGolpes.ids():  # as folhas `<proj>_heroi` (lidas do índice, não de lista fixa): as cópias nascem ao montar, não no primeiro arremesso
+		if str(id).ends_with("_heroi"):
+			var voo: Dictionary = AnimGolpes.de(str(id)).get("voo", {})
+			if not voo.is_empty():
+				_preparar_folha(voo)
 	misseis_visual.montar()
 	estalos.montar()
 	_traco_px.resize(TRACO_BUF)
@@ -675,7 +681,7 @@ func _desenhar_corpo() -> void:
 			continue
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		p = _pos_visual(i)  # a sombra acima permanece na trajetória lógica do chão
-		var ang := _ang_visual(i)  # a imagem aponta para onde o DESENHO anda, numa das 16 direções e sem girar pixel (sprite_giro.gd)
+		var ang := PixelRot.angulo16(_dir_desenho(i))  # a imagem aponta para onde o DESENHO anda, numa das 16 direções e sem girar pixel (sprite_giro.gd)
 		if e.has("anim"):
 			var f: Dictionary = e.anim
 			var q := Vector2i(f.quadro as Vector2)
@@ -789,6 +795,12 @@ func _ang_visual(i: int) -> float:
 	if d.length_squared() < 0.000001:
 		return (a_dir[i] as Vector2).angle()
 	return d.angle()
+
+
+## A direção (das 16, `PixelRot.direcao16`) com que `_desenhar_corpo` desenha a imagem do projétil `i`: a de `_ang_visual`, quantizada.
+## O corpo desenha por ela (SpriteGiro quantiza de novo, sem mudar nada), e o teste v2_misseis_desenho mede esta mesma direção.
+func _dir_desenho(i: int) -> Vector2i:
+	return PixelRot.direcao16(_ang_visual(i))
 
 
 ## Gera as cópias pré-giradas de uma folha animada (`voo` de `<proj>_heroi`) para o desenho em 16 direções; sem efeito se já gerou.
@@ -950,8 +962,9 @@ func _img_plasma() -> Texture2D:
 func _registrar(nome: String, tex: Texture2D, compr: float, alt: float) -> int:
 	_proj_lista.append({"nome": nome, "tex": tex, "compr": compr, "alt": alt})
 	_proj_nomes[nome] = _proj_lista.size() - 1
-	var tam := Vector2i(tex.get_size())
-	SpriteGiro.preparar(tex, tam, tam / 2)  # as cópias pré-giradas nascem aqui, ao montar, e não no meio da partida
+	if nome != "bala":  # a bolinha do mecha é desenhada sem giro (`_bolinha`); outro herói com "bala" cairia no `variante` sob demanda
+		var tam := Vector2i(tex.get_size())
+		SpriteGiro.preparar(tex, tam, tam / 2)  # as cópias pré-giradas nascem aqui, ao montar, e não no meio da partida
 	return _proj_lista.size() - 1
 
 

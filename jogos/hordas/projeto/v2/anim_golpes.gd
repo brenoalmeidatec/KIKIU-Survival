@@ -58,6 +58,12 @@ static func de(id: String) -> Dictionary:
 	return _armas.get(id, {})
 
 
+## Os ids de todas as armas com folha animada (lidos dos índices).
+static func ids() -> Array:
+	carregar()
+	return _armas.keys()
+
+
 ## Duração (s) de uma passada da folha.
 static func duracao(f: Dictionary) -> float:
 	return float(f.n) / float(f.fps)
