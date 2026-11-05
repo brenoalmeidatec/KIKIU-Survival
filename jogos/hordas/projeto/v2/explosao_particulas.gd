@@ -11,7 +11,8 @@ extends RefCounted
 ##  - BRASA: pontos de 1 px que sobem devagar da cratera e da bola, em ciano (BRASA) ou âmbar, 3 degraus de cor.
 ##  - FUMACA: blobs de 14/10/6/3 px (discos pixel com pontilhado no lugar de alfa) que sobem e encolhem em degraus, furando antes de sumir. Atrás da bola.
 ##  - CALOR: pontos de 2 px no chão que acendem quando a onda passa e apagam em 3 degraus (ciano -> azul -> azul escuro). No nó do chão.
-## "Reduzir piscadas" (calmo): faíscas e brasas de UMA cor (âmbar médio) e sem rastro, os pedaços de casco sem trocar de forma; o resto só desce de claro para escuro.
+## "Reduzir piscadas" (calmo): faíscas e brasas de UMA cor (âmbar médio), sem rastro e sem trocar de tamanho, os pontos de calor de um azul só, os pedaços de casco sem
+## trocar de forma e só 1 degrau de tamanho (3 -> 2 px); a fumaça só desce de claro para escuro, em 2 degraus. Nenhum estado dura menos de ~0,24 s de relógio.
 ## Perfil Baixo: explosao_mecha não chama `emitir` (zero partículas). A sucção do fim do fusível (`desenhar_succao`) é estática e fica em qualquer perfil (4 pontos no Baixo).
 
 const MAX := 128
@@ -258,6 +259,27 @@ func degrau_fumaca(i: int) -> int:
 	return 0 if f < 0.4 else (1 if f < 0.65 else (2 if f < 0.85 else 3))
 
 
+## O lado (px) do detrito `i`. Normal: 3 -> 2 -> 1. Calmo: 3 -> 2 uma vez só, na metade da vida (cada lado dura >= 0,24 s de relógio).
+func lado_detrito(i: int) -> int:
+	var f := _f(i)
+	if calmo:
+		return 3 if f < 0.5 else 2
+	return 3 if f < 0.55 else (2 if f < 0.8 else 1)
+
+
+## O lado (px) da faísca `i`. Normal: as de variante 1 têm 2 px na 1ª metade. Calmo: sempre 1 px (nada troca de tamanho).
+func lado_faisca(i: int) -> int:
+	return 2 if vari[i] == 1 and not calmo and _f(i) < 0.5 else 1
+
+
+## A cor do ponto de calor `i`. Normal: ciano -> azul -> azul escuro. Calmo: um azul só.
+func cor_calor(i: int) -> Color:
+	if calmo:
+		return AZUL
+	var f := _f(i)
+	return CIANO if f < 0.33 else (AZUL if f < 0.66 else AZUL_ESC)
+
+
 ## Detritos, faíscas e brasas: por cima da bola.
 func desenhar_frente(no: CanvasItem) -> void:
 	for i in MAX:
@@ -268,7 +290,7 @@ func desenhar_frente(no: CanvasItem) -> void:
 		var p := _tela(i)
 		match t:
 			DETRITO:
-				var lado := 3 if f < 0.55 else (2 if f < 0.8 else 1)
+				var lado := lado_detrito(i)
 				if vari[i] == 1 and lado == 3:  # pedaço de casco: gira trocando de forma (calmo: uma forma só)
 					var forma: Array = FORMAS_CASCO[0 if calmo or quicou[i] == 1 and vz[i] == 0.0 else int(idade[i] / CASCO_GIRO) % 4]
 					for q in forma:
@@ -278,7 +300,7 @@ func desenhar_frente(no: CanvasItem) -> void:
 					no.draw_rect(Rect2(p - Vector2(lado / 2, lado / 2), Vector2(lado, lado)), cor)
 			FAISCA:
 				var cor := AMBAR_MEDIO if calmo else (AMBAR_CLARO if f < 0.35 else (LARANJA if f < 0.7 else CINZA_ESC))
-				var lado := 2 if vari[i] == 1 and f < 0.5 else 1
+				var lado := lado_faisca(i)
 				no.draw_rect(Rect2(p, Vector2(lado, lado)), cor)
 				if not calmo and f < 0.7:  # o rastro: 2 pontos atrás, pela velocidade (sem guardar histórico)
 					for k in [1, 2]:
@@ -301,8 +323,7 @@ func desenhar_chao(no: CanvasItem) -> void:
 	for i in MAX:
 		if tipo[i] != CALOR or idade[i] < 0.0:
 			continue
-		var f := _f(i)
-		no.draw_rect(Rect2(_tela(i), Vector2(2, 1)), CIANO if f < 0.33 else (AZUL if f < 0.66 else AZUL_ESC))
+		no.draw_rect(Rect2(_tela(i), Vector2(2, 1)), cor_calor(i))
 
 
 ## O blob de fumaça de `diam` px (variante 0..2: o tom), desenhado uma vez por sessão: topo FUMACA, base FUMACA_ESC, borda pontilhada (AZUL_ESC / vazio) no lugar de alfa;

@@ -4,7 +4,8 @@ extends Node
 #  2. some no fim: depois da vida mais longa (fumaça) o pool fica vazio, e `limpar` zera;
 #  3. perfil Baixo (`explodir(..., leve = true)`): nenhuma partícula nasce;
 #  4. RNG da partida intacto: a sequência do RNG global depois de explodir e animar 4 s é a mesma de sem a explosão (o efeito usa hash próprio);
-#  5. "Reduzir piscadas": faíscas e brasas de cor única, e cada partícula só desce de degrau (tamanho e cor nunca voltam), com degrau de fumaça >= 0,25 s de relógio.
+#  5. "Reduzir piscadas": faíscas e brasas de cor única, e cada partícula só desce de degrau (tamanho e cor nunca voltam), com degrau de fumaça >= 0,25 s de relógio;
+#     detritos, faíscas, fumaça e pontos de calor trocam de desenho no máximo 1 vez e nenhum estado dura menos de 0,2 s (medido por vaga, quadro a quadro).
 #  6. a sucção do fusível: 4 degraus de raio no normal e um só no calmo (desenho estático, conferido pelo número de pontos).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_lw_q_particulas.tscn  (imprime "v2_lw_q_particulas falhas=0")
 const Ex := preload("res://v2/explosao_mecha.gd")
@@ -90,8 +91,6 @@ func _ready() -> void:
 	ok(not c.cheia() and c.particulas.calmo, "Reduzir piscadas: a bola calma e as partículas calmas")
 	var cp = c.particulas
 	var degrau_ant := {}
-	var troca_t := {}
-	var menor_degrau := 1e9
 	var voltou := 0
 	for f in 240:
 		c.atualizar(DT)
@@ -105,14 +104,71 @@ func _ready() -> void:
 			if degrau_ant.has(i):
 				if dg < degrau_ant[i]:
 					voltou += 1
-				elif dg > degrau_ant[i]:
-					if troca_t.has(i):
-						menor_degrau = minf(menor_degrau, (float(f) * DT - troca_t[i]) / 1.25)
-					troca_t[i] = float(f) * DT
 			degrau_ant[i] = dg
 	ok(voltou == 0, "calmo: a fumaça nunca volta de degrau")
-	print("calmo: o menor degrau da fumaça dura %.3f s de relógio" % menor_degrau)
-	ok(menor_degrau >= 0.25, "calmo: cada degrau da fumaça dura pelo menos 0,25 s de relógio (2 Hz) (%.3f)" % menor_degrau)
+	# 5b: calmo, detritos, faíscas, brasas, fumaça e calor: o desenho de cada partícula (tamanho/cor) troca no máximo 1 vez, nunca volta, e nenhum estado dura < 0,2 s de relógio
+	Config.temporario("reduzir_piscadas", true)
+	var d := _nova()
+	d.explodir(Vector2.ZERO, rect)
+	Config.temporario("reduzir_piscadas", false)
+	var dp = d.particulas
+	var sig_ant := {}  # vaga -> assinatura de desenho
+	var desde := {}  # vaga -> quadro em que a assinatura atual começou
+	var trocas := {}  # vaga -> quantas trocas
+	var menor := 1e9
+	var menor_fumaca := 1e9
+	var sig_tipo := {}
+	var voltas := 0
+	var vistos := {}
+	for f in 300:
+		d.atualizar(DT)
+		for i in P.MAX:
+			var t: int = dp.tipo[i]
+			var vis: bool = t != P.LIVRE and dp.idade[i] >= 0.0
+			if not vis:
+				if sig_ant.has(i):  # sumiu: fecha o último estado
+					menor = minf(menor, float(f - desde[i]) * DT / 1.25)
+					if sig_tipo[i] == P.FUMACA_T:
+						menor_fumaca = minf(menor_fumaca, float(f - desde[i]) * DT / 1.25)
+					sig_ant.erase(i)
+				continue
+			var sg := -1
+			match t:
+				P.DETRITO:
+					sg = dp.lado_detrito(i)
+				P.FAISCA:
+					sg = dp.lado_faisca(i)
+				P.CALOR:
+					sg = int(dp.cor_calor(i).b * 100.0)
+				P.FUMACA_T:
+					sg = -dp.degrau_fumaca(i)  # índice maior = blob menor
+				_:
+					sg = 0  # brasa: uma cor, um tamanho
+			vistos[t] = true
+			var chave := i * 8 + t
+			if not sig_ant.has(i):
+				sig_ant[i] = sg
+				sig_tipo[i] = t
+				desde[i] = f
+				trocas[chave] = trocas.get(chave, 0)
+			elif sg != sig_ant[i]:
+				if sg > sig_ant[i] and t != P.CALOR:
+					voltas += 1  # cresceu de novo
+				menor = minf(menor, float(f - desde[i]) * DT / 1.25)
+				if t == P.FUMACA_T:
+					menor_fumaca = minf(menor_fumaca, float(f - desde[i]) * DT / 1.25)
+				trocas[chave] = trocas.get(chave, 0) + 1
+				sig_ant[i] = sg
+				desde[i] = f
+	var max_trocas := 0
+	for k in trocas:
+		max_trocas = maxi(max_trocas, trocas[k])
+	ok(vistos.size() == 5, "calmo: foram medidos detrito, faísca, brasa, fumaça e calor (%d tipos)" % vistos.size())
+	ok(voltas == 0, "calmo: nenhum detrito, faísca ou fumaça volta a crescer")
+	ok(max_trocas <= 1, "calmo: cada partícula troca de desenho no máximo 1 vez (%d)" % max_trocas)
+	print("calmo: o menor estado de partícula dura %.3f s de relógio (fumaça %.3f; trocas por partícula <= %d)" % [menor, menor_fumaca, max_trocas])
+	ok(menor_fumaca < 1e8 and menor_fumaca >= 0.25, "calmo: cada estado da fumaça dura pelo menos 0,25 s de relógio (2 Hz) (%.3f)" % menor_fumaca)
+	ok(menor >= 0.2, "calmo: nenhum estado dura menos de 0,2 s de relógio (%.3f)" % menor)
 	# 6: a sucção (os pontos): 4 degraus que fecham no normal, um só no calmo
 	var raios := []
 	for kk in [0.1, 0.3, 0.6, 0.9]:
