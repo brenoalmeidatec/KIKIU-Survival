@@ -35,6 +35,7 @@ const Especial := preload("res://v2/especial.gd")
 const Mecha := preload("res://v2/mecha.gd")
 const Matriz := preload("res://v2/matriz.gd")
 const Fumaca := preload("res://v2/fumaca.gd")  # a fumaça do Luke, o secundário dele (DEF-5)
+const Impulso := preload("res://v2/impulso.gd")  # o impulso do mecha do LightWolf (o Shift dele)
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
@@ -76,6 +77,7 @@ var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a r
 var ritmo
 var matriz  # a matriz de defesa do LightWolf, o secundário do mecha (v2/matriz.gd; só age com ela erguida)
 var fumaca  # a fumaça do Luke, o secundário dele (v2/fumaca.gd; a nuvem mora no pool de armas_novas.gd)
+var impulso  # o impulso do mecha do LightWolf (v2/impulso.gd; só age com o bloco cfg.impulso, que só o mecha tem)
 var mecha  # as formas Mecha e Lobo do LightWolf (v2/mecha.gd; só age em eventos, sem custo para os outros heróis)
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Luke (pool, v2/adagas.gd)
@@ -218,6 +220,8 @@ func montar(m) -> void:
 	fumaca.montar(self)
 	mecha = Mecha.new()
 	mecha.montar(self)
+	impulso = Impulso.new()
+	impulso.montar(self)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -1241,6 +1245,7 @@ func limpar_partida() -> void:
 	escudo.limpar()
 	matriz.limpar()
 	fumaca.limpar()
+	impulso.limpar()
 	especial.limpar()
 	habilidade.limpar()
 	baus.limpar()
@@ -1305,6 +1310,7 @@ func liberar() -> void:
 		especial,
 		habilidade,
 		mecha,
+		impulso,
 		elites,
 		baus,
 		chefes
@@ -1334,6 +1340,7 @@ func liberar() -> void:
 	especial = null
 	habilidade = null
 	mecha = null
+	impulso = null
 	elites = null
 	baus = null
 	chefes = null

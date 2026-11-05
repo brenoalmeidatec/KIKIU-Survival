@@ -763,7 +763,7 @@ func _visual_mecha(proj: int) -> bool:
 ## A tabela foi conferida contra o clarão desenhado na própria folha (combo, quadros 1 e 7): centro do clarão e boca diferem até 1,7 px nas 16 bocas (v2_mecha_projeteis confere <= 3).
 func _boca_mundo(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
 	var rel := _boca_rel(proj, h, origem, dir, passo)
-	return h.pos + rel if rel.is_finite() else Vector2.INF
+	return h.pos + rel + Vector2(0.0, -float(h.get("alt_px") if "alt_px" in h else 0)) if rel.is_finite() else Vector2.INF  # alt_px: o mecha voando no impulso
 
 
 ## A mesma boca relativa aos pés do herói (a tabela da folha, sem arredondar); Vector2.INF quando `_boca_mundo` também não tem.

@@ -48,6 +48,10 @@ extends RefCounted
 ##   --roteiro=lw_q        (a explosão do Q do mecha, para vídeo no Movie Maker) o LightWolf parado, 24 monstros em volta, aperta o Q (Autodestruição)
 ##                         aos 0,5 s e segue 5,5 s depois do estouro (o fusível, a bola de fogo, a onda no chão e a cratera até sumir) e fecha. Sem fotos:
 ##                         grave com --write-movie (cada quadro). Imprime LW_Q com o segundo do aperto e o do estouro.
+##   --roteiro=impulso     (o Shift do mecha, v2/impulso.gd; com --heroi=lightwolf) para gravar em vídeo (Movie Maker, ~5,3 s): o mecha parado 0,6 s à esquerda de um
+##                         objeto BAIXO do mapa (lápide, runa, crânio, braseiro, caixa de oferenda, rocha, pedras ou poste: o de caminho mais limpo), com 8 monstros de
+##                         vida alta em fila à direita; aperta o Shift e atira para a direita: voa 3 s por cima da fila e do objeto, depois fica 1,7 s parado (o slot
+##                         do Shift em recarga) e sai. Imprime IMPULSO a cada 0,25 s (x, alt_px, toques, vida do 1º monstro) e IMPQ a cada quadro (o mecha na tela).
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -171,6 +175,8 @@ func atualizar(dt: float) -> void:
 				_r_lw_tiros()
 			"lw_q":
 				_r_lw_q()
+			"impulso":
+				_r_impulso()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -546,6 +552,78 @@ func _r_lw_q() -> void:
 		4:
 			print("LW_Q fim atrasos=%d" % lw_atrasos)
 			mundo.get_tree().quit()
+
+
+const IMP_BAIXOS := ["lapide", "runa", "cranio", "braseiro", "caixa_oferenda", "rocha", "pedras", "poste_lanterna"]
+var imp_fila: Array = []  # o roteiro impulso: os monstros da fila
+var imp_log_t := 0.0
+
+
+func _r_impulso() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			var alvo = null
+			var melhor := INF
+			var centro: Vector2 = mundo.limite_andavel.get_center()
+			for o in mundo.cenario.objetos:
+				if not (str(o.chave) in IMP_BAIXOS):
+					continue
+				var faixa := Rect2(o.pos + Vector2(-230, -70), Vector2(720, 140))  # o caminho do voo: quanto menos objeto em volta, mais limpo o vídeo
+				var n := 0
+				for q in mundo.cenario.objetos:
+					if q != o and faixa.has_point(q.pos):
+						n += 1
+				var nota: float = float(n) * 10000.0 + o.pos.distance_to(centro)
+				if nota < melhor:
+					melhor = nota
+					alvo = o
+			var base: Vector2 = alvo.pos + Vector2(-200, 0) if alvo != null else h.pos
+			print("IMPULSO objeto=%s em %s" % [str(alvo.chave) if alvo != null else "nenhum", str(alvo.pos) if alvo != null else "-"])
+			h.definir_pos(base)
+			mundo.cam.cravar(base)
+			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+			imp_fila.clear()
+			for i in 8:
+				var m = mundo.nascer_monstro(
+					"inimigo_cao_ossos" if i % 2 == 0 else "inimigo_aranha_tecela", base + Vector2(60.0 + 55.0 * float(i), 0.0 if i % 2 == 0 else 8.0), false
+				)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				m.atordoa_t = 999.0
+				m.recarga = 999.0
+				imp_fila.append(m)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo >= 0.6:
+				h.correr_forcado = true
+				h.ataque_forcado = true
+				passo = 2
+				t_passo = 0.0
+		2:
+			h.correr_forcado = false
+			if h.imp_t <= 0.0 and t_passo > 0.5:
+				h.ataque_forcado = false
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo >= 1.7:
+				mundo.get_tree().quit()
+				return
+	var rel: Vector2 = h.pr - mundo.cam.centro_base()
+	print("IMPQ %d %.1f %.1f" % [Engine.get_frames_drawn(), rel.x, rel.y])  # onde o mecha está na tela (px do mundo a partir do centro): para recortar o vídeo em volta dele
+	imp_log_t += mundo.combate.dt_local if mundo.combate.dt_local > 0.0 else 0.0
+	if imp_log_t >= 0.25:
+		imp_log_t = 0.0
+		var v1: float = imp_fila[0].vida if not imp_fila.is_empty() else 0.0
+		print(
+			(
+				"IMPULSO t=%.2f x=%.1f y=%.1f alt=%d voo=%.2f rec=%.2f toques=%d vida1=%.0f"
+				% [mundo.t, h.pos.x, h.pos.y, h.alt_px, h.imp_t, h.imp_recarga, mundo.combate.impulso.toques, v1]
+			)
+		)
 
 
 ## A posição de um clarão de boca recém-aceso (restam pelo menos metade dos 0,1 s) a 20 px ou mais de `longe` (Vector2.INF = qualquer um); Vector2.INF se não há.

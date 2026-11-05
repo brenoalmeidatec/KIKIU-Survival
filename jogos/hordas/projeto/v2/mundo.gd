@@ -826,7 +826,8 @@ func _baixar_qualidade(dt: float, fps: float) -> void:
 ## PONTO ÚNICO DE MOVIMENTO: o herói e os monstros pedem aqui o deslocamento que querem (`desejado`, em px) e é aqui que a colisão age
 ## (v2/colisao.gd: o corpo é um círculo de raio `a.raio` no chão; contra as elipses dos objetos ele é empurrado e desliza). Depois prende
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
-func mover(a, desejado: Vector2) -> Vector2:
+## `larg_ignora` (px; 0 = nada): objetos de largura até ela não seguram o corpo (o mecha do LightWolf voando no impulso, v2/impulso.gd).
+func mover(a, desejado: Vector2, larg_ignora := 0.0) -> Vector2:
 	var antes: Vector2 = a.pos
 	var depois := antes + desejado
 	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
@@ -834,9 +835,9 @@ func mover(a, desejado: Vector2) -> Vector2:
 		var passo := desejado / n_passos
 		depois = antes
 		for _i in n_passos:
-			depois = Colisao.resolver(depois + passo, a.raio)
+			depois = Colisao.resolver(depois + passo, a.raio, larg_ignora)
 	else:
-		depois = Colisao.resolver(depois, a.raio)
+		depois = Colisao.resolver(depois, a.raio, larg_ignora)
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
@@ -963,8 +964,9 @@ func avancar(dt: float) -> void:
 			if herois.size() <= 1:  # solo: um alvo só, sem busca
 				var hp: Vector2 = heroi.pos
 				var hr: float = heroi.raio
+				var por_cima: bool = heroi.imp_t > 0.0  # o mecha no impulso passa POR CIMA: o corpo dele não afasta ninguém (v2/impulso.gd)
 				for mo in monstros:
-					mo.atualizar(dtm, hp, hr)
+					mo.atualizar(dtm, hp, hr, por_cima)
 			else:
 				for mo in monstros:
 					var alvo = alvo_mais_perto(mo.pos)
