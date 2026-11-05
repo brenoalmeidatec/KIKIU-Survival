@@ -752,9 +752,6 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 		_acertou("raio")
 	_raio_visual(pontos)
 	fx.luz_rapida(alvo.pos + Vector2(0, -10), COR_RAIO, 2.2, 150.0, 0.22)
-	fx.onda(alvo.pos, Color(0.7, 0.85, 1.0, 0.9), 26.0, 0.2)
-	novas.fumaca_impacto(alvo.pos, 22.0, COR_RAIO, 0.6)  # o chão queimado solta um fio de fumaça
-	fx.explosao(alvo.pos, 28.0, COR_RAIO, 0.0)
 	fx.marca_chao(alvo.pos, 16.0, COR_RAIO)
 	combate.audio.tocar("raio", randf_range(0.92, 1.1), -1.0, 0.08)
 	mundo.cam.tremer(2.0 if Anim.suave else 1.0, 0.12 if Anim.suave else 0.1)
@@ -877,12 +874,7 @@ func _explodir_runa(i: int, a: Dictionary, h) -> void:
 	var fr := Anim.de(str(a.id))
 	if fr.has("explosao"):  # o estouro do glifo toca no instante do dano, do tamanho da área real
 		novas.tocar_fx(fr.explosao, p, maxf(1.0, roundf(raio * 2.0 / (fr.explosao.quadro as Vector2).x)))
-	fx.estouro(p + Vector2(0, -4), a.cor, 12)
-	fx.onda(p, Color(a.cor.r, a.cor.g, a.cor.b, 0.9), raio, 0.3)
-	fx.folha("cristal", p, raio * 1.1, a.cor, 0.3)
 	fx.luz_rapida(p + Vector2(0, -6), a.cor, 2.0, raio * 2.6, 0.3)
-	novas.fumaca_impacto(p, raio, a.cor)
-	fx.explosao(p, raio, a.cor)
 	fx.marca_chao(p, raio * 0.7, a.cor)
 	combate.audio.tocar("runa", randf_range(0.9, 1.1), -1.0, 0.05)
 	mundo.cam.tremer(2.5 if Anim.suave else 1.5, 0.16 if Anim.suave else 0.12)
@@ -909,15 +901,14 @@ func _dano_area(p: Vector2, raio: float, dano: float, empurra: float, atordoa: f
 	return n
 
 
-## Explosão em área sem dono (o crítico explosivo da katana).
-func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) -> void:
+## Explosão em área sem dono (o crítico explosivo da katana). `tem_folha`: quem chamou já toca a folha de impacto da arma.
+func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null, tem_folha := false) -> void:
 	_dano_area(p, raio, dano, 120.0, 0.2, cor, "explode", 0.0, ignorar)
-	fx.estouro(p + Vector2(0, -6), cor, 8)
-	fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.25)
-	fx.folha("cristal", p, raio * 1.1, cor, 0.25)
+	if not tem_folha:
+		var f: Dictionary = Anim.de("fx_explode").get("impacto", {})
+		if not f.is_empty():
+			novas.tocar_fx(f, p, maxf(1.0, roundf(raio * 2.0 / (f.quadro as Vector2).x)))
 	fx.luz_rapida(p + Vector2(0, -8), cor, 1.8, raio * 3.0, 0.25)
-	novas.fumaca_impacto(p, raio, cor)
-	fx.explosao(p, raio, cor)
 	fx.marca_chao(p, raio * 0.75, cor)
 	if Anim.suave:  # o peso do estouro: tremor e soco de zoom pelo tamanho (as opções de tremor escalam os dois)
 		mundo.cam.tremer(clampf(raio / 30.0, 1.0, 3.0), 0.14)
@@ -1294,9 +1285,16 @@ func _desenhar_brilho_i() -> void:
 		for j in z_n[i]:
 			pts.append(z_pts[base + j].round())
 		# A linha mantém todos os saltos e dentes; a arte acrescenta só uma chamada por raio.
-		no_brilho.draw_polyline(pts, Color(0.5, 0.7, 1.0, 0.35 * k), 7.0)
-		no_brilho.draw_polyline(pts, Color(0.75, 0.88, 1.0, 0.9 * k), 3.0)
-		no_brilho.draw_polyline(pts, Color(1, 1, 1, k), 1.0)
+		# halo, corpo e núcleo em pixel inteiro; o brilho cai em degraus e o raio solta galhos que somem antes dele
+		var kk := ceilf(k * 3.0) / 3.0
+		no_brilho.draw_polyline(pts, Color(0.35, 0.5, 1.0, 0.5 * kk), 3.0)
+		no_brilho.draw_polyline(pts, Color(0.8, 0.9, 1.0, kk), 2.0)
+		no_brilho.draw_polyline(pts, Color(1, 1, 1, kk), 1.0)
+		if k > 0.45:
+			for j in range(2, pts.size() - 1, 3):
+				var lado := 1.0 if (j + i) % 2 == 0 else -1.0
+				var q1 := pts[j] + Vector2(lado * 7.0, 5.0)
+				no_brilho.draw_polyline(PackedVector2Array([pts[j], q1, q1 + Vector2(lado * 4.0, 6.0)]), Color(0.75, 0.88, 1.0, kk), 1.0)
 		# z_* não guarda id de origem. O stamp genérico cobre apenas a primeira queda reamostrada.
 		var sp := Novas.sprite_de("raio")
 		if not sp.is_empty() and pts.size() > 1 and not Anim.de("raio").has("impacto"):  # com a folha, o estalo em cada alvo substitui o carimbo esticado

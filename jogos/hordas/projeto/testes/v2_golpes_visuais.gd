@@ -113,6 +113,7 @@ func _ready() -> void:
 					rastro_no_acerto = rastro_no_acerto or corte.visible
 				for j in w.combate.fx.o_t.size():
 					onda_no_acerto = onda_no_acerto or w.combate.fx.o_t[j] < w.combate.fx.o_dur[j]
+				onda_no_acerto = onda_no_acerto or w.combate.armas.novas.x_ativos > 1  # a pancada é folha desde o estilo pixelfx
 				cauda_no_acerto = cauda_no_acerto or w.combate.adagas.ativas() > 0
 		ok(m.vida < m.vida_max and m.vivo, nome + " combo atinge alvo vivo")
 		if nome == "Luke" or nome == "Fabian":

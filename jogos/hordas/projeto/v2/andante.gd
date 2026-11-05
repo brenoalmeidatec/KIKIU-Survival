@@ -11,6 +11,7 @@ extends RefCounted
 ## Estado no item: an = é andante, e = ANDANDO / ATACANDO / SURGINDO, et = tempo no estado, lin = vista, pf = fase do passo (anda com a
 ## distância ANDADA: parado não muda e o pé não escorrega), mov = andou neste quadro, imp = o golpe deste ataque já caiu, ip = onde ele cai.
 ## O dano cai quando a animação cruza o quadro do impacto, em área pequena à frente (`ip`, guardado no começo do golpe).
+const Anim := preload("res://v2/anim_golpes.gd")  # as folhas de impacto (fx_*)
 const Golem := preload("res://v2/golem.gd")
 
 const LINHAS := 5
@@ -569,8 +570,7 @@ static func _impacto(nv, it: Dictionary, f: Dictionary) -> void:
 	var p: Vector2 = it.ip
 	var raio := float(f.raio)
 	pai._dano_area(p, raio, nv._dano(a.st), float(f.empurra), float(f.atordoa), a.cor, "aliado")
-	pai.fx.onda(p, Color(f.cor_fx, 0.7), raio, 0.22)
-	pai.fx.faiscas(p, it.v, 6, f.cor_fx, 130.0)
+	nv.tocar_fx(Anim.de("fx_aliado").get("impacto", {}), p + Vector2(0, -8), 1.0, false, -1.0 if (it.v as Vector2).x < 0.0 else 1.0, Color(f.cor_fx, 1.0))
 	pai.fx.luz_rapida(p + Vector2(0, -6), f.cor_fx, 1.4, raio * 2.2, 0.2)
 	pai.combate.audio.invocacao(it, "atacar")
 	if (pai.mundo.heroi.pos as Vector2).distance_to(p) < 300.0:

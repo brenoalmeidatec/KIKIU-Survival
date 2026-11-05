@@ -307,7 +307,7 @@ func _faixa(h) -> void:
 			_numeros += 1
 			c.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dn), COR_CRIT if crit else COR_NUM, crit)
 			c.fx.flash(m, 0.1)
-			c.fx.folha("estrela", ponto, 15.0 if crit else 11.0, cor, 0.14)
+			c.armas.novas.tocar_fx(c.Anim.de("fx_aliado").get("impacto", {}), ponto, 1.0, false, 1.0, cor)
 			c.fx.faiscas(ponto, fora, 6, cor, 170.0)
 		c.audio.tocar("critico" if crit else "impacto", randf_range(0.85, 1.0), -3.0, 0.05)
 	if feitos > 0:

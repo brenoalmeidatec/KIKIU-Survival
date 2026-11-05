@@ -6,6 +6,7 @@ extends Control
 ## mundo falso dos testes) o círculo fica apagado com "EM BREVE" e nunca indica uma ultimate pronta que não existe. Desenhado por código, num Control só,
 ## redesenhado só quando a chave de estado muda (ou a cada quadro enquanto pronto, em andamento ou negado, que pulsam).
 
+const FxUi := preload("res://v2/fx_ui.gd")
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o pulso do anel e do halo fica parado
@@ -25,6 +26,8 @@ const TRILHO := Color(Paleta.HABILIDADE_FUNDO, 0.95)
 
 var _slots = null  # o nó irmão "Habilidades"
 var _chave := ""
+var _fx
+var _estava_pronta := false
 var _icone: Texture2D = null  # o ícone do Q do herói (ver _arte)
 var _icone_chave := "#"  # nenhuma chave de herói é "#": força o primeiro carregamento
 
@@ -37,6 +40,8 @@ func _ready() -> void:
 	light_mask = 0
 	Glifos.ao_mudar(queue_redraw)  # o selo da tecla segue o dispositivo em uso (Q no teclado, RB no controle)
 	_slots = get_parent().get_node_or_null("Habilidades")
+	_fx = FxUi.new()
+	add_child(_fx)
 
 
 func _process(_delta: float) -> void:
@@ -44,6 +49,9 @@ func _process(_delta: float) -> void:
 		return
 	var chave: String = _slots.q_chave()
 	var pulsa: bool = _slots.q_implementada and (_slots.q_pronta or _slots.q_ativa or _slots.q_negada)
+	if _slots.q_pronta and not _estava_pronta:  # encheu: o anel de luz abre em volta do slot
+		_fx.tocar("fx_ui_pronta", Vector2(DIAMETRO, DIAMETRO) * 0.5, Color.WHITE)
+	_estava_pronta = _slots.q_pronta
 	if pulsa or chave != _chave:
 		_chave = chave
 		queue_redraw()

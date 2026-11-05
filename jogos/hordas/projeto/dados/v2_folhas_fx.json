@@ -1,5 +1,5 @@
 {
- "_ajuda": "Folhas de efeito em 1 px de arte = 1 px do jogo, UMA POR TAMANHO (gerado por fonte_arte/blender_corte/folhas_1px.py; nao editar a mao). Por folha: quadros (por linha), linhas (4 no corte: 0, 22,5, 45 e 67,5 graus) e tam = lista de [largura, altura] do quadro em px; o arquivo de cada tamanho e assets/v2/efeitos/<corte_hazaki|corte_hazaki_ciano|efeito_<nome>>_e<largura>.png. v2/efeitos.gd escolhe o tamanho mais perto do pedido e desenha com escala 1 (sem ampliar nada); o corte (e o ciano) tem quadro quadrado, os efeitos de chao (cristal, anel, espiral) vem achatados a 0,62 no Y.",
+ "_ajuda": "Folhas de efeito em 1 px de arte = 1 px do jogo, UMA POR TAMANHO (gerado por fonte_arte/blender_corte/folhas_1px.py; nao editar a mao). Por folha: quadros (por linha), linhas (4 no corte: 0, 22,5, 45 e 67,5 graus) e tam = lista de [largura, altura] do quadro em px; o arquivo de cada tamanho e assets/v2/efeitos/<corte_pfx|corte_pfx_ciano|efeito_<nome>>_e<largura>.png (o corte sai do corte_pfx.py, por cima da base do Blender). v2/efeitos.gd escolhe o tamanho mais perto do pedido e desenha com escala 1 (sem ampliar nada); o corte (e o ciano) tem quadro quadrado, os efeitos de chao (cristal, anel, espiral) vem achatados a 0,62 no Y.",
  "corte": {
   "quadros": 16,
   "linhas": 4,

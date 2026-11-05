@@ -15,7 +15,7 @@ const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const PASSO := 1.0 / 60.0
 const FOLHAS := {"corte": 7, "corte_ciano": 5}  # variante -> quantos tons de alfa a quantização deixa (com o zero)
-const ARQ := {"corte": "res://assets/v2/efeitos/corte_hazaki_e%d.png", "corte_ciano": "res://assets/v2/efeitos/corte_hazaki_ciano_e%d.png"}
+const ARQ := {"corte": "res://assets/v2/efeitos/corte_pfx_e%d.png", "corte_ciano": "res://assets/v2/efeitos/corte_pfx_ciano_e%d.png"}
 
 var falhas := 0
 var w

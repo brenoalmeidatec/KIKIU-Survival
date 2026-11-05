@@ -93,7 +93,7 @@ func _t_ciano_png() -> void:
 	var linhas := int(def.linhas)
 	for par in def.tam:
 		var lar := int(par[0])
-		var tex := load("res://assets/v2/efeitos/corte_hazaki_ciano_e%d.png" % lar) as Texture2D
+		var tex := load("res://assets/v2/efeitos/corte_pfx_ciano_e%d.png" % lar) as Texture2D
 		var im := tex.get_image() if tex != null else null
 		ok(im != null and im.get_width() == quadros * lar and im.get_height() == linhas * lar, "ciano %d: a folha tem %d x %d quadros" % [lar, quadros, linhas])
 		if im == null:
