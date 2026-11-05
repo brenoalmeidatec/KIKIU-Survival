@@ -1,6 +1,7 @@
 extends "res://v2/ator.gd"
 ## Herói da v2 (o escolhido no santuário: Hazaki, Nick ou Luke, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
-## anda quando a direção de andar muda; com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
+## anda quando a direção de andar muda (menos segurando o tiro com o mouse num herói de golpe.mira_continua, o LightWolf: aí fica no mouse);
+## com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
 ##
 ## Combate (números em dados/v2_combate.json):
 ##  - GOLPE no clique (ação "atacar") na direção do cursor: combo de 3 (corte, corte, estocada). Clique dentro da janela depois do golpe
@@ -712,9 +713,19 @@ func atualizar(dt: float) -> void:
 		if s.length() > 0.3:
 			fonte = Fonte.STICK
 			dir_olhar = s.normalized()
-	# a direção de andar mudou (começou a andar ou virou): passa a olhar para onde anda, até o mouse mexer de novo
+	var segurando := false
+	if real:
+		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
+		if _soltar_ataque:  # o aperto que escolheu a carta ainda está lá: não conta como golpe até soltar
+			_soltar_ataque = segurando
+			segurando = false
+	elif ataque_forcado != null:
+		segurando = bool(ataque_forcado)
+	# a direção de andar mudou (começou a andar ou virou): passa a olhar para onde anda, até o mouse mexer de novo. Exceto atirando com
+	# o mouse num herói de mira contínua (o canhão do LightWolf, como num shooter): segurando o tiro, a mira fica no mouse.
 	if v != Vector2.ZERO and (_anda_ant == Vector2.ZERO or v.normalized().dot(_anda_ant.normalized()) < 0.9):
-		fonte = Fonte.ANDA
+		if not (segurando and fonte == Fonte.MOUSE and mira_continua()):
+			fonte = Fonte.ANDA
 	_anda_ant = v
 	# relógios
 	invenc = maxf(0.0, invenc - dt)
@@ -736,17 +747,11 @@ func atualizar(dt: float) -> void:
 	var parado := v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA)
 	_recuperar(dt, parado)
 	_recuperar_defesa(dt, parado)
-	var segurando := false
-	if real:
-		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
-		if _soltar_ataque:  # o aperto que escolheu a carta ainda está lá: não conta como golpe até soltar
-			_soltar_ataque = segurando
-			segurando = false
-	elif ataque_forcado != null:
-		segurando = bool(ataque_forcado)
-	# mira (sempre calculada: o golpe sai para ela)
+	# mira (sempre calculada: o golpe sai para ela). No golpe ela fica travada (o compromisso de direção do corpo a corpo), menos na mira
+	# contínua, em que o golpe é só a cadência do tiro e o _golpe segue a mira de agora.
 	var c := centro()
-	if fonte == Fonte.MOUSE and estado != Estado.GOLPE and estado != Estado.ESPECIAL and estado != Estado.HABILIDADE:
+	var trava := estado == Estado.ESPECIAL or estado == Estado.HABILIDADE or (estado == Estado.GOLPE and not mira_continua())
+	if fonte == Fonte.MOUSE and not trava:
 		var d: Vector2 = mundo.mouse_mundo() - c
 		if d.length() > 4.0:
 			dir_olhar = d.normalized()
@@ -1163,9 +1168,7 @@ func _iniciar_golpe() -> bool:
 	golpe_t = 0.0
 	golpe_acertou = false
 	pedido_t = 0.0
-	var d: Vector2 = mira_mundo - centro()
-	golpe_dir = d.normalized() if d.length() > 2.0 else dir_olhar
-	dir_olhar = golpe_dir
+	_golpe_para_mira()
 	estado = Estado.GOLPE
 	golpes += 1
 	_punch = 0.0
@@ -1183,8 +1186,24 @@ func fase_golpe() -> String:
 	return "ativo" if golpe_t <= golpe_dur * float(golpe_cfg.acerto_em) + 1.0 / 60.0 else "recuperacao"
 
 
+## O golpe aponta para a mira de agora (golpe_dir e dir_olhar juntos).
+func _golpe_para_mira() -> void:
+	var d: Vector2 = mira_mundo - centro()
+	golpe_dir = d.normalized() if d.length() > 2.0 else dir_olhar
+	dir_olhar = golpe_dir
+
+
+## O golpe deste herói segue a mira enquanto sai (dados > golpe.mira_continua: o canhão do mecha; a pistola do Lobo ainda não, sem vídeo)? Sem o campo, a direção
+## fica travada do começo ao fim do golpe (o compromisso do corpo a corpo). Com ele, braços e balas viram no mesmo quadro que o mouse (ou o
+## analógico): antes a rajada de 0,16 s segurava a mira velha e a bala do quadro de acerto saía para trás (vídeo da rodada 4, 05/11).
+func mira_continua() -> bool:
+	return bool(mundo.combate.cfg.golpe.get("mira_continua", false))
+
+
 func _golpe(dt: float, v: Vector2) -> Vector2:
 	golpe_t += dt
+	if mira_continua():
+		_golpe_para_mira()
 	var p := golpe_t / golpe_dur
 	var acerto := float(golpe_cfg.acerto_em)
 	# cancela o fim do golpe com a esquiva
@@ -1425,7 +1444,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		# andando e atirando, as pernas seguem o passo de verdade: no golpe o herói anda a mov_golpe da velocidade (_golpe), e o ciclo também
 		# andando contra a mira (de costas) no andar_tiro, o ciclo toca ao contrário: o pé de apoio vai para a frente e o mecha recua
 		# sem moonwalk. A fase é contínua nos dois sentidos (nunca salta de quadro ao virar), por isso o índice usa posmod.
-		var sentido := -1.0 if anda_atira and v.dot(dir_olhar) < 0.0 else 1.0
+		# O andar comum (sem atirar) da folha que tem o andar_tiro (o mecha) recua do mesmo jeito: a mira no mouse contra o passo era moonwalk.
+		var sentido := -1.0 if (anda_atira or _tem_anim("andar_tiro")) and v.dot(dir_olhar) < 0.0 else 1.0
 		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
 		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
 		_parado_t = 0.0
