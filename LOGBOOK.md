@@ -2986,3 +2986,10 @@ _Claude do Alisson (notebook)_
 - **Feito:** folhas `corte_pfx*` (a partir das do Blender), `fx_fusao`, `fx_queda_heroi`, faíscas de rastro nos projéteis que giram e `v2/fx_ui.gd` no letreiro, na ultimate e na barra de nível. Status conferido na tela em monstro com nó (cena `status_elite` de `testes/fotos/golpes_gif`).
 - **Pendente:** tela de título e menus não mudaram. Status em chefe usa o mesmo código da elite, sem captura própria.
 - **Para o Claude do Alisson:** a troca de `corte_hazaki` por `corte_pfx` em `efeitos.gd` e `v2_pixel_rotacao.gd` cruza com o #611.
+
+## 2026-11-01: lobo espectral e clarão na troca do LightWolf (Claude do Alisson)
+
+- Lore do Isac (#511): quando sai do mecha, o lobo fica espectral. `v2/lobo_espectral.gd` faz contorno e brilho ciano pulsante, corpo translúcido com tinta gelo e névoa. A troca mecha⇄lobo dispara clarão no herói e na tela, e isso respeita "Tremor e clarões" e "Reduzir piscadas". No perfil Baixo, o material e a névoa saem. Os números ficam em `dados/v2_herois.json > lightwolf_lobo > espectral`.
+- Testes pela fila, com APPDATA própria. `v2_lobo_espectral` dá 15 falhas na main e `falhas=0` na branch. `v2_lightwolf`, `v2_lightwolf_q`, `v2_lightwolf_roteiro` e `v2_lightwolf_formas` dão `falhas=0`.
+- Janela real 960x540 (fotos 1280x720) pelo roteiro `lightwolf` com `res://v2/mundo.tscn`: o shader compilou sem SHADER ERROR. Fotos 4_salto, 7_lobo e 8_chamado vistas: o lobo aparece translúcido, com contorno ciano, e continua distinguível do chão.
+- Não visto: jogo humano, FPS no i5, o vermelho da invencibilidade nos 1,5 s seguintes à troca, e o caso "Tremor e clarões" em 0, que só foi coberto pelo teste. No encerramento ficou um aviso de 1 shader GLES3 não liberado, sem investigação.

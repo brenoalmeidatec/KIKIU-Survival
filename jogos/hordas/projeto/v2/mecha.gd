@@ -15,6 +15,7 @@ extends RefCounted
 ## API: montar(c), tem(), precarregar(), quebrou(h) -> bool, autodestruir(h) -> bool, virar_lobo(h, chamado, quebra), chegar(h), reiniciar(h), atualizar(dt).
 
 const Herois := preload("res://v2/herois.gd")
+const LoboEspectral := preload("res://v2/lobo_espectral.gd")
 const COR := Color(0.75, 0.95, 1.0)
 const COR_CASCO := Color(0.55, 0.78, 1.0)
 
@@ -46,6 +47,14 @@ func tem() -> bool:
 func precarregar() -> void:
 	if tem():
 		mundo.sprites.tipo(Herois.sprite(lobo_id))
+		_garantir_espectral(mundo.heroi)
+
+
+## O visual espectral do Lobo (v2/lobo_espectral.gd) nasce UMA vez por herói e é reaproveitado em toda troca (nenhum nó novo no meio da luta).
+func _garantir_espectral(h) -> void:
+	if h.espectral == null:
+		h.espectral = LoboEspectral.new()
+		h.espectral.montar(h, lobo_id)
 
 
 func _bloco() -> Dictionary:
@@ -80,6 +89,9 @@ func virar_lobo(h, chamado: float, quebra := true) -> void:
 	h.entrar_lobo(float(cfg_lobo.get("vida_pct", 0.31)))
 	c.cfg = Herois.cfg_para(Dados.json("v2_combate"), lobo_id)
 	h.trocar_forma(lobo_id, mundo.sprites.tipo(Herois.sprite(lobo_id)))
+	_garantir_espectral(h)
+	h.espectral.ligar()
+	h.espectral.clarao(true)  # o mecha quebra e a verdadeira forma aparece num clarão (lore do Isac, #511)
 	h.esp_carga = minf(chamado, h.esp_carga_max)
 	h.invenc = maxf(h.invenc, float(cfg_lobo.get("invencivel", 1.5)))
 	if quebra:
@@ -120,6 +132,9 @@ func chegar(h) -> void:
 	h.sair_lobo()
 	c.cfg = Herois.cfg_para(Dados.json("v2_combate"), c.heroi_id)
 	h.trocar_forma(c.heroi_id, mundo.sprites.tipo(_folha_mecha()))
+	if h.espectral != null:
+		h.espectral.desligar()
+		h.espectral.clarao(false)  # o mecha cai: clarão mais fraco
 	h.esp_carga = minf(carga_mecha, h.esp_carga_max)
 	h.hab_recarga = recarga_mecha
 	h.vida = h.vida_max
@@ -134,6 +149,8 @@ func reiniciar(h) -> void:
 	autodestruicoes = 0
 	chamados = 0
 	tempo_lobo = 0.0
+	if h.espectral != null:
+		h.espectral.desligar()
 	if not tem() or str(h.chave) == str(combate.heroi_id):
 		h.forma_lobo = false
 		return
