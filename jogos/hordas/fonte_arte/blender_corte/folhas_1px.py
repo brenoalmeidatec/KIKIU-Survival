@@ -10,7 +10,8 @@ Como: chama o Blender (4.5 ou 5.2; sem janela) com os scripts de sempre, que ago
   - corte e corte ciano: uma folha por tamanho com 4 linhas = a cena girada em 0, 22,5, 45 e 67,5 graus (a camera gira: cada giro e desenhado
     de verdade, sem RotSprite). Os outros 12 dos 16 angulos do jogo sao quartos de volta trocados no shader (efeitos.gd), exatos.
   - efeitos: uma folha por tamanho; os de chao (cristal, anel, espiral) saem ja achatados em H/W = 0,62 (H par).
-Saidas: jogos/hordas/projeto/assets/v2/efeitos/{corte_hazaki,corte_hazaki_ciano}_e<L>.png, efeito_<nome>_e<L>.png e
+Saidas: fonte_arte/blender_corte/1px/{corte_hazaki,corte_hazaki_ciano}_e<L>.png (a base do corte: depois rode corte_pfx.py, que desenha o rastro e
+as faiscas do pixelfx e grava assets/v2/efeitos/corte_pfx*_e<L>.png, as que o jogo usa), assets/v2/efeitos/efeito_<nome>_e<L>.png e
 jogos/hordas/projeto/dados/v2_folhas_fx.json (a lista de tamanhos por folha, que o jogo le).
 
 Uso (de qualquer pasta):  python folhas_1px.py [corte corte_ciano cristal estrela anel espiral]    (sem argumento: tudo, ~2 min)
@@ -124,7 +125,7 @@ def gera(blender: str, nome: str, tmp: str) -> list:
             script = os.path.join(AQUI, "corte_hazaki_ciano.py" if ciano else "corte_hazaki.py")
             roda(blender, script, pasta, [], {"CORTE_TAM": str(lar), "CORTE_GIROS": "1"})
             origem = os.path.join(pasta, "corte_hazaki_ciano_giros.png" if ciano else "corte_hazaki_giros.png")
-            destino = os.path.join(SAIDA, ARQUIVO[nome] % lar)
+            destino = os.path.join(AQUI, "1px", ARQUIVO[nome] % lar)  # base: o jogo usa a versao do corte_pfx.py
         else:
             script = os.path.normpath(os.path.join(AQUI, "..", "blender_efeitos", "efeitos_kikiu.py"))
             roda(blender, script, pasta, [nome], {"EFEITO_TAM": str(lar), "EFEITO_ALTURA": str(h)})
@@ -142,6 +143,7 @@ def main() -> None:
     pedidos = sys.argv[1:] or list(TAMANHOS)
     blender = acha_blender()
     os.makedirs(SAIDA, exist_ok=True)
+    os.makedirs(os.path.join(AQUI, "1px"), exist_ok=True)
     dados = {}
     if os.path.exists(JSON):
         with open(JSON, encoding="utf-8") as f:
@@ -153,7 +155,7 @@ def main() -> None:
     dados["_ajuda"] = (
         "Folhas de efeito em 1 px de arte = 1 px do jogo, UMA POR TAMANHO (gerado por fonte_arte/blender_corte/folhas_1px.py; nao editar a mao). "
         "Por folha: quadros (por linha), linhas (4 no corte: 0, 22,5, 45 e 67,5 graus) e tam = lista de [largura, altura] do quadro em px; o arquivo de "
-        "cada tamanho e assets/v2/efeitos/<corte_hazaki|corte_hazaki_ciano|efeito_<nome>>_e<largura>.png. v2/efeitos.gd escolhe o tamanho mais perto do "
+        "cada tamanho e assets/v2/efeitos/<corte_pfx|corte_pfx_ciano|efeito_<nome>>_e<largura>.png (o corte sai do corte_pfx.py, por cima da base do Blender). v2/efeitos.gd escolhe o tamanho mais perto do "
         "pedido e desenha com escala 1 (sem ampliar nada); o corte (e o ciano) tem quadro quadrado, os efeitos de chao (cristal, anel, espiral) vem achatados a 0,62 no Y."
     )
     ordem = {"_ajuda": dados.pop("_ajuda")}
@@ -163,7 +165,7 @@ def main() -> None:
     with open(JSON, "w", encoding="utf-8", newline="\n") as f:
         json.dump(ordem, f, ensure_ascii=False, indent=1)
         f.write("\n")
-    print("OK", JSON)
+    print("OK", JSON, "(agora rode corte_pfx.py para as folhas do corte)")
 
 
 if __name__ == "__main__":

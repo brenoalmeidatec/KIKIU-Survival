@@ -46,13 +46,13 @@ func _ready() -> void:
 	var nos0 := _nos_total(w.glow)  # a camada onde moram as âncoras e os nós de desenho do fx_folha
 	var p0: Vector2 = w.heroi.pos
 
-	# 1. fogo: a chama nasce com o status e some quando acaba
+	# 1. fogo: toma o corpo pelo shader (v2/status_corpo.gd), sem ícone preso no meio do bicho
 	var m = w.nascer_monstro(TIPO, p0 + Vector2(40, 0))
 	m.queimar(0.2, 0.6)
 	_quadros(w, 20)
-	ok(st.ativos == 1 and st.n_efeitos() == 1, "queimando: uma chama (monstros=%d efeitos=%d)" % [st.ativos, st.n_efeitos()])
+	ok(m._estado_corpo() == 1 and st.n_efeitos() == 0, "queimando: o fogo está no corpo, sem foguinho preso (efeitos=%d)" % st.n_efeitos())
 	_quadros(w, 40)
-	ok(m.queima_t <= 0.0 and st.n_efeitos() == 0 and st.ativos == 0, "o fogo acabou: a chama voltou ao pool (efeitos=%d)" % st.n_efeitos())
+	ok(m.queima_t <= 0.0 and m._estado_corpo() == 0, "o fogo acabou: o corpo volta ao normal")
 
 	# 2. lento e atordoado no mesmo monstro: três efeitos; o corte curto não acende estrelas
 	m.atordoa_t = 0.3
@@ -62,7 +62,7 @@ func _ready() -> void:
 	m.queimar(0.2, 1.0)
 	m.atordoa_t = 0.9
 	_quadros(w, 12)
-	ok(st.n_efeitos() == 3 and st.ativos == 1, "fogo, lento e atordoado juntos: 3 efeitos num monstro (%d)" % st.n_efeitos())
+	ok(st.n_efeitos() == 2 and st.ativos == 1, "fogo, lento e atordoado juntos: 2 ícones num monstro (%d)" % st.n_efeitos())
 	_quadros(w, 80)
 	ok(st.n_efeitos() == 0 and st.ativos == 0, "tudo acabou: nada preso (%d)" % st.n_efeitos())
 
@@ -70,16 +70,16 @@ func _ready() -> void:
 	m.queimar(0.2, 5.0)
 	m.deixar_lento(5.0)
 	_quadros(w, 12)
-	ok(st.n_efeitos() == 2, "antes de morrer: chama e relógio (%d)" % st.n_efeitos())
+	ok(st.n_efeitos() == 1, "antes de morrer: o relógio (%d)" % st.n_efeitos())
 	c.ferir(m, 9999.0, Vector2.ZERO, 0.0, 0.0, Color.WHITE, false)
 	_quadros(w, 4)
 	ok(not m.vivo and st.n_efeitos() == 0 and st.ativos == 0, "o monstro morreu: os efeitos foram soltos (%d)" % st.n_efeitos())
 
 	# 4. volta ao pool com status: o monstro reaproveitado nasce limpo e sem efeito
 	var m2 = w.nascer_monstro(TIPO, p0 + Vector2(-40, 0))
-	m2.queimar(0.2, 5.0)
+	m2.deixar_lento(5.0)
 	_quadros(w, 12)
-	ok(st.n_efeitos() == 1, "segundo monstro queimando (%d)" % st.n_efeitos())
+	ok(st.n_efeitos() == 1, "segundo monstro lento (%d)" % st.n_efeitos())
 	m2.esconder()
 	m2.morrendo = false
 	w.devolver_monstro(m2)
@@ -113,17 +113,14 @@ func _ready() -> void:
 	m3.lento_t = 0.0
 	_quadros(w, 4)
 
-	# 6. limite: mais monstros com status que o teto de monstros, misturando os três tipos para o teto de chamas (6) não barrar antes
+	# 6. limite: mais monstros com status que o teto de monstros, misturando os dois tipos para o teto de cada um não barrar antes
 	var lista: Array = []
 	for k in 18:
 		var mk = w.nascer_monstro(TIPO, p0 + Vector2(-70 + 8 * k, 70))
-		match k % 3:
-			0:
-				mk.queimar(0.01, 20.0)
-			1:
-				mk.deixar_lento(20.0)
-			_:
-				mk.atordoa_t = 20.0
+		if k % 2 == 0:
+			mk.deixar_lento(20.0)
+		else:
+			mk.atordoa_t = 20.0
 		lista.append(mk)
 	var com_status := 0
 	for mk in lista:
@@ -141,7 +138,7 @@ func _ready() -> void:
 	ok(st.n_efeitos() == 0 and st.ativos == 0, "perfil Baixo: sem efeito (%d)" % st.n_efeitos())
 	Anim.suave = true
 	_quadros(w, 40)
-	ok(st.n_efeitos() > 0, "perfil Médio de novo: as chamas voltam (%d)" % st.n_efeitos())
+	ok(st.n_efeitos() > 0, "perfil Médio de novo: os ícones voltam (%d)" % st.n_efeitos())
 
 	# 8. herói na teia da Rainha: o relógio fica nele e sai quando a teia acaba
 	c.limpar_partida()

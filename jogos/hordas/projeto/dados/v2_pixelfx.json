@@ -1,5 +1,20 @@
 {
 	"_ajuda": "Registro das folhas do pixelfx (MIT) tocadas por v2/fx_folha.gd. Uma entrada por id. Obrigatórios: arquivo (relativo a assets/v2/pixelfx/), quadro [w,h], colunas, quadros, fps, pivo [x,y] (o ponto da folha que cai em pos). Opcionais: loop (false), escala (inteira, 1; fração mistura pixels de tamanhos diferentes: gere uma folha no tamanho certo com fonte_arte/pixelfx/gerar_folhas.py e registre com outro id), cor ([r,g,b,a] ou '#rrggbb', multiplica a folha), camada ('glow' acima do escurecimento, ou 'mundo'; padrão glow), aditivo (false), passo (1; 2 pula um quadro a cada tick), limite (8; teto de cópias vivas do id), intervalo (0; segundos mínimos entre dois tocar do mesmo id), decorativo (true; some no perfil Baixo), clarao (false; o alfa segue a opção Tremor e clarões). Como regenerar e registrar: docs/PIXELFX.md.",
+	"marca_dur": 0.6,
+	"marcas": {
+		"nuvem_veneno": "veneno",
+		"dardos_peconhentos": "veneno",
+		"chuva_acida": "veneno",
+		"peste_negra": "veneno",
+		"cinzas_acidas": "veneno",
+		"raio": "choque",
+		"raio_meteorico": "choque",
+		"martelo_trovao": "choque",
+		"revoada_de_trovoes": "choque",
+		"pagode_do_trovao": "choque",
+		"tempestade_primordial": "choque",
+		"cortina_sangue": "sangue"
+	},
 	"efeitos": {
 		"collect-burst": {
 			"arquivo": "pickups/collect-burst.png",
