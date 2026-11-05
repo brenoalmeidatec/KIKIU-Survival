@@ -1475,7 +1475,7 @@ func _visual(dt: float, v: Vector2) -> void:
 			sprite.offset = _off_base
 		var imp = mundo.combate.impulso
 		alt_px = imp.alt(self) if imp != null else 0
-		_ordenar(imp.ordem(self) if imp != null else 0)
+		_ordenar(imp.ordem(self, dt) if imp != null else 0)
 		# o voo sobe o DESENHO em px inteiros (a sombra fica no chão) pelo offset; a posição do sprite desce ordem_px: é o y da ordem de desenho
 		# (com raiz.y_sort_enabled o sprite entra no y-sort do mundo pelo próprio y, v2/impulso.gd > ordem). No chão, ordem_px 0: tudo como antes.
 		sprite.position = desloca + Vector2(0.0, float(ordem_px))

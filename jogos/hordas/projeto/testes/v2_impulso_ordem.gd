@@ -163,5 +163,81 @@ func _ready() -> void:
 		ok(chave_heroi(h) > pe_b.y, "no ar o objeto baixo que ele sobrevoa fica atrás dele: herói %.1f, pé %.1f" % [chave_heroi(h), pe_b.y])
 		passos(200)
 
+	# 4. (revisão da rodada 5) a trava da árvore é o TRONCO, não a caixa do sprite com a copa: a ~100 px do tronco, com a copa larga cobrindo o
+	#    mecha, um monstro 20 px abaixo dele continua atrás no ar; e entrar de repente perto do tronco não salta de ordem num quadro
+	if arvore != null:
+		var pe_a: Vector2 = arvore.raiz.position
+		var p4 := pe_a + Vector2(-100.0, -14.0)  # o pé da árvore 14 px abaixo do mecha (dentro de ordem_px), o tronco a 100 px na horizontal
+		zerar(p4)
+		var r_a: Rect2 = arvore.sprite.get_rect()
+		var w_h := float(h.tipo.get("w", 0.0))
+		ok(Rect2(pe_a + r_a.position, r_a.size).intersects(Rect2(p4 + Vector2(-w_h * 0.5, -40.0), Vector2(w_h, 40.0))), "pré-condição: a caixa do sprite da árvore (com a copa) encosta na do mecha a 100 px do tronco")
+		var m4 = monstro_em(p4 + Vector2(0.0, 20.0))
+		apertar()
+		passos(20)
+		ok(h.imp_t > 0.0 and h.alt_px > 0, "voando a 100 px do tronco")
+		ok(float(m4.chave_y) < chave_heroi(h), "a 100 px do tronco, o monstro 20 px abaixo fica ATRÁS do mecha no ar (monstro %.1f, herói %.1f)" % [float(m4.chave_y), chave_heroi(h)])
+		# encosta no tronco num quadro (teleporte na horizontal: o y dos pés não muda, só a ordem pode mudar a chave)
+		var ant4 := chave_heroi(h)
+		var maior4 := 0.0
+		h.pos = pe_a + Vector2(-6.0, -14.0)
+		h.definir_pos(h.pos)
+		for i in 12:
+			passos(1)
+			var k4 := chave_heroi(h)
+			maior4 = maxf(maior4, absf(k4 - ant4))
+			ant4 = k4
+		var lim4 := ceilf(float(faixa) * PASSO / float(c.get("subida", 0.15))) + 1.0
+		ok(maior4 <= lim4, "chegar perto do tronco não salta de ordem num quadro (maior salto %.1f px, limite %.1f)" % [maior4, lim4])
+		ok(chave_heroi(h) < pe_a.y, "colado no tronco, a ordem volta à do chão (herói %.1f, pé %.1f)" % [chave_heroi(h), pe_a.y])
+		# e sai de perto num quadro (300 px, longe até da copa): a ordem volta a subir aos poucos
+		ant4 = chave_heroi(h)
+		maior4 = 0.0
+		h.pos = pe_a + Vector2(-300.0, -14.0)
+		h.definir_pos(h.pos)
+		for i in 12:
+			passos(1)
+			var k5 := chave_heroi(h)
+			maior4 = maxf(maior4, absf(k5 - ant4))
+			ant4 = k5
+		ok(h.imp_t > 0.0, "ainda voando ao sair de perto do tronco")
+		ok(maior4 <= lim4, "sair de perto do tronco não salta de ordem num quadro (maior salto %.1f px, limite %.1f)" % [maior4, lim4])
+		passos(200)
+
+	# 5. (revisão da rodada 5) o estalo numa raspada longa por uma fileira de objetos grandes: no máximo um a cada estalo_intervalo s; no perfil
+	#    Baixo o estalo acontece (mesmo sorteio) mas não desenha nenhuma partícula. A poeira do propulsor fica desligada aqui para contar só o estalo.
+	var poeira_ant = c.get("poeira_cada", 0.05)
+	var interv := float(c.get("estalo_intervalo", 0.25))
+	for perfil in [1.0, 0.3]:
+		zerar(centro)
+		w.combate.fx.fator_part = perfil
+		w.combate.cfg.impulso["poeira_cada"] = 9999.0
+		var bola := [{"tipo": "elipse", "centro": [0.0, 0.0], "raio": [12.0, 6.0]}]  # 24 px: segura o voo
+		for i in 40:
+			Colisao.adicionar_objeto(centro + Vector2(-10.0 + 20.0 * i, 20.0), bola)
+		h.m_vel_mov = 1.0
+		h.entrada_forcada = Vector2(1.0, 0.35).normalized()
+		var est0 = imp.get("estalos")
+		var part0: int = w.combate.fx.usados.particulas
+		apertar()
+		var quadros := 0
+		while h.imp_t > 0.0 and quadros < 400:
+			passos(1)
+			quadros += 1
+		h.entrada_forcada = Vector2.ZERO
+		var n_est: int = (int(imp.get("estalos")) - int(est0)) if est0 != null else -1
+		var n_part: int = w.combate.fx.usados.particulas - part0
+		var teto := ceili(float(quadros) * PASSO / interv) + 1
+		print("estalo perfil %.1f: %d estalos, %d partículas, %d quadros, x %.1f -> %.1f" % [perfil, n_est, n_part, quadros, centro.x, h.pos.x])
+		ok(h.pos.x > centro.x + 300.0, "perfil %.1f: o mecha desliza pela fileira (x %.1f)" % [perfil, h.pos.x])
+		ok(n_est >= 1, "perfil %.1f: a raspada estala (%d)" % [perfil, n_est])
+		if perfil >= 0.5:
+			var n_fx := int(c.get("estalo_faiscas", 0))
+			ok(n_part <= teto * n_fx, "estalos espaçados: %d partículas em %d quadros (teto %d estalos de %d)" % [n_part, quadros, teto, n_fx])
+		else:
+			ok(n_part == 0, "perfil Baixo: o estalo não desenha partícula (%d)" % n_part)
+	w.combate.cfg.impulso["poeira_cada"] = poeira_ant
+	w.combate.fx.fator_part = 1.0
+
 	print("v2_impulso_ordem falhas=%d" % falhas)
 	get_tree().quit()

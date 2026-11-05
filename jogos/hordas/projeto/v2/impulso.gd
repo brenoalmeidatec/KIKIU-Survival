@@ -30,6 +30,8 @@ var voos := 0  # quantos impulsos saíram
 var _ultimo := {}  # monstro -> instante (relógio do voo) do último toque nele; zerado a cada voo
 var _poeira_t := 0.0
 var _raspando := false  # o voo estava encostado num objeto grande no quadro anterior (o estalo sai só na encostada)
+var _estalo_em := -INF  # relógio do voo do último estalo (zerado a cada voo): não repete antes de `estalo_intervalo` s
+var estalos := 0  # quantos estalos saíram (para os testes; conta também os do perfil Baixo, que não desenham)
 
 
 func montar(c) -> void:
@@ -42,6 +44,9 @@ func limpar() -> void:
 	toques = 0
 	poupados = 0
 	voos = 0
+	estalos = 0
+	_raspando = false
+	_estalo_em = -INF
 
 
 ## O bloco do impulso da forma de agora ({} = esta forma não tem: o Lobo e todos os outros heróis).
@@ -97,6 +102,7 @@ func _iniciar(h, c: Dictionary) -> void:
 	h._baixar_escudo()  # a Matriz cai: não ergue durante o voo
 	_ultimo.clear()
 	_poeira_t = 0.0
+	_estalo_em = -INF
 	voos += 1
 	combate.audio.tocar("esquiva", 0.6, 0.0, 0.0)
 
@@ -152,15 +158,19 @@ func depois_de_mover(h, desl := Vector2.ZERO, andou := Vector2.ZERO) -> void:
 
 
 ## O ESTALO do contato: no quadro em que o voo encosta num objeto grande (a colisão comeu parte do passo e o corpo toca uma forma sólida), umas
-## poucas faíscas (`estalo_faiscas`) saem do ponto de contato, uma vez por encostada; o deslize continua. Sem flash nem luz (nada pisca) e, no
-## perfil Baixo (partículas abaixo de 0,5), nada: o perfil não ganha partícula nova.
+## poucas faíscas (`estalo_faiscas`) saem do ponto de contato, uma vez por encostada e no máximo uma a cada `estalo_intervalo` s (num contorno
+## curvo a encostada liga e desliga: sem o intervalo viravam estalos seguidos); o deslize continua. Sem flash nem luz (nada pisca). No perfil
+## Baixo (partículas abaixo de 0,5) as faíscas saem com desenhar=false: nenhuma partícula, mas o mesmo consumo de randf() da convenção de
+## v2/efeitos.gd (o robô de playtest semeia o RNG global e não pode divergir por perfil só por isso).
 func _raspar(h, desl: Vector2, andou: Vector2) -> void:
 	var comido := desl - andou
 	var raspa := desl.length_squared() > 0.25 and comido.length_squared() > desl.length_squared() * 0.0625
 	raspa = raspa and not Colisao.livre(h.pos, h.raio + 1.0, h._imp_larg)
-	if raspa and not _raspando and combate.fx.fator_part >= 0.5:
+	if raspa and not _raspando and h.imp_relogio - _estalo_em >= float(cfg().get("estalo_intervalo", 0.25)):
 		var n := int(cfg().get("estalo_faiscas", 0))
 		if n > 0:
+			_estalo_em = h.imp_relogio
+			estalos += 1
 			var cor_a: Array = cfg().get("cor", [0.75, 0.95, 1.0])
 			var dir := -comido.normalized()
 			combate.fx.faiscas(
@@ -168,7 +178,8 @@ func _raspar(h, desl: Vector2, andou: Vector2) -> void:
 				dir,
 				n,
 				Color(float(cor_a[0]), float(cor_a[1]), float(cor_a[2])),
-				90.0
+				90.0,
+				combate.fx.fator_part >= 0.5
 			)
 	_raspando = raspa
 
@@ -232,23 +243,35 @@ func _subida(h) -> float:
 ## cima de quem sobrevoa: monstros, elites e objetos baixos com os pés até `ordem_px` px mais para baixo na tela são desenhados ATRÁS dele (e a
 ## silhueta de oclusão não acende por eles). Acompanha a subida e a descida (nada de salto de ordem no pouso: quem estava atrás volta para a frente
 ## de baixo para cima nos `subida` s finais). Objeto GRANDE (largura de colisão acima de `larg_obstaculo`, que segura o voo) não é sobrevoado: com
-## um deles na frente, com o desenho encostando no do mecha (as caixas dos dois sprites), a ordem para 1 px acima do pé dele, a mesma do chão (o mecha não passa por cima
-## do tronco nem atravessa ele ao raspar).
-func ordem(h) -> int:
-	var o := roundi(float(cfg().get("ordem_px", 0)) * _subida(h))
-	if o <= 0 or mundo == null or mundo.get("cenario") == null:
-		return maxi(o, 0)
-	var y0: float = h.pr.y
-	var w := float(h.tipo.get("w", 0.0))
-	var corpo := Rect2(h.pr + Vector2(-w * 0.5, -float(h.tipo.get("pe", 0.0)) - float(alt(h))), Vector2(w, float(h.tipo.get("h", 0.0))))
-	for a in mundo.cenario.ativos:
-		if a.larg_col <= h._imp_larg:
-			continue
-		var p: Vector2 = a.raiz.position
-		if p.y <= y0 or p.y > y0 + float(o):
-			continue
-		var r: Rect2 = a.sprite.get_rect()
-		if not corpo.intersects(Rect2(p + r.position, r.size)):  # o desenho dele não encosta no do mecha: a ordem entre os dois não aparece
-			continue
-		o = mini(o, ceili(p.y - y0) - 1)
+## um deles na frente, com o TRONCO perto do mecha na horizontal, a ordem para 1 px acima do pé dele, a mesma do chão (o mecha não passa por
+## cima do tronco nem atravessa ele ao raspar). O tronco é a largura de colisão (`larg_col`), não a caixa do sprite com a copa (que travava a
+## ordem a ~136 px do pé, revisão da rodada 5), alargada de cada lado pelo que o voo anda numa `subida` (vel x subida): é a folga para a rampa.
+## RAMPA: com `dt` > 0 (o quadro do Heroi._visual) a ordem anda no máximo ordem_px/subida px por segundo (+1 px de arredondamento) a partir de
+## h.ordem_px, a mesma velocidade do pouso: chegar perto ou sair de perto de um tronco não salta de ordem num quadro. dt 0 = o alvo direto.
+func ordem(h, dt := 0.0) -> int:
+	var c := cfg()
+	var maximo := float(c.get("ordem_px", 0))
+	var o := roundi(maximo * _subida(h))
+	if o > 0 and mundo != null and mundo.get("cenario") != null:
+		var y0: float = h.pr.y
+		var meio_w := float(c.get("corpo_meia_larg", float(h.tipo.get("w", 0.0)) * 0.5))  # o corpo desenhado, não o quadro de 128 px da folha
+		var folga := float(c.get("vel", 0.0)) * float(h.m_vel_mov) * float(c.get("subida", 0.15))
+		var faixa := float(o)
+		for a in mundo.cenario.ativos:
+			if a.larg_col <= h._imp_larg:
+				continue
+			var p: Vector2 = a.raiz.position
+			if p.y <= y0 or p.y > y0 + faixa:
+				continue
+			if absf(p.x - h.pr.x) > a.larg_col * 0.5 + meio_w + folga:  # o tronco não chega perto do mecha: a ordem entre os dois não aparece
+				continue
+			o = mini(o, ceili(p.y - y0) - 1)
+		o = maxi(o, 0)
+	o = maxi(o, 0)
+	if dt > 0.0:
+		var s := maxf(float(c.get("subida", 0.15)), 0.001)
+		var passo := ceili(maximo * dt / s) + 1
+		o = clampi(o, int(h.ordem_px) - passo, int(h.ordem_px) + passo)
+		if h.imp_t <= 0.0:
+			o = mini(o, int(h.ordem_px))  # fora do voo só desce
 	return maxi(o, 0)
