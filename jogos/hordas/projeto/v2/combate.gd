@@ -35,6 +35,7 @@ const Especial := preload("res://v2/especial.gd")
 const Mecha := preload("res://v2/mecha.gd")
 const Matriz := preload("res://v2/matriz.gd")
 const Fumaca := preload("res://v2/fumaca.gd")  # a fumaça do Luke, o secundário dele (DEF-5)
+const Impulso := preload("res://v2/impulso.gd")  # o impulso do mecha do LightWolf (o Shift dele)
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
@@ -76,6 +77,7 @@ var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a r
 var ritmo
 var matriz  # a matriz de defesa do LightWolf, o secundário do mecha (v2/matriz.gd; só age com ela erguida)
 var fumaca  # a fumaça do Luke, o secundário dele (v2/fumaca.gd; a nuvem mora no pool de armas_novas.gd)
+var impulso  # o impulso do mecha do LightWolf (v2/impulso.gd; só age com o bloco cfg.impulso, que só o mecha tem)
 var mecha  # as formas Mecha e Lobo do LightWolf (v2/mecha.gd; só age em eventos, sem custo para os outros heróis)
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Luke (pool, v2/adagas.gd)
@@ -129,12 +131,15 @@ var _ciclo_adagas_chave: Array = []  # uma única entrada; nunca guarda históri
 var _ciclo_adagas_valor := 0.0
 var _ciclo_adagas_calculos := 0  # diagnóstico para provar reutilização/invalidação do modelo
 var _plim_t := 0.0
+var _brilho_t := 0.0  # o brilho da coleta de orbe (a alma de 9 px e o collect-burst) só volta depois de cfg.xp.brilho_intervalo s
+var coleta_brilhos := 0  # testes: quantos brilhos de coleta saíram
 var _plim_n := 0
 var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
 # Limpar a tela (ULT-A): quem a limpeza marcou espera aqui, com a hora da morte (distância / velocidade da frente de onda), em arrays de tamanho fixo
 # preparados na montagem. `drenar_limpa` mata no máximo `_lp_max` por quadro, para 164 mortes não virarem um soluço no i5.
 const LIMPA_CAP := 320
 var limpa_mortes := 0  # testes: quantos morreram pela limpeza na partida
+var limpando := false  # true enquanto `drenar_limpa` mata os marcados deste quadro: as mortes da limpeza do Q não enchem a carga dele (especial.ocupado)
 var limpa_quadro := 0  # testes: quantos morreram pela limpeza no último quadro
 var limpa_pico := 0  # testes: o maior número de mortes da limpeza num quadro só
 var limpa_info := {}  # testes: a última limpeza (comuns marcados, elites e chefes atingidos)
@@ -144,6 +149,10 @@ var _lp_n := 0
 var _lp_relogio := 0.0
 var _lp_max := 24
 var _lp_part := 0.35
+var _lp_tom := Color.WHITE  # o tom (multiplica) da nuvem e das partículas das mortes da limpeza (L.tom_morte; branco = a nuvem de sempre)
+var _lp_almas := 1.0  # a fração das almas (brilho aditivo) das mortes da limpeza (L.almas; 1 = todas)
+var ultimo_tom_morte := Color.WHITE  # testes: o tom da última nuvem de morte
+var ultimas_almas := 1.0  # testes: a fração de almas da última morte
 var apices := 0  # quantos bônus chegaram ao ÁPICE na partida (testes)
 var apice_passada := 0  # quantos monstros a última passada de dano do ÁPICE atingiu (testes)
 var _apice_fila: Array = []  # ÁPICES ganhos que esperam o mundo voltar a andar (a escolha de cartas o pausa): {id, nome, cor}
@@ -218,6 +227,8 @@ func montar(m) -> void:
 	fumaca.montar(self)
 	mecha = Mecha.new()
 	mecha.montar(self)
+	impulso = Impulso.new()
+	impulso.montar(self)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -321,6 +332,7 @@ func atualizar(dt: float) -> void:
 		if combo_t <= 0.0:
 			mundo.combo = 0
 	_plim_t -= dt
+	_brilho_t -= dt
 	if jogo == "jogando":
 		if not _apice_fila.is_empty():
 			_apice_executar()
@@ -697,7 +709,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var emp: Vector2 = rumo * forca_emp
 		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
-		especial.dano(util)
+		especial.dano(util, m)
 		contar_dano("principal", util)
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
@@ -767,10 +779,16 @@ func matar(m, leve := false) -> void:
 	var grande: bool = m.elite or m.chefe
 	fx.flash(m, 0.24, Color(1, 1, 1), 1)
 	var parts := float(cfg.morte.particulas) * (3.0 if grande else 1.0)
-	if leve:  # morte da limpeza da tela: só uma fração das partículas (são dezenas de mortes juntas)
+	var tom := Color.WHITE
+	var almas := 1.0
+	if leve:  # morte da limpeza da tela: só uma fração das partículas (são dezenas de mortes juntas), no tom e com as almas da limpeza (a Autodestruição: cinza de fumaça, sem almas)
 		parts *= _lp_part
-	fx.estouro(c, Color(0.9, 0.9, 0.85), roundi(parts))
-	armas.novas.tocar_fx(Anim.de("fx_morte").get("impacto", {}), m.pos)
+		tom = _lp_tom
+		almas = _lp_almas
+	ultimo_tom_morte = tom
+	ultimas_almas = almas
+	fx.estouro(c, Color(0.9, 0.9, 0.85) * tom, roundi(parts), true, tom, almas)
+	armas.novas.tocar_fx(Anim.de("fx_morte").get("impacto", {}), m.pos, 1.0, false, 1.0, tom)
 	audio.tocar("morte", randf_range(0.9, 1.12) * (0.7 if grande else 1.0), -1.0, 0.03)
 	mundo.abates += 1
 	mundo.combo += 1
@@ -806,6 +824,8 @@ func limpar_tela(centro: Vector2, L: Dictionary) -> int:
 	var vel := maxf(float(L.vel), 1.0)
 	_lp_max = maxi(1, int(L.por_quadro))
 	_lp_part = float(L.particulas)
+	_lp_tom = _cor(L.tom_morte) if L.has("tom_morte") else Color.WHITE
+	_lp_almas = float(L.get("almas", 1.0))
 	_lp_relogio = 0.0
 	var marcados := 0
 	var elites_n := 0
@@ -814,6 +834,7 @@ func limpar_tela(centro: Vector2, L: Dictionary) -> int:
 	if chefes != null and chefes.atual != null and not bool(chefes.marca.get("mini", true)):
 		chefao = chefes.atual
 	fonte_dano = "especial"
+	var ini := _lp_n
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo or not rect.has_point(m.pos):
 			continue
@@ -833,10 +854,38 @@ func limpar_tela(centro: Vector2, L: Dictionary) -> int:
 			_lp_t[_lp_n] = (m.pos - centro).length() / vel
 			_lp_n += 1
 			marcados += 1
+	_espalhar_limpa(ini, centro, float(L.get("espalha", 0.0)))
 	limpa_info = {"comuns": marcados, "elites": elites_n, "chefes": chefes_n}
 	processar_mortes()
 	mundo._perfil("c_limpa", Time.get_ticks_usec() - t0)
 	return marcados
+
+
+## `espalha` (s do mundo, L.espalha do Q; 0 = só a frente de onda): os comuns marcados de `ini` até `_lp_n` morrem em ONDA saindo de `centro`, um depois do outro
+## na ordem da distância (empate: x, depois y; determinístico), o último em `espalha` s. Sem isso, a frente a comum.limpa.vel px/s alcança um cerco inteiro
+## no mesmo quadro e as nuvens de morte acendem juntas num bloco claro (o clarão duplo da Autodestruição, 05/11). Ninguém morre ANTES da frente passar.
+func _espalhar_limpa(ini: int, centro: Vector2, espalha: float) -> void:
+	var n := _lp_n - ini
+	if espalha <= 0.0 or n < 2:
+		return
+	var ordem: Array = []
+	for i in range(ini, _lp_n):
+		ordem.append(i)
+	ordem.sort_custom(
+		func(a: int, b: int) -> bool:
+			var pa: Vector2 = _lp_m[a].pos
+			var pb: Vector2 = _lp_m[b].pos
+			var da := pa.distance_squared_to(centro)
+			var db := pb.distance_squared_to(centro)
+			if da != db:
+				return da < db
+			if pa.x != pb.x:
+				return pa.x < pb.x
+			return pa.y < pb.y
+	)
+	for k in n:
+		var i: int = ordem[k]
+		_lp_t[i] = maxf(_lp_t[i], espalha * float(k) / float(n - 1))
 
 
 ## Um quadro da fila adiada da limpeza (tempo do mundo, chamada logo depois de `especial.atualizar`): mata no máximo `_lp_max` comuns marcados cuja
@@ -845,8 +894,11 @@ func drenar_limpa(dt: float) -> void:
 	limpa_quadro = 0
 	if _lp_n == 0 or jogo != "jogando" or pausado:
 		return
+	if local.parada_t > 0.0:  # o quadro em que um hit-stop começa (o do estouro da Autodestruição) ainda roda o combate: a fila só anda depois do congelamento
+		return
 	var t0 := Time.get_ticks_usec()
 	_lp_relogio += dt
+	limpando = true
 	var feitos := 0
 	var i := 0
 	while i < _lp_n and feitos < _lp_max:
@@ -861,6 +913,7 @@ func drenar_limpa(dt: float) -> void:
 		if m.vivo:
 			matar(m, true)
 			feitos += 1
+	limpando = false
 	limpa_quadro = feitos
 	limpa_mortes += feitos
 	limpa_pico = maxi(limpa_pico, feitos)
@@ -881,7 +934,7 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	var dn := maxi(1, roundi(dano))
 	var util := minf(float(dn), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
-	especial.dano(util)
+	especial.dano(util, m)
 	contar_dano(fonte_dano, util)
 	ferimentos += 1
 	var marca: String = _marcas.get(fonte_dano, "")
@@ -958,8 +1011,15 @@ func coletar(valor: float, _de: Vector2) -> void:
 	audio.tocar("orbe", tom, -4.0, 0.0)
 	var h = mundo.heroi
 	mundo.xp_coletado += valor
-	fx.particula(h.pos + Vector2(randf_range(-4, 4), -18), Vector2(randf_range(-10, 10), -30), 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
-	fx_folha.tocar("collect-burst", h.pos)  # o estouro do pixelfx no peito do herói (pivô da folha no chão: ~40 px acima, o anel no peito)
+	var bp: Vector2 = h.pos + Vector2(randf_range(-4, 4), -18)  # o RNG é consumido igual com ou sem o brilho
+	var bv := Vector2(randf_range(-10, 10), -30)
+	# O brilho (aditivo) só a cada brilho_intervalo s: dezenas de orbes chegando juntos (a limpeza de um Q) somavam o brilho num bloco branco no herói, que
+	# acendia logo depois da explosão da Autodestruição apagar (claro-escuro-claro local, revisão de 05/11). O som e o XP seguem por orbe.
+	if _brilho_t <= 0.0:
+		_brilho_t = float(cfg.xp.get("brilho_intervalo", 0.0))
+		coleta_brilhos += 1
+		fx.particula(bp, bv, 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
+		fx_folha.tocar("collect-burst", h.pos)  # o estouro do pixelfx no peito do herói (pivô da folha no chão: ~40 px acima, o anel no peito)
 	# O orbe guarda base + combo para as almas; dificuldade aumenta XP e almas independentemente (Meta credita as almas no fim).
 	progresso.ganhar_xp(valor * preload("res://v2/dificuldade.gd").fator(mundo, "xp_mult"))
 
@@ -1241,6 +1301,7 @@ func limpar_partida() -> void:
 	escudo.limpar()
 	matriz.limpar()
 	fumaca.limpar()
+	impulso.limpar()
 	especial.limpar()
 	habilidade.limpar()
 	baus.limpar()
@@ -1261,6 +1322,7 @@ func limpar_partida() -> void:
 	jogo = "jogando"
 	combo_t = 0.0
 	_plim_t = 0.0
+	_brilho_t = 0.0
 	_plim_n = 0
 	acertos = 0
 	criticos = 0
@@ -1305,6 +1367,7 @@ func liberar() -> void:
 		especial,
 		habilidade,
 		mecha,
+		impulso,
 		elites,
 		baus,
 		chefes
@@ -1334,6 +1397,7 @@ func liberar() -> void:
 	especial = null
 	habilidade = null
 	mecha = null
+	impulso = null
 	elites = null
 	baus = null
 	chefes = null

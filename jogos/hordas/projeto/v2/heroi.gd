@@ -1,6 +1,7 @@
 extends "res://v2/ator.gd"
 ## Herói da v2 (o escolhido no santuário: Hazaki, Nick ou Luke, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
-## anda quando a direção de andar muda; com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
+## anda quando a direção de andar muda (menos se a última fonte da mira foi o mouse: aí o herói segue olhando o cursor e andar de lado é strafe);
+## com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
 ##
 ## Combate (números em dados/v2_combate.json):
 ##  - GOLPE no clique (ação "atacar") na direção do cursor: combo de 3 (corte, corte, estocada). Clique dentro da janela depois do golpe
@@ -8,6 +9,8 @@ extends "res://v2/ator.gd"
 ##    pouco (lunge) e anda devagar enquanto golpeia. A esquiva cancela o fim do golpe.
 ##  - ESQUIVA (ação "esquiva", Espaço): rolamento com fôlego (cargas que voltam com o tempo) e invulnerabilidade no começo (porte do
 ##    movimento.json da v1).
+##  - IMPULSO (a mesma ação "correr", só no MECHA do LightWolf, v2/impulso.gd): o aperto faz o mecha voar ~3 s (flutua, passa por cima de objetos baixos e de monstros,
+##    ferindo sem matar), com recarga e slot próprio na HUD. Para ele o Shift NÃO corre; para os outros heróis e para o Lobo, nada muda.
 ##  - CORRER (ação "correr", Shift/L3): ~1,6x a velocidade de andar, gasta o MESMO fôlego da esquiva por segundo. Fôlego zerado = CANSADO:
 ##    não corre nem esquiva até recuperar ~30%, e anda mais devagar. A recuperação começa depois de um atraso sem gastar e é mais rápida
 ##    parado. Atacar cancela a corrida. A câmera adianta um pouco na direção da corrida.
@@ -43,6 +46,7 @@ extends "res://v2/ator.gd"
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 const Foguinho := preload("res://v2/foguinho.gd")
+const Propulsor := preload("res://v2/propulsor.gd")  # os jatos nas costas do mecha no impulso
 const PixelRot := preload("res://v2/pixel_rot.gd")  # pixel art só gira em passos de 90 graus
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a invencibilidade vira tom fixo
 const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a defesa do escudo recarrega sozinha?
@@ -99,6 +103,19 @@ var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (v
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
 var golpe_calor_t := 0.0  # Médio/Difícil: ao zerar fôlego, o ataque principal espera o calor baixar.
 var correndo := false
+# ---- impulso do mecha do LightWolf (v2/impulso.gd; contrato imp_* lido pela HUD, v2/hud_habilidades.gd)
+var imp_nome := ""  # "" = sem impulso nesta forma (todo herói menos o mecha): o slot do Shift some
+var imp_t := 0.0  # s de voo que faltam (> 0 = voando)
+var imp_dur := 0.0  # a duração do voo de agora
+var imp_recarga := 0.0
+var imp_recarga_max := 0.0
+var imp_nega_t := 0.0  # o aperto foi negado (recarga): o slot treme em vermelho
+var imp_relogio := 0.0  # s desde o começo do voo
+var imp_dir := Vector2.RIGHT  # a direção do voo (vira a giro rad/s)
+var alt_px := 0  # px inteiros que o desenho sobe (o voo); a sombra, a posição e a física ficam no chão
+var _imp_ant := false  # o botão estava apertado no quadro anterior (o impulso é por aperto)
+var _imp_saindo := false  # o voo acabou em cima de um objeto baixo: segue passando por eles até sair
+var _imp_larg := 0.0  # a largura de objeto baixo do último voo (px)
 var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
 
 # ---- modificadores das melhorias (progresso.gd)
@@ -234,6 +251,7 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _lado_passo := 0.0  # strafe (_lado_strafe): +1 = passo para o +x do rig, -1 = o outro lado, 0 = andar normal; guarda a histerese
 var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
 var _pose_tiro_t := 0.0  # somente a pose visual da folha: evita baixar e erguer os braços entre tiros rápidos
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
@@ -241,6 +259,7 @@ var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
 var morte_t := 0.0  # s de jogo desde a morte (só anda em _visual_morto, no dt do herói: hit-stop e pausa o congelam)
 var _mat_morte: ShaderMaterial = null
+var propulsor = null  # os jatos nas costas durante o impulso (v2/propulsor.gd): criado no primeiro voo; null antes
 var foguinho = null  # o brilho no peito (v2/foguinho.gd): só visual, sem colisão; `foguinho.no` é o Sprite2D
 
 
@@ -265,6 +284,16 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	folego = folego_max
 	cansado = false
 	correndo = false
+	imp_t = 0.0
+	imp_relogio = 0.0
+	imp_recarga = 0.0
+	imp_recarga_max = 0.0
+	imp_nega_t = 0.0
+	alt_px = 0
+	ar = 0.0
+	if propulsor != null:
+		propulsor.esconder()
+	_imp_saindo = false
 	escudo_ativo = false
 	escudo_t = 0.0
 	def_reserva = -1.0
@@ -354,6 +383,7 @@ func resetar(p: Vector2) -> void:
 	sprite.position = Vector2.ZERO
 	sprite.offset = _off_base
 	sprite.material = null
+	_ordenar(0)
 	morte_t = 0.0
 	_pose_tiro_t = 0.0
 	foguinho.resetar()
@@ -689,9 +719,21 @@ func atualizar(dt: float) -> void:
 		if s.length() > 0.3:
 			fonte = Fonte.STICK
 			dir_olhar = s.normalized()
-	# a direção de andar mudou (começou a andar ou virou): passa a olhar para onde anda, até o mouse mexer de novo
+	var segurando := false
+	if real:
+		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
+		if _soltar_ataque:  # o aperto que escolheu a carta ainda está lá: não conta como golpe até soltar
+			_soltar_ataque = segurando
+			segurando = false
+	elif ataque_forcado != null:
+		segurando = bool(ataque_forcado)
+	# a direção de andar mudou (começou a andar ou virou): sem mouse na mira, passa a olhar para onde anda (teclado e controle). Se a última
+	# fonte da mira foi o MOUSE, ela fica nele: o herói segue olhando o cursor e andar de lado vira strafe com o mouse parado (regra do
+	# Alisson, 05/11; antes o primeiro quadro de cada passo e de cada inversão tocava o andar de frente). Só o analógico direito tira
+	# a fonte do mouse.
 	if v != Vector2.ZERO and (_anda_ant == Vector2.ZERO or v.normalized().dot(_anda_ant.normalized()) < 0.9):
-		fonte = Fonte.ANDA
+		if fonte != Fonte.MOUSE:
+			fonte = Fonte.ANDA
 	_anda_ant = v
 	# relógios
 	invenc = maxf(0.0, invenc - dt)
@@ -707,20 +749,17 @@ func atualizar(dt: float) -> void:
 	if esp_nega_t > 0.0:
 		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
 	_secundario_relogios(dt)
+	var imp = mundo.combate.impulso
+	if imp != null:
+		imp.relogios(self, dt)
 	var parado := v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA)
 	_recuperar(dt, parado)
 	_recuperar_defesa(dt, parado)
-	var segurando := false
-	if real:
-		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
-		if _soltar_ataque:  # o aperto que escolheu a carta ainda está lá: não conta como golpe até soltar
-			_soltar_ataque = segurando
-			segurando = false
-	elif ataque_forcado != null:
-		segurando = bool(ataque_forcado)
-	# mira (sempre calculada: o golpe sai para ela)
+	# mira (sempre calculada: o golpe sai para ela). No golpe ela fica travada (o compromisso de direção do corpo a corpo), menos na mira
+	# contínua, em que o golpe é só a cadência do tiro e o _golpe segue a mira de agora.
 	var c := centro()
-	if fonte == Fonte.MOUSE and estado != Estado.GOLPE and estado != Estado.ESPECIAL and estado != Estado.HABILIDADE:
+	var trava := estado == Estado.ESPECIAL or estado == Estado.HABILIDADE or (estado == Estado.GOLPE and not mira_continua())
+	if fonte == Fonte.MOUSE and not trava:
 		var d: Vector2 = mundo.mouse_mundo() - c
 		if d.length() > 4.0:
 			dir_olhar = d.normalized()
@@ -742,6 +781,8 @@ func atualizar(dt: float) -> void:
 			desl = mundo.combate.especial.quadro(self, dt, v)
 		Estado.HABILIDADE:
 			desl = mundo.combate.habilidade.quadro(self, dt, v)
+	if imp_t > 0.0:  # o voo do impulso troca o andar (o canhão e a E seguem; v2/impulso.gd)
+		desl = imp.quadro(self, dt, v)
 	if emp.length_squared() > 4.0:
 		desl += emp * dt
 		emp *= exp(-AMORTECE_EMP * dt)
@@ -753,7 +794,9 @@ func atualizar(dt: float) -> void:
 		_cancelar_aparo()
 	var antes := pos
 	if desl != Vector2.ZERO:
-		mundo.mover(self, desl)
+		mundo.mover(self, desl, imp.larg_ignora(self) if imp != null else 0.0)
+	if imp != null:
+		imp.depois_de_mover(self, desl, pos - antes)
 	vel = (pos - antes) / maxf(dt, 0.0001)
 	_camera_adiantada(dt)
 	if mundo.combate.escudo != null:
@@ -783,8 +826,8 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return _escudo(dt, v)
 	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
-		if _iniciar_golpe():
-			return Vector2.ZERO
+		if _iniciar_golpe():  # o quadro em que o golpe sai já anda no passo do golpe: parado nele, o tiro contínuo do mecha engasgava 1 quadro por rajada
+			return v * vel_base * m_vel_mov * float(mundo.combate.cfg.heroi.mov_golpe) * dt
 	if not andando:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
@@ -792,7 +835,7 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 	var k := vel_andar()
 	if cansado:
 		k *= float(mundo.combate.cfg.folego.lento_cansado)
-	elif _quer_correr() and folego > 0.0:
+	elif _quer_correr() and folego > 0.0 and imp_nome == "":  # o mecha não corre: o Shift dele é o impulso
 		correndo = true
 		k = vel_correr()
 		_gastar(float(mundo.combate.cfg.corrida.gasto) * dt)
@@ -819,6 +862,8 @@ func _sec_apertado() -> bool:
 func _quer_secundario() -> bool:
 	var c = mundo.combate
 	if c.escudo == null or not c.escudo.posse_para(str(chave)) or c.jogo != "jogando" or c.pausado or _pausa_aberta():
+		return false
+	if imp_t > 0.0:  # voando no impulso a Matriz não ergue (o canhão atira)
 		return false
 	var apertado := _sec_apertado()
 	if not apertado or def_quebrado:
@@ -1065,7 +1110,7 @@ func _quer_correr() -> bool:
 
 ## Pode esquivar agora? (não cansado e com fôlego para um rolamento)
 func pode_esquivar() -> bool:
-	return not cansado and folego >= float(mundo.combate.cfg.esquiva.gasto)
+	return not cansado and imp_t <= 0.0 and folego >= float(mundo.combate.cfg.esquiva.gasto)  # voando não esquiva
 
 
 ## Gasta fôlego; zerar deixa cansado. Gastar adia a recuperação, menos no ataque principal (adia = false): com golpes a cada ~0,35 s
@@ -1102,7 +1147,7 @@ func _recuperar(dt: float, parado: bool) -> void:
 
 func _camera_adiantada(dt: float) -> void:
 	var alvo := Vector2.ZERO
-	if correndo and vel.length() > 1.0:
+	if (correndo or imp_t > 0.0) and vel.length() > 1.0:  # o voo do impulso também adianta a câmera
 		alvo = vel.normalized() * float(mundo.combate.cfg.corrida.avanco_camera)
 	avanco_camera = avanco_camera.lerp(alvo, 1.0 - exp(-3.5 * dt))
 
@@ -1131,9 +1176,7 @@ func _iniciar_golpe() -> bool:
 	golpe_t = 0.0
 	golpe_acertou = false
 	pedido_t = 0.0
-	var d: Vector2 = mira_mundo - centro()
-	golpe_dir = d.normalized() if d.length() > 2.0 else dir_olhar
-	dir_olhar = golpe_dir
+	_golpe_para_mira()
 	estado = Estado.GOLPE
 	golpes += 1
 	_punch = 0.0
@@ -1151,8 +1194,24 @@ func fase_golpe() -> String:
 	return "ativo" if golpe_t <= golpe_dur * float(golpe_cfg.acerto_em) + 1.0 / 60.0 else "recuperacao"
 
 
+## O golpe aponta para a mira de agora (golpe_dir e dir_olhar juntos).
+func _golpe_para_mira() -> void:
+	var d: Vector2 = mira_mundo - centro()
+	golpe_dir = d.normalized() if d.length() > 2.0 else dir_olhar
+	dir_olhar = golpe_dir
+
+
+## O golpe deste herói segue a mira enquanto sai (dados > golpe.mira_continua: o canhão do mecha; a pistola do Lobo ainda não, sem vídeo)? Sem o campo, a direção
+## fica travada do começo ao fim do golpe (o compromisso do corpo a corpo). Com ele, braços e balas viram no mesmo quadro que o mouse (ou o
+## analógico): antes a rajada de 0,16 s segurava a mira velha e a bala do quadro de acerto saía para trás (vídeo da rodada 4, 05/11).
+func mira_continua() -> bool:
+	return bool(mundo.combate.cfg.golpe.get("mira_continua", false))
+
+
 func _golpe(dt: float, v: Vector2) -> Vector2:
 	golpe_t += dt
+	if mira_continua():
+		_golpe_para_mira()
 	var p := golpe_t / golpe_dur
 	var acerto := float(golpe_cfg.acerto_em)
 	# cancela o fim do golpe com a esquiva
@@ -1387,12 +1446,24 @@ func cancelar_ruptura(som := true) -> void:
 func _visual(dt: float, v: Vector2) -> void:
 	var l := linha_de(dir_olhar)
 	var c := 0
-	if estado == Estado.LIVRE and andando:
-		_anim += dt * (1.45 if correndo else 1.0)
-		var passo := PASSO_ANIM
-		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
-			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
-		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
+	_contar_pose_tiro(dt)
+	var anda_atira := _anda_atirando(v)
+	_lado_passo = _lado_strafe(v, anda_atira)
+	if (estado == Estado.LIVRE and andando) or anda_atira:
+		# andando e atirando, as pernas seguem o passo de verdade: no golpe o herói anda a mov_golpe da velocidade (_golpe), e o ciclo também
+		# andando contra a mira (de costas) no andar_tiro, o ciclo toca ao contrário: o pé de apoio vai para a frente e o mecha recua
+		# sem moonwalk. A fase é contínua nos dois sentidos (nunca salta de quadro ao virar), por isso o índice usa posmod.
+		# O andar comum (sem atirar) da folha que tem o andar_tiro (o mecha) recua do mesmo jeito: a mira no mouse contra o passo era moonwalk.
+		# De lado (strafe), o passo-junta da folha toca para a frente ou ao contrário conforme o lado: um ciclo só cobre os dois lados.
+		var sentido := _lado_passo if _lado_passo != 0.0 else (-1.0 if (anda_atira or _tem_anim("andar_tiro")) and v.dot(dir_olhar) < 0.0 else 1.0)
+		if _lado_passo < 0.0 and _anim == 0.0:
+			# o strafe começa na pose 0 (junta, os pés sob o corpo) nos dois lados: tocado ao contrário, a fase 0 cairia no quadro 5 (base
+			# aberta) já no primeiro passo; a semente põe o começo no fim da pose 0, que então dura o mesmo que as outras.
+			_anim = _passo_andar()
+		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
+		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
+		if _lado_passo != 0.0 and not anda_atira:
+			c = _coluna_anim("strafe", posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes.strafe.colunas as Array).size()))
 		_parado_t = 0.0
 	else:
 		_anim = 0.0
@@ -1401,7 +1472,7 @@ func _visual(dt: float, v: Vector2) -> void:
 			c = _coluna_por_tempo("parado", _parado_t)
 		else:
 			_parado_t = 0.0
-	var ca := _coluna_acao(dt)
+	var ca := _coluna_acao(dt, anda_atira)
 	if ca >= 0:
 		c = ca
 	if l != linha or c != coluna:
@@ -1422,6 +1493,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		_rup_punch = maxf(0.0, _rup_punch - dt / 0.12)
 		if _rup_punch >= 0.5:
 			desloca -= (dir_olhar * RECUO_DISPARO_PX).round()
+	if estado == Estado.ESQUIVA:
+		_ordenar(0)  # esquivando não se voa
 	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
 		sprite.position = Vector2.ZERO  # o rolamento já está desenhado na folha: sem girar o sprite
 		sprite.offset = _off_base
@@ -1436,7 +1509,19 @@ func _visual(dt: float, v: Vector2) -> void:
 		if sprite.rotation != 0.0:
 			sprite.rotation = 0.0
 			sprite.offset = _off_base
-		sprite.position = desloca
+		var imp = mundo.combate.impulso
+		alt_px = imp.alt(self) if imp != null else 0
+		ar = clampf(float(alt_px) / float(imp.cfg().get("alt_px", 14)), 0.0, 1.0) if imp != null and alt_px > 0 else 0.0  # a sombra no chão encolhe e clareia (v2/sombras.gd)
+		_ordenar(imp.ordem(self, dt) if imp != null else 0)
+		# o voo sobe o DESENHO em px inteiros (a sombra fica no chão) pelo offset; a posição do sprite desce ordem_px: é o y da ordem de desenho
+		# (com raiz.y_sort_enabled o sprite entra no y-sort do mundo pelo próprio y, v2/impulso.gd > ordem). No chão, ordem_px 0: tudo como antes.
+		sprite.position = desloca + Vector2(0.0, float(ordem_px))
+		sprite.offset = _off_base - Vector2(0.0, float(ordem_px + alt_px))
+		if imp != null and imp_t > 0.0:  # os jatos nas costas, no mesmo contrato do foguinho (abaixo)
+			if propulsor == null:
+				propulsor = Propulsor.new()
+				propulsor.montar(raiz)
+			propulsor.seguir(self, imp, sprite.position + sprite.offset - _off_base, sprite.position.y if raiz.y_sort_enabled else INF)
 	sprite.scale = Vector2.ONE
 	var piscando := invenc > 0.0 and Piscadas.pisca(_pisca_t, float(mundo.combate.cfg.heroi.pisca_hz))
 	if estado == Estado.ESQUIVA:
@@ -1453,8 +1538,21 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color.WHITE.lerp(Color(1.0, 0.85, 0.65), rup_carga)  # o corpo esquenta com a carga
 	else:
 		sprite.modulate = Color.WHITE
-	foguinho.seguir(desloca)
+	foguinho.seguir(sprite.position + sprite.offset - _off_base, sprite.position.y if raiz.y_sort_enabled else INF)
 	foguinho.atualizar(dt)
+
+
+## A ordem de desenho do herói desce `o` px abaixo dos pés (o voo do impulso; 0 = a do chão). Com o > 0 a raiz entra no y-sort do mundo pelos
+## filhos (o sprite e o foguinho, no y do sprite), não pela própria posição, que segue nos pés (sombra, luzes, flash e sensores leem a raiz).
+func _ordenar(o: int) -> void:
+	ordem_px = o
+	if raiz.y_sort_enabled != (o > 0):
+		raiz.y_sort_enabled = o > 0
+
+
+## O y que o y-sort do mundo usa para o herói agora (a horda reparte as fatias por ele e a oclusão compara com ele).
+func y_ordem() -> float:
+	return raiz.position.y + (sprite.position.y if raiz.y_sort_enabled else 0.0)
 
 
 ## Gancho do visual da morte: põe o shader de dissolução no corpo (só agora, então o herói vivo não paga nada por ele).
@@ -1482,6 +1580,7 @@ func morte_k() -> float:
 
 
 func _visual_morto(dt: float) -> void:
+	_ordenar(0)  # morto não voa: a ordem de desenho volta à do chão
 	var anim := _tem_anim("morte")  # a queda do Blender (deitada de lado) toca primeiro; o dissolve entra quando ela chega ao quadro de repouso
 	var c_lenta := 1.0
 	if anim:
@@ -1553,13 +1652,66 @@ func _coluna_por_tempo(nome: String, t: float) -> int:
 	return _coluna_anim(nome, n - 1)
 
 
-## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
-func _coluna_acao(dt: float) -> int:
-	var corpo_fixo := bool(tipo.info.get("corpo_fixo_ao_atirar", false))
-	if corpo_fixo and estado == Estado.GOLPE:
+## Segundos de andar por quadro (animacoes.andar.s_por_quadro da folha, ou PASSO_ANIM): o andar e o andar_tiro usam a mesma fase.
+func _passo_andar() -> float:
+	if _tem_anim("andar"):
+		return maxf(float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM)), 0.001)
+	return PASSO_ANIM
+
+
+## O mecha (folha com corpo_fixo_ao_atirar) segura a mira por segurar_mira_s depois de cada rajada (o intervalo entre tiros não baixa os braços).
+func _contar_pose_tiro(dt: float) -> void:
+	if bool(tipo.info.get("corpo_fixo_ao_atirar", false)) and estado == Estado.GOLPE:
 		_pose_tiro_t = maxf(float(tipo.info.get("segurar_mira_s", 0.0)), 0.0)
 	else:
 		_pose_tiro_t = maxf(_pose_tiro_t - dt, 0.0)
+
+
+## Andando (entrada `v`) e atirando (no golpe ou segurando a mira entre rajadas), com a folha que tem o andar_tiro: pernas do andar e braços
+## na mira (pedido do Alisson, 05/11: antes a mira ficava parada e as pernas deslizavam). Vale nos dois estados juntos, então a pose nunca
+## alterna mira/andar a cada rajada (o tremor de 04/11, v2_mecha_tremor).
+func _anda_atirando(v: Vector2) -> bool:
+	if v == Vector2.ZERO or escudo_ativo or not _tem_anim("andar_tiro") or not bool(tipo.info.get("corpo_fixo_ao_atirar", false)):
+		return false
+	return estado == Estado.GOLPE or (estado == Estado.LIVRE and _pose_tiro_t > 0.0)
+
+
+## Strafe (pedido do Alisson, 05/11: andar de lado "não parecia existir", o herói tocava o andar de frente e deslizava): andando num ângulo
+## com a mira (|cos| abaixo de animacoes.strafe.limiar_cos, com histerese para não piscar perto do limite) e com a folha que tem "strafe"
+## (ou "strafe_tiro" andando e atirando). Devolve o lado no espaço do rig (+1 = +x, a direita da tela com o herói de frente) ou 0.
+## Com a fonte ANDA a mira é o próprio movimento, então só a mira do mouse ou do stick chega aqui.
+func _lado_strafe(v: Vector2, anda_atira: bool) -> float:
+	var nome := "strafe_tiro" if anda_atira else "strafe"
+	if v == Vector2.ZERO or escudo_ativo or not _tem_anim(nome) or not ((estado == Estado.LIVRE and andando) or anda_atira):
+		return 0.0
+	var a: Dictionary = tipo.info.animacoes[nome]
+	var folga := float(a.get("histerese", 0.08))
+	var lim := float(a.get("limiar_cos", 0.5)) + (folga if _lado_passo != 0.0 else -folga)
+	if absf(v.normalized().dot(dir_olhar.normalized())) >= lim:
+		return 0.0
+	return -signf(dir_olhar.cross(v))  # mira (0,1) de frente para a câmera e v (1,0) para a direita da tela: +x do rig, +1
+
+
+## Px inteiros a somar à boca do canhão `lado` (bocas_projeteis.canhoes, arredondada) no quadro que a folha desenha agora: o sobe-e-desce do
+## passo no andar_tiro (animacoes.andar_tiro.desvio_boca[quadro][linha][lado], medido no Blender); zero em qualquer outro quadro.
+func desvio_boca(lado: int) -> Vector2:
+	if not tipo.has("info") or not _tem_anim("andar_tiro"):  # herói sem folha (Heroi.new() solto, coop de teste)
+		return Vector2.ZERO
+	var a: Dictionary = tipo.info.animacoes.andar_tiro
+	if _tem_anim("strafe_tiro") and (tipo.info.animacoes.strafe_tiro.colunas as Array).has(float(coluna)):  # andando de lado e atirando
+		a = tipo.info.animacoes.strafe_tiro
+	var i := (a.colunas as Array).find(float(coluna))  # o JSON traz as colunas como float
+	var tab: Array = a.get("desvio_boca", [])
+	if i < 0 or i >= tab.size() or linha < 0 or linha >= (tab[i] as Array).size():
+		return Vector2.ZERO
+	var xy: Array = tab[i][linha][clampi(lado, 0, 1)]
+	return Vector2(float(xy[0]), float(xy[1]))
+
+
+## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
+## `anda_atira` (_anda_atirando): o quadro do andar_tiro na fase do passo, no lugar do combo e da mira parada.
+func _coluna_acao(dt: float, anda_atira := false) -> int:
+	var corpo_fixo := bool(tipo.info.get("corpo_fixo_ao_atirar", false))
 	if _dano_t >= 0.0:
 		_dano_t += dt
 		if _tem_anim("dano") and estado != Estado.ESQUIVA:
@@ -1570,6 +1722,9 @@ func _coluna_acao(dt: float) -> int:
 				return _coluna_por_tempo("dano", _dano_t)
 		if _dano_t >= 0.5:
 			_dano_t = -1.0
+	if anda_atira:
+		var nome := "strafe_tiro" if _lado_passo != 0.0 else "andar_tiro"
+		return _coluna_anim(nome, posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes[nome].colunas as Array).size()))
 	if estado == Estado.GOLPE and _tem_anim("combo"):
 		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo := mini(golpe_i, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
@@ -1600,7 +1755,9 @@ func _coluna_acao(dt: float) -> int:
 		if not hab_anim_quadros.is_empty():
 			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
-	if corpo_fixo and estado == Estado.LIVRE and not andando and not escudo_ativo and _pose_tiro_t > 0.0 and _tem_anim("combo"):
+	# o intervalo entre tiros segura a mira também andando: sem isso, andar atirando metia 1 quadro do andar (pernas e braços em outra pose,
+	# ~2000 px diferentes) entre duas rajadas, 10 trocas de pose por segundo (o "tremendo todo" de 04/11)
+	if corpo_fixo and estado == Estado.LIVRE and not escudo_ativo and _pose_tiro_t > 0.0 and _tem_anim("combo"):
 		return _coluna_anim("combo", 0)
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)

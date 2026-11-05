@@ -168,8 +168,10 @@ func _t_cena() -> void:
 		h.estado == Heroi.Estado.LIVRE and h.forma_lobo and h.invenc > 0.0,
 		"depois da explosão o Lobo está livre, ainda Lobo e ainda protegido (%.2f s)" % h.invenc
 	)
-	for f in 80:
+	for f in 200:  # as mortes saem em onda por limpa.espalha (1,2 s do mundo) depois do hit-stop
 		w.avancar(PASSO)
+		if vivos(lista) == 0:
+			break
 	ok(vivos(lista) == 0, "todos os comuns da tela morreram (sobraram %d)" % vivos(lista))
 	ok(vivos(longe) == 2, "quem está fora da câmera mais a margem sobrevive")
 	ok(

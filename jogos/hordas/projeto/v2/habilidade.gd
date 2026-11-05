@@ -9,7 +9,7 @@ extends RefCounted
 ##    uma pancada curta onde para. O Q dele (Terremoto) é a pancada gigante parado; a E é a entrada em movimento.
 ##  - SALTO DAS ADAGAS (Luke): salta para TRÁS (contra a mira), INVULNERÁVEL, soltando um leque de adagas para a frente na decolagem e outro menor ao
 ##    pousar. O Q dele (Tempestade) é o círculo parado; a E é o recuo que abre distância já atirando.
-##  - MÍSSEIS (LightWolf, mecha; LW-4): como a D.Va, o mecha solta 12 micro-mísseis dos ombros em 0,9 s, com a mira travada no disparo, andando a 50% e SEM
+##  - MÍSSEIS (LightWolf, mecha; LW-4): como a D.Va, o mecha solta 24 micro-mísseis dos ombros em 3,75 s (3 s na tela), com a mira travada no disparo, andando a 50% e SEM
 ##    invulnerabilidade (`invul: false` nos dados; nas outras E o campo não existe e vale true). Cada míssil é um projétil do pool de v2/adagas.gd (`missil`,
 ##    com giro e explosão pequena), que escolhe o alvo ao sair; a mecânica dele mora lá e os números em dados/v2_habilidade.json > misseis.
 ## Id desconhecido deixa a tecla E sem efeito.

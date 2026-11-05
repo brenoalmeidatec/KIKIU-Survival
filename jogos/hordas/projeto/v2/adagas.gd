@@ -20,9 +20,34 @@ extends RefCounted
 ## Ricochete: o campo `ricochete` do passo (n) vale só no golpe principal (`cresce_com_nivel`); o Q, a E e a chuva usam o projétil sem ricochetear.
 ## No acerto, uma varredura acha o monstro vivo mais perto (até RIC_ALCANCE px) que a lâmina ainda não acertou e a vira para ele; a direção nova
 ## vale no quadro seguinte, porque a lista de candidatos deste quadro foi montada com a direção antiga.
+## Rajada (o canhão do LightWolf, um leque de projéteis pequenos por braço, como uma escopeta automática): o passo `numero_rajada` (true) faz
+## só o PRIMEIRO acerto de cada rajada (um `lancar`) mostrar o número e tocar o som de impacto; os outros projéteis da mesma rajada ferem, empurram
+## e acendem o flash do monstro, mas sem número nem som (cinco números e cinco sons a cada disparo poluíam a tela). O crítico sempre mostra o
+## número, para o jogador ver o crítico. A memória é um anel fixo de NUM_RAJADAS rajadas recentes, sem alocar nem consumir sorteio.
+## Estalo da bolinha (v2/estalos_visual.gd): o acerto toca uma explosãozinha âmbar-branca no ponto do contato e o fim do alcance sem acerto um
+## "fizzle"; pool fixo, com teto por quadro, por rajada e por lugar, e o nível de partículas (efe_impactos) cortando no perfil Baixo. Só desenho.
+## Convergência da bolinha do canhão: o campo `boca_converge` do passo (px, 170 = o alcance) é a distância em que o desenho desce da boca (no alto do mecha) até a trajetória lógica no
+## chão: a 840 px/s, com os 60 px de antes, a bolinha mergulhava ~35 px em 4 quadros (parecia nascer abaixo do cano, e o clarão ficava solto no alto); com 170 ela segue o cano e desce
+## devagar, e a previsão de colisão continua encurtando a descida até a entrada no círculo do monstro, então ela ainda chega no alvo. O padrão (sem o campo; os mísseis nunca leem o campo) segue 60.
+## Clarão de boca (mesmo arquivo, tipo BOCA): o passo com `clarao_boca` (true) acende UM clarão no cano do braço (a boca medida da folha, `bocas_projeteis.canhoes`)
+## a cada `lancar`, junto com a rajada; o clarão é guardado por braço e relativo ao herói (`_boca_rel` + `_boca_lado`), então anda com o cano. É o mesmo ponto onde a primeira imagem de cada bolinha nasce; a física continua saindo da origem lógica no chão e o desenho converge
+## para ela (veja `_pos_visual`). Sem sorteio, sem nó, sem som: só desenho, e o perfil Baixo e "Reduzir piscadas" têm a versão deles (veja estalos_visual.gd).
+## Acerto das bolinhas rápidas (o canhão voa a 840 px/s, ~14 px por quadro a 60 Hz): `_mover` testa o SEGMENTO do passo (posição anterior até a atual) contra o círculo do
+## monstro, não o ponto de chegada, e `_selecionar_candidatos` usa o mesmo segmento (com o `dt` que chegou): nenhuma bolinha atravessa um monstro, nem com quadro lento.
+## Desenho dos projéteis com imagem (adaga, plasma, míssil e as folhas `<proj>_heroi`): pixel art não gira por ângulo livre (v2/pixel_rot.gd). A imagem aponta numa
+## das 16 direções (passos de 22,5 graus), com as cópias pré-giradas de v2/sprite_giro.gd (geradas em `montar`, não no meio da partida) e a posição inteira.
+## A direção é a do movimento DESENHADO (`_ang_visual`, a derivada de `_pos_visual_em`), não a do chão: o míssil que desce do pod aponta o nariz para
+## baixo enquanto desce. O míssil não esmaece no fim do alcance (`_fade`): some inteiro, alfa 0/1.
+## O míssil também deixa RASTRO (05/11/2026, v2/misseis_rastro.gd, só desenho): a chama do bocal (opaca, fixa) no corpo e uma fumaça de puffs de 2 a 4 px, um a cada ESPACO px de voo no bocal da imagem DESENHADA
+## (`_fumaca`, então segue a descida do pod), em pool fixo e sem sorteio; perfil Baixo: só a chama. Os puffs ficam no ar depois do impacto até acabarem (`atualizar` segue ativo enquanto houver).
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
+const PixelRot := preload("res://v2/pixel_rot.gd")
+const Piscadas := preload("res://v2/piscadas.gd")
+const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
+const MisseisRastro := preload("res://v2/misseis_rastro.gd")
+const EstalosVisual := preload("res://v2/estalos_visual.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
 const ALCANCE_EXTRA := 120.0  # a Chuva pode nascer e andar ainda neste quadro
@@ -32,6 +57,20 @@ const RIC_ALCANCE := 110.0  # até onde o ricochete procura o próximo alvo (px,
 const PROJ_PADRAO := "adaga"
 const VISUAL_DIST := 60.0  # deslocamento da boca projetada converge para a trajetória lógica
 const VISUAL_DUR := 0.2
+const NARIZ_PASSO := 2.0  # px de voo antes e depois de agora com que `_ang_visual` mede a direção do desenho
+const FADE_PX := 24.0  # nos últimos px do alcance a imagem esmaece (`_fade`; o míssil não)
+## O TRAÇANTE da bolinha do mecha (pedido do Alisson de 05/11/2026: "ainda falta algo, acho que rastros"): uma linha de pixels inteiros atrás da bolinha, pelo mesmo
+## caminho DESENHADO dela (a descida da boca ao chão, `_pos_visual_em`), com TRACO px (a 840 px/s ela anda ~14 px por quadro: o traço cobre ~1,4 quadro de voo e as
+## rajadas viram riscos, não pontos). Cores opacas, do quente ao escuro (TRACO_CORES, da cabeça para a cauda); os primeiros TRACO_GROSSO px ganham um segundo pixel ao lado
+## (2 px de espessura perto da bolinha, 1 px na cauda: afina). Nasce na boca e cresce com o voo (nunca desenha atrás do cano). Perfil Baixo (efe_particulas <= 0,3):
+## TRACO_BAIXO px, fino, o mesmo tamanho do rastro antigo. Contínuo: não pisca. Só desenho no `no_corpo`, sem nó e sem sorteio.
+const TRACO := 20
+const TRACO_BAIXO := 6
+const TRACO_GROSSO := 8
+const TRACO_INICIO := 3  # começa fora do contorno do losango (raio 2)
+const TRACO_CORES := [Color(1.0, 0.98, 0.82), Color(1.0, 0.86, 0.42), Color(1.0, 0.66, 0.2), Color(0.9, 0.42, 0.1), Color(0.62, 0.24, 0.06)]
+const TRACO_BUF := 2 * (TRACO + TRACO_GROSSO) + 2  # teto de pixels de um traçante (na descida da boca o desenho anda até ~2 px por px de chão)
+const NUM_RAJADAS := 16  # rajadas com número já mostrado lembradas ao mesmo tempo (no máximo ~9 rajadas/s x ~0,6 s de voo em voo juntas)
 
 var combate
 var mundo
@@ -59,7 +98,12 @@ var a_alvo: Array = []  # o monstro que o míssil busca (null = reto)
 var a_extra := PackedByteArray()  # 1 = veio do modificador "chuva" (não solta outra)
 var a_grupo := PackedInt64Array()  # arremesso principal; tamanho fixo MAX, sem histórico crescente
 var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina desse grupo
+var a_rajada := PackedInt64Array()  # o lancar da rajada com `numero_rajada` (0 = cada acerto mostra o seu número, o normal)
 var _grupo := 0
+var _traco_px := PackedVector2Array()  # buffer fixo do traçante (TRACO_BUF), reaproveitado por bolinha
+var _traco_cor := PackedInt32Array()
+var _num_rajadas := PackedInt64Array()  # anel das rajadas que já mostraram o número (veja o cabeçalho)
+var _num_i := 0
 var _pausa_recarga := 0.0
 var a_cor := PackedColorArray()
 var a_visual_offset := PackedVector2Array()
@@ -77,9 +121,15 @@ var _cand: Array = []
 var _cand_visual: Array = []  # previsão visual separada: nunca acrescenta alvos ao narrowphase físico
 var _proj_lista: Array = []  # [{nome, tex (código) ou anim (folha), compr, alt}], o índice 0 é sempre a adaga
 var _proj_nomes := {}  # nome -> índice em _proj_lista
+## As texturas procedurais (adaga, bala, plasma, míssil), geradas UMA vez por processo: o cache de cópias pré-giradas de sprite_giro.gd é
+## estático e indexado pela textura, então gerar textura nova a cada `montar` (a cada Combate) somava cópias que nunca saíam do cache.
+static var _texs := {}
 var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâminas na mesma fase)
 var _desenha := false
 var misseis_visual := MisseisVisual.new()
+var rastro := MisseisRastro.new()  # a fumaça atrás do bocal dos mísseis (pool fixo; a chama do bocal é desenhada no corpo)
+var a_fum := PackedFloat32Array()  # a distância voada em que o míssil deixa o próximo puff de fumaça
+var estalos := EstalosVisual.new()  # o estalo das bolinhas do mecha (acerto e fim do alcance)
 
 
 func montar(c, camada: Node, tex: Texture2D) -> void:
@@ -88,11 +138,23 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	tex_brilho = tex
 	_proj_lista.clear()
 	_proj_nomes.clear()
-	_registrar("adaga", _img_adaga(), COMPR, 5.0)
-	_registrar("bala", _img_bala(), 7.0, 3.0)
-	_registrar("plasma", _img_plasma(), 11.0, 7.0)
-	_registrar("missil", _img_missil(), 24.0, 9.0)
+	if _texs.is_empty():
+		_texs = {"adaga": _img_adaga(), "bala": _img_bala(), "plasma": _img_plasma(), "missil": _img_missil()}
+	_registrar("adaga", _texs.adaga, COMPR, 5.0)
+	_registrar("bala", _texs.bala, 5.0, 5.0)
+	_registrar("plasma", _texs.plasma, 11.0, 7.0)
+	_registrar("missil", _texs.missil, 24.0, 9.0)
+	for id in AnimGolpes.ids():  # as folhas `<proj>_heroi` (lidas do índice, não de lista fixa): as cópias nascem ao montar, não no primeiro arremesso
+		if str(id).ends_with("_heroi"):
+			var voo: Dictionary = AnimGolpes.de(str(id)).get("voo", {})
+			if not voo.is_empty():
+				_preparar_folha(voo)
 	misseis_visual.montar()
+	rastro.montar()
+	a_fum.resize(MAX)
+	estalos.montar()
+	_traco_px.resize(TRACO_BUF)
+	_traco_cor.resize(TRACO_BUF)
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
 	a_vel.resize(MAX)
@@ -110,6 +172,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_alvo.resize(MAX)
 	a_extra.resize(MAX)
 	a_grupo.resize(MAX)
+	a_rajada.resize(MAX)
+	_num_rajadas.resize(NUM_RAJADAS)
 	a_pausa.resize(MAX)
 	a_cor.resize(MAX)
 	a_visual_offset.resize(MAX)
@@ -137,8 +201,14 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 
 func limpar() -> void:
 	misseis_visual.limpar()
+	rastro.limpar()
+	a_fum.fill(0.0)
+	estalos.limpar()
 	a_rest.fill(0.0)
 	a_grupo.fill(0)
+	a_rajada.fill(0)
+	_num_rajadas.fill(0)
+	_num_i = 0
 	a_pausa.fill(0)
 	a_ric.fill(0)
 	a_proj.fill(0)
@@ -192,6 +262,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 	var proj := _indice_proj(str(passo.get("proj", PROJ_PADRAO)))
 	var ric := maxi(0, int(passo.get("ricochete", 0))) if cresce_com_nivel else 0
 	_grupo += 1
+	var rajada: int = _grupo if bool(passo.get("numero_rajada", false)) else 0
 	for k in n:
 		var ang := 0.0 if n == 1 else leque * (float(k) / float(n - 1) - 0.5)
 		ang += randf_range(-0.025, 0.025)
@@ -211,6 +282,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 		a_proj[i] = proj
 		_boca_visual(i, h, origem, dir, passo)
 		a_ric[i] = ric
+		a_rajada[i] = rajada
 		if float(passo.get("giro", 0.0)) > 0.0:
 			_mirar(i, h, passo, dir)
 		a_expl[i] = float(passo.get("expl_raio", 0.0))
@@ -218,6 +290,10 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 		if cresce_com_nivel:  # só combate.golpear; Q e chuva nunca recebem grupo elegível
 			a_grupo[i] = _grupo
 			a_pausa[i] = 1
+	if bool(passo.get("clarao_boca", false)) and _bolinha(proj):  # o clarão no cano que atirou, uma vez por rajada (só desenho)
+		var rel := _boca_rel(proj, h, origem, dir, passo)
+		if rel.is_finite():  # relativo ao herói: o clarão anda com o cano (estalos_visual desenha em h.pr + rel a cada quadro)
+			estalos.emitir_boca(h, rel, _boca_lado(proj, h, origem, dir, passo), _fator_impactos(), _boca_tabela(proj, h))
 	combate.fx.faiscas(origem + dir * 12.0, dir, 3, cor, 110.0, not _visual_mecha(proj))
 
 
@@ -252,10 +328,12 @@ func _nova(
 	a_expl_d[i] = 0.0
 	a_alvo[i] = null
 	a_grupo[i] = 0
+	a_rajada[i] = 0
 	a_pausa[i] = 0
 	a_cor[i] = cor
 	a_visual_offset[i] = Vector2.ZERO
 	a_visual_dist[i] = 0.0
+	a_fum[i] = MisseisRastro.INICIO
 	a_visual_t[i] = 0.0
 	a_visual_compr[i] = VISUAL_DIST
 	a_visual_ultima[i] = Vector2.ZERO
@@ -274,9 +352,11 @@ func _nova(
 
 func atualizar(dt: float) -> void:
 	misseis_visual.atualizar(dt)
+	rastro.atualizar(dt)
+	estalos.atualizar(dt)
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	_relogio += dt
-	var ativo := misseis_visual.ativas() > 0
+	var ativo := misseis_visual.ativas() > 0 or rastro.vivos() > 0 or estalos.vivos() > 0
 	for i in MAX:
 		if a_rest[i] > 0.0:
 			ativo = true
@@ -298,6 +378,7 @@ func atualizar(dt: float) -> void:
 		a_visual_dist[i] += antes.distance_to(a_pos[i])
 		a_visual_t[i] = maxf(0.0, a_visual_t[i] - dt)
 		_atualizar_visual(i)
+		_fumaca(i)
 	_desenha = true
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
@@ -463,7 +544,7 @@ func _mover(i: int, dt: float) -> void:
 	a_pos[i] = p0 + dir * passo
 	a_rest[i] -= passo
 	if a_rest[i] <= 0.0 or not mundo.mapa.has_point(a_pos[i]):
-		_acabar(i)
+		_acabar(i, a_rest[i] <= 0.0)
 
 
 ## Ricochete do acerto de `m` em `perto` (a lâmina andou `t` px neste quadro): vira a lâmina para o vivo mais perto que ela ainda não acertou.
@@ -492,9 +573,12 @@ func _ricochetear(i: int, m, perto: Vector2, t: float) -> bool:
 	return true
 
 
-func _acabar(i: int) -> void:
+## `fim_alcance`: acabou o alcance sem acertar (a bolinha do mecha faz o fizzle ali); furar tudo ou sair do mapa não estala.
+func _acabar(i: int, fim_alcance := false) -> void:
 	a_rest[i] = 0.0
 	sumiram += 1
+	if fim_alcance and _bolinha(a_proj[i]):
+		estalos.emitir(a_pos[i], EstalosVisual.FIZZLE, a_rajada[i], _fator_impactos())
 	combate.fx.faiscas(a_pos[i], a_dir[i], 2, a_cor[i], 70.0, not _visual_mecha(a_proj[i]))
 
 
@@ -513,12 +597,20 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	var dir: Vector2 = a_dir[i]
 	var cor: Color = a_cor[i]
 	combate.fonte_dano = str(a_fonte[i])
-	combate.ferir(m, d, dir, a_emp[i] * (1.25 if crit else 1.0), a_atord[i] * (1.3 if crit else 1.0), cor.lerp(Color.WHITE, 0.45), true, crit)
+	var mostra := crit or _primeiro_da_rajada(i)
+	var vivo: bool = m.vivo and not m.morrendo
+	combate.ferir(m, d, dir, a_emp[i] * (1.25 if crit else 1.0), a_atord[i] * (1.3 if crit else 1.0), cor.lerp(Color.WHITE, 0.45), mostra, crit)
+	if not mostra and vivo:
+		combate.fx.flash(m, 0.08)  # sem número, o flash do acerto continua (o mesmo que ferir acende junto com o número)
 	_pausar_grupo(i)
 	if a_expl[i] > 0.0:
 		_explodir(i, m)
 	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0, not _visual_mecha(a_proj[i]))
-	combate.audio.tocar("critico" if crit else "impacto", randf_range(1.25, 1.5), -7.0, 0.05)
+	if _bolinha(a_proj[i]):  # o estalo no ponto do contato (o crítico, maior, passa do teto por rajada)
+		estalos.emitir(p, EstalosVisual.ESTALO_CRIT if crit else EstalosVisual.ESTALO, a_rajada[i], _fator_impactos(), crit)
+	var tom := randf_range(1.25, 1.5)  # sorteado sempre, com ou sem som: a rajada não muda a sequência de sorteios
+	if mostra:
+		combate.audio.tocar("critico" if crit else "impacto", tom, -7.0, 0.05)
 	if crit and float(combate.armas.mods.explode) > 0.0:
 		var raio_e: float = float(combate.cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
 		combate.armas.explodir(m.pos, d * float(combate.armas.mods.explode) / 100.0, raio_e, Color(1.0, 0.74, 0.2), m)
@@ -527,6 +619,26 @@ func _acertar(i: int, m, p: Vector2) -> void:
 		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], ALCANCE_EXTRA, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
 		a_proj[j] = a_proj[i]
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
+
+
+## Fração de impactos do nível de partículas (Config.PART_NIVEL.efe_impactos): 1 no Alto, 0,34 no Baixo, 0 sem partículas.
+func _fator_impactos() -> float:
+	if mundo == null or not mundo.has_method("_nivel_particulas"):
+		return 1.0
+	return float(mundo._nivel_particulas().get("efe_impactos", 1.0))
+
+
+## true se o acerto do projétil `i` é o primeiro da rajada dele (ou se ele não é de rajada): esse mostra o número e toca o som.
+func _primeiro_da_rajada(i: int) -> bool:
+	var r: int = a_rajada[i]
+	if r == 0:
+		return true
+	for k in NUM_RAJADAS:
+		if _num_rajadas[k] == r:
+			return false
+	_num_rajadas[_num_i] = r
+	_num_i = (_num_i + 1) % NUM_RAJADAS
+	return true
 
 
 ## A explosão pequena do míssil `i` em volta do monstro acertado: dano em área pelo mesmo caminho das armas (elipse do chão), sem repetir o monstro `m` que ele já feriu.
@@ -566,21 +678,39 @@ func _pausar_grupo(i: int) -> void:
 func _desenhar_corpo() -> void:
 	if misseis_visual.ativas() > 0:
 		misseis_visual.desenhar(no_corpo, float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3)
+	if rastro.vivos() > 0:
+		rastro.desenhar(no_corpo, Piscadas.ligado())  # por baixo de toda imagem: a fumaça nunca tapa o míssil
+	var baixo := float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3 if mundo != null and mundo.has_method("_nivel_particulas") else false
 	for i in MAX:
 		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
 		var p: Vector2 = a_pos[i]
-		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
-		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
+		var fade := _fade(i)
 		var e: Dictionary = _proj_lista[a_proj[i]]
+		if _bolinha(a_proj[i]):  # ponto simétrico na grade de 1 px, sem giro (girar borraria a bolinha); a direção fica no rastro
+			no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)  # o giro do projétil anterior não vale aqui
+			no_corpo.draw_rect(Rect2((p + Vector2(-2, 6)).round(), Vector2(5, 1)), Color(0, 0, 0, 0.3 * fade))  # sombra da largura da bolinha
+			var pv := _pos_visual(i).round()
+			_tracante(i, pv, fade, baixo)
+			no_corpo.draw_texture(e.tex, pv - Vector2(2, 2), Color(1, 1, 1, fade))
+			continue
+		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-4, 6), Vector2(8, 3)), false, Color(0, 0, 0, 0.35 * fade))
 		p = _pos_visual(i)  # a sombra acima permanece na trajetória lógica do chão
+		var ang := PixelRot.angulo16(_dir_desenho(i))  # a imagem aponta para onde o DESENHO anda, numa das 16 direções e sem girar pixel (sprite_giro.gd)
+		if _missil(a_proj[i]):
+			MisseisRastro.chama(no_corpo, p.round(), Vector2.from_angle(ang))  # a chama do bocal, atrás da imagem
 		if e.has("anim"):
 			var f: Dictionary = e.anim
-			AnimGolpes.desenhar(no_corpo, f, AnimGolpes.quadro_em(f, _relogio), p, (a_dir[i] as Vector2).angle(), Vector2.ONE, Color(1, 1, 1, fade))
+			var q := Vector2i(f.quadro as Vector2)
+			SpriteGiro.desenhar(
+				no_corpo, f.tex, q, Vector2i(f.ancora as Vector2), int(f.n), AnimGolpes.quadro_em(f, _relogio), p, ang, Vector2.ONE, Color(1, 1, 1, fade)
+			)
 			continue
-		no_corpo.draw_set_transform(p.round(), (a_dir[i] as Vector2).angle(), Vector2.ONE)
-		no_corpo.draw_texture(e.tex, Vector2(-float(e.compr) * 0.5, -float(e.alt) * 0.5), Color(1, 1, 1, fade))
+		var tam := Vector2i((e.tex as Texture2D).get_size())
+		SpriteGiro.desenhar(no_corpo, e.tex, tam, tam / 2, 1, 0, p, ang, Vector2.ONE, Color(1, 1, 1, fade))
 	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if estalos.vivos() > 0:
+		estalos.desenhar(no_corpo)  # por cima das bolinhas: o estalo nasce onde a bolinha some, e o clarão de boca onde ela nasce
 
 
 func _desenhar_brilho() -> void:
@@ -588,15 +718,11 @@ func _desenhar_brilho() -> void:
 		if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0:
 			continue
 		var p: Vector2 = _pos_visual(i)
-		var dir: Vector2 = a_dir[i]
+		var dir := Vector2.from_angle(PixelRot.angulo16(PixelRot.direcao16(_ang_visual(i))))  # o rastro sai da cauda da imagem: a direção quantizada do desenho
 		var cor: Color = a_cor[i]
-		var fade := clampf(a_rest[i] / 24.0, 0.0, 1.0)
+		var fade := _fade(i)
 		if _visual_mecha(a_proj[i]):
-			if str(_proj_lista[a_proj[i]].nome) == "missil":
-				no_brilho.draw_line((p - dir * 19.0).round(), (p - dir * 10.0).round(), Color(1.0, 0.55, 0.14, 0.65 * fade), 2.0)
-			else:
-				no_brilho.draw_line((p - dir * 7.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.65 * fade), 1.0)
-			continue
+			continue  # o míssil leva a chama e a fumaça no corpo (MisseisRastro), opacas; a bolinha da rajada leva o rastro no corpo (_desenhar_corpo), pixel a pixel
 		no_brilho.draw_line((p - dir * 16.0).round(), p.round(), Color(cor.r, cor.g, cor.b, 0.4 * fade), 3.0)
 		no_brilho.draw_line((p - dir * 9.0).round(), (p + dir * 4.0).round(), Color(1, 1, 1, 0.8 * fade), 1.0)
 		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.3 * fade))
@@ -621,21 +747,19 @@ func _img_adaga() -> Texture2D:
 	return ImageTexture.create_from_image(im)
 
 
-## A bala do canhão do LightWolf: 7x3 px, ponta clara e corpo âmbar.
+## A bolinha da rajada do canhão do LightWolf: losango 5x5 px, miolo branco puro, cruz âmbar e contorno marrom quase preto de 1 px.
+## O contorno é o que a separa do chão de pedra iluminado de laranja (âmbar sobre âmbar sumia na captura da rodada 2); a cor de arma do
+## herói continua âmbar, como pede o DESIGN. Simétrica de propósito: é desenhada sem giro (`_bolinha`), então fica sempre na grade de 1 px;
+## o traçante (TRACO, `_tracante`) mostra a direção.
 func _img_bala() -> Texture2D:
-	var im := Image.create(7, 3, false, Image.FORMAT_RGBA8)
-	var corpo := Color(1.0, 0.72, 0.25)
-	var ponta := Color(1.0, 0.96, 0.8)
-	var cauda := Color(0.8, 0.4, 0.15)
-	for x in 7:
-		for y in 3:
-			im.set_pixel(x, y, corpo)
-	for y in 3:
-		im.set_pixel(0, y, cauda)
-		im.set_pixel(6, y, ponta if y == 1 else corpo)
-	im.set_pixel(0, 0, Color(0, 0, 0, 0))
-	im.set_pixel(0, 2, Color(0, 0, 0, 0))
-	im.set_pixel(5, 1, ponta)
+	var im := Image.create(5, 5, false, Image.FORMAT_RGBA8)
+	var contorno := Color(0.16, 0.08, 0.03)
+	var corpo := Color(1.0, 0.7, 0.22)
+	for k in [Vector2i(2, 0), Vector2i(1, 1), Vector2i(3, 1), Vector2i(0, 2), Vector2i(4, 2), Vector2i(1, 3), Vector2i(3, 3), Vector2i(2, 4)]:
+		im.set_pixelv(k, contorno)
+	for k in [Vector2i(2, 1), Vector2i(1, 2), Vector2i(3, 2), Vector2i(2, 3)]:
+		im.set_pixelv(k, corpo)
+	im.set_pixel(2, 2, Color.WHITE)
 	return ImageTexture.create_from_image(im)
 
 
@@ -661,42 +785,167 @@ func _img_missil() -> Texture2D:
 	return ImageTexture.create_from_image(im)
 
 
+## A bala do mecha (a bolinha da rajada): desenhada sem giro, centrada no pixel da posição.
+func _bolinha(proj: int) -> bool:
+	return str(_proj_lista[proj].nome) == "bala" and _visual_mecha(proj)
+
+
+func _missil(proj: int) -> bool:
+	return str(_proj_lista[proj].nome) == "missil"
+
+
+## A fumaça do míssil `i`: um puff a cada MisseisRastro.ESPACO px de voo, no bocal da imagem DESENHADA (`_pos_visual`, então segue a descida do pod até o alvo), nunca com o desenho
+## oculto. Perfil Baixo (efe_particulas <= 0,3): nenhum puff, fica só a chama. Sem RNG e sem nó: o ritmo vem da distância voada.
+func _fumaca(i: int) -> void:
+	if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0 or a_visual_dist[i] < a_fum[i] or not _missil(a_proj[i]):
+		return
+	a_fum[i] = a_visual_dist[i] + MisseisRastro.ESPACO
+	if float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3:
+		return
+	var dir := Vector2.from_angle(PixelRot.angulo16(_dir_desenho(i)))
+	rastro.emitir(_pos_visual(i).round() - dir * MisseisRastro.ATRAS)
+
+
+## O alfa da imagem do projétil `i` no fim do alcance: de 1 a 0 nos últimos FADE_PX. O míssil fica em 1 até o alcance acabar e some inteiro
+## naquele quadro (alfa 0/1 da grade de pixel; a bolinha do canhão faz o mesmo encurtando o traçante, e a explosão do acerto é a do misseis_visual).
+func _fade(i: int) -> float:
+	if _missil(a_proj[i]):
+		return 1.0
+	return clampf(a_rest[i] / FADE_PX, 0.0, 1.0)
+
+
+## A direção (rad) em que o DESENHO do projétil `i` anda agora: a derivada de `_pos_visual_em` (diferença central de NARIZ_PASSO px de voo), não
+## `a_dir` (a do chão). Na descida da boca do pod até a trajetória (VISUAL_DIST) o míssil anda e desce ao mesmo tempo: o nariz aponta para onde a
+## imagem vai, sem escorregar de lado. Sem descida (acabou, ou o projétil não tem boca) é a própria `a_dir`. Quem desenha quantiza em 16 direções.
+func _ang_visual(i: int) -> float:
+	var d := _pos_visual_em(i, -NARIZ_PASSO) - _pos_visual_em(i, NARIZ_PASSO)
+	if d.length_squared() < 0.000001:
+		return (a_dir[i] as Vector2).angle()
+	return d.angle()
+
+
+## A direção (das 16, `PixelRot.direcao16`) com que `_desenhar_corpo` desenha a imagem do projétil `i`: a de `_ang_visual`, quantizada.
+## O corpo desenha por ela (SpriteGiro quantiza de novo, sem mudar nada), e o teste v2_misseis_desenho mede esta mesma direção.
+func _dir_desenho(i: int) -> Vector2i:
+	return PixelRot.direcao16(_ang_visual(i))
+
+
+## Gera as cópias pré-giradas de uma folha animada (`voo` de `<proj>_heroi`) para o desenho em 16 direções; sem efeito se já gerou.
+func _preparar_folha(f: Dictionary) -> void:
+	SpriteGiro.preparar(f.tex, Vector2i(f.quadro as Vector2), Vector2i(f.ancora as Vector2), int(f.n))
+
+
 func _visual_mecha(proj: int) -> bool:
 	var nome := str(_proj_lista[proj].nome)
 	return nome == "missil" or (nome == "bala" and combate.heroi_id == "lightwolf")
 
 
+## A boca do cano (ou do pod) deste disparo em px de mundo: a posição projetada na folha (`bocas_projeteis` do JSON da folha, relativa aos pés do herói) da linha
+## de 8 direções da mira e do braço (`lateral` < 0 = o braço esquerdo da tela, a tabela [linha][0]). Vector2.INF se o projétil não é do mecha ou a folha não tem a tabela.
+## A tabela foi conferida contra o clarão desenhado na própria folha (combo, quadros 1 e 7): centro do clarão e boca diferem até 1,7 px nas 16 bocas (v2_mecha_projeteis confere <= 3).
+## No canhão soma o desvio do quadro que a folha desenha (h.desvio_boca, o passo do andar_tiro): a bolinha nasce no cano também andando.
+func _boca_mundo(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
+	var rel := _boca_rel(proj, h, origem, dir, passo)
+	if not rel.is_finite():
+		return Vector2.INF
+	if str(_proj_lista[proj].nome) != "missil":
+		rel += h.desvio_boca(_boca_lado(proj, h, origem, dir, passo))
+	return h.pos + rel + Vector2(0.0, -float(h.get("alt_px") if "alt_px" in h else 0))  # alt_px: o mecha voando no impulso (o pod dos mísseis sobe junto)
+
+
+## A mesma boca relativa aos pés do herói (a tabela da folha, sem arredondar); Vector2.INF quando `_boca_mundo` também não tem.
+func _boca_rel(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
+	if not _visual_mecha(proj):
+		return Vector2.INF
+	var tabela := _boca_tabela(proj, h)
+	var linha: int = h.linha_de(passo.get("cone_dir", dir))
+	if tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
+		return Vector2.INF
+	var xy: Array = tabela[linha][_boca_lado(proj, h, origem, dir, passo)]
+	if xy.size() != 2:
+		return Vector2.INF
+	return Vector2(float(xy[0]), float(xy[1]))
+
+
+## A tabela de bocas da folha para este projétil ([linha][lado] -> [x, y], relativa aos pés): os pods do míssil ou os canhões. [] se a folha não tem.
+func _boca_tabela(proj: int, h) -> Array:
+	var chave := "pods" if str(_proj_lista[proj].nome) == "missil" else "canhoes"
+	return h.tipo.info.get("bocas_projeteis", {}).get(chave, [])
+
+
+## O braço (ou o pod) deste disparo: 0 = o esquerdo da tela (a tabela [linha][0]), 1 = o direito. Canhão: o sinal de `lateral`; míssil: o lado da origem.
+func _boca_lado(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> int:
+	if str(_proj_lista[proj].nome) == "missil":
+		var mira: Vector2 = passo.get("cone_dir", dir)
+		return 0 if (origem - (h.pos + h.ORIGEM_GOLPE)).dot(Vector2(-mira.y, mira.x)) < 0.0 else 1
+	return 0 if float(passo.get("lateral", -1.0)) < 0.0 else 1
+
+
 ## Coordenadas projetadas na folha, relativas aos pés do herói. Só desenho: nada altera a_pos/a_dir/alcance/colisão.
 func _boca_visual(i: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
-	if not _visual_mecha(a_proj[i]):
+	var boca := _boca_mundo(a_proj[i], h, origem, dir, passo)
+	if not boca.is_finite():
 		return
-	var nome := str(_proj_lista[a_proj[i]].nome)
-	var chave := "pods" if nome == "missil" else "canhoes"
-	var tabela: Array = h.tipo.info.get("bocas_projeteis", {}).get(chave, [])
-	var mira: Vector2 = passo.get("cone_dir", dir)
-	var linha: int = h.linha_de(mira)
-	if tabela.size() != 8 or (tabela[linha] as Array).size() != 2:
-		return
-	var lado := 0 if float(passo.get("lateral", -1.0)) < 0.0 else 1
-	if nome == "missil":
-		var perp := Vector2(-mira.y, mira.x)
-		lado = 0 if (origem - (h.pos + h.ORIGEM_GOLPE)).dot(perp) < 0.0 else 1
-	var xy: Array = tabela[linha][lado]
-	if xy.size() != 2:
-		return
-	a_visual_offset[i] = h.pos + Vector2(float(xy[0]), float(xy[1])) - a_pos[i]
+	a_visual_offset[i] = boca - a_pos[i]
+	if _bolinha(a_proj[i]):  # só a bolinha do canhão: a bala segue a linha do cano e só chega ao chão perto do fim do alcance; o míssil mantém os 60 px
+		a_visual_compr[i] = maxf(float(passo.get("boca_converge", VISUAL_DIST)), 1.0)
 	a_visual_t[i] = VISUAL_DUR
-	a_visual_ultima[i] = h.pos + Vector2(float(xy[0]), float(xy[1]))
+	a_visual_ultima[i] = boca
 	a_visual_seguir[i] = 1
 
 
 func _pos_visual(i: int) -> Vector2:
+	return _pos_visual_em(i, 0.0)
+
+
+## Onde o desenho do projétil `i` estava `atras` px de voo antes de agora (0 = agora): a mesma conta de `_pos_visual`, com a distância e o tempo
+## daquele ponto (a bolinha anda reto no chão, a vel constante); o traçante usa para seguir a curva da descida da boca em vez de uma reta.
+func _pos_visual_em(i: int, atras: float) -> Vector2:
+	var chao: Vector2 = a_pos[i] - (a_dir[i] as Vector2) * atras
 	if a_visual_compr[i] <= 0.0:
-		return a_pos[i]
-	var k := clampf(minf(1.0 - a_visual_dist[i] / a_visual_compr[i], a_visual_t[i] / VISUAL_DUR), 0.0, 1.0)
+		return chao
+	var t_vis := a_visual_t[i] + (atras / a_vel[i] if a_vel[i] > 0.0 else 0.0)
+	var k := clampf(minf(1.0 - (a_visual_dist[i] - atras) / a_visual_compr[i], t_vis / VISUAL_DUR), 0.0, 1.0)
 	if a_visual_compr[i] >= VISUAL_DIST:
 		k = k * k * (3.0 - 2.0 * k)
-	return a_pos[i] + a_visual_offset[i] * k
+	return chao + a_visual_offset[i] * k
+
+
+## O traçante da bolinha `i` desenhada em `pv` (já arredondada): pixels inteiros pelo caminho desenhado, das cores quentes às escuras, 2 px de espessura
+## perto da bolinha e 1 px na cauda; só o comprimento já voado (nasce na boca). Perfil Baixo: TRACO_BAIXO px, fino. No fim da vida (`fade` < 1) o
+## traço ENCURTA em vez de esmaecer: os pixels ficam sempre opacos (alfa 0/1 da grade de pixel).
+func _tracante(i: int, pv: Vector2, fade: float, baixo: bool) -> void:
+	for k in _tracar(i, pv, baixo, fade):
+		no_corpo.draw_rect(Rect2(_traco_px[k], Vector2.ONE), TRACO_CORES[_traco_cor[k]])
+
+
+## Monta em `_traco_px` / `_traco_cor` (buffers fixos, reaproveitados: nada aloca por quadro) os pixels do traçante da bolinha `i` desenhada em `pv`;
+## devolve quantos. `corte` (0 a 1, o `fade` da bolinha) encurta o traço no fim da vida. Separado do desenho para o teste medir sem renderizar.
+func _tracar(i: int, pv: Vector2, baixo: bool, corte := 1.0) -> int:
+	var compr := int(float(mini(TRACO_BAIXO if baixo else TRACO, int(a_visual_dist[i]))) * clampf(corte, 0.0, 1.0))
+	var n := 0
+	if compr <= TRACO_INICIO:
+		return 0
+	var dir: Vector2 = a_dir[i]
+	var lado := Vector2(0, 1) if absf(dir.x) >= absf(dir.y) else Vector2(1, 0)  # o segundo pixel fica de lado ao eixo principal do voo
+	var agora := _pos_visual(i)
+	var ultimo := pv
+	var n_cor := TRACO_CORES.size()
+	for meio in range(TRACO_INICIO * 2, compr * 2 + 1):  # passo de meio px de chão: na descida da boca o desenho anda mais que o chão, e o traço não fura
+		var d := meio >> 1
+		var q := (_pos_visual_em(i, float(meio) * 0.5) - agora).round() + pv  # relativo à bolinha desenhada: o traço encosta nela
+		if q == ultimo or n + 2 > TRACO_BUF:
+			continue
+		ultimo = q
+		var ci := mini(n_cor - 1, (d - TRACO_INICIO) * n_cor / maxi(1, compr - TRACO_INICIO + 1))
+		_traco_px[n] = q
+		_traco_cor[n] = ci
+		n += 1
+		if not baixo and d < TRACO_INICIO + TRACO_GROSSO:
+			_traco_px[n] = q + lado
+			_traco_cor[n] = ci
+			n += 1
+	return n
 
 
 ## Boca já além do contato ou alvo tardio: não desenha uma volta para trás. A física segue e o desenho volta ao alcançar a última posição.
@@ -740,6 +989,9 @@ func _img_plasma() -> Texture2D:
 func _registrar(nome: String, tex: Texture2D, compr: float, alt: float) -> int:
 	_proj_lista.append({"nome": nome, "tex": tex, "compr": compr, "alt": alt})
 	_proj_nomes[nome] = _proj_lista.size() - 1
+	if nome != "bala":  # a bolinha do mecha é desenhada sem giro (`_bolinha`); outro herói com "bala" cairia no `variante` sob demanda
+		var tam := Vector2i(tex.get_size())
+		SpriteGiro.preparar(tex, tam, tam / 2)  # as cópias pré-giradas nascem aqui, ao montar, e não no meio da partida
 	return _proj_lista.size() - 1
 
 
@@ -749,6 +1001,7 @@ func _indice_proj(nome: String) -> int:
 		return _proj_nomes[nome]
 	var folhas := AnimGolpes.de(nome + "_heroi")
 	if folhas.has("voo"):
+		_preparar_folha(folhas.voo)
 		_proj_lista.append({"nome": nome, "anim": folhas.voo})
 		_proj_nomes[nome] = _proj_lista.size() - 1
 	else:

@@ -241,6 +241,7 @@ func _objeto(nome: String, pos: Vector2, luz_obj: Dictionary) -> void:
 	a.tex_n = it.tn
 	a.tex_b = it.tb
 	a.larg_blob = float(it.w) * (0.35 if a.alt > 100.0 else 0.6)
+	a.larg_col = Colisao.largura_objeto(it.colisao)
 	objetos.append(a)
 	_bloco(pos).obj.append(a)
 	Colisao.adicionar_objeto(pos, it.colisao)

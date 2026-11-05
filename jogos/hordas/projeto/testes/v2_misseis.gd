@@ -1,7 +1,7 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste automático da E MÍSSEIS do LightWolf (LW-4: v2/habilidade.gd, v2/adagas.gd, v2/hud_habilidades.gd, dados/v2_habilidade.json > misseis): o mecha tem a E, o Lobo não; o aperto
-# solta 12 micro-mísseis em 0,9 s sem ficar invulnerável e andando a 50%; cada míssil escolhe ao sair o monstro mais perto no cone de 50 graus (no máximo 2 por alvo enquanto houver outro),
-# gira até 3,2 rad/s para ele, fere (11) e explode em área pequena (raio 26); quem está fora do cone não é buscado; sem alvo ou com o alvo morto segue reto e acaba no alcance; o pool de
+# solta 24 micro-mísseis em 3,75 s do mundo (3 s na tela com o ritmo 1,25; um a cada 0,156 s) sem ficar invulnerável e andando a 50%; cada míssil escolhe ao sair o monstro mais perto no cone de 50 graus (no máximo 2 por alvo enquanto houver outro),
+# gira até 3,2 rad/s para ele, fere (8) e explode em área pequena (raio 26); quem está fora do cone não é buscado; sem alvo ou com o alvo morto segue reto e acaba no alcance; o pool de
 # projéteis nunca passa de 17 em voo com a E e não cria nó; as cartas da E (dano, recarga) valem; o HUD mostra o ícone A19. O mundo anda em passos fixos de 1/60 s.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_misseis.tscn  (imprime "v2_misseis falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -93,18 +93,18 @@ func _dados() -> void:
 	var b: Dictionary = d.get("misseis", {})
 	ok(b.has("nome") and b.has("rotulo") and b.has("desc") and b.has("cor") and b.has("icone"), "bloco misseis completo")
 	ok(str(b.rotulo).length() <= 10 and Dados.icone_carta(str(b.icone)) != null, "o rótulo cabe no slot e o ícone de carta existe (%s)" % b.get("icone", ""))
-	ok(float(b.recarga) == 9.0 and int(b.n) == 12 and float(b.dur) == 0.9, "números do plano: recarga 9 s, 12 mísseis em 0,9 s")
+	ok(float(b.recarga) == 9.0 and int(b.n) == 24 and float(b.dur) == 3.75, "números de 05/11: recarga 9 s, 24 mísseis em 3,75 s do mundo (3 s na tela)")
 	ok(float(b.mov) == 0.5 and not bool(b.invul), "anda a 50% e NÃO é invulnerável")
 	ok(
-		float(b.cone) == 50.0 and float(b.giro) == 3.2 and float(b.dano) == 11.0 and float(b.expl_raio) == 26.0,
-		"cone 50 graus, giro 3,2 rad/s, dano 11, explosão de raio 26"
+		float(b.cone) == 50.0 and float(b.giro) == 3.2 and float(b.dano) == 8.0 and float(b.expl_dano) == 4.0 and float(b.expl_raio) == 26.0,
+		"cone 50 graus, giro 3,2 rad/s, dano 8, explosão 4 de raio 26"
 	)
 	var ad = w.combate.adagas
 	ok(ad._proj_nomes.has("missil") and int(ad._proj_nomes["missil"]) > 0, "o pool tem a imagem `missil` (a mesma tabela de projéteis)")
 	ok(ad._proj_lista[int(ad._proj_nomes["missil"])].has("tex"), "o míssil é desenhado em código (sem folha nova)")
 
 
-## O aperto: 12 mísseis em 0,9 s, vulnerável, recarga armada, nada de nó novo no pool, no máximo 17 em voo.
+## O aperto: 24 mísseis em 3,75 s, vulnerável, recarga armada (só corre depois da E), nada de nó novo no pool, no máximo 17 em voo.
 func _disparo() -> void:
 	zerar()
 	var h = w.heroi
@@ -121,21 +121,24 @@ func _disparo() -> void:
 	var maximo := 0
 	var n := 0
 	var vida0: float = h.vida
-	while h.estado == Heroi.Estado.HABILIDADE and n < 200:
+	while h.estado == Heroi.Estado.HABILIDADE and n < 400:
 		passos(1)
 		n += 1
 		maximo = maxi(maximo, ad.ativas())
 		if n == 20:
-			ok(ad.lancadas - lancadas0 >= 3 and ad.lancadas - lancadas0 <= 5, "a ~0,33 s saíram ~4 mísseis (um a cada 75 ms): %d" % (ad.lancadas - lancadas0))
-	ok(absf(float(n) * PASSO - 0.9) < 0.1, "a E dura ~0,9 s (durou %s)" % (float(n) * PASSO))
-	ok(ad.lancadas - lancadas0 == 12, "saíram 12 mísseis (%d)" % (ad.lancadas - lancadas0))
+			ok(ad.lancadas - lancadas0 >= 2 and ad.lancadas - lancadas0 <= 4, "a ~0,33 s saíram ~3 mísseis (um a cada 156 ms): %d" % (ad.lancadas - lancadas0))
+		if n == 120:
+			ok(ad.lancadas - lancadas0 >= 12 and ad.lancadas - lancadas0 <= 14, "a 2 s saíram ~13 mísseis (ainda atirando): %d" % (ad.lancadas - lancadas0))
+			ok(absf(h.hab_recarga - 9.0) < 0.01, "a recarga não corre durante a E (%s)" % h.hab_recarga)
+	ok(absf(float(n) * PASSO - 3.75) < 0.1, "a E dura ~3,75 s do mundo atirando, 3 s na tela (durou %s)" % (float(n) * PASSO))
+	ok(ad.lancadas - lancadas0 == 24, "saíram 24 mísseis (%d)" % (ad.lancadas - lancadas0))
 	ok(maximo <= 17, "no máximo 17 projéteis em voo no pior caso (%d)" % maximo)
 	ok(h.estado == Heroi.Estado.LIVRE and not h.hab_invul, "acabou: livre")
 	ok(hab.disparos == 1 and hab.ultimo.get("id") == "misseis", "a E conta o disparo (%s)" % str(hab.ultimo))
 	ok(w.get_child_count() == nos0, "nenhum nó novo na cena (pool)")
 	ok(h.vida == vida0, "ninguém feriu o mecha (recarga dos monstros 99)")
 	passos(120)
-	ok(perdeu(alvo) >= 11.0 * 6.0, "o alvo no cone levou vários mísseis (%s de dano)" % perdeu(alvo))
+	ok(perdeu(alvo) >= 8.0 * 12.0, "o alvo no cone levou vários mísseis (%s de dano)" % perdeu(alvo))
 	ok(float(w.combate.dano_por_fonte.get("habilidade", 0.0)) > 0.0, "o dano conta na fonte `habilidade` da tela de fim")
 	ok(h.habilidade() == false and h.hab_negados >= 1, "na recarga o aperto é negado")
 	h.hab_recarga = 0.0
@@ -178,7 +181,7 @@ func _busca() -> void:
 	var vizinho = monstro_a(190 + 18, 80 + 10)  # perto o bastante para a explosão (26 + raio), atrás do alvo
 	var acertos0: int = ad.acertos
 	ok(h.habilidade(), "dispara com alvo fora do eixo")
-	passos(150)
+	passos(300)  # a salva inteira (3,75 s) e o voo do último
 	ok(perdeu(alvo) >= 11.0 * 3.0, "os mísseis curvam até o alvo fora do eixo (%s de dano)" % perdeu(alvo))
 	ok(perdeu(vizinho) > 0.0, "a explosão pequena fere o vizinho (%s)" % perdeu(vizinho))
 	ok(w.combate.armas.acertos.get("missil", 0) > 0, "a explosão passa pelo dano em área das armas (acertos `missil`)")
@@ -244,14 +247,14 @@ func _reto() -> void:
 	ok(h.habilidade(), "dispara sem ninguém")
 	passos(70)
 	ok(ad.ativas() > 0, "os mísseis voam sem alvo")
-	passos(120)
+	passos(230)  # o último sai em 3,59 s e voa 320 px a 270 px/s (~1,2 s)
 	ok(ad.ativas() == 0, "e acabam no alcance (%d em voo)" % ad.ativas())
 	zerar()
 	var alvo = monstro_a(220, 20, 30.0)
 	ok(h.habilidade(), "dispara no alvo frágil")
 	passos(200)
 	ok(not alvo.vivo or alvo.morrendo or alvo.vida <= 0.0, "o alvo frágil morre")
-	passos(100)
+	passos(140)
 	ok(ad.ativas() == 0, "depois da morte do alvo nenhum míssil fica preso no ar (%d)" % ad.ativas())
 
 
@@ -270,7 +273,7 @@ func _cartas() -> void:
 	for j in ad.MAX:
 		if ad.a_rest[j] > 0.0:
 			maior = maxf(maior, ad.a_dano[j])
-	ok(absf(maior - 22.0) < 0.5, "Punho de terra dobra o dano do míssil (%s)" % maior)
+	ok(absf(maior - 16.0) < 0.5, "Punho de terra dobra o dano do míssil (%s)" % maior)
 	passos(160)
 	ok(perdeu(alvo) > 0.0, "e o alvo apanha")
 	w.combate.ruptura.somas.dano = 0

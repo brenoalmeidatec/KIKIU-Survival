@@ -104,13 +104,20 @@ func resetar() -> void:
 	aplicar_perfil()
 
 
-## Segue o corpo: `desloca` é o quanto o tronco andou no golpe (px). Só escreve quando muda.
-func seguir(desloca: Vector2) -> void:
+## Segue o corpo: `desloca` é o quanto o desenho do tronco andou (o golpe, a subida do voo; px). Só escreve quando muda.
+## `chave_y` (só quando a raiz está no y-sort: o voo do impulso, Heroi._ordenar) é o y do sprite do corpo na raiz: o foguinho fica nesse mesmo
+## y e o offset o leva ao peito, então ele empata com o corpo no y-sort e sai logo depois dele (ordem da árvore), por cima. INF = fora do y-sort:
+## o nó fica no próprio peito, sem offset.
+func seguir(desloca: Vector2, chave_y := INF) -> void:
 	if no == null:
 		return
 	var p := _peito + desloca
-	if no.position != p:
-		no.position = p
+	var pos := Vector2(p.x, chave_y) if chave_y != INF else p
+	if no.position != pos:
+		no.position = pos
+	var off := Vector2(0.0, p.y - chave_y) if chave_y != INF else Vector2.ZERO
+	if no.offset != off:
+		no.offset = off
 
 
 ## Um passo do pulso (no relógio do herói). Fixo (perfil Baixo) não gasta nada.

@@ -106,6 +106,7 @@ func _coberto(heroi, monstros: Array) -> bool:
 		return false
 	_montar_grade(monstros)
 	var minimo := corpo.get_area() * COBERTURA_MIN
+	var y_heroi: float = heroi.y_ordem() if heroi is Object and heroi.has_method("y_ordem") else heroi.pos.y  # voando no impulso: quem ele sobrevoa fica atrás dele
 	var busca := Rect2(corpo.position - Vector2.ONE * _margem, corpo.size + Vector2.ONE * _margem * 2.0)
 	var cx0 := floori(busca.position.x / CELULA)
 	var cx1 := floori(busca.end.x / CELULA)
@@ -115,7 +116,7 @@ func _coberto(heroi, monstros: Array) -> bool:
 		for cy in range(cy0, cy1 + 1):
 			var lista: Array = _grade.get(_chave(cx, cy), [])
 			for mo in lista:
-				if mo.pos.y <= heroi.pos.y:  # atrás do herói (ou na mesma linha): quem desenha por cima é o herói
+				if mo.pos.y <= y_heroi:  # atrás do herói (ou na mesma linha): quem desenha por cima é o herói
 					continue
 				var inter := corpo.intersection(_corpo(mo.pos, mo.tipo, _esc(mo)))
 				if inter.get_area() >= minimo:

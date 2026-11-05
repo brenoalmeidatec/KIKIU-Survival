@@ -7,6 +7,9 @@ extends Control
 ## lê só o contrato `sec_*` que o herói publica (sec_nome, sec_icone, sec_pronta, sec_ativo, sec_barra, sec_recarga, sec_recarga_s). Acende pronto, pulsa em uso e
 ## mostra a cortina de recarga (fração `sec_recarga`) com o tempo que falta (`sec_recarga_s`). O ícone é assets/v2/secundario_s/<chave do herói>.png quando existir,
 ## senão o ícone de carta de `sec_icone`.
+## IMPULSO (o Shift do mecha do LightWolf, v2/impulso.gd): um terceiro card, mais estreito (TAM_IMP), à ESQUERDA do E. Lê só o contrato `imp_*` do herói (imp_nome,
+## imp_t, imp_dur, imp_recarga, imp_recarga_max, imp_nega_t); sem imp_nome (todo herói menos o mecha, e o Lobo) o lugar dele fica vazio, nada é desenhado.
+## O nó reserva o espaço sempre (a largura não muda no meio da partida e o layout não se mexe quando o mecha vira Lobo). Ícone: assets/v2/habilidade_shift/<chave>.png.
 
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
@@ -14,6 +17,11 @@ const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": os quad
 const TAM_CARD := Vector2(86.0, 74.0)
 const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó inteiro é escalado (`scale`): o desenho e `size` ficam no espaço de 86x74 por card
 const ESPACO_CARD := 2.0
+const TAM_IMP := Vector2(70.0, 74.0)  # o card do impulso: mais estreito, para o nó (x 585 a 954 na tela) não encostar na barra de XP (que acaba em x 580)
+const X_E := TAM_IMP.x + ESPACO_CARD  # onde começa o card E (o do impulso fica antes dele)
+const COR_IMP := Color(0.75, 0.95, 1.0)  # o azul claro do mecha (o mesmo de v2/mecha.gd)
+const TEXTO_RECARGA_IMP := Paleta.TEXTO_APAGADO  # o "x.x S" da recarga do impulso: o cinza do DESATIVADO dava ~2,5:1 no fundo do card; este passa de 4,5:1
+const PASTA_ICONE_IMP := "res://assets/v2/habilidade_shift/"  # <chave do herói>.png: o ícone do impulso (arte própria em pixel, docs/LICENCAS_ARTE.md)
 const TAM_ICON := Vector2(44.0, 44.0)  # o ícone (32 px) com 6 px de folga; era 48 e encolheu para o selo da tecla caber com 16 px de altura
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
 const COR_ESCUDO := Color(0.45, 0.82, 1.0)  # o azul do escudo (o mesmo do desenho dele no mundo, v2/escudo.gd)
@@ -50,6 +58,14 @@ var s_recarga_px := 0  # a cortina de recarga em 0 a 20 (sec_recarga)
 var s_recarga_s := 0.0  # s que faltam para ficar pronto (sec_recarga_s; 0 = sem contagem)
 var s_nome := ""  # o rótulo do slot (sec_nome)
 var s_icone := ""  # o id do ícone de carta (sec_icone)
+var imp_disponivel := false  # o herói publica um impulso (imp_nome): senão o card do Shift fica vazio
+var imp_ativo := false  # voando agora
+var imp_pronta := false
+var imp_negada := false
+var imp_recarga_px := 0  # a cortina de recarga em 0 a 20
+var imp_recarga_s := 0.0
+var imp_voo_px := 0  # o voo que falta em 0 a 20 (a barrinha embaixo do ícone)
+var imp_nome := ""
 var _icones_s := {}  # caminho -> Texture2D (ou null): o ícone próprio do slot S, carregado uma vez
 var q_negada := false
 var q_ativa := false  # o especial está em andamento
@@ -73,7 +89,7 @@ var _heroi_id := 0
 func _ready() -> void:
 	Glifos.ao_mudar(queue_redraw)  # o selo da tecla segue o dispositivo em uso (E e botão direito no teclado, LB e LT no controle)
 	scale = Vector2(ESCALA, ESCALA)  # o tamanho na tela é size * scale (261x111)
-	size = Vector2(TAM_CARD.x * 2.0 + ESPACO_CARD, TAM_CARD.y)  # a posição é do hud.tscn (canto inferior direito; o HUD cola na borda do canvas)
+	size = Vector2(X_E + TAM_CARD.x * 2.0 + ESPACO_CARD, TAM_CARD.y)  # a posição é do hud.tscn (canto inferior direito; o HUD cola na borda do canvas)
 	process_priority = 100  # corre depois do HUD; o círculo do Q (101) lê o estado que este nó acabou de sincronizar
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	light_mask = 0
@@ -162,11 +178,12 @@ func sincronizar(heroi) -> void:
 		perfeita = _campo(heroi, "rup_perfeita", false) == true
 		negada = float(_campo(heroi, "rup_nega_t", 0.0)) > 0.0
 	_sincronizar_secundario(heroi)
+	_sincronizar_impulso(heroi)
 	var rotulo := _rotulo_e()
 	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita and not Piscadas.ligado() else 0
 	var fase_pulso := int(Time.get_ticks_msec() / 160.0) % 2 if (e_ativa or s_ativo) and not Piscadas.ligado() else 0  # o quadro da E em andamento e o do escudo erguido pulsam
 	var nova_chave := (
-		"%s|%s|%d|%d|%d|%s|%s|%s|%d|%d|%s|%s|%s|%d|%s|%s|%s|%s"
+		"%s|%s|%d|%d|%d|%s|%s|%s|%d|%d|%s|%s|%s|%d|%s|%s|%s|%s|%s"
 		% [
 			estado_e,
 			e_pronta,
@@ -185,7 +202,8 @@ func sincronizar(heroi) -> void:
 			"%s%s%d" % [s_pronta, s_ativo, fase_pulso],
 			s_nome,
 			s_icone,
-			"%.1f" % s_recarga_s
+			"%.1f" % s_recarga_s,
+			"%s%s%s%s%d%d%.1f%s" % [imp_disponivel, imp_ativo, imp_pronta, imp_negada, imp_recarga_px, imp_voo_px, imp_recarga_s, imp_nome]
 		]
 	)
 	if nova_chave != _chave:
@@ -212,10 +230,62 @@ func _sincronizar_secundario(heroi) -> void:
 	s_recarga_s = 0.0 if s_ativo else maxf(float(_campo(heroi, "sec_recarga_s", 0.0)), 0.0)
 
 
+## O impulso: disponível se o herói publica um nome (imp_nome); pronto sem recarga, ativo voando, negado no aperto durante a recarga.
+func _sincronizar_impulso(heroi) -> void:
+	imp_nome = str(_campo(heroi, "imp_nome", ""))
+	imp_disponivel = imp_nome != ""
+	var t := maxf(float(_campo(heroi, "imp_t", 0.0)), 0.0)
+	var dur := maxf(float(_campo(heroi, "imp_dur", 1.0)), 0.001)
+	var rec := maxf(float(_campo(heroi, "imp_recarga", 0.0)), 0.0) if imp_disponivel else 0.0
+	var rec_max := maxf(float(_campo(heroi, "imp_recarga_max", 1.0)), 0.001)
+	imp_ativo = imp_disponivel and t > 0.0
+	imp_pronta = imp_disponivel and (imp_ativo or rec <= 0.0)
+	imp_negada = imp_disponivel and float(_campo(heroi, "imp_nega_t", 0.0)) > 0.0
+	imp_recarga_px = 0 if imp_ativo or rec <= 0.0 else mini(ceili(rec / rec_max * 20.0), 20)
+	imp_recarga_s = 0.0 if imp_ativo else rec
+	imp_voo_px = ceili(t / dur * 20.0) if imp_ativo else 0
+
+
 func _draw() -> void:
 	var fonte := get_theme_font("font")
-	_desenhar_card(Vector2.ZERO, "E", fonte)
-	_desenhar_card(Vector2(TAM_CARD.x + ESPACO_CARD, 0.0), "S", fonte)
+	if imp_disponivel:
+		_desenhar_impulso(fonte)
+	_desenhar_card(Vector2(X_E, 0.0), "E", fonte)
+	_desenhar_card(Vector2(X_E + TAM_CARD.x + ESPACO_CARD, 0.0), "S", fonte)
+
+
+## O card do impulso (o Shift do mecha), à esquerda do E: o mesmo desenho dos outros (pedra, quadro do ícone, cortina, rótulo, selo), mais estreito.
+func _desenhar_impulso(fonte: Font) -> void:
+	var card := Rect2(Vector2.ZERO, TAM_IMP)
+	draw_rect(card, FUNDO_CARD)
+	_moldura_pedra(card, true)
+	var icon_pos := Vector2((TAM_IMP.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
+	var cor := DESATIVADO
+	if imp_pronta:
+		cor = COR_IMP.lerp(Paleta.BRANCO, 0.45) if imp_ativo and _pulsa() else COR_IMP
+	if imp_negada:
+		cor = Paleta.PERIGO
+	draw_rect(Rect2(icon_pos, TAM_ICON), FUNDO)
+	_moldura(Rect2(icon_pos, TAM_ICON), cor)
+	var arte := arte_imp()
+	if arte != null:
+		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, Color.WHITE if imp_pronta else DESATIVADO)
+	_cortina(icon_pos, imp_recarga_px)
+	if imp_ativo:  # o voo que falta: a barrinha embaixo do ícone encolhe até o fim
+		draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 4.0), Vector2((TAM_ICON.x - 4.0) * float(imp_voo_px) / 20.0, 2.0)), COR_IMP)
+	var rotulo := imp_nome if imp_pronta else ("%.1f S" % imp_recarga_s if imp_recarga_s > 0.0 else "RECARGA")
+	draw_string(fonte, Vector2(0.0, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else TEXTO_RECARGA_IMP)
+	Glifos.desenhar_selo(self, "correr", TAM_IMP.x * 0.5, TAM_IMP.y - Glifos.ALTURA_SELO, cor, imp_pronta, DESATIVADO)
+
+
+## O ícone do impulso do herói (assets/v2/habilidade_shift/<chave>.png); null sem arte (o quadro fica só com a moldura).
+func arte_imp() -> Texture2D:
+	var caminho := PASTA_ICONE_IMP + q_heroi + ".png"
+	if q_heroi == "":
+		return null
+	if not _icones_s.has(caminho):
+		_icones_s[caminho] = load(caminho) if ResourceLoader.exists(caminho) else null
+	return _icones_s[caminho]
 
 
 ## Um card: "E" (a habilidade do herói) ou "S" (o secundário: escudo, aparo...).

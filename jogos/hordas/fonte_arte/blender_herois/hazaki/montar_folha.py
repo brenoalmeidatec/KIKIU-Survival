@@ -8,7 +8,7 @@ Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava n
   hazaki_final_previa_x4.png: cópia de prévia (albedo ampliado 4x, sobre fundo escuro)
 
 Colunas: as 7 primeiras são as da folha do piloto (parado = coluna 0, andar0..andar5 = colunas 1 a 6), e o heroi.gd anda com
-colunas.size() - 1 quadros. As colunas novas vão no FIM: parado 1..3, rolamento, combo (3 golpes x 6), escudo, dano e morte.
+colunas.size() - 1 quadros. As colunas novas vão no FIM: parado 1..3, rolamento, combo (3 golpes x 6), escudo, dano, morte e strafe.
 Por isso "colunas" do JSON continua com as 7 do andar; as animações novas estão em "animacoes" (ver LEIA-ME.md).
 """
 import json
@@ -32,6 +32,7 @@ ANIMACOES = [
     ("escudo", 4, 0.10),
     ("dano", 4, 0.08),
     ("morte", 8, 0.12),
+    ("strafe", 6, 0.09),
 ]
 # tempo por quadro (s) quando o quadro tem ritmo próprio (impacto rápido, hold e repouso longos); mesmos números do S_POR_QUADRO de cada anim_<nome>.py
 TEMPOS = {
@@ -46,9 +47,12 @@ TEMPOS = {
 COLUNAS = [("parado", 0)] + [("andar", i) for i in range(6)] + [("parado", i) for i in (1, 2, 3)]
 COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(18)]
 COLUNAS += [("escudo", i) for i in range(4)] + [("dano", i) for i in range(4)] + [("morte", i) for i in range(8)]
+# strafe (andar de lado, passo-junta) no FIM, colunas 50..55; o jogo toca o ciclo ao contrário para o outro lado (ver anim_strafe.py)
+COLUNAS += [("strafe", i) for i in range(6)]
 
 AVISOS = {
     "morte": "cai DE LADO, deitada atravessada na tela (cabeca para a esquerda ou a direita), encolhida; nos quadros deitados o corpo (botas, katana) passa 3 a 5 px dos 32 e e cortado pela celula (anim_morte.py, medir.py)",
+    "strafe": "cima, baixo_dir e cima_esq encostam na borda (katana e braco, como no andar; medir.py)",
     "andar": "baixo_esq, baixo_dir, cima_esq e cima_dir encostam na borda em alguns quadros (medir.py)",
     "rolamento": "quadro 1 (mergulho): a bainha ou a katana encostam na borda de perfil e em baixo_dir/cima_esq (medir.py)",
     "combo": "o rastro da lamina e a ponta da katana encostam na borda em varios quadros de golpe, de perfil e nas diagonais; o rastro e cortado pela celula (medir.py)",
@@ -116,6 +120,9 @@ def main():
         if anim in AVISOS:
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
+    # strafe: o jogo usa quando |cos(mira, movimento)| < limiar_cos (com histerese); ciclo para a frente = passo para o +x do herói
+    # (direita da tela de frente para a câmera), ao contrário = para o -x
+    info["animacoes"]["strafe"].update({"limiar_cos": 0.5, "histerese": 0.08, "sentido_frente": "+x do heroi"})
     info["animacoes"]["combo"]["golpes"] = 3
     info["animacoes"]["combo"]["quadros_por_golpe"] = 6
     info["animacoes"]["combo"]["golpes_tipo"] = ["horizontal", "diagonal", "estocada"]

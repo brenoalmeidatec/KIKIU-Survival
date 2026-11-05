@@ -49,6 +49,8 @@ func _ready() -> void:
 						origem += Vector2(-dir.y, dir.x) * (-9.0 if lado == 0 else 9.0)
 					var passo: Dictionary = w.combate.cfg.golpe.passos[lado].duplicate(true)
 					passo.proj = proj
+					passo.n = 1  # contato de UM projétil: a rajada (n bolinhas em leque) tem o próprio teste em v2_lightwolf e v2_mecha_projeteis
+					passo.leque = 0
 					passo.cone_dir = dir
 					passo.giro = 0.0
 					var numero := 875123 + ang * 1000 + lado * 100 + int(distancia)
@@ -190,6 +192,8 @@ func _monotonicidade(m, h, ad, tabela: Dictionary) -> void:
 							origem += Vector2(-dir.y, dir.x) * (-9.0 if lado == 0 else 9.0)
 						var passo: Dictionary = w.combate.cfg.golpe.passos[lado].duplicate(true)
 						passo.proj = proj
+						passo.n = 1  # contato de UM projétil: a rajada (n bolinhas em leque) tem o próprio teste em v2_lightwolf e v2_mecha_projeteis
+						passo.leque = 0
 						passo.cone_dir = dir
 						passo.giro = 0.0
 						var numero := 289219 + ang * 1000 + lado * 100 + int(distancia)
@@ -245,6 +249,8 @@ func _dt_variavel(m, h, ad, tabela: Dictionary) -> void:
 	var origem: Vector2 = h.pos + h.ORIGEM_GOLPE
 	var passo: Dictionary = w.combate.cfg.golpe.passos[0].duplicate(true)
 	passo.cone_dir = dir
+	passo.n = 1  # um projétil só (veja acima)
+	passo.leque = 0
 	passo.giro = 0.0
 	for dt in [1.0 / 60.0, 1.0 / 120.0, 1.0 / 30.0]:
 		var referencia := []
@@ -297,6 +303,8 @@ func _extras(m, h, ad, tabela: Dictionary) -> void:
 	var origem: Vector2 = h.pos + h.ORIGEM_GOLPE
 	var passo: Dictionary = w.combate.cfg.golpe.passos[0].duplicate(true)
 	passo.cone_dir = dir
+	passo.n = 1  # um projétil só (veja acima)
+	passo.leque = 0
 	passo.giro = 0.0
 	seed(49301)
 	var caminho := dir.rotated(randf_range(-0.025, 0.025))
