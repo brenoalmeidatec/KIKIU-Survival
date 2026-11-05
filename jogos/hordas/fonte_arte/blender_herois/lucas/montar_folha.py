@@ -44,6 +44,12 @@ TEMPOS = {
 COLUNAS = [("parado", 0)] + [("andar", i) for i in range(6)] + [("parado", i) for i in (1, 2, 3)]
 COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(12)]
 COLUNAS += [("escudo", i) for i in range(2)] + [("dano", i) for i in range(2)] + [("morte", i) for i in range(6)]
+# STRAFE (andar de lado, anim_strafe.py): entra no FIM so quando a pasta quadros/strafe existe (sem ela a folha fica identica a de antes).
+# Mesmo s_por_quadro do andar (o heroi.gd usa a mesma fase); limiar_cos/histerese: |cos(mira, movimento)| abaixo do limiar = strafe.
+TEM_STRAFE = os.path.isdir(os.path.join(AQUI, "quadros", "strafe"))
+if TEM_STRAFE:
+    ANIMACOES.append(("strafe", 6, 0.09))
+    COLUNAS += [("strafe", i) for i in range(6)]
 
 AVISOS = {
     "morte": "cai DE LADO, enrolada e deitada atravessada na tela (cabeca para a esquerda ou a direita); o corpo caido e encolhido 12% e fica a 32 px ou menos, com a borda tocada em varias direcoes (anim_morte.py, medir.py)",
@@ -119,6 +125,8 @@ def main():
         if anim in AVISOS:
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
+    if TEM_STRAFE:  # tocado para a frente = passo para o +x do rig (direita da tela com o heroi de frente); ao contrario = -x
+        info["animacoes"]["strafe"].update({"limiar_cos": 0.5, "histerese": 0.08, "lado_frente": "+x"})
     info["animacoes"]["combo"]["golpes"] = 3
     info["animacoes"]["combo"]["quadros_por_golpe"] = 4
     info["animacoes"]["combo"]["golpes_tipo"] = ["arremesso_direita", "arremesso_esquerda", "leque"]

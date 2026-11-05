@@ -1,6 +1,6 @@
 extends "res://v2/ator.gd"
 ## Herói da v2 (o escolhido no santuário: Hazaki, Nick ou Luke, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
-## anda quando a direção de andar muda (menos segurando o tiro com o mouse num herói de golpe.mira_continua, o LightWolf: aí fica no mouse);
+## anda quando a direção de andar muda (menos se a última fonte da mira foi o mouse: aí o herói segue olhando o cursor e andar de lado é strafe);
 ## com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
 ##
 ## Combate (números em dados/v2_combate.json):
@@ -251,6 +251,7 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _lado_passo := 0.0  # strafe (_lado_strafe): +1 = passo para o +x do rig, -1 = o outro lado, 0 = andar normal; guarda a histerese
 var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
 var _pose_tiro_t := 0.0  # somente a pose visual da folha: evita baixar e erguer os braços entre tiros rápidos
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
@@ -726,10 +727,12 @@ func atualizar(dt: float) -> void:
 			segurando = false
 	elif ataque_forcado != null:
 		segurando = bool(ataque_forcado)
-	# a direção de andar mudou (começou a andar ou virou): passa a olhar para onde anda, até o mouse mexer de novo. Exceto atirando com
-	# o mouse num herói de mira contínua (o canhão do LightWolf, como num shooter): segurando o tiro, a mira fica no mouse.
+	# a direção de andar mudou (começou a andar ou virou): sem mouse na mira, passa a olhar para onde anda (teclado e controle). Se a última
+	# fonte da mira foi o MOUSE, ela fica nele: o herói segue olhando o cursor e andar de lado vira strafe com o mouse parado (regra do
+	# Alisson, 05/11; antes o primeiro quadro de cada passo e de cada inversão tocava o andar de frente). Só o analógico direito tira
+	# a fonte do mouse.
 	if v != Vector2.ZERO and (_anda_ant == Vector2.ZERO or v.normalized().dot(_anda_ant.normalized()) < 0.9):
-		if not (segurando and fonte == Fonte.MOUSE and mira_continua()):
+		if fonte != Fonte.MOUSE:
 			fonte = Fonte.ANDA
 	_anda_ant = v
 	# relógios
@@ -1445,14 +1448,22 @@ func _visual(dt: float, v: Vector2) -> void:
 	var c := 0
 	_contar_pose_tiro(dt)
 	var anda_atira := _anda_atirando(v)
+	_lado_passo = _lado_strafe(v, anda_atira)
 	if (estado == Estado.LIVRE and andando) or anda_atira:
 		# andando e atirando, as pernas seguem o passo de verdade: no golpe o herói anda a mov_golpe da velocidade (_golpe), e o ciclo também
 		# andando contra a mira (de costas) no andar_tiro, o ciclo toca ao contrário: o pé de apoio vai para a frente e o mecha recua
 		# sem moonwalk. A fase é contínua nos dois sentidos (nunca salta de quadro ao virar), por isso o índice usa posmod.
 		# O andar comum (sem atirar) da folha que tem o andar_tiro (o mecha) recua do mesmo jeito: a mira no mouse contra o passo era moonwalk.
-		var sentido := -1.0 if (anda_atira or _tem_anim("andar_tiro")) and v.dot(dir_olhar) < 0.0 else 1.0
+		# De lado (strafe), o passo-junta da folha toca para a frente ou ao contrário conforme o lado: um ciclo só cobre os dois lados.
+		var sentido := _lado_passo if _lado_passo != 0.0 else (-1.0 if (anda_atira or _tem_anim("andar_tiro")) and v.dot(dir_olhar) < 0.0 else 1.0)
+		if _lado_passo < 0.0 and _anim == 0.0:
+			# o strafe começa na pose 0 (junta, os pés sob o corpo) nos dois lados: tocado ao contrário, a fase 0 cairia no quadro 5 (base
+			# aberta) já no primeiro passo; a semente põe o começo no fim da pose 0, que então dura o mesmo que as outras.
+			_anim = _passo_andar()
 		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
 		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
+		if _lado_passo != 0.0 and not anda_atira:
+			c = _coluna_anim("strafe", posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes.strafe.colunas as Array).size()))
 		_parado_t = 0.0
 	else:
 		_anim = 0.0
@@ -1665,12 +1676,30 @@ func _anda_atirando(v: Vector2) -> bool:
 	return estado == Estado.GOLPE or (estado == Estado.LIVRE and _pose_tiro_t > 0.0)
 
 
+## Strafe (pedido do Alisson, 05/11: andar de lado "não parecia existir", o herói tocava o andar de frente e deslizava): andando num ângulo
+## com a mira (|cos| abaixo de animacoes.strafe.limiar_cos, com histerese para não piscar perto do limite) e com a folha que tem "strafe"
+## (ou "strafe_tiro" andando e atirando). Devolve o lado no espaço do rig (+1 = +x, a direita da tela com o herói de frente) ou 0.
+## Com a fonte ANDA a mira é o próprio movimento, então só a mira do mouse ou do stick chega aqui.
+func _lado_strafe(v: Vector2, anda_atira: bool) -> float:
+	var nome := "strafe_tiro" if anda_atira else "strafe"
+	if v == Vector2.ZERO or escudo_ativo or not _tem_anim(nome) or not ((estado == Estado.LIVRE and andando) or anda_atira):
+		return 0.0
+	var a: Dictionary = tipo.info.animacoes[nome]
+	var folga := float(a.get("histerese", 0.08))
+	var lim := float(a.get("limiar_cos", 0.5)) + (folga if _lado_passo != 0.0 else -folga)
+	if absf(v.normalized().dot(dir_olhar.normalized())) >= lim:
+		return 0.0
+	return -signf(dir_olhar.cross(v))  # mira (0,1) de frente para a câmera e v (1,0) para a direita da tela: +x do rig, +1
+
+
 ## Px inteiros a somar à boca do canhão `lado` (bocas_projeteis.canhoes, arredondada) no quadro que a folha desenha agora: o sobe-e-desce do
 ## passo no andar_tiro (animacoes.andar_tiro.desvio_boca[quadro][linha][lado], medido no Blender); zero em qualquer outro quadro.
 func desvio_boca(lado: int) -> Vector2:
 	if not tipo.has("info") or not _tem_anim("andar_tiro"):  # herói sem folha (Heroi.new() solto, coop de teste)
 		return Vector2.ZERO
 	var a: Dictionary = tipo.info.animacoes.andar_tiro
+	if _tem_anim("strafe_tiro") and (tipo.info.animacoes.strafe_tiro.colunas as Array).has(float(coluna)):  # andando de lado e atirando
+		a = tipo.info.animacoes.strafe_tiro
 	var i := (a.colunas as Array).find(float(coluna))  # o JSON traz as colunas como float
 	var tab: Array = a.get("desvio_boca", [])
 	if i < 0 or i >= tab.size() or linha < 0 or linha >= (tab[i] as Array).size():
@@ -1694,7 +1723,8 @@ func _coluna_acao(dt: float, anda_atira := false) -> int:
 		if _dano_t >= 0.5:
 			_dano_t = -1.0
 	if anda_atira:
-		return _coluna_anim("andar_tiro", posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes.andar_tiro.colunas as Array).size()))
+		var nome := "strafe_tiro" if _lado_passo != 0.0 else "andar_tiro"
+		return _coluna_anim(nome, posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes[nome].colunas as Array).size()))
 	if estado == Estado.GOLPE and _tem_anim("combo"):
 		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo := mini(golpe_i, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))

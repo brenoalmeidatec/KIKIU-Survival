@@ -3,7 +3,7 @@
     python montar_folha.py
 
 Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava nesta pasta:
-  lightwolf_mecha_final_albedo.png e lightwolf_mecha_final_normal.png: grade de 8 linhas x 44 colunas, quadros 128x192 (cor e normal, mesma silhueta)
+  lightwolf_mecha_final_albedo.png e lightwolf_mecha_final_normal.png: grade de 8 linhas x 56 colunas, quadros 128x192 (cor e normal, mesma silhueta)
   lightwolf_mecha_final.json: formato do jogo (quadro, linhas, colunas, pe_y) + animação -> colunas, quadros e tempo por quadro
   lightwolf_mecha_final_previa_x3.png: cópia de prévia (albedo ampliado 3x, sobre fundo escuro)
 
@@ -41,6 +41,8 @@ ANIMACOES = [
     ("dano", 2, 0.10),
     ("morte", 6, 0.12),
     ("andar_tiro", 6, 0.11),
+    ("strafe", 6, 0.11),
+    ("strafe_tiro", 6, 0.11),
 ]
 # tempo por quadro (s) quando o quadro tem ritmo próprio; os mesmos números do S_POR_QUADRO de cada anim_<nome>.py
 TEMPOS = {
@@ -57,11 +59,19 @@ COLUNAS = [("parado", 0)] + [("andar", i) for i in range(6)] + [("parado", i) fo
 COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(12)]
 COLUNAS += [("escudo", i) for i in range(2)] + [("dano", i) for i in range(2)] + [("morte", i) for i in range(6)]
 COLUNAS += [("andar_tiro", i) for i in range(6)]  # 05/11: no FIM, para as 38 colunas de antes não mudarem de lugar
+COLUNAS += [("strafe", i) for i in range(6)] + [("strafe_tiro", i) for i in range(6)]  # 05/11 (strafe): também no FIM, colunas 44 a 55
+# strafe: quando o movimento faz com a mira um ângulo de |cos| < LIMIAR_COS (60 a 120 graus), com histerese (entra abaixo de
+# LIMIAR_COS - HISTERESE, sai acima de LIMIAR_COS + HISTERESE); o heroi.gd lê estes números da folha
+LIMIAR_COS = 0.5
+HISTERESE = 0.08
 
 AVISOS = {
     "combo": "tiro esquerdo (quadros 0 a 5) e direito (6 a 11); clarão no quadro 1 de cada tiro, alinhado a acerto_em=0.2; medir.py confere as quatro bordas com o contorno",
     "andar_tiro": "pernas do andar (mesma fase, quadro a quadro) e braços na mira do combo, sem recuo e sem clarão; desvio_boca[quadro][linha][lado] = px inteiros "
     "que somar à boca de bocas_projeteis.canhoes (arredondada) para cair no cano deste quadro (o sobe-e-desce do passo, medido no Blender)",
+    "strafe": "andar de lado (passo-junta: abre, apoia, junta; 2 passos), corpo virado para a linha (a mira); tocado para a frente = passos para o +x do rig "
+    "(a direita da tela olhando para a câmera); tocado de trás para a frente vai para o outro lado com o pé de apoio parado; mesma fase do andar",
+    "strafe_tiro": "pernas do strafe (mesma fase, quadro a quadro) e braços na mira do andar_tiro; desvio_boca no mesmo formato do andar_tiro",
     "morte": "cai de lado, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido",
 }
 
@@ -174,6 +184,10 @@ def main():
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
     info["animacoes"]["andar_tiro"]["desvio_boca"] = desvio_boca("andar_tiro")
+    info["animacoes"]["strafe_tiro"]["desvio_boca"] = desvio_boca("strafe_tiro")
+    for anim in ("strafe", "strafe_tiro"):
+        info["animacoes"][anim]["limiar_cos"] = LIMIAR_COS
+        info["animacoes"][anim]["histerese"] = HISTERESE
     info["animacoes"]["combo"]["golpes"] = 2
     info["animacoes"]["combo"]["sem_clarao"] = {"1": 2, "7": 8}
     info["animacoes"]["combo"]["quadros_por_golpe"] = 6

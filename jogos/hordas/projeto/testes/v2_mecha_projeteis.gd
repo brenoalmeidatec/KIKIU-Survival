@@ -734,7 +734,8 @@ func boca_andando() -> void:
 			if e.boca_tempo[i] > 0.0:
 				lugares.append(e.boca_pos[i])
 		ok(
-			lugares.has((h.pr as Vector2) + Vector2(21, -9)) and lugares.has((outro.pr as Vector2) + Vector2(21, -9)),
+			# h ainda está no último quadro do laço acima (andando de lado = strafe_tiro): o clarão soma o desvio desse quadro (h.desvio_boca)
+			lugares.has((h.pr as Vector2) + Vector2(21, -9) + h.desvio_boca(1)) and lugares.has((outro.pr as Vector2) + Vector2(21, -9)),
 			"coop: cada clarão é desenhado no cano do seu herói"
 		)
 		outro.pr += Vector2(7, 3)

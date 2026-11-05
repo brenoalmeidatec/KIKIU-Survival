@@ -21,3 +21,4 @@ Cabeca 1,18x (a do Luke e 1,32x) para as orelhas caberem nos 44 px. Sem rosto de
 ## Limites
 - O quadro NAO cresceu: as orelhas foram baixadas ate caberem (topo na linha 1 a 6). Nas poses de golpe e nas diagonais o braco com a pistola encosta na borda, como no Luke (`medir.py`).
 - Nao ha pose propria de "andar de quatro": e um piloto agil de pe, com tracos de lobo.
+- STRAFE (andar de lado, 05/11): `blender -b -t 6 -P gerar.py -- --anim=strafe` usa o `../lucas/anim_strafe.py` (passo-junta para o +x do rig; tocado ao contrario = -x) e o `montar_folha.py` poe as 6 colunas no FIM (38..43, `animacoes.strafe` com `limiar_cos`/`histerese`). Em baixo/cima a bota aberta e a pistola encostam na borda em alguns quadros (`medir.py strafe`). O Lobo atirando mostra o combo, entao o strafe so aparece andando sem atirar.
