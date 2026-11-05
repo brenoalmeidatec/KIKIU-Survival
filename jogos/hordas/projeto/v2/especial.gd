@@ -35,6 +35,7 @@ extends RefCounted
 const Armas := preload("res://v2/armas.gd")
 const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: o analógico de mira (STICK) e o controle (Glifos) não seguem o cursor no Q
 const Glifos := preload("res://v2/glifos.gd")  # no controle não há cursor: o Q segue o corpo
+const ExplosaoMecha := preload("res://v2/explosao_mecha.gd")  # o desenho da explosão da Autodestruição: bola, onda no chão e cratera
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
 const MAX_ANEIS := 10
@@ -55,6 +56,7 @@ var padrao := "investida"
 var herois: Dictionary = {}  # chave do herói -> id do especial (os testes mexem aqui)
 var blocos: Dictionary = {}  # id -> bloco de números
 var no: Node2D
+var explosao_visual  # ExplosaoMecha (só com o bloco `autodestruicao`): a bola, a onda no chão e a cratera do estouro do mecha
 var disparos := 0  # testes: quantos especiais saíram
 var ultimo: Dictionary = {}  # o último especial (testes): id, n (monstros atingidos no total), mortes
 var ondas := 0  # testes: quantas ondas de choque do terremoto saíram
@@ -132,6 +134,9 @@ func montar(c, camada: Node) -> void:
 	no.material = mat
 	no.draw.connect(_desenhar)
 	camada.add_child(no)
+	if blocos.has("autodestruicao"):
+		explosao_visual = ExplosaoMecha.new()
+		explosao_visual.montar(camada, mundo.get("no_mundo"), blocos.autodestruicao.explosao, float(comum.limpa.vel))
 	a_vivo.resize(MAX_ANEIS)
 	a_pos.resize(MAX_ANEIS)
 	a_t.resize(MAX_ANEIS)
@@ -165,6 +170,8 @@ func limpar() -> void:
 	ultimo = {}
 	a_vivo.fill(0)
 	_desenhou = false
+	if explosao_visual != null:
+		explosao_visual.limpar()
 	if no != null:
 		no.queue_redraw()
 	if mundo != null and mundo.heroi != null:
@@ -197,6 +204,8 @@ func _carga_max() -> float:
 ## partida recomeça.
 func armar(h) -> void:
 	var b := bloco_de(str(h.chave))
+	if explosao_visual != null and id_de(str(h.chave)) == "autodestruicao":
+		explosao_visual.preparar()  # os quadros da explosão do mecha: só para quem tem a Autodestruição, no começo da partida
 	h.esp_invul = false
 	h.esp_t = 0.0
 	h.esp_nega_t = 0.0
@@ -341,7 +350,8 @@ func limpar_tela(h, de: Variant = null) -> int:
 	limpas += 1
 	var cor: Color = h.esp_cor
 	var rmax := Vector2(float(mundo.cam.LARG), float(mundo.cam.ALT)).length() * 0.5 + float(L.margem)
-	_anel(centro, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
+	if de == null or explosao_visual == null or not explosao_visual.viva():  # a Autodestruição já desenha a frente na grade de 1 px (a onda no chão de v2/explosao_mecha.gd)
+		_anel(centro, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
 	if n > 0:
 		c.fx.numero(h.pos + Vector2(0, -52), "LIMPOU x%d" % n, COR_CRIT, true)
 	c.audio.tocar("ruptura_disparo", 0.9, -3.0, 0.0)
@@ -440,24 +450,25 @@ func _q_autodestruicao(h, dt: float) -> Vector2:
 	return desl
 
 
-## O estouro do mecha no lugar onde ele ficou: ondas, cascos azuis, luz local, um clarão (que respeita "Tremor e clarões"), tremor e uma pausa curta. Nenhum dano aqui: quem limpa a tela
-## é a peça comum (`limpar_tela`) e o raio dos dados é só visual.
+## O estouro do mecha no lugar onde ele ficou: a bola de energia, a onda no chão até a borda da câmera e a cratera (v2/explosao_mecha.gd, na grade de 1 px), e o peso:
+## tremor leve e curto da câmera (respeita "Tremor e clarões"), o clarão de tela (que respeita "Tremor e clarões" e "Reduzir piscadas") e o hit-stop, que segura o 1º
+## quadro da bola. Fora do perfil Baixo, também os cascos que voam e a luz local. Nenhum dano aqui: quem limpa a tela é a peça comum (`limpar_tela`), e a onda no chão
+## é o desenho da frente de onda dela (mesma velocidade, até cobrir a mesma área).
 func _explodir_mecha() -> void:
 	var c = combate
 	var e: Dictionary = _c.explosao
 	var cor := _cor(_c.cor)
-	var raio := float(e.raio)
 	var centro := _origem + Vector2(0, -16)
 	explosoes += 1
-	c.fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), raio, 0.45)
-	c.fx.onda(centro, Color(1, 1, 1, 0.7), raio * 0.6, 0.3)
-	c.fx.estouro(centro, Color(0.55, 0.78, 1.0), 34)
-	c.fx.luz_rapida(centro, cor, 3.0, raio * 2.5, 0.5)
+	if explosao_visual != null:
+		explosao_visual.explodir(_origem, mundo.cam.retangulo(float(comum.limpa.margem)))
+	if not _leve():
+		c.fx.estouro(centro, Color(0.55, 0.78, 1.0), 34)
+		c.fx.luz_rapida(centro, cor, 3.0, float(e.raio) * 2.5, 0.5)
 	c.fx.clarao(Color(cor.r, cor.g, cor.b, float(e.clarao)), 0.25)
-	_anel(_origem, raio * 0.2, raio, 0.4, 5.0, cor.lerp(Color.WHITE, 0.5), 1.0)
 	c.audio.tocar("impacto", 0.4, 4.0, 0.0)
 	c.audio.tocar("ruptura_disparo", 0.6, 0.0, 0.0)
-	mundo.cam.tremer(float(e.tremor), 0.4)
+	mundo.cam.tremer(float(e.tremor), float(e.get("tremor_s", 0.3)))
 	c.hit_stop(float(e.hit_stop))
 
 
@@ -651,6 +662,8 @@ func _bater(h) -> void:
 
 ## Um quadro da onda de choque (tempo do mundo): a frente cresce de `_onda_r0` a `_onda_r1` e fere uma vez quem ela alcança.
 func atualizar(dt: float) -> void:
+	if explosao_visual != null:
+		explosao_visual.atualizar(dt)
 	if _graca > 0.0:
 		_graca = maxf(0.0, _graca - dt)
 	if _onda_t < 0.0:

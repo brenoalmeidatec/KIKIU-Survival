@@ -42,6 +42,9 @@ extends RefCounted
 ##   --roteiro=andar_seq   (o "tremendo todo" de 04/11) fotos SEGUIDAS, uma por quadro de render, do herói escolhido (o LightWolf com
 ##                         --heroi=lightwolf) sem monstros: anda_00..29 (andando para a direita, sem atirar), anda_tiro_00..39 (andando e
 ##                         atirando para a direita) e tiro_00..29 (parado atirando). Para medir quadro a quadro o corpo contra o cenário.
+##   --roteiro=lw_q        (a explosão do Q do mecha, para vídeo no Movie Maker) o LightWolf parado, 24 monstros em volta, aperta o Q (Autodestruição)
+##                         aos 0,5 s e segue 5,5 s depois do estouro (o fusível, a bola de fogo, a onda no chão e a cratera até sumir) e fecha. Sem fotos:
+##                         grave com --write-movie (cada quadro). Imprime LW_Q com o segundo do aperto e o do estouro.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -160,6 +163,8 @@ func atualizar(dt: float) -> void:
 				_r_lightwolf()
 			"andar_seq":
 				_r_andar_seq()
+			"lw_q":
+				_r_lw_q()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -423,6 +428,42 @@ func _r_andar_seq() -> void:
 		passo += 1
 		t_passo = 0.0
 		seq_n = 0
+
+
+## A explosão do Q do mecha para o vídeo: aperta aos 0,5 s e fecha 5,5 s depois do estouro.
+func _r_lw_q() -> void:
+	var h = mundo.heroi
+	var esp = mundo.combate.especial
+	match passo:
+		0:
+			_preparar()
+			_cercar_lightwolf(24)
+			mundo.mouse_forcado = h.centro() + Vector2(200, 0)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.5:
+				lw_expl0 = esp.explosoes
+				h.esp_carga = h.esp_carga_max
+				if not h.especial():
+					lw_atrasos += 1
+				print("LW_Q aperto t=%.2f" % mundo.t)
+				passo = 2
+				t_passo = 0.0
+		2:
+			if esp.explosoes > lw_expl0:
+				print("LW_Q estouro t=%.2f" % mundo.t)
+				passo = 3
+				t_passo = 0.0
+			elif t_passo > 3.0:
+				lw_atrasos += 1
+				passo = 4
+		3:
+			if t_passo > 5.5:
+				passo = 4
+		4:
+			print("LW_Q fim atrasos=%d" % lw_atrasos)
+			mundo.get_tree().quit()
 
 
 ## A posição de um clarão de boca recém-aceso (restam pelo menos metade dos 0,1 s) a 20 px ou mais de `longe` (Vector2.INF = qualquer um); Vector2.INF se não há.
