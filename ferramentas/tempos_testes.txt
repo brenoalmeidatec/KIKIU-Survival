@@ -217,3 +217,5 @@ v2_misseis_desenho 40
 
 # v2_misseis_rastro: ~20 s pela fila no notebook em 05/11/2026 (inclui inicialização; o Godot mediu 20,6 s na primeira rodada).
 v2_misseis_rastro 20
+# v2_misseis_particulas: ~15 s pela fila no notebook em 05/11/2026 (estimativa grossa).
+v2_misseis_particulas 15

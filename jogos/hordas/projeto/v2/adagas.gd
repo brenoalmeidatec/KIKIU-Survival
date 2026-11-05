@@ -39,7 +39,7 @@ extends RefCounted
 ## A direção é a do movimento DESENHADO (`_ang_visual`, a derivada de `_pos_visual_em`), não a do chão: o míssil que desce do pod aponta o nariz para
 ## baixo enquanto desce. O míssil não esmaece no fim do alcance (`_fade`): some inteiro, alfa 0/1.
 ## O míssil também deixa RASTRO (05/11/2026, v2/misseis_rastro.gd, só desenho): a chama do bocal (opaca, fixa) no corpo e uma fumaça de puffs de 2 a 4 px, um a cada ESPACO px de voo no bocal da imagem DESENHADA
-## (`_fumaca`, então segue a descida do pod), em pool fixo e sem sorteio; perfil Baixo: só a chama. Os puffs ficam no ar depois do impacto até acabarem (`atualizar` segue ativo enquanto houver).
+## (`_fumaca`, então segue a descida do pod), em pool fixo e sem sorteio; perfil Baixo: só a chama. Rodada 7: faíscas do voo e estouro do acerto em v2/misseis_particulas.gd (`particulas`). Os puffs ficam no ar depois do impacto até acabarem (`atualizar` segue ativo enquanto houver).
 
 const AnimGolpes := preload("res://v2/anim_golpes.gd")
 const PixelRot := preload("res://v2/pixel_rot.gd")
@@ -47,6 +47,7 @@ const Piscadas := preload("res://v2/piscadas.gd")
 const SpriteGiro := preload("res://v2/sprite_giro.gd")
 const MisseisVisual := preload("res://v2/misseis_visual.gd")
 const MisseisRastro := preload("res://v2/misseis_rastro.gd")
+const MisseisParticulas := preload("res://v2/misseis_particulas.gd")
 const EstalosVisual := preload("res://v2/estalos_visual.gd")
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
@@ -128,6 +129,7 @@ var _relogio := 0.0  # tempo para o quadro das folhas animadas (todas as lâmina
 var _desenha := false
 var misseis_visual := MisseisVisual.new()
 var rastro := MisseisRastro.new()  # a fumaça atrás do bocal dos mísseis (pool fixo; a chama do bocal é desenhada no corpo)
+var particulas := MisseisParticulas.new()  # faíscas do voo e estouro do acerto dos mísseis (pool fixo, rodada 7)
 var a_fum := PackedFloat32Array()  # a distância voada em que o míssil deixa o próximo puff de fumaça
 var estalos := EstalosVisual.new()  # o estalo das bolinhas do mecha (acerto e fim do alcance)
 
@@ -151,6 +153,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 				_preparar_folha(voo)
 	misseis_visual.montar()
 	rastro.montar()
+	particulas.montar()
 	a_fum.resize(MAX)
 	estalos.montar()
 	_traco_px.resize(TRACO_BUF)
@@ -202,6 +205,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 func limpar() -> void:
 	misseis_visual.limpar()
 	rastro.limpar()
+	particulas.limpar()
 	a_fum.fill(0.0)
 	estalos.limpar()
 	a_rest.fill(0.0)
@@ -353,10 +357,11 @@ func _nova(
 func atualizar(dt: float) -> void:
 	misseis_visual.atualizar(dt)
 	rastro.atualizar(dt)
+	particulas.atualizar(dt)
 	estalos.atualizar(dt)
 	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	_relogio += dt
-	var ativo := misseis_visual.ativas() > 0 or rastro.vivos() > 0 or estalos.vivos() > 0
+	var ativo := misseis_visual.ativas() > 0 or rastro.vivos() > 0 or particulas.vivos() > 0 or estalos.vivos() > 0
 	for i in MAX:
 		if a_rest[i] > 0.0:
 			ativo = true
@@ -649,6 +654,8 @@ func _explodir(i: int, m) -> void:
 	combate.fonte_dano = str(a_fonte[i])
 	combate.armas._dano_area(m.pos, raio, a_expl_d[i], a_emp[i], a_atord[i], cor, "missil", 0.0, m)
 	misseis_visual.emitir(m.pos, raio)
+	if _particulas_ok():
+		particulas.impacto(m.pos, raio)  # faíscas, anel, detritos e fumaça do acerto (sem RNG da partida; perfil Baixo e Reduzir piscadas: nada)
 	combate.fx.estouro(m.pos + Vector2(0, -6), Color(1.0, 0.85, 0.5), 3, false)  # preserva o consumo de RNG do visual anterior
 	combate.audio.tocar("impacto", randf_range(1.5, 1.8), -8.0, 0.05)
 
@@ -711,6 +718,8 @@ func _desenhar_corpo() -> void:
 	no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if estalos.vivos() > 0:
 		estalos.desenhar(no_corpo)  # por cima das bolinhas: o estalo nasce onde a bolinha some, e o clarão de boca onde ela nasce
+	if particulas.vivos() > 0:
+		particulas.desenhar(no_corpo)  # por cima de tudo: faíscas e estouro do acerto não somem atrás do monstro
 
 
 func _desenhar_brilho() -> void:
@@ -799,11 +808,25 @@ func _missil(proj: int) -> bool:
 func _fumaca(i: int) -> void:
 	if a_rest[i] <= 0.0 or a_visual_oculto[i] != 0 or a_visual_dist[i] < a_fum[i] or not _missil(a_proj[i]):
 		return
+	var n := int(roundf((a_fum[i] - MisseisRastro.INICIO) / MisseisRastro.ESPACO))  # o número deste puff no voo do míssil (0 = o primeiro)
 	a_fum[i] = a_visual_dist[i] + MisseisRastro.ESPACO
 	if float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.3:
 		return
 	var dir := Vector2.from_angle(PixelRot.angulo16(_dir_desenho(i)))
-	rastro.emitir(_pos_visual(i).round() - dir * MisseisRastro.ATRAS)
+	var bocal := _pos_visual(i).round() - dir * MisseisRastro.ATRAS
+	var calmo := Piscadas.ligado()
+	rastro.emitir(bocal, Vector2(-dir.y, dir.x), calmo)
+	if not calmo:
+		particulas.voo(bocal, dir, n)  # nuvem de largada no 1º puff e uma fagulha âmbar a cada MisseisParticulas.FAGULHA_CADA
+
+
+## As partículas novas dos mísseis (v2/misseis_particulas.gd) só nascem fora do perfil Baixo (efe_particulas <= 0,3) e sem "Reduzir piscadas": ali fica o mínimo de antes.
+func _particulas_ok() -> bool:
+	if Piscadas.ligado():
+		return false
+	if mundo == null or not mundo.has_method("_nivel_particulas"):
+		return true
+	return float(mundo._nivel_particulas().get("efe_particulas", 1.0)) > 0.3
 
 
 ## O alfa da imagem do projétil `i` no fim do alcance: de 1 a 0 nos últimos FADE_PX. O míssil fica em 1 até o alcance acabar e some inteiro
