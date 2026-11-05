@@ -3168,3 +3168,47 @@ Mesma branch `alisson/lw-r5-missil`. A revisão deu "aprovo com ressalvas", sem 
 **Fica para o Alisson decidir (não mexi):** a regra de alfa 0/1 fora do míssil. A adaga, o plasma (com cauda de alfa 0,7 na arte) e as folhas shuriken/kunai/flecha seguem esmaecendo nos últimos 24 px; o fogo do motor (0,65) e a sombra (0,35) do míssil seguem com alfa parcial constante. Se a regra vale para todos, `_fade` passa a retornar 1 para todo projétil com imagem.
 
 **Não verificado:** o desenho não mudou (o corpo passa `angulo16(_dir_desenho(i))`, que o SpriteGiro quantiza para a mesma direção de antes, e as texturas têm os mesmos pixels), por isso não gravei clipe novo. CI do push não acompanhado.
+### 05/11/2026 — LightWolf rodada 5, frente Q (branch alisson/lw-r5-q, saindo de 369857c9; Claude do Alisson)
+
+Os vídeos da rodada 4 mostraram três defeitos no Q do mecha (Autodestruição). Todos foram corrigidos na causa e um quarto ponto foi só investigado.
+- **Clarão duplo:** o estouro acendia um clarão de tela (`fx.clarao`, alfa 0,3) que apagava durante o hit-stop. Logo depois, o cerco inteiro morria no mesmo quadro, porque a frente a 2600 px/s alcança 150 px em 2 ou 3 quadros (no teste, pico de 18 mortes num quadro). As 24 nuvens de morte acendiam juntas, e o resultado era claro, escuro e claro de novo a ~0,15 s. Também havia uma morte que escapava no próprio quadro do estouro, antes do congelamento.
+  - Saiu o clarão do estouro: o claro do impacto agora é só o miolo da bola.
+  - As mortes da limpeza deste Q saem em onda do centro, uma depois da outra pela distância, ao longo de `autodestruicao.limpa.espalha` = 0,5 s do mundo (0,4 s de relógio). Isso fica em `combate._espalhar_limpa`, e ninguém morre antes da frente de onda.
+  - `drenar_limpa` não anda no quadro em que um hit-stop começa.
+  - Tremor, hit-stop, bola, onda e cratera não mudaram. O Baixo não ganhou partícula.
+  - Os outros Qs não mudam: `espalha` é só do bloco da Autodestruição, mas a regra do hit-stop vale para todos.
+- **Mecha fantasma:** não era a oclusão. Em `especial._desenhar_autodestruicao`, o quadro do mecha era desenhado no nó aditivo da camada glow com alfa de 0,3 a 0,9 e crescia 10%.
+  - Agora é arte opaca num nó próprio, `no_casco`, filho do `no_mundo` (y-sort), sem escala, em posição inteira.
+  - O aviso é um contorno de 1 px âmbar em volta da silhueta (gerado no aperto, com cache por quadro) mais um tom no corpo. Liga e desliga a `alerta.hz` 1,5 do mundo, o que dá ~1,9 Hz de relógio, medido no vídeo. Com "Reduzir piscadas" fica aceso parado.
+  - É âmbar, não vermelho, porque vermelho piscando é o caso proibido no piscadas.gd.
+- **HUD do Q (16%, 35%, ícone, 35%):** não é bug de carga, é estado de exibição.
+  - O 16% é o roteiro `lw_q`, que força a carga cheia no mesmo quadro do aperto.
+  - Os 35% de um quadro aparecem porque o anel só mostra o ícone com `esp_t > 0`, e no quadro do aperto ainda vale 0. Os 35 são `inicio_autodestruicao`.
+  - As mortes do próprio Q não carregam (`ocupado()`, graça de 0,8 s). O teste novo confere isso com as mortes espalhadas: o chamado fica em 35,00 na última morte.
+- **Números do Lobo empilhando (só investigação):** a branch `alisson/numeros-dano` (#597) resolve.
+  - Números nascidos a menos de 0,3 s e de 30x20 px um do outro, com a mesma cor e tamanho, somam num só. Os que não somam sobem 14 px até 3 vezes se as caixas se cruzam.
+  - Os tiros do Lobo usam `fx.numero` sem `exato` (combate.gd 710/927), então entram na soma: o 16/17/18 sobreposto vira um número que sobe. Crítico tem outro tamanho e não soma, só é afastado.
+  - Não foi implementado aqui.
+
+**Testes.** Teste novo `testes/v2_lw_q_onda`, com 9 falhas no código antigo (rodado contra o 369857c9) e 0 no novo. Passaram com falhas=0 e sem SCRIPT ERROR: v2_lightwolf_q_explosao, v2_lightwolf_q, v2_especial, v2_lightwolf, v2_lightwolf_roteiro, v2_herois, v2_partida, v2_pixel_filtros, v2_pixel_efeitos, v2_piscadas, v2_ult_tamanho, v2_herois_novos, v2_lw_cartas, v2_mecha_tremor e v2_hud.
+
+**Vídeo.** Gravado com o Movie Maker, `--roteiro=lw_q`, 60 fps, fora do repositório. Medi a luminância por célula, procurando pico, vale e pico em menos de 0,5 s com 20 ou mais de diferença:
+- em células de 1/10 da tela, o clipe antigo tem 2 células com o defeito (q79/q87/q88, profundidade 25,6) e o novo tem 0;
+- a luminância média do quadro inteiro antes ia de 28,8 para 71 (o clarão), caía para 38 e subia de novo; agora vai de 28 a 31 sem pico duplo;
+- em células finas (1/20) ainda aparece uma oscilação de quadro a quadro na borda da bola durante o hit-stop. É o tremor de câmera aprovado, que move a imagem alguns px: o centro do brilho anda ±4 px.
+
+**Não visto:** "Reduzir piscadas" e o perfil Baixo em vídeo (só nos testes), um cerco grande (164 mortes) em vídeo e o Q de outros heróis em vídeo. Subir de nível no meio da onda pausa as mortes restantes até a escolha da carta. É o comportamento normal da fila, mas antes quase não acontecia porque morriam todos juntos.
+
+### 05/11/2026 — LightWolf rodada 5, frente Q, correção da revisão (branch alisson/lw-r5-q; Claude do Alisson, PC)
+
+A revisão independente bloqueou o item 1: o clarão de tela tinha saído, mas sobrava um claro-escuro-claro LOCAL (a bola clara apaga na fumaça escura da cratera e ~0,3 s depois acende um bloco branco no mesmo lugar), também com "Reduzir piscadas". Medi quadro a quadro e o bloco branco não era a nuvem de morte (`fx_morte` é pequena e cinza). Eram dois brilhos aditivos somados:
+- **as almas do estouro de morte** (`efeitos.estouro`, 5 brilhos ciano de 9 px por morte; ~120 vivos ao mesmo tempo na onda). Agora `estouro` aceita `tom` e `almas`, e a limpeza da Autodestruição usa `autodestruicao.limpa.tom_morte` = cinza da fumaça (nuvem e cinzas) e `almas` 0. O RNG é consumido igual.
+- **o brilho da coleta de orbe** (a alma de 9 px e o `collect-burst` do pixelfx): os 24 orbes chegam ao herói quase juntos e acendiam até 8 cópias aditivas. Agora `combate.coletar` só acende o brilho a cada `xp.brilho_intervalo` = 0,3 s (dados/v2_combate.json); XP e plim seguem por orbe. **Vale para todos os heróis** (qualquer coleta em massa).
+- Ressalva do aviso: o pisca do mecha vazio conta em RELÓGIO (`_t / combate.velocidade`); `alerta.hz` 1,5 agora é 1,5 Hz de relógio (antes 1,875 com velocidade_partida 1,25). O teste roda o mundo a 1,5x e mede o menor meio-período.
+- Ferramenta nova `ferramentas/medir_piscadas_video.py`: luminância por célula de 48x27 px num clipe do Movie Maker (reduz a saída para 960x540).
+
+**Testes.** `v2_lw_q_onda` ganhou 4 checagens (almas na onda, tom da nuvem, brilhos de coleta somados, aviso em relógio); contra o 4158a537 dá falhas=4, no novo falhas=0. Pela fila, 28 testes com falhas=0, sem SCRIPT ERROR nem Parse Error e exit 0: v2_lw_q_onda, v2_lightwolf_q_explosao, v2_lightwolf_q, v2_especial, v2_lightwolf, v2_lightwolf_roteiro, v2_herois, v2_partida, v2_pixel_filtros, v2_pixel_efeitos, v2_piscadas, v2_ult_tamanho, v2_herois_novos, v2_lw_cartas, v2_mecha_tremor, v2_hud, v2_limpa_tela, v2_fx_folha, v2_combate, v2_morte, v2_chefe, v2_ritmo, v2_status, v2_lightwolf_formas, v2_mecha_projeteis, v2_dificuldade, v2_escudo_barra e v2_ruptura.
+
+**Vídeo (60 fps, `--roteiro=lw_q`, quadros q70-q200 depois do aperto, células de 48x27 px, claro-escuro-claro em < 0,5 s com profundidade >= 20):** clipe da revisão (código 4158a537) 7 células no normal e 9 com Reduzir piscadas; agora 3 e 3. Na célula do achado (480-528 x 243-270) a profundidade caiu de 60,9 para 24,1 (normal) e de 58,6 para 21,3 (Reduzir piscadas); na região 470-500 x 250-280 o 2º pico caiu de ~200 para ~149 (vale 78). **NÃO zerou:** sobram 3 células por modo. Parte é o fundo do mapa voltando quando a fumaça escura sai (o chão ali tem ~104 e o vale da fumaça 78, então só o fundo já dá profundidade 26); parte é um traço claro à esquerda da cratera (~q103-q106) e o único collect-burst que ainda acende, que não identifiquei até o fim. Antes do estouro há também uma célula com o brilho da transformação do Lobo (q31-q67), que já existia.
+
+**Pendente / decisão do Alisson:** aceitar o resíduo (3 células, profundidade 21 a 35) ou seguir: escurecer a fumaça devagar (sem vale), deixar o collect-burst desligado com Reduzir piscadas, ou investigar o traço claro. Também: o cartaz "LIMPOU x24" ainda sai no quadro do estouro; a trava do hit-stop em `drenar_limpa` vale para todos os Qs; `espalha` segue em tempo do mundo (0,5 = 0,4 s de relógio). Não vi em vídeo: perfil Baixo, Q de outros heróis, cerco de 164.

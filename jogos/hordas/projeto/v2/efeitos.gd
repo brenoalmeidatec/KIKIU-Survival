@@ -871,21 +871,27 @@ func faiscas(pos: Vector2, dir: Vector2, n: int, cor: Color, vel := 170.0, desen
 
 ## O estouro da morte do monstro: ossos/cinzas para todo lado e almas que sobem.
 ## desenhar=false mantém o consumo de RNG do efeito substituído sem criar partículas/onda.
-func estouro(pos: Vector2, cor: Color, n: int, desenhar := true) -> void:
+## `tom` multiplica o claro para onde as cinzas puxam (branco = o de sempre) e `almas` é a fração das almas (brilho aditivo de 9 px) que nascem: a limpeza da
+## Autodestruição usa o cinza da fumaça e 0, porque dezenas de almas somadas no brilho viravam um bloco branco logo depois da bola (revisão de 05/11).
+## O RNG é consumido igual em qualquer caso.
+func estouro(pos: Vector2, cor: Color, n: int, desenhar := true, tom := Color.WHITE, almas := 1.0) -> void:
 	n = maxi(2, roundi(n * fator_part))
+	var claro := Color(0.85, 0.85, 0.8) * tom
 	for i in n:
 		var a := randf() * TAU
 		var v := Vector2(cos(a), sin(a) * 0.7) * randf_range(35.0, 150.0)
 		var vida := randf_range(0.3, 0.55)
 		var tam := 2.0 if randf() < 0.7 else 3.0
-		var tinta := cor.lerp(Color(0.85, 0.85, 0.8), randf() * 0.7)
+		var tinta := cor.lerp(claro, randf() * 0.7)
 		if desenhar:
 			particula(pos, v, vida, tam, tinta, 420.0)
-	for i in maxi(2, roundi(5 * fator_part)):
+	var na := maxi(2, roundi(5 * fator_part))
+	var vivas := roundi(float(na) * clampf(almas, 0.0, 1.0))
+	for i in na:
 		var origem := pos + Vector2(randf_range(-5, 5), randf_range(-4, 2))
 		var vel := Vector2(randf_range(-14, 14), randf_range(-30, -12))
 		var vida := randf_range(0.45, 0.8)
-		if desenhar:
+		if desenhar and i < vivas:
 			particula(origem, vel, vida, 9.0, Color(0.5, 0.9, 1.0, 0.6), -20.0, true)
 
 
