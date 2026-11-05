@@ -1418,12 +1418,15 @@ func cancelar_ruptura(som := true) -> void:
 func _visual(dt: float, v: Vector2) -> void:
 	var l := linha_de(dir_olhar)
 	var c := 0
-	if estado == Estado.LIVRE and andando:
-		_anim += dt * (1.45 if correndo else 1.0)
-		var passo := PASSO_ANIM
-		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
-			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
-		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
+	_contar_pose_tiro(dt)
+	var anda_atira := _anda_atirando(v)
+	if (estado == Estado.LIVRE and andando) or anda_atira:
+		# andando e atirando, as pernas seguem o passo de verdade: no golpe o herói anda a mov_golpe da velocidade (_golpe), e o ciclo também
+		# andando contra a mira (de costas) no andar_tiro, o ciclo toca ao contrário: o pé de apoio vai para a frente e o mecha recua
+		# sem moonwalk. A fase é contínua nos dois sentidos (nunca salta de quadro ao virar), por isso o índice usa posmod.
+		var sentido := -1.0 if anda_atira and v.dot(dir_olhar) < 0.0 else 1.0
+		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
+		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
 		_parado_t = 0.0
 	else:
 		_anim = 0.0
@@ -1432,7 +1435,7 @@ func _visual(dt: float, v: Vector2) -> void:
 			c = _coluna_por_tempo("parado", _parado_t)
 		else:
 			_parado_t = 0.0
-	var ca := _coluna_acao(dt)
+	var ca := _coluna_acao(dt, anda_atira)
 	if ca >= 0:
 		c = ca
 	if l != linha or c != coluna:
@@ -1585,13 +1588,48 @@ func _coluna_por_tempo(nome: String, t: float) -> int:
 	return _coluna_anim(nome, n - 1)
 
 
-## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
-func _coluna_acao(dt: float) -> int:
-	var corpo_fixo := bool(tipo.info.get("corpo_fixo_ao_atirar", false))
-	if corpo_fixo and estado == Estado.GOLPE:
+## Segundos de andar por quadro (animacoes.andar.s_por_quadro da folha, ou PASSO_ANIM): o andar e o andar_tiro usam a mesma fase.
+func _passo_andar() -> float:
+	if _tem_anim("andar"):
+		return maxf(float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM)), 0.001)
+	return PASSO_ANIM
+
+
+## O mecha (folha com corpo_fixo_ao_atirar) segura a mira por segurar_mira_s depois de cada rajada (o intervalo entre tiros não baixa os braços).
+func _contar_pose_tiro(dt: float) -> void:
+	if bool(tipo.info.get("corpo_fixo_ao_atirar", false)) and estado == Estado.GOLPE:
 		_pose_tiro_t = maxf(float(tipo.info.get("segurar_mira_s", 0.0)), 0.0)
 	else:
 		_pose_tiro_t = maxf(_pose_tiro_t - dt, 0.0)
+
+
+## Andando (entrada `v`) e atirando (no golpe ou segurando a mira entre rajadas), com a folha que tem o andar_tiro: pernas do andar e braços
+## na mira (pedido do Alisson, 05/11: antes a mira ficava parada e as pernas deslizavam). Vale nos dois estados juntos, então a pose nunca
+## alterna mira/andar a cada rajada (o tremor de 04/11, v2_mecha_tremor).
+func _anda_atirando(v: Vector2) -> bool:
+	if v == Vector2.ZERO or escudo_ativo or not _tem_anim("andar_tiro") or not bool(tipo.info.get("corpo_fixo_ao_atirar", false)):
+		return false
+	return estado == Estado.GOLPE or (estado == Estado.LIVRE and _pose_tiro_t > 0.0)
+
+
+## Px inteiros a somar à boca do canhão `lado` (bocas_projeteis.canhoes, arredondada) no quadro que a folha desenha agora: o sobe-e-desce do
+## passo no andar_tiro (animacoes.andar_tiro.desvio_boca[quadro][linha][lado], medido no Blender); zero em qualquer outro quadro.
+func desvio_boca(lado: int) -> Vector2:
+	if not tipo.has("info") or not _tem_anim("andar_tiro"):  # herói sem folha (Heroi.new() solto, coop de teste)
+		return Vector2.ZERO
+	var a: Dictionary = tipo.info.animacoes.andar_tiro
+	var i := (a.colunas as Array).find(float(coluna))  # o JSON traz as colunas como float
+	var tab: Array = a.get("desvio_boca", [])
+	if i < 0 or i >= tab.size() or linha < 0 or linha >= (tab[i] as Array).size():
+		return Vector2.ZERO
+	var xy: Array = tab[i][linha][clampi(lado, 0, 1)]
+	return Vector2(float(xy[0]), float(xy[1]))
+
+
+## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
+## `anda_atira` (_anda_atirando): o quadro do andar_tiro na fase do passo, no lugar do combo e da mira parada.
+func _coluna_acao(dt: float, anda_atira := false) -> int:
+	var corpo_fixo := bool(tipo.info.get("corpo_fixo_ao_atirar", false))
 	if _dano_t >= 0.0:
 		_dano_t += dt
 		if _tem_anim("dano") and estado != Estado.ESQUIVA:
@@ -1602,6 +1640,8 @@ func _coluna_acao(dt: float) -> int:
 				return _coluna_por_tempo("dano", _dano_t)
 		if _dano_t >= 0.5:
 			_dano_t = -1.0
+	if anda_atira:
+		return _coluna_anim("andar_tiro", posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes.andar_tiro.colunas as Array).size()))
 	if estado == Estado.GOLPE and _tem_anim("combo"):
 		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo := mini(golpe_i, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))

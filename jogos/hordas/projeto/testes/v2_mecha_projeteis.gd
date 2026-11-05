@@ -698,7 +698,8 @@ func boca_andando() -> void:
 				var linha: int = h.linha_de(h.dir_olhar)  # a linha que a folha está desenhando, não qualquer uma das 8
 				for lado in 2:
 					var xy: Array = tabela[linha][lado]
-					var d: float = (mundo[i] as Vector2).distance_to((h.pr as Vector2) + Vector2(xy[0], xy[1]).round())
+					# a boca desenhada neste quadro: a tabela arredondada + o desvio do quadro do andar_tiro (o passo sobe e desce o cano)
+					var d: float = (mundo[i] as Vector2).distance_to((h.pr as Vector2) + Vector2(xy[0], xy[1]).round() + h.desvio_boca(lado))
 					if d < perto:
 						perto = d
 						lado_perto = lado

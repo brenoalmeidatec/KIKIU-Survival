@@ -761,9 +761,14 @@ func _visual_mecha(proj: int) -> bool:
 ## A boca do cano (ou do pod) deste disparo em px de mundo: a posição projetada na folha (`bocas_projeteis` do JSON da folha, relativa aos pés do herói) da linha
 ## de 8 direções da mira e do braço (`lateral` < 0 = o braço esquerdo da tela, a tabela [linha][0]). Vector2.INF se o projétil não é do mecha ou a folha não tem a tabela.
 ## A tabela foi conferida contra o clarão desenhado na própria folha (combo, quadros 1 e 7): centro do clarão e boca diferem até 1,7 px nas 16 bocas (v2_mecha_projeteis confere <= 3).
+## No canhão soma o desvio do quadro que a folha desenha (h.desvio_boca, o passo do andar_tiro): a bolinha nasce no cano também andando.
 func _boca_mundo(proj: int, h, origem: Vector2, dir: Vector2, passo: Dictionary) -> Vector2:
 	var rel := _boca_rel(proj, h, origem, dir, passo)
-	return h.pos + rel + Vector2(0.0, -float(h.get("alt_px") if "alt_px" in h else 0)) if rel.is_finite() else Vector2.INF  # alt_px: o mecha voando no impulso
+	if not rel.is_finite():
+		return Vector2.INF
+	if str(_proj_lista[proj].nome) != "missil":
+		rel += h.desvio_boca(_boca_lado(proj, h, origem, dir, passo))
+	return h.pos + rel + Vector2(0.0, -float(h.get("alt_px") if "alt_px" in h else 0))  # alt_px: o mecha voando no impulso (o pod dos mísseis sobe junto)
 
 
 ## A mesma boca relativa aos pés do herói (a tabela da folha, sem arredondar); Vector2.INF quando `_boca_mundo` também não tem.
