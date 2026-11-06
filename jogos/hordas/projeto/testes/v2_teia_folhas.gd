@@ -91,6 +91,8 @@ func _ready() -> void:
 		return
 	var W := 96
 	var H := 64
+	var WB := 128
+	var HB := 80
 	# repouso: o último quadro de "abre" = o primeiro de "some", por geometria; o último de "some" é vazio
 	for g in 2:
 		ok(iguais(imgs.abre, 5 * W, g * H, imgs.some, 0, g * H, W, H), "geometria %d: o repouso de 'abre' é o primeiro quadro de 'some'" % g)
@@ -99,8 +101,9 @@ func _ready() -> void:
 			pixels(imgs.queima, 7 * W, g * 4 * H, W, H) < 40,
 			"geometria %d: a queima termina quase vazia (%d px)" % [g, pixels(imgs.queima, 7 * W, g * 4 * H, W, H)]
 		)
-		ok(pixels(imgs.corte, 6 * W, g * 2 * H, W, H) < 60, "geometria %d: o corte termina quase vazio" % g)
-		ok(pixels(imgs.quebra, 6 * W, g * H, W, H) < 60, "geometria %d: a quebra termina quase vazia" % g)
+		# corte e quebra têm quadro maior (128x80: os pedaços voam além da teia) e duram mais (9 e 8 quadros)
+		ok(pixels(imgs.corte, 8 * WB, g * 2 * HB, WB, HB) < 160, "geometria %d: o corte termina quase vazio" % g)
+		ok(pixels(imgs.quebra, 7 * WB, g * HB, WB, HB) < 160, "geometria %d: a quebra termina quase vazia" % g)
 		# a queima começa como o repouso (fio inteiro): quase o mesmo número de pixels do repouso
 		var rep := pixels(imgs.abre, 5 * W, g * H, W, H)
 		var q0 := pixels(imgs.queima, 0, g * 4 * H, W, H)
@@ -121,14 +124,18 @@ func _ready() -> void:
 	ok(l0[2] > l0[0] and l0[2] > l0[7], "o pico da queima fica no meio, não nas pontas")
 	# o critério reprova um pico triplo
 	ok(not um_pico([0.1, 0.2, 0.1, 0.2, 0.1, 0.2, 0.1, 0.1]), "o critério reprova uma série com três picos")
-	# o corte tem o risco brilhante (amarelo/branco) no quadro 1
-	var risco := 0
-	for y in H:
-		for x in W:
-			var c: Color = (imgs.corte as Image).get_pixel(W + x, y)
-			if c.a > 0.5 and c.r > 0.95 and c.g > 0.6 and c.b < 0.6:
-				risco += 1
-	ok(risco > 40, "o quadro 1 do corte tem o risco brilhante (%d px)" % risco)
+	# o corte tem o risco brilhante (amarelo/branco) no quadro 1 e ele dura 3 quadros (eram 2; pedido do Alisson, 06/11)
+	var riscos: Array = []
+	for col in 9:
+		var risco := 0
+		for y in HB:
+			for x in WB:
+				var c: Color = (imgs.corte as Image).get_pixel(col * WB + x, y)
+				if c.a > 0.5 and c.r > 0.95 and c.g > 0.6 and c.b < 0.6:
+					risco += 1
+		riscos.append(risco)
+	ok(riscos[1] > 40, "o quadro 1 do corte tem o risco brilhante (%d px)" % riscos[1])
+	ok(riscos[0] > 20 and riscos[1] > 40 and riscos[2] > 40, "o risco brilhante dura 3 quadros inteiros (%s px)" % str(riscos.slice(0, 4)))
 	# registro de licença
 	var caminho := ProjectSettings.globalize_path("res://").path_join("../../../docs/LICENCAS_ARTE.md").simplify_path()
 	if FileAccess.file_exists(caminho):

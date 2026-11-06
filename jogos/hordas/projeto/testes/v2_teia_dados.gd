@@ -20,7 +20,7 @@ func _ready() -> void:
 	var d: Dictionary = Dados.json("v2_teia")
 	ok(not d.is_empty(), "dados/v2_teia.json existe e é um objeto")
 	ok(str(d.get("_ajuda", "")).length() > 200, "o arquivo tem _ajuda explicando os números")
-	for k in ["teia", "lento", "aranha", "queima", "corta", "folhas"]:
+	for k in ["teia", "lento", "aranha", "queima", "chamas", "corta", "folhas"]:
 		ok(d.get(k) is Dictionary, "seção '%s'" % k)
 	var t: Dictionary = d.get("teia", {})
 	for k in ["raio", "achata", "vida_s", "sumir_s", "max_vivas", "max_vivas_baixo", "max_voando"]:
@@ -34,6 +34,17 @@ func _ready() -> void:
 	for nome in l.get("estados", []):
 		ok(preload("res://v2/teias.gd").estado_do_heroi(str(nome)) >= 0, "lento.estados: '%s' é um estado do herói" % nome)
 	ok(not (l.get("estados", []) as Array).has("ESQUIVA"), "a esquiva escapa da teia (o contra-jogo)")
+	var ch: Dictionary = d.get("chamas", {})
+	ok(str(ch.get("_ajuda", "")).length() > 200, "chamas tem _ajuda")
+	for k in ["pool", "por_quadro", "frente_min", "frente_ref", "balanco_hz"]:
+		ok(ch.has(k) and float(ch[k]) > 0.0, "chamas.%s > 0" % k)
+	for k in ["vivas", "vida_s", "sobe_px"]:
+		ok((ch.get(k, []) as Array).size() == 2 and float(ch[k][0]) <= float(ch[k][1]) and float(ch[k][1]) > 0.0, "chamas.%s é [min, max]" % k)
+	ok(int(ch.get("vivas", [0, 0])[0]) >= 20 and int(ch.get("vivas", [0, 0])[1]) <= 40, "chamas.vivas fica entre 20 e 40 por teia")
+	ok(float(ch.get("sobe_px", [0, 0])[0]) >= 6.0 and float(ch.get("sobe_px", [0, 0])[1]) <= 14.0, "chamas.sobe_px fica entre 6 e 14 px")
+	ok(int(ch.get("pool", 0)) >= 6 * int(ch.get("vivas", [0, 0])[1]), "o pool comporta 6 teias queimando ao mesmo tempo")
+	ok((ch.get("quente", []) as Array).size() == 3 and (ch.get("brasa", []) as Array).size() == 4, "chamas.quente e chamas.brasa têm os limites de cor")
+	ok(ch.get("calmo", {}).has("vivas") and ch.get("calmo", {}).has("quadro"), "chamas.calmo (Reduzir piscadas) tem vivas e quadro")
 	var a: Dictionary = d.get("aranha", {})
 	for k in ["dist_min", "dist_max", "preparo_s", "disparo_s", "recuperar_s", "voo_s", "arco_px", "boca_dist", "boca_alt", "fio_s", "abre_ar_s"]:
 		ok(a.has(k) and float(a[k]) > 0.0, "aranha.%s > 0" % k)

@@ -311,6 +311,12 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 
 - `jogos/hordas/projeto/assets/v2/teias/teia_abre.png`, `teia_queima.png`, `teia_corte.png`, `teia_quebra.png`, `teia_some.png`, `teia_bolota.png` e `teia_abre_ar.png` (alfa 0/255, fios de 1 px, paleta própria de azul-branco, fogo, brasa e cinza): arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/teia/gerar_teia.py` (Python, Pillow e numpy, sementes fixas, sem nenhuma imagem de entrada). A referência `notas/artes_chatgpt/A25_teia_ref.png` foi gerada para o projeto no ChatGPT e serviu SÓ de direção de paleta e de ritmo; nenhum pixel dela foi copiado nem recortado, e ela não entra no jogo.
 - As colunas `disparo0..3` das folhas `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_aranha_tecela.*` e `inimigo_aranha_tecela_x2.*` vêm do modelo 3D próprio da aranha (`fonte_arte/modelos3d/floresta.py`, pose `acoes.disparo`) renderizado no Blender 4.5 pelo pipeline de sempre (`prototipos/cara_nova/gerar_cara_nova.py`). Arte PRÓPRIA, sem material de terceiros. A chama dos propulsores do mecha que acende a teia é a que já existe em `v2/propulsor.gd` (desenho em código). Licença: a do projeto.
+
 ## Gotas de fogo animadas (PR #624), Claude do Alisson, 06/11/2026
 
 - `jogos/hordas/fonte_arte/chama/gerar_gotas.py` e `jogos/hordas/projeto/assets/v2/efeitos/chama_gotas.png` (72x96 px: 4 tamanhos de labareda x 2 variantes x 8 quadros, 5 cores, alfa 0/1): arte PRÓPRIA, procedural (numpy + Pillow, regra e semente fixa, nenhum arquivo ou receita de terceiros). Usada por `v2/chama_gotas.gd`. Licença: a do projeto.
+
+## Teia da aranha: folhas de corte e quebra regeneradas e labaredas da queima (PR #628), Claude do Alisson, 06/11/2026
+
+- `jogos/hordas/projeto/assets/v2/teias/teia_corte.png` (9 quadros de 128x80, 4 linhas) e `teia_quebra.png` (8 quadros de 128x80, 2 linhas): regeneradas por `jogos/hordas/fonte_arte/teia/gerar_teia.py` (pedaços maiores e mais duráveis, risco de 3 quadros). Arte PRÓPRIA, procedural, sem material de terceiros. Licença: a do projeto.
+- `jogos/hordas/projeto/v2/teia_chamas.gd` não traz arte nova: desenha a folha `chama_gotas.png` já registrada acima sobre a queima da teia.

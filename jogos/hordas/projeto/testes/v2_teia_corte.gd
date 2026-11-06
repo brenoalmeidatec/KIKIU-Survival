@@ -3,12 +3,15 @@ extends "res://testes/isolamento_v2.gd"
 # Confere: os golpes de corpo a corpo da lista (katana, kanabo com a pancada de 360, naginata, kusarigama com o giro, tessen) que cobrem a teia a cortam; o arco virado para o outro lado
 # não corta; fora do alcance não corta; as adagas não cortam; a orientação diagonal sai do sinal de dir.x*dir.y; martelo e giro estilhaçam (QUEBRADA); cortar não dá dano nem carga do Q;
 # a ruptura e os especiais (terremoto, investida) cortam quando a lista deixa.
+# LEGIBILIDADE (pedido do Alisson, 06/11: "o cone do golpe domina e os pedaços são pequenos"): os pedaços da folha de corte e da de quebra ficam visíveis por pelo menos PEDACOS_MIN_S segundos
+# (quadros com 70% ou mais dos pixels do quadro inicial, contados depois do risco de 3 quadros no corte e do 1º quadro na quebra) e os do corte ficam MAIORES que a teia inteira (fio de 2 px); o risco brilhante dura 3 quadros (v2_teia_folhas).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_teia_corte.tscn  (imprime "v2_teia_corte falhas=0")
 
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const PASSO := 1.0 / 60.0
+const PEDACOS_MIN_S := 0.35
 
 var falhas := 0
 var w
@@ -168,5 +171,39 @@ func _ready() -> void:
 	var dur: float = float(t._folhas.corte.quadros) / float(t._folhas.corte.fps)
 	passos(int(dur * 60.0) + 3)
 	ok(t._est[s1] == t.LIVRE, "a animação do corte acaba e o slot volta ao pool (%.2f s)" % dur)
+
+	# 11. os pedaços ficam visíveis por mais tempo e maiores (medido na folha)
+	for nome in ["corte", "quebra"]:
+		var f: Dictionary = t._folhas[nome]
+		var im: Image = (f.tex as Texture2D).get_image()
+		var qw := int(f.quadro.x)
+		var qh := int(f.quadro.y)
+		for linha in int(f.linhas):
+			var cont: Array = []
+			for col in int(f.quadros):
+				var n_px := 0
+				for y in qh:
+					for x in qw:
+						if im.get_pixel(col * qw + x, linha * qh + y).a > 0.5:
+							n_px += 1
+				cont.append(n_px)
+			var visiveis := 0
+			for col in range(3 if nome == "corte" else 1, int(f.quadros)):
+				if float(cont[col]) >= 0.7 * float(cont[0]):
+					visiveis += 1
+			var seg := float(visiveis) / float(f.fps)
+			ok(
+				seg >= PEDACOS_MIN_S,
+				"%s, linha %d: os pedaços ficam visíveis por %.2f s (mínimo %.2f; pixels por quadro %s)" % [nome, linha, seg, PEDACOS_MIN_S, str(cont)]
+			)
+			if nome == "corte":
+				var pico := 0
+				for col in range(3, int(f.quadros)):
+					pico = maxi(pico, int(cont[col]))
+				ok(
+					float(pico) >= 1.15 * float(cont[0]),
+					"corte, linha %d: os pedaços (fio de 2 px) pesam mais que a teia inteira (%d contra %d px)" % [linha, pico, int(cont[0])]
+				)
+	ok(float(t._folhas.corte.quadros) / float(t._folhas.corte.fps) >= 0.7, "o corte dura 0,7 s ou mais")
 	print("v2_teia_corte falhas=%d" % falhas)
 	get_tree().quit()

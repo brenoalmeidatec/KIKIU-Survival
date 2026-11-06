@@ -144,15 +144,19 @@ func _ready() -> void:
 	var sem_teia: float = h.pos.x - p2.x
 	ok(sem_teia > 5.0 and absf(com_teia - sem_teia) < 1.0, "o empurrão anda o mesmo dentro e fora da teia (%.1f e %.1f px)" % [com_teia, sem_teia])
 
-	# 6. o relógio de lentidão liga no herói preso (o mesmo da Rainha)
+	# 6. NENHUM relógio sobre a cabeça do herói preso (pedido do Alisson: "não faz sentido"): a lentidão se sente no movimento
 	zerar()
 	poe_teia(h.pos)
 	passos(10)
-	ok(w.combate.fx_status._alca_heroi != 0, "o relógio de lentidão aparece no herói preso na teia")
+	var cf0: int = w.combate.fx_folha.ativos
+	ok(
+		w.combate.fx_status.n_efeitos() == cf0,
+		"o herói preso na teia não leva ícone (fx_folha %d, ícones de monstros %d)" % [cf0, w.combate.fx_status.n_efeitos()]
+	)
 	h.pos += Vector2(0, 150)
 	h.definir_pos(h.pos)
 	passos(10)
-	ok(w.combate.fx_status._alca_heroi == 0, "e some quando ele sai")
+	ok(w.combate.fx_status.n_efeitos() == w.combate.fx_folha.ativos, "e continua sem ícone quando ele sai")
 
 	# 7. o mecha em voo não fica lento (LightWolf)
 	Herois.forcado = "lightwolf"

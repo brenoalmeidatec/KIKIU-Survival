@@ -7,11 +7,13 @@ extends RefCounted
 ##  - LENTIDÃO: o herói com os pés dentro da elipse ganha a fonte "teia" em `Heroi.lento_fontes` (o menor multiplicador vale; v2/heroi.gd). O mecha do LightWolf em VOO
 ##    (impulso, `voando`) não fica lento e, se o propulsor passar por cima (a elipse mais `queima.margem`), a teia QUEIMA: o fogo nasce no canto do lado dele e corre pelo anel.
 ##  - CORTE: `cortar_arco` (chamado por combate.golpear, ruptura e especiais) parte a teia que o golpe cobre: risco diagonal (corte) ou estilhaço radial (martelo, giro de 360 graus).
+##  - A QUEIMA ganha LABAREDAS por cima da folha (v2/teia_chamas.gd, `chamas` em dados): as mini-animações das gotas de fogo nascem nos pixels quentes da frente de fogo.
 ##  - RNG próprio (a recarga das aranhas): o RNG da partida não é tocado. Sem partículas: tudo é folha de pixel art; no perfil Baixo o teto de teias cai e a abertura pula quadros.
 ## API: montar(c), atualizar(dt), limpar(), disparar(m, dir) -> bool, lancar(chao, alt0, alvo) -> bool, pode_lancar(), dentro(p) -> bool, voando(h) -> bool,
 ## cortar_arco(origem, dir, alc, arco, tipo) -> int, tipo_do_passo(nome) -> String, sorteio_recarga(inicial) -> float, contar(estado) -> int.
 
 const Anim := preload("res://v2/anim_golpes.gd")
+const Chamas := preload("res://v2/teia_chamas.gd")  # as labaredas (mesma folha das gotas de fogo) sobre a frente de fogo da queima
 const PASTA := "res://assets/v2/teias/"
 const LIVRE := 0
 const VOANDO := 1
@@ -29,6 +31,7 @@ var combate
 var mundo
 var cfg: Dictionary = {}
 var no: Node2D = null
+var chamas  # v2/teia_chamas.gd
 var raio := 40.0
 var achata := 0.62
 var vida_s := 12.0
@@ -110,6 +113,8 @@ func montar(c) -> void:
 		no.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		no.draw.connect(_desenhar)
 		pai.add_child(no)
+	chamas = Chamas.new()
+	chamas.montar(self)
 
 
 ## O número do estado do herói (Heroi.Estado) pelo nome; -1 se não existe.
@@ -126,6 +131,8 @@ func limpar() -> void:
 		h.lento_fontes.erase("teia")
 	if no != null:
 		no.queue_redraw()
+	if chamas != null:
+		chamas.limpar()
 
 
 func teto_vivas() -> int:
@@ -255,6 +262,7 @@ func atualizar(dt: float) -> void:
 	if no != null and (algum or _desenhado):
 		no.queue_redraw()
 	_desenhado = algum
+	chamas.atualizar(dt)  # depois do passo: vê as teias que acabaram de pegar fogo
 
 
 func _pousar(i: int) -> void:

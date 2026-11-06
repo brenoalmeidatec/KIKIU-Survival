@@ -1,6 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste automático do v2/fx_status.gd: chama (queima_t), relógio (lento_t) e estrelas (atordoa_t) sobre o monstro, e o relógio sobre o herói na teia
-# da Rainha. Prova: o efeito nasce quando o status começa e some quando acaba; o atordoamento curto (corte comum) não acende estrelas; morte, volta ao
+# Teste automático do v2/fx_status.gd: chama (queima_t), relógio (lento_t) e estrelas (atordoa_t) sobre o monstro, e NENHUM ícone sobre o herói
+# na teia da Rainha (a lentidão dele se sente no movimento). Prova: o efeito nasce quando o status começa e some quando acaba; o atordoamento curto (corte comum) não acende estrelas; morte, volta ao
 # pool, saída da tela, perfil Baixo e limpar_partida soltam tudo; o limite de monstros com efeito vale; nenhum nó nasce no meio da partida.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_fx_status.tscn  (imprime "v2_fx_status falhas=0")
 const Anim := preload("res://v2/anim_golpes.gd")
@@ -140,15 +140,16 @@ func _ready() -> void:
 	_quadros(w, 40)
 	ok(st.n_efeitos() > 0, "perfil Médio de novo: os ícones voltam (%d)" % st.n_efeitos())
 
-	# 8. herói na teia da Rainha: o relógio fica nele e sai quando a teia acaba
+	# 8. herói na teia da Rainha: a lentidão segue valendo, mas NENHUM ícone (relógio) aparece sobre ele
 	c.limpar_partida()
 	ok(st.n_efeitos() == 0 and st.ativos == 0 and cf.ativos == 0, "limpar_partida solta tudo (%d)" % cf.ativos)
 	c.chefes._teia_t = 1.0
 	_quadros(w, 6)
-	ok(st.heroi_com_efeito() and cf.vivo(st._alca_heroi), "herói preso na teia: relógio sobre ele")
+	ok(c.chefes._teia_t > 0.0 and c.chefes._teia_t < 1.0, "a teia segue valendo: o herói está lento (%.2f s)" % c.chefes._teia_t)
+	ok(cf.ativos == st.n_efeitos(), "herói preso na teia: nenhum efeito além dos de monstros (fx_folha %d, monstros %d)" % [cf.ativos, st.n_efeitos()])
 	c.chefes._teia_t = 0.0
 	_quadros(w, 6)
-	ok(not st.heroi_com_efeito(), "a teia acabou: relógio solto")
+	ok(cf.ativos == st.n_efeitos(), "a teia acabou: continua sem ícone no herói")
 
 	ok(_nos_total(w.glow) == nos0, "nenhum nó nasceu na camada de efeitos durante a partida (%d -> %d)" % [nos0, _nos_total(w.glow)])
 	w.queue_free()

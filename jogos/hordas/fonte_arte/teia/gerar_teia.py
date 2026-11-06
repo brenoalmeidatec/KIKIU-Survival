@@ -37,7 +37,11 @@ RX = 40.0  # raio da teia no chão (dados/v2_teia.json > teia > raio)
 ACHATA = 0.62  # o chão aparece comprimido pela câmera a 45 graus (v2/avisos.gd ACHATA)
 RY = RX * ACHATA
 SEMENTES = [11, 29]  # duas geometrias de teia
-QUADROS = {"abre": 6, "queima": 8, "corte": 7, "quebra": 7, "some": 6}
+QUADROS = {"abre": 6, "queima": 8, "corte": 9, "quebra": 8, "some": 6}
+# corte e quebra: os pedaços voam mais longe que a teia (raio 40), então o quadro deles é maior (128x80, centro em 64,40); dados/v2_teia.json > folhas > corte e quebra
+WB, HB = 128, 80
+CXB, CYB = 64.0, 40.0
+N_RISCO = 3  # quadros do risco brilhante do corte (eram 2: um a mais pedido pelo Alisson, 06/11, "o cone do golpe domina e os pedaços são pequenos")
 
 # paleta (RGB). Fios: azul-branco; sombra escura embaixo; fogo do claro ao escuro; brasa e cinza.
 CLARO = (226, 236, 247)
@@ -319,7 +323,8 @@ def risco(q, a, b, largura, fase):
 
 
 def folha_corte(semente, invertido):
-    """7 quadros: o risco atravessa (em "/"; `invertido` espelha para "\\"), a rede parte em dois lados que se afastam e em pedaços que encolhem e somem."""
+    """9 quadros: o risco atravessa (em "/"; `invertido` espelha para "\\") por 3 quadros, depois a rede parte em dois lados que se afastam em pedaços GROSSOS (fios de 2 px) que
+    encolhem pouco e duram 6 quadros (o corte antigo: risco em 2 quadros, pedaços de 1 px que sumiam em 4)."""
     f = teia(semente)
     xs, ys, rs, th, rnd, tp = f.arr()
     n = len(xs)
@@ -355,29 +360,30 @@ def folha_corte(semente, invertido):
     for c in set(chunk.tolist()):
         idx = np.where(chunk == c)[0]
         cen[c] = (float(xs[idx].mean()), float(ys[idx].mean()))
-    vel = {c: (nx * lado[np.where(chunk == c)[0][0]] * rng.uniform(0.8, 1.4) + rng.uniform(-0.5, 0.5) * ux,
-               ny * lado[np.where(chunk == c)[0][0]] * rng.uniform(0.8, 1.4) + rng.uniform(-0.5, 0.5) * uy) for c in cen}
-    vida = {c: rng.uniform(0.55, 1.0) for c in cen}  # quando (0 a 1 do tempo de pedaços) o pedaço some inteiro
+    vel = {c: (nx * lado[np.where(chunk == c)[0][0]] * rng.uniform(1.3, 2.0) + rng.uniform(-0.6, 0.6) * ux,
+               ny * lado[np.where(chunk == c)[0][0]] * rng.uniform(1.3, 2.0) + rng.uniform(-0.6, 0.6) * uy) for c in cen}
+    vida = {c: rng.uniform(1.0, 1.5) for c in cen}  # quando (0 a 1 do tempo de pedaços) o pedaço some inteiro (acima de 1: só a erosão do fim apaga)
     quadros = []
-    for k in range(7):
-        q = Quadro()
-        if k <= 1:
+    n_q = N_RISCO + 6
+    for k in range(n_q):
+        q = Quadro(WB, HB, CXB, CYB)
+        if k < N_RISCO:
             q.fios(xs, ys, rs, rnd, tp)
-            risco(q, a, b, 4.0 if k == 1 else 3.0, 0.5 if k == 0 else 1.0)
+            risco(q, a, b, 3.0 if k == 0 else 4.0, 0.5 if k == 0 else 1.0)
         else:
-            t = (k - 2) / 4.0  # 0 a 1 ao longo dos 5 quadros em que a rede se solta
+            t = (k - N_RISCO) / 5.0  # 0 a 1 ao longo dos 6 quadros em que a rede se solta
             cores = []
             dx = []
             dy = []
             for i in range(n):
                 c = int(chunk[i])
-                sol = 1.6 + 5.0 * t + (1.0 + 3.0 * t) * t
-                encolhe = 1.0 - 0.5 * t
+                sol = 2.0 + 6.0 * t + (1.0 + 3.0 * t) * t
+                encolhe = 1.0 - 0.25 * t
                 px = cen[c][0] + (xs[i] - cen[c][0]) * encolhe
                 py = cen[c][1] + (ys[i] - cen[c][1]) * encolhe
                 dx.append(px - xs[i] + vel[c][0] * sol)
                 dy.append(py - ys[i] + vel[c][1] * sol * 0.8 + 0.6 * t * t * 4)
-                morre = t > vida[c] * 1.05 or rnd[i] < t * t * 0.9
+                morre = t > vida[c] * 1.05 or rnd[i] < t ** 3 * 0.97
                 cores.append(None if morre else cor_fio(rs[i], rnd[i], tp[i]))
             pos = []
             for i in range(n):
@@ -386,13 +392,18 @@ def folha_corte(semente, invertido):
             # sombra primeiro (não cobre fio) e fios depois
             for (xy, c) in pos:
                 q.pinta(xy[0], xy[1], c)
+            for (xy, c) in pos:  # fio GROSSO: cada pixel do pedaço ganha o vizinho da direita (2 px de largura leem de longe)
+                if q.vazio(xy[0] + 1, xy[1]):
+                    q.pinta(xy[0] + 1, xy[1], c)
             for (xy, c) in pos:
                 if q.vazio(xy[0], xy[1] + 1):
                     q.pinta(xy[0], xy[1] + 1, SOMBRA)
-            if k <= 4:  # o rastro do risco some e solta faíscas ao longo da reta
-                risco(q, (a[0] + ux * 3 * (k - 1), a[1] + uy * 3 * (k - 1)), (b[0] - ux * 3 * (k - 1), b[1] - uy * 3 * (k - 1)), 2.0 if k == 2 else 1.0, 1.0)
+                if q.vazio(xy[0] + 1, xy[1] + 1):
+                    q.pinta(xy[0] + 1, xy[1] + 1, SOMBRA)
+            if k <= N_RISCO + 2:  # o rastro do risco some e solta faíscas ao longo da reta
+                risco(q, (a[0] + ux * 3 * (k - 2), a[1] + uy * 3 * (k - 2)), (b[0] - ux * 3 * (k - 2), b[1] - uy * 3 * (k - 2)), 2.0 if k == N_RISCO else 1.0, 1.0)
             frng = random.Random(semente * 17 + k)
-            for _ in range(14 if k <= 3 else 5):
+            for _ in range(14 if k <= N_RISCO + 1 else 6):
                 s = frng.uniform(0, 1)
                 px_ = a[0] + dxl * s + frng.uniform(-6, 6)
                 py_ = a[1] + dyl * s + frng.uniform(-5, 5) - k
@@ -404,7 +415,7 @@ def folha_corte(semente, invertido):
 
 
 def folha_quebra(semente):
-    """7 quadros: o martelo (ou o giro de 360 graus) estoura a rede de dentro para fora: uma onda branca na elipse e 20 pedaços que voam para fora, encolhem e somem."""
+    """8 quadros: o martelo (ou o giro de 360 graus) estoura a rede de dentro para fora: uma onda branca na elipse e 20 pedaços GROSSOS (fios de 2 px) que voam mais longe, encolhem pouco e duram mais."""
     f = teia(semente)
     xs, ys, rs, th, rnd, tp = f.arr()
     n = len(xs)
@@ -415,14 +426,14 @@ def folha_quebra(semente):
     for c in set(chunk.tolist()):
         idx = np.where(chunk == c)[0]
         cen[c] = (float(xs[idx].mean()), float(ys[idx].mean()))
-    vel = {c: rng.uniform(0.9, 1.5) for c in cen}
-    vida = {c: rng.uniform(0.5, 1.0) for c in cen}
+    vel = {c: rng.uniform(1.2, 1.9) for c in cen}
+    vida = {c: rng.uniform(1.0, 1.5) for c in cen}
     quadros = []
-    for k in range(7):
-        q = Quadro()
-        t = k / 6.0
+    for k in range(8):
+        q = Quadro(WB, HB, CXB, CYB)
+        t = k / 7.0
         if k >= 1:
-            t = (k - 1) / 5.0
+            t = (k - 1) / 6.0
         pos = []
         for i in range(n):
             c = int(chunk[i])
@@ -432,18 +443,23 @@ def folha_quebra(semente):
             if k == 0:
                 sol = 0.0
             else:
-                sol = (3.0 + 9.0 * t) * vel[c]
-            encolhe = 1.0 - (0.0 if k == 0 else 0.55 * t)
+                sol = (3.0 + 10.0 * t) * vel[c]
+            encolhe = 1.0 - (0.0 if k == 0 else 0.3 * t)
             px = ox + (xs[i] - ox) * encolhe + ex * sol * 1.0
             py = oy + (ys[i] - oy) * encolhe + ey * sol * ACHATA - (4.0 * t * (1 - t) * 3.0 if k > 0 else 0.0)
-            morre = k > 0 and (t > vida[c] * 1.05 or rnd[i] < t * t * 0.85)
+            morre = k > 0 and (t > vida[c] * 1.05 or rnd[i] < t ** 3 * 0.97)
             if not morre:
                 pos.append(((int(round(px)), int(round(py))), cor_fio(rs[i], rnd[i], tp[i])))
         for (xy, c) in pos:
             q.pinta(xy[0], xy[1], c)
+        for (xy, c) in pos:  # fio grosso (2 px de largura)
+            if q.vazio(xy[0] + 1, xy[1]):
+                q.pinta(xy[0] + 1, xy[1], c)
         for (xy, c) in pos:
             if q.vazio(xy[0], xy[1] + 1):
                 q.pinta(xy[0], xy[1] + 1, SOMBRA)
+            if q.vazio(xy[0] + 1, xy[1] + 1):
+                q.pinta(xy[0] + 1, xy[1] + 1, SOMBRA)
         if k <= 3:  # a onda do golpe: um anel branco que abre na elipse
             raio = (0.35 + 0.28 * k)
             m = int(220 * RX * raio)
@@ -598,8 +614,8 @@ def principal():
     for nome, (w, h, c, l) in {
         "teia_abre": (W, H, 6, len(SEMENTES)),
         "teia_queima": (W, H, 8, 4 * len(SEMENTES)),
-        "teia_corte": (W, H, 7, 2 * len(SEMENTES)),
-        "teia_quebra": (W, H, 7, len(SEMENTES)),
+        "teia_corte": (WB, HB, 9, 2 * len(SEMENTES)),
+        "teia_quebra": (WB, HB, 8, len(SEMENTES)),
         "teia_some": (W, H, 6, len(SEMENTES)),
         "teia_bolota": (16, 16, 4, 1),
         "teia_abre_ar": (24, 24, 4, 1),

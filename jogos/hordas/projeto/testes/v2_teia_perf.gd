@@ -8,6 +8,7 @@ const Herois := preload("res://v2/herois.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const Anim := preload("res://v2/anim_golpes.gd")
 const PASSO := 1.0 / 60.0
+const LIMITE_CHAMAS_US := 500.0  # µs por quadro com 6 teias queimando e as labaredas no pico (o orçamento do quadro é 16 667 µs)
 const LIMITE_US := 400.0  # µs por quadro (o passo todo do jogo com 100 monstros é ~8 ms: a teia fica abaixo de 5% disso)
 
 var falhas := 0
@@ -86,6 +87,36 @@ func _ready() -> void:
 	var us := float(Time.get_ticks_usec() - t0) / float(n)
 	print("teias.atualizar: %.1f us por quadro (limite %.0f)" % [us, LIMITE_US])
 	ok(us < LIMITE_US, "o passo da teia custa menos de %.0f us por quadro (%.1f)" % [LIMITE_US, us])
+	# as labaredas (v2/teia_chamas.gd): 6 teias queimando ao mesmo tempo, o passo todo (teias + labaredas) continua barato e não cria nó
+	var ch = t.chamas
+	var antes2 := _nos()
+	var soma := 0.0
+	var rodadas := 8
+	for r in rodadas:
+		for j in t._est.size():
+			t._est[j] = t.LIVRE
+		for k in 6:
+			var j2: int = t._livre()
+			t._est[j2] = t.QUEIMANDO
+			t._pos[j2] = h.pos + Vector2(-200 + 70 * (k % 3), 90 + 70 * (k / 3))
+			t._t[j2] = 0.0
+			t._geo[j2] = k % 2
+			t._var[j2] = k % 4
+		var t2 := Time.get_ticks_usec()
+		for k in 60:
+			t.atualizar(PASSO)
+		soma += float(Time.get_ticks_usec() - t2) / 60.0
+	var us2 := soma / float(rodadas)
+	print("teias.atualizar com 6 teias queimando e %d labaredas no pico: %.1f us por quadro (limite %.0f)" % [ch.n_pool(), us2, LIMITE_CHAMAS_US])
+	ok(us2 < LIMITE_CHAMAS_US, "6 teias queimando com labaredas custam menos de %.0f us por quadro (%.1f)" % [LIMITE_CHAMAS_US, us2])
+	var novos2: Array = []
+	for n3 in _nos():
+		if not antes2.has(n3):
+			novos2.append(n3)
+	ok(novos2.is_empty(), "as labaredas não criam nó (novos: %s)" % str(novos2))
+	for j in t._est.size():
+		t._est[j] = t.LIVRE
+	t.chamas.limpar()
 	# com os monstros e as aranhas atirando: o passo do mundo inteiro, só para constar
 	var t1 := Time.get_ticks_usec()
 	passos(480)
