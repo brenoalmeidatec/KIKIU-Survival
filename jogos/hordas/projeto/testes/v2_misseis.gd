@@ -160,14 +160,15 @@ func _andar() -> void:
 	h.entrada_forcada = Vector2.ZERO
 	passos(5)
 	h.entrada_forcada = Vector2(0, 1)
+	h.fonte = Heroi.Fonte.MOUSE
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
 	ok(h.habilidade(), "dispara andando")
-	var mira0: Vector2 = h.dir_olhar
 	passos(2)
 	p0 = h.pos
 	passos(30)
 	var com_e: float = (h.pos - p0).length()
 	ok(normal > 10.0 and absf(com_e / normal - 0.5) < 0.08, "anda a 50%% durante a E (normal %s, com a E %s)" % [normal, com_e])
-	ok(h.dir_olhar.is_equal_approx(mira0), "com o mouse parado a mira segue nele (não vira para o passo)")
+	ok(h.dir_olhar.x > 0.9, "andando para baixo com o mouse à direita, o mecha segue olhando o mouse (dir %s)" % h.dir_olhar)
 	ok(h.estado == Heroi.Estado.HABILIDADE and not h.hab_invul, "ainda na E, vulnerável")
 	h.entrada_forcada = Vector2.ZERO
 	passos(60)

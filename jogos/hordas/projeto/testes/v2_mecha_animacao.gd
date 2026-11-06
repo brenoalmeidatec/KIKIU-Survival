@@ -73,9 +73,15 @@ func _ready() -> void:
 	ok(h._pose_tiro_t == 0.0, "reiniciar descarta a pose anterior")
 	zerar()
 	ok(h.habilidade() and h.hab_id == "misseis", "a E real inicia os mísseis")
+	# mira livre (05/11/2026): parado na E o mecha respira pelo "parado" da folha (nunca o combo, que tem o clarão dos canhões)
+	var parado_cols: Array = h.tipo.info.animacoes.parado.colunas
+	var combo_cols: Array = h.tipo.info.animacoes.combo.colunas
 	for i in 30:
 		passos(1)
-		ok(h.estado == Heroi.Estado.HABILIDADE and h.coluna == h._coluna_anim("parado", 0), "mísseis usam pose dos pods sem clarão do combo")
+		ok(
+			h.estado == Heroi.Estado.HABILIDADE and parado_cols.has(h.coluna) and not combo_cols.has(h.coluna),
+			"mísseis parados: pose do parado, sem clarão do combo (coluna %d)" % h.coluna
+		)
 	zerar()
 	var calmo_antes := Config.reduzir_piscadas
 	Config.temporario("reduzir_piscadas", true)
