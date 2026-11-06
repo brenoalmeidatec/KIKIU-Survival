@@ -8,6 +8,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const Anim := preload("res://v2/anim_golpes.gd")
+const Avisos := preload("res://v2/avisos.gd")
 const PASSO := 1.0 / 60.0
 
 var falhas := 0
@@ -54,7 +55,7 @@ func _ready() -> void:
 	var t = w.combate.teias
 	var c: Vector2 = h.pos + Vector2(0, 120)
 	var raio: float = t.raio
-	var ry: float = raio * t.achata
+	var ry: float = raio * Avisos.ACHATA  # a proporção dos avisos, não a do dado: o dado errado tem de reprovar
 
 	# 1. a elipse: centro, borda em x, borda em y (achatada), fora
 	t._est[0] = t.PARADA
