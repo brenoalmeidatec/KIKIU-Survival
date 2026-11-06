@@ -7,6 +7,7 @@
 | ⚔️ [`HAZAKI_ARMAS_EQUIPAMENTOS.md`](HAZAKI_ARMAS_EQUIPAMENTOS.md) | Hazaki: armas e equipamentos |
 | 🌐 [`ONLINE_KIKIU.md`](ONLINE_KIKIU.md) | Como funciona o online (sala, horda junta, reviver, duelo) |
 | 🌌 [`visual_2_5d/`](visual_2_5d/README.md) | **Direção visual 2.5D (oficial desde 10/10)**: referência, HUD e menus, mundo, lacunas e paleta |
+| 🖌️ [`DIRECAO_DE_ARTE.md`](DIRECAO_DE_ARTE.md) | **Guia global de direção de arte**: camadas do pipeline (Blender, pixel, pixelfx, UI, IA), regras invioláveis, validação e como adaptar para outros gêneros |
 | 🎨 [`VISUAL_KIKIU.md`](VISUAL_KIKIU.md) | Pipeline 3D → pixel art (a direção de arte agora é a 2.5D acima) |
 | ⚡ [`PERF_2026-10-06.md`](PERF_2026-10-06.md) | Medição de desempenho com 500 inimigos |
 | ⚡ [`PERF_2026-10-07.md`](PERF_2026-10-07.md) | PC antigo: perfil de qualidade, núcleos, primeiros quadros, shaders e histórico de fps |
