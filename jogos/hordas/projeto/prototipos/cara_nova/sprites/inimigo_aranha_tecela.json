@@ -1,7 +1,7 @@
 {
  "quadro": [
-  52,
-  52
+  55,
+  56
  ],
  "elevacao": 45.0,
  "ppu": 24.5,
@@ -16,7 +16,11 @@
   "andar0",
   "andar1",
   "andar2",
-  "andar3"
+  "andar3",
+  "disparo0",
+  "disparo1",
+  "disparo2",
+  "disparo3"
  ],
- "pe_y": 50
+ "pe_y": 54
 }

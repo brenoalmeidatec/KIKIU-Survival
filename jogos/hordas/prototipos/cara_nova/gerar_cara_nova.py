@@ -465,6 +465,17 @@ def gerar_monstro(modulo, nome):
     raiz, corpo, p, pose = modelo(m)
     engrossar_olhos()
     olhos = [o for o in bpy.data.objects if o.type == "MESH" and o.data.materials and (VARIANTES.get(_nome_base(o)) or {}).get("brilha")]
+    acao = getattr(pose, "acoes", {}).get("disparo")     # a pose de ação do modelo (aranha tecelã: v2/teias.gd): 4 colunas disparo0..3 depois das de andar
+    NA = 4 if acao else 0
+
+    def posar(ang, col):
+        if col < N:
+            passo_legivel(pose, corpo, p, ang, fases[col], col)
+        else:
+            pose(0.0, 0)     # volta tudo ao repouso (o andar de fase 0) e a ação põe a pose por cima
+            for n in p:
+                p[n].scale = (1.0, 1.0, 1.0)
+            acao(col - N)
     trocar_passe("albedo")
     cam.data.shift_x = 0.0
     cam.data.shift_y = 0.0
@@ -479,8 +490,8 @@ def gerar_monstro(modulo, nome):
         raiz.rotation_euler = (0, 0, -math.radians(ang))
         for o in olhos:
             o.hide_render = ang > 100.0      # de costas os olhos (que ficam na face da frente) não aparecem
-        for k, fase in enumerate(fases):
-            passo_legivel(pose, corpo, p, ang, fase, k)
+        for k in range(N + NA):
+            posar(ang, k)
             cx = px3.caixa_alfa(px3.render_rgba())
             if cx is None:
                 raise RuntimeError("o modelo não apareceu no render")
@@ -501,11 +512,11 @@ def gerar_monstro(modulo, nome):
         raiz.rotation_euler = (0, 0, -math.radians(ang))
         for o in olhos:
             o.hide_render = ang > 100.0
-        for q, fase in enumerate(fases):
-            passo_legivel(pose, corpo, p, ang, fase, q)
+        for q in range(N + NA):
+            posar(ang, q)
             quadros[(v, q)] = render_tres(pal, True)     # o bicho olha pra esquerda no render: espelha pra olhar pra direita
-    folhas = montar_folha(nome, quadros, len(vistas), N, W, H)
-    gravar("inimigo_" + nome + ("_x%d" % MULT if MULT > 1 else ""), folhas, W, H, {"linhas": LINHAS_MONSTRO, "colunas": ["andar%d" % k for k in range(N)],
+    folhas = montar_folha(nome, quadros, len(vistas), N + NA, W, H)
+    gravar("inimigo_" + nome + ("_x%d" % MULT if MULT > 1 else ""), folhas, W, H, {"linhas": LINHAS_MONSTRO, "colunas": ["andar%d" % k for k in range(N)] + ["disparo%d" % k for k in range(NA)],
                                            "pe_y": H - 2})
 
 

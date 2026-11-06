@@ -86,10 +86,12 @@ def aranha_tecela(m):
     """Aranha tecelã: abdômen grande com uma caveira pálida desenhada, seis olhos verdes, oito patas finas."""
     raiz, corpo = raiz_corpo()
     p = {}
-    esfera("abdomen", 0.34, (0, 0.34, 0.5), m["quitina"], corpo, escala=(1.0, 1.25, 0.85))
-    esfera("marca", 0.14, (0, 0.3, 0.76), m["osso"], corpo, escala=(1.0, 1.0, 0.35))       # a caveira nas costas
+    abd = junta("j_abdomen", (0, 0.1, 0.48), corpo)     # o pivô do abdômen (no repouso fica parado: o andar não muda); a pose "disparo" o levanta
+    p["abdomen"] = abd
+    esfera("abdomen", 0.34, (0, 0.34, 0.5), m["quitina"], abd, escala=(1.0, 1.25, 0.85))
+    esfera("marca", 0.14, (0, 0.3, 0.76), m["osso"], abd, escala=(1.0, 1.0, 0.35))       # a caveira nas costas
     for x in (0.05, -0.05):
-        esfera("marca_olho", 0.035, (x, 0.24, 0.8), m["negro"], corpo)
+        esfera("marca_olho", 0.035, (x, 0.24, 0.8), m["negro"], abd)
     esfera("torax", 0.2, (0, -0.12, 0.42), m["quitina"], corpo, escala=(1.0, 1.1, 0.8))
     esfera("cabeca", 0.13, (0, -0.32, 0.42), m["quitina"], corpo)
     for x, z in ((0.06, 0.5), (-0.06, 0.5), (0.1, 0.46), (-0.1, 0.46), (0.035, 0.44), (-0.035, 0.44)):
@@ -114,6 +116,33 @@ def aranha_tecela(m):
                 alterna = 1 if (i % 2 == 0) == (lado == "e") else -1
                 p["p%d%s" % (i, lado)].rotation_euler = (0, 0, 0.22 * s * alterna)
         corpo.location = (0, 0, 0.03 * abs(math.cos(fase)))
+        corpo.rotation_euler = (0, 0, 0)       # o andar volta ao repouso depois de uma pose de ação
+        abd.rotation_euler = (0, 0, 0)
+
+    # AÇÃO "disparo" (v2/teias.gd, dados/v2_teia.json > aranha): 4 poses, as colunas disparo0..3 da folha. O bicho olha para -Y. Rotação em X positiva ABAIXA a
+    # cabeça (-Y) e LEVANTA o abdômen (+Y); a pata da frente sobe girando em Y no sentido oposto ao lado dela.
+    #   0 preparo: a cabeça sobe um pouco e as patas da frente se erguem; 1 recuo: o corpo se encolhe para trás, cabeça no alto, patas da frente no ar;
+    #   2 disparo: o corpo salta para a frente, a cabeça desce e o abdômen se levanta; 3 recuperação: volta ao meio do caminho.
+    POSES = [
+        # (inclinação do corpo, recuo em Y, altura, abdômen, patas da frente, 2º par de patas)
+        (-0.16, 0.02, 0.03, 0.15, 0.30, 0.10),
+        (-0.42, 0.07, 0.05, -0.10, 0.65, 0.22),
+        (0.14, -0.10, 0.00, 0.50, 0.12, 0.00),
+        (-0.05, -0.03, 0.01, 0.22, 0.20, 0.05),
+    ]
+
+    def acao_disparo(k):
+        incl, recuo, alt, ab, frente, segundo = POSES[k]
+        corpo.rotation_euler = (incl, 0, 0)
+        corpo.location = (0, recuo, alt)
+        abd.rotation_euler = (ab, 0, 0)
+        for lado in ("e", "d"):
+            sinal = 1 if lado == "e" else -1
+            for i in range(4):
+                ang = frente if i == 0 else (segundo if i == 1 else 0.0)
+                p["p%d%s" % (i, lado)].rotation_euler = (0, -sinal * ang, 0)
+                p["p%d%s" % (i, lado)].scale = (1.0, 1.0, 1.0)
+    pose.acoes = {"disparo": acao_disparo}
     return raiz, corpo, p, pose
 
 
