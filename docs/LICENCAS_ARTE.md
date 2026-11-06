@@ -306,11 +306,3 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Partículas dos micro-mísseis do LightWolf (rodada 7), Claude do Alisson, 05/11/2026
 
 - `jogos/hordas/projeto/v2/misseis_particulas.gd` e o ajuste de `v2/misseis_rastro.gd`: faíscas, fagulhas, nuvem de largada, anel de choque, detritos e fumaça do acerto desenhados EM CÓDIGO (draw_rect em pixel inteiro, alfa 0/1, paletas próprias). Nenhuma imagem, som ou receita de terceiros; a D.Va (Overwatch) foi só referência de sensação, sem copiar arte, forma ou som. Licença: a do projeto.
-
-## Chama alta de status (fogo sobre o monstro), Claude do Alisson (notebook), 06/11/2026
-
-- `jogos/hordas/projeto/assets/v2/pixelfx/status/chama_p.png` (240x96, quadros de 40x48), `chama_m.png` (432x176, quadros de 72x88) e `chama_g.png` (624x256, quadros de 104x128): 12 quadros em 6 colunas, alfa 0/1, paleta própria de 5 tons mais contorno escuro. Arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/chama/gerar_chama.py` (numpy + Pillow, sem sorteio: tudo é função periódica do quadro). A folha de referência gerada para o projeto no ChatGPT (`notas/artes_chatgpt/A24_queimando_ref.png`) foi só direção de estilo; nenhum pixel dela entra nas folhas. Sem material de terceiros. Substitui `status/burning.png` (24x32, registrada acima), que foi removida junto com o `.import`. Licença: a do projeto.
-
-## Chama de status dentro do monstro (troca dos sprites soltos), Claude do Alisson (notebook), 06/11/2026
-
-- `jogos/hordas/projeto/assets/v2/pixelfx/status/chama_p.png` (144x56, ladrilhos de 24x28), `chama_m.png` (216x104, ladrilhos de 36x52) e `chama_g.png` (288x160, ladrilhos de 48x80): SUBSTITUEM as folhas de mesmo nome do registro anterior (quadros de 40x48, 72x88 e 104x128, presos as costas do monstro). 12 quadros em 6 colunas, alfa 0/1, a mesma paleta própria de 5 tons mais contorno escuro. Agora cada quadro é um ladrilho que emenda no eixo x e é lido pelo shader do corpo (`v2/status_corpo.gd`), que o pinta só dentro da silhueta do monstro. Arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/chama/gerar_chama.py` (numpy + Pillow, sem sorteio). Nenhuma imagem, ícone ou referência de terceiros entra nas folhas. Licença: a do projeto.

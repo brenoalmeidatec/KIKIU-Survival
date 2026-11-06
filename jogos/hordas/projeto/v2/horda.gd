@@ -23,12 +23,10 @@ const Y_MIN := 0.2  # espessura vertical mínima da sombra (a mesma de sombras.g
 
 ## Lê o recorte (x, y, largura, altura em px do atlas; largura negativa = espelhado) do custom data de cada instância e a cor (modulate)
 ## do COLOR. NORMAL_MAP do mesmo recorte: a luz 2D age como em qualquer Sprite2D com CanvasTexture.
-## O alfa traz o status do corpo e a semente (v2/status_corpo.gd). Com status, o quadrado ganha folga para o arco, a bolha e a gota passarem do contorno.
+## O alfa traz o status do corpo e a semente (v2/status_corpo.gd). Com status, o quadrado ganha folga para a chama passar do contorno.
 const SHADER_SPRITE := (
 	"""shader_type canvas_item;
-"""
-	+ StatusCorpo.UNIFORMS
-	+ """varying flat vec4 reg;
+varying flat vec4 reg;
 varying flat vec4 cor;
 varying flat vec2 st;
 void vertex() {
@@ -198,7 +196,6 @@ func montar(m) -> void:
 	atlas = m.sprites.atlas(m.SPRITES_MONSTRO)
 	_quad = _quadrado()
 	_mat_sprite = _material(SHADER_SPRITE)
-	StatusCorpo.preparar(_mat_sprite)
 	lote_blob = Lote.new()
 	lote_blob.montar(_quad, sombras.textura_blob(), _material(SHADER_BLOB), sombras.raiz_blobs)
 	lote_blob.mmi.light_mask = 0
@@ -282,7 +279,6 @@ func _separadores() -> void:
 ## olhos). `t` = tempo do mundo, `rect` = o que a câmera mostra, `quadro` = contador de quadros (espalha a conta da luz).
 func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 	var t0 := Time.get_ticks_usec()
-	StatusCorpo.ritmo(_mat_sprite)
 	var modo: int = sombras.modo
 	if modo != _modo:
 		_trocar_modo(modo)

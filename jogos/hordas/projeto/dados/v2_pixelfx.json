@@ -16,9 +16,39 @@
 		"cortina_sangue": "sangue"
 	},
 	"status": {
-		"_ajuda": "Fogo no corpo (v2/status_corpo.gd, o shader do sprite: vale para o monstro em lote, elite e chefe). A chama não é sprite solto: é pintada SÓ nos pixels em que o monstro tem alfa 1, com as folhas chama_p, chama_m e chama_g (assets/v2/pixelfx/status/, geradas por fonte_arte/chama/gerar_chama.py; cada quadro é um ladrilho que se repete na largura do monstro). fogo.corpo.altura: altura da chama, fração da altura da célula do monstro, contada da base dela (0,4 = 40%). sobra: quantos px a ponta da chama pode passar acima do contorno do monstro (0 = recorte puro; o máximo útil é 2). corte [p, m]: a folha usada é a P se a altura da chama (altura x célula) é de até p px, a M até m px, senão a G. quadros_s: quadros por segundo da chama (12 quadros em loop). quadros_calmo: o mesmo com 'Reduzir piscadas' ligado (1,5: nenhum pixel troca mais de 2 vezes por segundo; as brasas soltas no corpo também somem). Perfil Baixo: sem efeito (o monstro só é tingido).",
+		"_ajuda": "Fogo no corpo: o shader do sprite (v2/status_corpo.gd) escurece e aquece o monstro e põe a borda de brasa por dentro; as GOTAS DE FOGO (v2/chama_gotas.gd) são partículas que nascem de pixels opacos do próprio corpo e sobem. fogo.gotas: pool = gotas no total (fixo, nenhum nó nasce na partida); por_monstro [min, max] gotas vivas (o máximo vezes as vagas dá o pool); vagas = pool / máximo de por_monstro (40); as últimas vagas_elite são só para elite e chefe; quem passa do limite fica só com o tingimento); pontos = quantos pixels opacos por quadro da folha entram na lista de nascimento (calculada uma vez por tipo e quadro); cobertura_media_min_px = piso que o teste exige (média de pixels de gota por quadro num monstro queimando); bias_baixo = quantas vezes mais provável nascer na metade de baixo; vida_s [min, max]; sobe_px_s [min, max]; curva_px = amplitude lateral; sobra_cabeca = até quantos px acima do topo opaco a gota sobe antes de sumir; sobra_lado = até quantos px além da caixa opaca ela pode ir de lado; atraso_s = espera entre uma gota e a seguinte da mesma vaga; cores do amarelo-claro ao vermelho escuro e fases (fração da vida em que troca); formas = pixels (X) de cada gota (peso = chance). calmo = o que muda com 'Reduzir piscadas' (1 gota por monstro, parada na cor laranja, sobe devagar, folga entre gotas: nenhum pixel troca mais de 2 vezes por segundo). Perfil Baixo: sem gotas (só o tingimento).",
 		"fogo": {
-			"corpo": {"altura": 0.4, "sobra": 1, "corte": [30, 56], "quadros_s": 14, "quadros_calmo": 1.5}
+			"gotas": {
+				"pool": 160,
+				"por_monstro": [2, 4],
+				"vagas_elite": 4,
+				"pontos": 48,
+				"bias_baixo": 2.0,
+				"cobertura_media_min_px": 6,
+				"vida_s": [0.4, 0.8],
+				"sobe_px_s": [14, 24],
+				"curva_px": 2,
+				"sobra_cabeca": 3,
+				"sobra_lado": 2,
+				"atraso_s": [0.0, 0.15],
+				"cores": [[255, 241, 168], [246, 168, 30], [224, 82, 26], [140, 28, 10]],
+				"fases": [0.25, 0.55, 0.8],
+				"formas": {
+					"alta": {"linhas": ["X", "X", "X"], "peso": 2},
+					"gorda": {"linhas": [".X", "XX"], "peso": 2},
+					"media": {"linhas": ["X", "X"], "peso": 2},
+					"fagulha": {"linhas": ["X"], "peso": 1}
+				},
+				"calmo": {
+					"por_monstro": [1, 1],
+					"vida_s": [1.5, 2.0],
+					"sobe_px_s": [2, 3],
+					"curva_px": 0,
+					"atraso_s": [1.0, 1.4],
+					"cor": [246, 168, 30],
+					"formas": ["gorda", "fagulha"]
+				}
+			}
 		}
 	},
 	"efeitos": {
