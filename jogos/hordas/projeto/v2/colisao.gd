@@ -22,6 +22,11 @@ extends RefCounted
 ## A grade é plana e fixa: GRADE_W x GRADE_H células de 64 px, começando em -OFFSET_CELULAS células. Forma fora
 ## dela fica na célula da borda (a consulta também prende na borda, então o resultado não muda).
 ## Uso: adicionar_objeto(pe, formas) para cada objeto fixo; por quadro e corpo, resolver(pos, raio).
+## OBJETO BAIXO (o IMPULSO do mecha do LightWolf, v2/impulso.gd): cada forma guarda a LARGURA do objeto inteiro (a caixa em x de todas as formas dele, em px).
+## resolver(pos, raio, larg_ignora) e livre(pos, raio, larg_ignora) pulam as formas de objeto com largura <= larg_ignora (0, o padrão, não pula nada).
+## Com o limite de 22 px do mecha voando (dados/v2_herois.json > lightwolf > cfg > impulso > larg_obstaculo) passam rocha, pedras, runa, lápide,
+## poste de lanterna, crânio, braseiro e caixa de oferenda; pedra (26), pilar (24), pedestal, coluna, obelisco, toro, fogueira, altar, muro, árvores, tocos,
+## tronco e torii seguram.
 ## limpar() zera tudo ao trocar de fase. Sem class_name: carregue com preload, como o resto do projeto.
 
 const TAM_CELULA := 64.0
@@ -38,6 +43,7 @@ static var _rx := PackedFloat32Array()  # raio em x
 static var _k := PackedFloat32Array()  # rx / ry: o fator que escala o y (na caixa, mx / my)
 static var _ry := PackedFloat32Array()  # meia-altura em y (elipse: ry; caixa: my)
 static var _caixa := PackedByteArray()  # 1 se a forma é caixa, 0 se é elipse
+static var _larg := PackedFloat32Array()  # a largura em x do OBJETO dono da forma (todas as formas dele): o critério de objeto baixo do impulso
 static var _grade: Array = []  # GRADE_W * GRADE_H células, cada uma um PackedInt32Array de índices de forma
 static var _rx_max := 0.0
 static var _perto := PackedByteArray()  # por célula: 1 se alguma forma está a menos de RAIO_BUSCA dela (refeita quando entra forma nova)
@@ -50,6 +56,7 @@ static func limpar() -> void:
 	_k = PackedFloat32Array()
 	_ry = PackedFloat32Array()
 	_caixa = PackedByteArray()
+	_larg = PackedFloat32Array()
 	_grade = []
 	for _i in GRADE_W * GRADE_H:
 		_grade.append(PackedInt32Array())
@@ -61,6 +68,7 @@ static func limpar() -> void:
 static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 	if _grade.is_empty():
 		limpar()
+	var larg := largura_objeto(formas)
 	for f in formas:
 		if not (f is Dictionary):
 			continue
@@ -79,6 +87,7 @@ static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 		_k.append(rx / ry)
 		_ry.append(ry)
 		_caixa.append(1 if eh_caixa else 0)
+		_larg.append(larg)
 		_rx_max = maxf(_rx_max, maxf(rx, ry) if eh_caixa else rx)
 		_sujo = true
 		var ax := _coluna(centro.x - rx)
@@ -94,7 +103,7 @@ static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 
 ## Empurra o círculo (pos, raio) para fora de todas as formas que ele toca. Devolve a posição corrigida.
 ## A grade é consultada a cada passada, no ponto atual: a caixa cobre qualquer forma que possa tocar o círculo.
-static func resolver(pos: Vector2, raio: float) -> Vector2:
+static func resolver(pos: Vector2, raio: float, larg_ignora := 0.0) -> Vector2:
 	var p := pos
 	if _grade.is_empty():
 		return p
@@ -107,6 +116,7 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 	var ks := _k
 	var rys := _ry
 	var caixas := _caixa
+	var largs := _larg
 	var grade := _grade
 	var folga := raio + _rx_max
 	for _passada in PASSADAS:
@@ -118,6 +128,8 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 		for gx in range(ax, bx + 1):
 			for gy in range(ay, by + 1):
 				for i in grade[gx * GRADE_H + gy]:
+					if largs[i] <= larg_ignora:
+						continue  # objeto baixo e o corpo passa por cima (o impulso); larg_ignora 0 nunca pula
 					var q := p - cen[i]
 					if caixas[i] == 1:
 						var empurrao_c := _empurrao_caixa(q, rxs[i], rys[i], raio)
@@ -140,6 +152,20 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 		if not tocou:
 			break
 	return p
+
+
+## A largura em x (px) de um objeto: a caixa de todas as formas "elipse" e "caixa" da lista "colisao" dele (0 = sem forma sólida).
+static func largura_objeto(formas: Array) -> float:
+	var lo := INF
+	var hi := -INF
+	for f in formas:
+		if not (f is Dictionary) or not (str(f.get("tipo", "")) in ["elipse", "caixa"]):
+			continue
+		var c: Array = f["centro"]
+		var r: Array = f["meio"] if str(f.tipo) == "caixa" else f["raio"]
+		lo = minf(lo, float(c[0]) - float(r[0]))
+		hi = maxf(hi, float(c[0]) + float(r[0]))
+	return hi - lo if hi > lo else 0.0
 
 
 ## Empurrão (no espaço normal) que tira o corpo (elipse raio x raio/2; centro q relativo ao centro da caixa) da caixa de
@@ -182,7 +208,7 @@ static func _refazer_perto() -> void:
 
 
 ## True se o círculo (pos, raio) não toca nenhuma forma.
-static func livre(pos: Vector2, raio: float) -> bool:
+static func livre(pos: Vector2, raio: float, larg_ignora := 0.0) -> bool:
 	if _grade.is_empty():
 		return true
 	var cen := _cen
@@ -190,11 +216,14 @@ static func livre(pos: Vector2, raio: float) -> bool:
 	var ks := _k
 	var rys := _ry
 	var caixas := _caixa
+	var largs := _larg
 	var grade := _grade
 	var folga := raio + _rx_max
 	for gx in range(_coluna(pos.x - folga), _coluna(pos.x + folga) + 1):
 		for gy in range(_linha(pos.y - folga), _linha(pos.y + folga) + 1):
 			for i in grade[gx * GRADE_H + gy]:
+				if largs[i] <= larg_ignora:
+					continue
 				var q := pos - cen[i]
 				if caixas[i] == 1:
 					# raio - FOLGA: livre mede o toque real (como a elipse), sem a folga do empurrão, que o erro de ponto flutuante contaria como dentro

@@ -35,6 +35,8 @@ extends RefCounted
 const Armas := preload("res://v2/armas.gd")
 const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: o analógico de mira (STICK) e o controle (Glifos) não seguem o cursor no Q
 const Glifos := preload("res://v2/glifos.gd")  # no controle não há cursor: o Q segue o corpo
+const ExplosaoMecha := preload("res://v2/explosao_mecha.gd")  # o desenho da explosão da Autodestruição: bola, onda no chão e cratera
+const Piscadas := preload("res://v2/piscadas.gd")  # o aviso do mecha vazio: liga e desliga abaixo de 2 Hz, aceso parado com "Reduzir piscadas"
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
 const MAX_ANEIS := 10
@@ -55,20 +57,24 @@ var padrao := "investida"
 var herois: Dictionary = {}  # chave do herói -> id do especial (os testes mexem aqui)
 var blocos: Dictionary = {}  # id -> bloco de números
 var no: Node2D
+var explosao_visual  # ExplosaoMecha (só com o bloco `autodestruicao`): a bola, a onda no chão e a cratera do estouro do mecha
 var disparos := 0  # testes: quantos especiais saíram
 var ultimo: Dictionary = {}  # o último especial (testes): id, n (monstros atingidos no total), mortes
 var ondas := 0  # testes: quantas ondas de choque do terremoto saíram
 var prontos := 0  # quantas vezes a carga chegou a 100 na partida (o robô de playtest e os testes)
 var carga_total := {"dano": 0.0, "abate": 0.0, "recebido": 0.0, "tempo": 0.0}  # pontos de carga ganhos na partida por fonte (calibragem, robô de playtest)
+var tamanho_soma := {"util": 0.0, "pesado": 0.0}  # dano útil e dano x fator de tamanho na partida (calibragem do fator, ligado ou não; robô)
 var _graca := 0.0  # s depois do fim do Q em que ainda não carrega (as últimas adagas voando)
 var limpa_ligada := true  # a limpeza da tela (ULT-A) liga/desliga por instância (os testes antigos de dano por área desligam)
 var limpas := 0  # testes: quantas limpezas saíram
 var _limpa_pend := false  # a limpeza deste Q ainda não saiu (espera `limpa_em`)
 var explosoes := 0  # testes: quantas autodestruições do mecha explodiram
 var _g_tipo: Dictionary = {}  # autodestruição: a folha do mecha que ficou no lugar (o fantasma que acende), com o quadro e o espelhamento do instante do aperto
+var no_casco: Node2D  # o mecha vazio que fica no lugar durante o fusível (opaco, no nó do mundo); só com o bloco `autodestruicao`
+var _g_contorno: Texture2D  # o contorno de alerta de 1 px em volta do quadro do mecha vazio (gerado no aperto, cache por quadro)
+static var _contornos := {}  # [chave da folha e quadro] -> Texture2D
 var _g_regiao := Rect2()
 var _g_flip := false
-var _g_esc := Vector2.ONE
 
 var _id := ""  # o especial em andamento ("" = nenhum)
 var _c: Dictionary = {}  # o bloco dele
@@ -132,6 +138,16 @@ func montar(c, camada: Node) -> void:
 	no.material = mat
 	no.draw.connect(_desenhar)
 	camada.add_child(no)
+	if blocos.has("autodestruicao"):
+		explosao_visual = ExplosaoMecha.new()
+		explosao_visual.montar(
+			camada, mundo.get("no_mundo"), blocos.autodestruicao.explosao, float(blocos.autodestruicao.get("limpa", {}).get("vel", comum.limpa.vel))
+		)
+		var nm = mundo.get("no_mundo")
+		if nm != null:  # o mecha vazio no fusível: arte opaca no mundo (y-sort com os atores), blend normal; o brilho aditivo segue em `no`
+			no_casco = Node2D.new()
+			no_casco.draw.connect(_desenhar_casco)
+			nm.add_child(no_casco)
 	a_vivo.resize(MAX_ANEIS)
 	a_pos.resize(MAX_ANEIS)
 	a_t.resize(MAX_ANEIS)
@@ -161,12 +177,17 @@ func limpar() -> void:
 	ondas = 0
 	prontos = 0
 	carga_total = {"dano": 0.0, "abate": 0.0, "recebido": 0.0, "tempo": 0.0}
+	tamanho_soma = {"util": 0.0, "pesado": 0.0}
 	_graca = 0.0
 	ultimo = {}
 	a_vivo.fill(0)
 	_desenhou = false
+	if explosao_visual != null:
+		explosao_visual.limpar()
 	if no != null:
 		no.queue_redraw()
+	if no_casco != null:
+		no_casco.queue_redraw()
 	if mundo != null and mundo.heroi != null:
 		armar(mundo.heroi)
 
@@ -197,6 +218,8 @@ func _carga_max() -> float:
 ## partida recomeça.
 func armar(h) -> void:
 	var b := bloco_de(str(h.chave))
+	if explosao_visual != null and id_de(str(h.chave)) == "autodestruicao":
+		explosao_visual.preparar()  # os quadros da explosão do mecha: só para quem tem a Autodestruição, no começo da partida
 	h.esp_invul = false
 	h.esp_t = 0.0
 	h.esp_nega_t = 0.0
@@ -336,12 +359,16 @@ func cancelar(h) -> void:
 func limpar_tela(h, de: Variant = null) -> int:
 	var c = combate
 	var L: Dictionary = comum.limpa
+	if _id != "" and _c.has("limpa"):  # o Q pode trocar números da limpeza comum (a Autodestruição: `espalha`, as mortes em onda)
+		L = L.duplicate()
+		L.merge(_c.limpa, true)
 	var centro: Vector2 = h.pos if de == null else de  # de onde a frente de onda sai: do herói, ou do mecha que explodiu (a Autodestruição, LW-5)
 	var n: int = c.limpar_tela(centro, L)
 	limpas += 1
 	var cor: Color = h.esp_cor
 	var rmax := Vector2(float(mundo.cam.LARG), float(mundo.cam.ALT)).length() * 0.5 + float(L.margem)
-	_anel(centro, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
+	if de == null or explosao_visual == null or not explosao_visual.viva():  # a Autodestruição já desenha a frente na grade de 1 px (a onda no chão de v2/explosao_mecha.gd)
+		_anel(centro, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
 	if n > 0:
 		c.fx.numero(h.pos + Vector2(0, -52), "LIMPOU x%d" % n, COR_CRIT, true)
 	c.audio.tocar("ruptura_disparo", 0.9, -3.0, 0.0)
@@ -409,9 +436,12 @@ func _iniciar_autodestruicao(h) -> void:
 	_g_tipo = h.tipo
 	_g_regiao = h.regiao
 	_g_flip = h.sprite.flip_h
-	_g_esc = h.sprite.scale
 	if combate.mecha == null or not combate.mecha.autodestruir(h):
-		_g_tipo = {}  # herói sem formas (só em teste): o fusível e a explosão saem do mesmo jeito, sem o fantasma do mecha
+		_g_tipo = {}  # herói sem formas (só em teste): o fusível e a explosão saem do mesmo jeito, sem o mecha vazio
+	_g_contorno = _contorno(_g_tipo, _g_regiao) if not _g_tipo.is_empty() else null
+	if no_casco != null:
+		no_casco.position = _origem.round()
+		no_casco.queue_redraw()
 	h.estado = h.Estado.ESPECIAL
 	h.esp_invul = true
 	h.esp_t = 0.0
@@ -440,24 +470,24 @@ func _q_autodestruicao(h, dt: float) -> Vector2:
 	return desl
 
 
-## O estouro do mecha no lugar onde ele ficou: ondas, cascos azuis, luz local, um clarão (que respeita "Tremor e clarões"), tremor e uma pausa curta. Nenhum dano aqui: quem limpa a tela
-## é a peça comum (`limpar_tela`) e o raio dos dados é só visual.
+## O estouro do mecha no lugar onde ele ficou: a bola de energia, a onda no chão até a borda da câmera e a cratera (v2/explosao_mecha.gd, na grade de 1 px), e o peso:
+## tremor leve e curto da câmera (respeita "Tremor e clarões") e o hit-stop, que segura o 1º quadro da bola. Sem clarão de tela (saiu em 05/11): ele apagava
+## durante o hit-stop e as mortes da limpeza acendiam de novo logo depois, um par de piscadas a ~0,15 s; o claro do estouro é só o miolo da bola. Fora do perfil Baixo, também os cascos que voam e a luz local. Nenhum dano aqui: quem limpa a tela é a peça comum (`limpar_tela`), e a onda no chão
+## é o desenho da frente de onda dela (mesma velocidade, até cobrir a mesma área).
 func _explodir_mecha() -> void:
 	var c = combate
 	var e: Dictionary = _c.explosao
 	var cor := _cor(_c.cor)
-	var raio := float(e.raio)
 	var centro := _origem + Vector2(0, -16)
 	explosoes += 1
-	c.fx.onda(centro, Color(cor.r, cor.g, cor.b, 0.95), raio, 0.45)
-	c.fx.onda(centro, Color(1, 1, 1, 0.7), raio * 0.6, 0.3)
-	c.fx.estouro(centro, Color(0.55, 0.78, 1.0), 34)
-	c.fx.luz_rapida(centro, cor, 3.0, raio * 2.5, 0.5)
-	c.fx.clarao(Color(cor.r, cor.g, cor.b, float(e.clarao)), 0.25)
-	_anel(_origem, raio * 0.2, raio, 0.4, 5.0, cor.lerp(Color.WHITE, 0.5), 1.0)
+	if explosao_visual != null:
+		explosao_visual.explodir(_origem, mundo.cam.retangulo(float(comum.limpa.margem)))
+	if not _leve():
+		c.fx.estouro(centro, Color(0.55, 0.78, 1.0), 34)
+		c.fx.luz_rapida(centro, cor, 3.0, float(e.raio) * 2.5, 0.5)
 	c.audio.tocar("impacto", 0.4, 4.0, 0.0)
 	c.audio.tocar("ruptura_disparo", 0.6, 0.0, 0.0)
-	mundo.cam.tremer(float(e.tremor), 0.4)
+	mundo.cam.tremer(float(e.tremor), float(e.get("tremor_s", 0.3)))
 	c.hit_stop(float(e.hit_stop))
 
 
@@ -651,6 +681,8 @@ func _bater(h) -> void:
 
 ## Um quadro da onda de choque (tempo do mundo): a frente cresce de `_onda_r0` a `_onda_r1` e fere uma vez quem ela alcança.
 func atualizar(dt: float) -> void:
+	if explosao_visual != null:
+		explosao_visual.atualizar(dt)
 	if _graca > 0.0:
 		_graca = maxf(0.0, _graca - dt)
 	if _onda_t < 0.0:
@@ -800,9 +832,10 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, emp: float, atordoa:
 # ------------------------------------------------------------------ eventos (herói e combate chamam)
 
 
-## O Q em andamento (ou logo depois dele) não enche a carga: nem o dano das adagas e da onda dele, nem os abates dele.
+## O Q em andamento (ou logo depois dele) não enche a carga: nem o dano das adagas e da onda dele, nem os abates dele. Também não enchem as mortes da limpeza que
+## ainda esperam a frente de onda (a da Autodestruição dura ~1 s de relógio e passa da graça): sem isso o fim da onda de mortes carregava o chamado do Lobo.
 func ocupado() -> bool:
-	return _id != "" or _onda_t >= 0.0 or _graca > 0.0
+	return _id != "" or _onda_t >= 0.0 or _graca > 0.0 or combate.limpando or combate.limpa_pendentes() > 0
 
 
 ## Soma `pontos` à carga do herói (para na carga máxima). Só com o jogo rolando, fora do próprio Q e com o herói vivo. Avisa uma vez ao chegar a 100.
@@ -825,11 +858,31 @@ func carregar(h, pontos: float, fonte := "dano", por_nivel := true) -> void:
 		pronta(h)
 
 
-## Dano causado a um monstro (pontos de dano, sem contar o que passou da vida dele). Chamado por combate.ferir e combate.golpear.
-func dano(valor: float) -> void:
+## Dano causado ao monstro `m` (pontos de dano, sem contar o que passou da vida dele). Chamado por combate.ferir e combate.golpear.
+func dano(valor: float, m = null) -> void:
 	if mundo == null or mundo.heroi == null:
 		return
-	carregar(mundo.heroi, valor * float(_carga_de(mundo.heroi).dano), "dano")
+	if m != null:  # calibragem: quanto o fator mudaria a carga por dano deste herói, ligado ou não (robô de playtest, q_tamanho)
+		tamanho_soma.util = float(tamanho_soma.util) + valor
+		tamanho_soma.pesado = float(tamanho_soma.pesado) + valor * fator_de(m)
+	carregar(mundo.heroi, valor * float(_carga_de(mundo.heroi).dano) * fator_tamanho(mundo.heroi, m), "dano")
+
+
+## Carga por TAMANHO do alvo (05/11): alvo pequeno, difícil de acertar, enche o Q mais rápido; grande (elite, chefe) mais devagar. Só para o Q cujo bloco
+## traz `carga_tamanho` (o LightWolf); os outros e `m` nulo valem 1.
+func fator_tamanho(h, m) -> float:
+	if m == null or not bool(bloco_de(str(h.chave)).get("carga_tamanho", false)):
+		return 1.0
+	return fator_de(m)
+
+
+## O fator do monstro `m` pela regra comum.tamanho, sem olhar o herói: (raio_ref / raio dele) ^ expoente, preso entre min e max (1 sem a regra).
+func fator_de(m) -> float:
+	var t: Dictionary = comum.get("tamanho", {})
+	if t.is_empty():
+		return 1.0
+	var f := pow(float(t.raio_ref) / maxf(float(m.raio), 0.5), float(t.expoente))
+	return clampf(f, float(t.min), float(t.max))
 
 
 ## O herói levou dano de verdade (não o que o escudo bloqueou). Chamado por combate.heroi_apanhou.
@@ -923,6 +976,8 @@ func efeitos(dt: float) -> void:
 		vivo = true
 	if vivo or _desenhou:
 		no.queue_redraw()
+		if no_casco != null:
+			no_casco.queue_redraw()
 	_desenhou = vivo
 
 
@@ -1022,8 +1077,8 @@ func _desenhar_chuva(h) -> void:
 	no.draw_polyline(_elipse(h.pos, 30.0), Color(cor.r, cor.g, cor.b, 0.25), 1.5)
 
 
-## O mecha que ficou no lugar acende durante o fusível: o quadro dele em luz aditiva, um brilho em elipses e o anel que cresce até o raio da explosão. Tudo SOBE e nunca oscila (nada de
-## piscar). No perfil Baixo (partículas em "poucas" ou "nenhuma") fica só o mecha e o anel, sem o brilho.
+## O fusível na camada glow: um brilho em elipses e o anel que cresce até o raio da explosão. Tudo SOBE e nunca oscila (nada de piscar). No perfil Baixo
+## (partículas em "poucas" ou "nenhuma") fica só o anel, sem o brilho. O mecha vazio NÃO é desenhado aqui: é arte opaca no mundo (`_desenhar_casco`).
 func _desenhar_autodestruicao(_h) -> void:
 	if _fase != 0:
 		return
@@ -1035,15 +1090,80 @@ func _desenhar_autodestruicao(_h) -> void:
 		for i in 3:
 			var r := lerpf(18.0, 44.0, e) * (1.0 + 0.6 * float(i))
 			no.draw_colored_polygon(_elipse(corpo, r), Color(cor.r, cor.g, cor.b, (0.04 + 0.09 * e) / float(i + 1)))
-	if not _g_tipo.is_empty():
-		var t: Dictionary = _g_tipo
-		var tom := cor.lerp(Color.WHITE, 0.2 + 0.6 * e)
-		var sobe := roundf(2.0 * e)  # em vez de aumentar até 1,1x (fração que borra o pixel), o mecha sobe até 2 px, em passos inteiros
-		no.draw_set_transform(_origem + Vector2(0.0, -sobe), 0.0, Vector2(_g_esc.x * (-1.0 if _g_flip else 1.0), _g_esc.y))
-		no.draw_texture_rect_region(t.alb, Rect2(-float(t.w) * 0.5, -float(t.pe), float(t.w), float(t.h)), _g_regiao, Color(tom.r, tom.g, tom.b, 0.3 + 0.6 * e))
-		no.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var alvo := float(_c.explosao.raio)
 	no.draw_polyline(_elipse(_origem, lerpf(alvo * 0.15, alvo, e)), Color(cor.r, cor.g, cor.b, 0.15 + 0.35 * e), 1.5)
+
+
+## O mecha vazio está à mostra (o fusível da Autodestruição, antes do estouro)? Testes e `_desenhar_casco`.
+func casco_visivel() -> bool:
+	var h = mundo.heroi if mundo != null else null
+	return _id == "autodestruicao" and _fase == 0 and not _g_tipo.is_empty() and h != null and h.estado == h.Estado.ESPECIAL
+
+
+## O aviso de autodestruição está aceso agora? Liga e desliga a `alerta.hz` por segundo de RELÓGIO (o `_t` do mundo dividido pelo ritmo da partida,
+## combate.velocidade: mexer em velocidade_partida não leva o aviso acima de 2 Hz); com "Reduzir piscadas", aceso parado.
+func casco_alerta() -> bool:
+	if not casco_visivel():
+		return false
+	var vel := maxf(float(combate.velocidade), 0.01) if combate != null else 1.0
+	return Piscadas.ligado() or Piscadas.pisca(_t / vel, float(_c.alerta.hz))
+
+
+## O mecha vazio no fusível (no nó do mundo, blend normal, y-sort com os atores): o quadro do instante do aperto, OPACO (a arte é alfa 0/1, modulação de alfa 1), na
+## posição inteira e sem escala além do espelhamento. O aviso: com o alerta aceso, o corpo leva o tom `alerta.tinta` (multiplica, não clareia) e ganha o contorno
+## de 1 px na cor `alerta.cor` em volta da silhueta.
+func _desenhar_casco() -> void:
+	if not casco_visivel():
+		return
+	var t: Dictionary = _g_tipo
+	var aceso := casco_alerta()
+	var a: Dictionary = _c.alerta
+	var r := Rect2(-float(int(t.w) / 2), -float(t.pe), float(t.w), float(t.h))
+	no_casco.draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1.0 if _g_flip else 1.0, 1.0))
+	if aceso and _g_contorno != null:
+		no_casco.draw_texture(_g_contorno, r.position - Vector2.ONE, _cor(a.cor))
+	no_casco.draw_texture_rect_region(t.tex, r, _g_regiao, _cor(a.tinta) if aceso else Color.WHITE)
+	no_casco.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## O contorno de 1 px em volta da silhueta do quadro `regiao` da folha `t` (branco, alfa 0/1, 2 px maior que o quadro em cada eixo): pixel vazio com vizinho
+## opaco (4 lados). Gerado uma vez por quadro e guardado.
+func _contorno(t: Dictionary, regiao: Rect2) -> Texture2D:
+	var chave := "%s|%s" % [str(t.alb.resource_path if t.alb.resource_path != "" else t.alb.get_rid()), str(regiao)]
+	if _contornos.has(chave):
+		return _contornos[chave]
+	var src: Image = t.alb.get_image()
+	if src == null:
+		return null
+	if src.is_compressed():
+		src.decompress()
+	var q := src.get_region(Rect2i(regiao))
+	q.convert(Image.FORMAT_RGBA8)
+	var w := q.get_width()
+	var hh := q.get_height()
+	var lw := w + 4  # a máscara com 2 px de folga em volta: os vizinhos nunca saem dela
+	var mask := PackedByteArray()
+	mask.resize(lw * (hh + 4))
+	var dados := q.get_data()
+	for y in hh:
+		for x in w:
+			if dados[(y * w + x) * 4 + 3] > 127:
+				mask[(y + 2) * lw + x + 2] = 1
+	var px := PackedByteArray()
+	px.resize((w + 2) * (hh + 2) * 4)
+	for y in hh + 2:
+		for x in w + 2:
+			var i := (y + 1) * lw + x + 1
+			if mask[i] == 0 and (mask[i - 1] + mask[i + 1] + mask[i - lw] + mask[i + lw]) > 0:
+				var o := (y * (w + 2) + x) * 4
+				px[o] = 255
+				px[o + 1] = 255
+				px[o + 2] = 255
+				px[o + 3] = 255
+	var out := Image.create_from_data(w + 2, hh + 2, false, Image.FORMAT_RGBA8, px)
+	var tex := ImageTexture.create_from_image(out)
+	_contornos[chave] = tex
+	return tex
 
 
 ## O perfil Baixo (partículas em "poucas" ou "nenhuma"): sem o brilho em elipses.

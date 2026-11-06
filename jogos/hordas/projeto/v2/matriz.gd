@@ -14,10 +14,31 @@ extends RefCounted
 ##  - AURORA LUNAR (Sifão 3 + Ampla 3, sem consumir as peças): a cura do sifão dobra (e o teto também) e a cura que passa da vida cheia vira defesa (`excedente_barra`, 50%).
 ##  - CABO DE RESGATE não passa por aqui: multiplica a carga do chamado em `especial.carregar` (`cartas.mult_cabo`).
 ##
+## A casca de 88 px (era 40) segura a horda mais longe, a ~94 px do herói no chão: ainda dentro dos 170 px do canhão. MEDIDO em testes/v2_matriz: o canhão nos 8 cães
+## que a matriz parou dá ~61 de dano por segundo, contra ~64 com a mesma horda a ~35 px (a casca antiga); o leque abre, mas a horda espalhada pega o que o alvo único
+## perderia. O empurrão (170 px/s) não mudou. A casca é uma PAREDE só onde a moldura da frente está DESENHADA (`segura`, `meia_parede`): no cone que bate nela a casca
+## é medida NA MIRA, então o monstro para rente ao pé da moldura (num raio só, mirando para baixo a 35 graus ele parava 12 px para dentro dela, atravessando o campo);
+## fora da largura que o desenho mostra naquela direção (de frente ~68 px no chão; de lado só ~10, o painel estreito) vale o raio da casca, onde a marca fina no chão
+## mostra o alcance, e a reta tangente do canto da parede ao círculo liga as duas sem degrau. A Matriz Ampla abre o arco e o desenho, não a parede (ver `meia_parede`).
+## Antes era uma caixa (a meia-largura cheia, sem o encolhimento de lado nem limite de ângulo): de lado segurava o cão a 35 graus no ar, ~30 px fora da moldura e da
+## marca, e com a Ampla no máximo segurava no flanco a ~154 px (degrau de ~58 px a 90 graus) e no canto a ~180 px (testes/v2_matriz 8b e 8c, v2_matriz_visual 9).
+##
 ## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo` serve aos dois, velocidade, a barra); este módulo cuida da geometria (`cobre`), da absorção, do empurrão
-## (`atualizar`, no tempo do mundo) e do visual (`efeitos`, no relógio de parede). O VISUAL é 100% em código (nenhuma folha): uma faixa azul clara em arco no chão, na casca,
-## com traços de painel hexagonal, um brilho que corre pelo arco e, quando absorve, um clarão e faíscas no ponto do golpe. O brilho pulsa a 1,5 Hz (nunca acima de 2 Hz) e o clarão
-## de absorção tem intervalo mínimo; no perfil Baixo (sem partículas) fica só a faixa, parada: sem clarão de absorção, luz rápida, tremor de tela nem brilho que corre (os sons ficam). Com a defesa abaixo de 35% a faixa vai ficando laranja (inteira em 5%), sem piscar.
+## (`atualizar`, no tempo do mundo) e do visual (`efeitos`, no relógio de parede). O VISUAL é 100% em código (nenhuma folha) e segue a Matriz de Defesa como IDEIA (pedido do
+## Alisson): um campo EM PÉ na frente do mecha, na direção da mira, feito de 3 MOLDURAS hexagonais (`molduras`) encaixadas em degraus: a de trás menor e mais perto do mecha,
+## a da frente maior e mais longe; todas com contorno de 2 px (de 1 px as de trás sumiam sobre o corpo do mecha e o campo se lia como um contorno só) e preenchimento
+## translúcido leve, em px inteiros e sem antialiasing (a grade de 1 px do mundo). De frente, o topo de cada moldura sobe ~8 px e os lados abrem ~14 px em relação à de trás.
+## O campo é GRANDE e BEM À FRENTE (pedido do Alisson no #620): os pés a 34, 59 e 84 px do herói no chão e a da frente com 136x80 px de frente (o mecha tem 55x73), não
+## uma caixinha em volta do corpo. A CASCA da regra acompanha a moldura da frente (88 px, 4 por fora do pé dela): o monstro que o empurrão segura fica logo na frente do
+## campo, nunca atravessando a moldura (testes/v2_matriz_visual cobra os dois juntos).
+## Cada moldura é um painel vertical no chão: a base fica a `distancia` + i x `recuo` px do herói, na mira, e o eixo da largura é a perpendicular à mira vista de cima (de frente
+## para a câmera quando mira para baixo, largo; de lado quando mira para a direita ou a esquerda, estreito, mas nunca abaixo de `lado_min` da largura). A largura cresce com o
+## arco (`arco_graus`, a Matriz Ampla abre). O nó do desenho fica DENTRO do y-sort do mundo (`no_mundo`), com a chave de ordem na base do campo: mirando para baixo o campo é
+## desenhado depois do mecha (na frente), mirando para cima antes (atrás: o campo de costas não cobre o mecha); aditivo e sem luz (`LIGHT_MODE_UNSHADED`), como o foguinho,
+## para o escuro do mapa e as luzes não apagarem o brilho. No chão fica só uma marca fina na casca (onde o empurrão começa). Uma linha de varredura sobe pela moldura da frente
+## (`varredura_hz`, no máximo 2 Hz) e, quando absorve, um clarão e faíscas no ponto do golpe, no plano da moldura da frente. O brilho pulsa a 1,5 Hz (nunca acima de 2 Hz) e o
+## clarão de absorção tem intervalo mínimo; no perfil Baixo (sem partículas) ficam só as molduras, paradas: sem clarão de absorção, luz rápida, tremor de tela nem varredura (os
+## sons ficam). Com a defesa abaixo de 35% as molduras vão ficando laranja (inteiras em 5%), sem piscar. Ao erguer, as molduras entram em degraus, de trás para a frente.
 ##
 ## API: montar(c, camada), limpar(), ativa(h) -> bool, cobre(h, de) -> bool, absorver(h, valor, de) -> float [o que vazou], ergueu(h), abaixou(h), atualizar(dt), efeitos(dt).
 
@@ -28,13 +49,16 @@ const COR_ALERTA := Color(1.0, 0.62, 0.3)
 const COR_CURA := Color(0.62, 1.0, 0.6)  # o número de cura do sifão (verde claro, o mesmo tom das faíscas de cura da arte)
 const ALERTA_ATE := 0.35  # fração da barra abaixo da qual a faixa começa a esquentar (laranja inteira em ALERTA_FIM)
 const ALERTA_FIM := 0.05
-const PTS := 20  # pontos do arco desenhado
+const ENTRA_S := 0.12  # s para as molduras aparecerem, uma depois da outra (de trás para a frente)
+## O hexágono de cada moldura, em frações: x da meia-largura (-1 a 1) e y da altura (0 no pé, 1 no topo). Base mais estreita, o ponto mais largo a 40% da altura e o topo
+## quase tão largo: o painel alongado e trapezoidal da ideia da Matriz de Defesa. Forma de desenho, não regra.
+const FORMA: Array[Vector2] = [Vector2(-0.72, 0.0), Vector2(0.72, 0.0), Vector2(1.0, 0.4), Vector2(0.84, 1.0), Vector2(-0.84, 1.0), Vector2(-1.0, 0.4)]
 
 var combate
 var mundo
 var cfg: Dictionary = {}  # dados/v2_secundario.json > matriz
 var visual: Dictionary = {}  # dados/v2_secundario.json > matriz > visual
-var no: Node2D  # a camada glow (aditiva): o desenho da barreira
+var no: Node2D  # o desenho da barreira: dentro do y-sort do mundo (aditivo, sem luz), com a posição na base do campo
 var absorvido := 0.0  # a defesa gasta absorvendo golpes na partida (o gancho das cartas de cura do LW-6)
 var golpes := 0  # quantos golpes a matriz absorveu
 var claroes := 0  # quantos clarões de absorção apareceram (no máximo 2 por segundo; nenhum no perfil Baixo)
@@ -62,10 +86,13 @@ func montar(c, camada: Node) -> void:
 	visual = cfg.get("visual", {})
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED  # o escuro do mapa e as luzes do cenário não tingem nem apagam o campo
 	no = Node2D.new()
 	no.material = mat
 	no.draw.connect(_desenhar)
-	camada.add_child(no)
+	# no y-sort do mundo: a posição do nó (a base do campo) decide se ele sai na frente ou atrás do mecha; sem mundo (testes com mundo falso), a camada que veio
+	var pai = mundo.get("no_mundo") if mundo != null else null
+	(pai if pai != null else camada).add_child(no)
 
 
 ## Partida nova.
@@ -178,10 +205,7 @@ func _clarao(h, de: Vector2) -> void:
 		return
 	_flash_t = 0.18
 	claroes += 1
-	var ang := atan2((de.y - h.pos.y) / ACHATA, de.x - h.pos.x)
-	var r := _raio()
-	var centro: Vector2 = h.pos + Vector2(0, -8)
-	_impacto = centro + Vector2(cos(ang) * r, sin(ang) * r * ACHATA)
+	_impacto = ponto_golpe(h, de)
 	mundo.cam.tremer(0.8, 0.08)
 	combate.fx.estouro(_impacto, COR_CIANO, 3)
 	combate.fx.luz_rapida(_impacto, COR_BASE, 1.3, 36.0, 0.16)
@@ -205,7 +229,7 @@ func ergueu(_h) -> void:
 func abaixou(h) -> void:
 	if h == null or not h.def_quebrado:
 		return
-	var centro: Vector2 = h.pos + Vector2(0, -8) + h.dir_olhar * _raio() * 0.8
+	var centro := _ponto(h, _n() - 1, 0.0, 0.45)  # o meio da moldura da frente
 	combate.audio.tocar("impacto", 0.55, 0.0, 0.05)
 	combate.audio.tocar("critico", 0.7, -5.0, 0.0)
 	if _leve():  # perfil Baixo: só o som
@@ -215,7 +239,10 @@ func abaixou(h) -> void:
 	combate.fx.luz_rapida(centro, COR_BASE, 1.6, 48.0, 0.2)
 
 
-## O empurrão, todo quadro do mundo enquanto erguida: quem está na casca e dentro do arco é empurrado para longe do herói. Não toca na vida nem no flash do monstro.
+## O empurrão, todo quadro do mundo enquanto erguida: quem está dentro da casca e do arco é empurrado para longe do herói. A casca tem a forma do campo DESENHADO
+## (`segura`): na frente da moldura da frente, a parede (a distância medida na mira); fora dela, o raio (a marca no chão); entre as duas, a reta que liga o canto da
+## parede ao círculo, sem degrau. O rumo é sempre o radial (o monstro anda para o herói e o empurrão o devolve na mesma linha, sem escorregar de lado).
+## Não toca na vida nem no flash do monstro.
 func atualizar(dt: float) -> void:
 	_cesta = minf(_cesta + teto_cura() * dt, teto_cura())  # a cesta do teto de cura do sifão enche à razão do teto por segundo
 	empurrados = 0
@@ -226,14 +253,17 @@ func atualizar(dt: float) -> void:
 	var forca := float(cfg.empurrao)
 	var graus := arco_graus()
 	var hp: Vector2 = h.pos
+	var u := _mira_chao(h)
+	var meia := meia_parede(h)
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo:
 			continue
 		var rel: Vector2 = m.pos - hp
 		var lim: float = casca + float(m.raio)
-		if absf(rel.x) > lim or absf(rel.y) > lim * ACHATA:
+		var fora: float = Vector2(lim, meia).length()  # o canto da parede, o mais longe que alguém pode ser segurado
+		if absf(rel.x) > fora or absf(rel.y) > fora * ACHATA:
 			continue
-		if Vector2(rel.x, rel.y / ACHATA).length() > lim:
+		if not segura(Vector2(rel.x, rel.y / ACHATA), u, lim, meia):
 			continue
 		if not combate.escudo.cobre_arco(h, m.pos, graus):
 			continue
@@ -244,7 +274,34 @@ func atualizar(dt: float) -> void:
 		empurrados += 1
 
 
-## O visual no relógio de parede: só redesenha enquanto a barreira está erguida (e uma vez ao apagar).
+## A meia-largura da PAREDE no chão (perpendicular à mira), a mesma que a moldura da frente MOSTRA nessa direção: a largura dela vezes o quanto o eixo do desenho
+## anda de lado no chão (de frente, 1; de lado, o `lado_min` e o `lado_inclina` deixam ~0,15: a moldura de lado cobre só ~±10 px no chão). Com a largura do ARCO
+## do dado: a Matriz Ampla abre o arco (o raio, a marca no chão) e alarga o desenho, mas não a parede. Uma parede da largura do campo amplo (146 px no máximo)
+## seguraria no canto a ~175 px do herói, além dos 170 do canhão; com a do dado, o canto fica a ~118 px.
+func meia_parede(h) -> float:
+	var p := _plano(h, _n() - 1)
+	var k := arco_graus() / maxf(float(cfg.arco), 1.0)
+	var g := Vector2(p.eixo.x, p.eixo.y / ACHATA)  # o passo de 1 px de largura do desenho, de volta para o chão
+	return float(p.w) / maxf(k, 1.0) * absf(g.cross(_mira_chao(h)))
+
+
+## O monstro em `rf` (no chão, relativo ao herói) está dentro da casca? A casca é o fecho do círculo de raio `lim` com a parede (na mira em `lim`, de lado até
+## `meia`): no cone que bate na parede vale a distância NA MIRA; dali até o ponto em que a reta do canto da parede encosta no círculo (tangente), essa reta; depois,
+## o raio. Contínua: a distância segurada nunca dá degrau de um ângulo para o outro.
+static func segura(rf: Vector2, u: Vector2, lim: float, meia: float) -> bool:
+	var a := rf.dot(u)  # na mira
+	var b := absf(rf.cross(u))  # de lado
+	if a > 0.0 and b * lim <= meia * a:  # o raio bate na parede (a frente da moldura da frente)
+		return a <= lim
+	var canto := Vector2(lim, meia).length()
+	var fi := atan2(meia, lim) + acos(clampf(lim / maxf(canto, 0.001), -1.0, 1.0))  # o ângulo em que a reta do canto encosta no círculo
+	var t := Vector2(cos(fi), sin(fi))
+	if b * t.x - a * t.y < 0.0:  # entre a parede e a tangente: a reta do canto
+		return a * t.x + b * t.y <= lim
+	return rf.length() <= lim
+
+
+## O visual no relógio de parede: só redesenha enquanto a barreira está erguida (e uma vez ao apagar). A posição do nó (a chave do y-sort) segue a base do campo.
 func efeitos(dt: float) -> void:
 	_relogio += dt
 	_sobe_t = minf(_sobe_t + dt, 9.0)
@@ -253,12 +310,14 @@ func efeitos(dt: float) -> void:
 	_num_cd = maxf(_num_cd - dt, 0.0)
 	var h = mundo.heroi
 	var ligada := ativa(h)
+	if ligada:
+		no.position = chave_ordem(h)
 	if ligada or _desenhou:
 		_desenhou = ligada
 		no.queue_redraw()
 
 
-## O raio da faixa no chão: a casca menos um pouco, para o traço de fora ficar onde o empurrão começa.
+## O raio da marca no chão: a casca menos um pouco, para o traço ficar onde o empurrão começa.
 func _raio() -> float:
 	return float(cfg.casca) - float(visual.get("raio_extra", 3.0))
 
@@ -275,9 +334,93 @@ func _hz() -> float:
 	return minf(float(visual.get("pulso_hz", 1.5)), 2.0)
 
 
-## O pulso do brilho da faixa (0,68 a 1,0): parado no perfil Baixo.
+## O pulso do brilho das molduras (0,68 a 1,0): parado no perfil Baixo.
 func _pulso() -> float:
 	return 1.0 if _leve() else 0.84 + 0.16 * sin(_relogio * TAU * _hz())
+
+
+## Quantas molduras o campo tem (dados > visual > molduras; 3, como os degraus da ideia).
+func _n() -> int:
+	return maxi(int(visual.get("molduras", 3)), 1)
+
+
+## A mira no chão (o ângulo da tela desfeito da achatada), unitária.
+func _mira_chao(h) -> Vector2:
+	var a0: float = atan2(h.dir_olhar.y / ACHATA, h.dir_olhar.x)
+	return Vector2(cos(a0), sin(a0))
+
+
+## O plano da moldura `i` (0 = a de trás): `base` (o pé do meio, no mundo), `eixo` (o passo na tela de 1 px de largura no chão), `w` (a meia-largura, que cresce com o arco)
+## e `alt` (a altura, em px de tela). O eixo é a perpendicular à mira vista de cima; de lado ele fica quase em pé e o painel some, então o x dele nunca cai abaixo de `lado_min`;
+## e a parte vertical dele encolhe para `lado_inclina` com o quadrado do lado da mira: a projeção crua, de lado, esticava a moldura da frente num paralelogramo de 26x105 px
+## (bem mais alto que o mecha, três agulhas inclinadas na tela); assim a altura de lado fica perto da de frente e as diagonais quase não mudam.
+func _plano(h, i: int) -> Dictionary:
+	var u := _mira_chao(h)
+	var d := float(visual.get("distancia", 22.0)) + float(i) * float(visual.get("recuo", 8.0))
+	var base: Vector2 = h.pos + Vector2(u.x, u.y * ACHATA) * d - Vector2(0.0, float(visual.get("solo", 2.0)))
+	var eixo := Vector2(-u.y, u.x * ACHATA)
+	var m := float(visual.get("lado_min", 0.3))
+	if absf(eixo.x) < m:
+		eixo.x = m if eixo.x >= 0.0 else -m
+	eixo.y *= lerpf(1.0, float(visual.get("lado_inclina", 0.2)), u.x * u.x)
+	var k := arco_graus() / maxf(float(cfg.arco), 1.0)  # a Matriz Ampla alarga as molduras na proporção do arco
+	var w := (float(visual.get("largura", 30.0)) + float(i) * float(visual.get("largura_passo", 6.0))) * k
+	var alt := float(visual.get("altura", 44.0)) + float(i) * float(visual.get("altura_passo", 8.0))
+	return {"base": base, "eixo": eixo, "w": w, "alt": alt}
+
+
+## Um ponto da moldura `i`: `sx` de -1 a 1 na largura, `zy` de 0 (pé) a 1 (topo) na altura. Sem arredondar (quem desenha arredonda).
+func _ponto(h, i: int, sx: float, zy: float) -> Vector2:
+	var p := _plano(h, i)
+	return p.base + p.eixo * (sx * float(p.w)) - Vector2(0.0, zy * float(p.alt))
+
+
+## As molduras do campo agora, de trás (a menor, perto do mecha) para a frente (a maior, mais longe): cada uma o hexágono de FORMA, 6 pontos em px inteiros do mundo.
+func molduras(h) -> Array:
+	var r: Array = []
+	for i in _n():
+		var pts := PackedVector2Array()
+		for f in FORMA:
+			pts.append(_ponto(h, i, f.x, f.y).round())
+		r.append(pts)
+	return r
+
+
+## A chave de ordem do nó no y-sort do mundo: a base do meio do campo, em px inteiros. Mirando de lado ela empata com o mecha; 1 px a mais deixa o painel por cima.
+func chave_ordem(h) -> Vector2:
+	var u := _mira_chao(h)
+	var d := float(visual.get("distancia", 22.0)) + float(_n() - 1) * 0.5 * float(visual.get("recuo", 8.0))
+	var c: Vector2 = (h.pos + Vector2(u.x, u.y * ACHATA) * d).round()
+	if absf(c.y - h.pos.y) < 1.0:
+		c.y = roundf(h.pos.y) + 1.0
+	return c
+
+
+## Onde o golpe que vem de `de` bate no campo: no plano da moldura da frente, do lado de quem bateu (a fração do arco vira a fração da largura), a 45% da altura.
+func ponto_golpe(h, de: Vector2) -> Vector2:
+	var u := _mira_chao(h)
+	var a := atan2((de.y - h.pos.y) / ACHATA, de.x - h.pos.x)
+	var rel := wrapf(a - atan2(u.y, u.x), -PI, PI)
+	var meio := deg_to_rad(arco_graus() * 0.5)
+	var sx := clampf(rel / maxf(meio, 0.01), -1.0, 1.0) * 0.8
+	return _ponto(h, _n() - 1, sx, 0.45).round()
+
+
+## A frequência da linha de varredura que sobe pela moldura da frente, no máximo 2 Hz.
+func _hz_varredura() -> float:
+	return minf(float(visual.get("varredura_hz", 0.8)), 2.0)
+
+
+## A altura (0 a 1) da linha de varredura agora; -1 no perfil Baixo (sem brilho que corre).
+func varredura() -> float:
+	return -1.0 if _leve() else fposmod(_relogio * _hz_varredura(), 1.0)
+
+
+## A meia-largura (fração) do hexágono de FORMA na altura `zy` (0 a 1), pelo lado direito dele.
+func _meia(zy: float) -> float:
+	if zy <= FORMA[2].y:
+		return lerpf(FORMA[1].x, FORMA[2].x, zy / FORMA[2].y)
+	return lerpf(FORMA[2].x, FORMA[3].x, (zy - FORMA[2].y) / (FORMA[3].y - FORMA[2].y))
 
 
 func _desenhar() -> void:
@@ -285,38 +428,53 @@ func _desenhar() -> void:
 	if not ativa(h):
 		return
 	var esc = combate.escudo
-	var leve := _leve()
 	var frac: float = float(h.def) / maxf(float(h.def_max), 0.001)
 	var cor := COR_BASE.lerp(COR_ALERTA, clampf((ALERTA_ATE - frac) / (ALERTA_ATE - ALERTA_FIM), 0.0, 1.0))
 	var pulso := _pulso()
-	var entra := clampf(_sobe_t / 0.12, 0.0, 1.0)
 	var clarao := _flash_t / 0.18
-	var r := _raio()
-	var faixa := float(visual.get("faixa", 7.0))
-	var graus := arco_graus()
-	var fora: PackedVector2Array = esc.pontos_arco(h, graus, r)
-	var dentro: PackedVector2Array = esc.pontos_arco(h, graus, r - faixa)
-	var poligono := PackedVector2Array(fora)
-	for i in range(dentro.size() - 1, -1, -1):
-		poligono.append(dentro[i])
-	no.draw_colored_polygon(poligono, Color(cor.r, cor.g, cor.b, (0.3 * pulso + 0.35 * clarao) * entra))
-	no.draw_polyline(fora, Color(cor.r, cor.g, cor.b, 1.0 * pulso * entra), 3.0)
-	no.draw_polyline(dentro, Color(cor.r, cor.g, cor.b, 0.6 * entra), 1.0)
-	# os painéis hexagonais: traços que cruzam a faixa, alternando a inclinação (um favo)
-	var n := maxi(int(visual.get("paineis", 7)), 2)
-	for i in range(1, n):
-		var k := roundi(float(i) / float(n) * float(fora.size() - 1))
-		var k2 := clampi(k + (1 if i % 2 == 0 else -1), 0, fora.size() - 1)
-		no.draw_line(fora[k], dentro[k2], Color(cor.r, cor.g, cor.b, 0.7 * entra), 1.0)
-	if leve:
+	var aparece := clampf(_sobe_t / ENTRA_S, 0.0, 1.0)
+	var o := no.position  # os pontos são do mundo: o desenho é relativo ao nó
+	var n := _n()
+	# a marca no chão, fina, onde a casca empurra (o alcance, para o jogador entender)
+	var chao: PackedVector2Array = esc.pontos_na_grade(esc.pontos_arco(h, arco_graus(), _raio()))
+	for k in chao.size():
+		chao[k] -= o
+	no.draw_polyline(chao, Color(cor.r, cor.g, cor.b, float(visual.get("chao_alfa", 0.3)) * aparece), 1.0)
+	var lista := molduras(h)
+	for i in n:
+		var entra := clampf(aparece * float(n) - float(i), 0.0, 1.0)  # em degraus: a de trás primeiro
+		if entra <= 0.0:
+			continue
+		var frente := i == n - 1
+		var pts: PackedVector2Array = lista[i]
+		for k in pts.size():
+			pts[k] -= o
+		var fundo := (0.07 + 0.03 * float(i)) * pulso + (0.3 * clarao if frente else 0.0)
+		no.draw_colored_polygon(pts, Color(cor.r, cor.g, cor.b, fundo * entra))
+		var fechado := PackedVector2Array(pts)
+		fechado.append(pts[0])
+		var forte := minf((0.95 + 0.05 * float(i)) * (pulso if frente else 1.0), 1.0)  # as de trás fortes também: são elas que fazem os degraus aparecerem por cima do mecha
+		no.draw_polyline(fechado, Color(cor.r, cor.g, cor.b, forte * entra), 2.0)
+		if frente:  # a grade da moldura da frente: traços em pé dividindo o painel
+			var paineis := maxi(int(visual.get("paineis", 3)), 1)
+			for j in range(1, paineis):
+				var sx := -1.0 + 2.0 * float(j) / float(paineis)
+				var a := _ponto(h, i, sx * FORMA[1].x, 0.0).round() - o
+				var b := _ponto(h, i, sx * FORMA[3].x, 1.0).round() - o
+				no.draw_line(a, b, Color(cor.r, cor.g, cor.b, 0.3 * entra), 1.0)
+	if _leve():
 		return
-	# o brilho que corre pelo arco (uma volta a cada 1,25 s, sem piscar)
-	var u := fposmod(_relogio * 0.8, 1.0)
-	var k0 := int(u * float(fora.size() - 4))
-	no.draw_polyline(fora.slice(k0, k0 + 4), Color(1, 1, 1, 0.8 * entra), 2.0)
-	if _flash_t > 0.0:  # o golpe absorvido: faíscas no ponto da barreira
+	var zv := varredura()  # a linha de varredura que sobe pela moldura da frente (uma volta a cada 1,25 s, sem piscar)
+	if zv >= 0.0:
+		var mw := _meia(zv)
+		var a := _ponto(h, n - 1, -mw, zv).round() - o
+		var b := _ponto(h, n - 1, mw, zv).round() - o
+		no.draw_line(a, b, Color(1, 1, 1, 0.55 * aparece), 1.0)
+	if _flash_t > 0.0:  # o golpe absorvido: faíscas no ponto do campo
 		var tam := (1.0 - clarao) * 12.0 + 4.0
+		var c := (_impacto - o).round()
 		for i in 5:
 			var d := Vector2.from_angle(TAU * float(i) / 5.0 + 0.3)
-			no.draw_line(_impacto + d * tam * 0.4, _impacto + d * tam, Color(COR_CIANO.r, COR_CIANO.g, COR_CIANO.b, clarao), 2.0)
-		no.draw_circle(_impacto, 2.5 * clarao, Color(1, 1, 1, clarao))
+			no.draw_line((c + d * tam * 0.4).round(), (c + d * tam).round(), Color(COR_CIANO.r, COR_CIANO.g, COR_CIANO.b, clarao), 2.0)
+		var r := maxi(roundi(2.0 * clarao), 1)
+		no.draw_rect(Rect2(c - Vector2(r, r), Vector2(2 * r, 2 * r)), Color(1, 1, 1, clarao))

@@ -15,6 +15,8 @@ const SOMBRA_FADE := 140.0  # comprimento (px do sprite) em que a sombra esmaece
 const ALT_LUZ := 2.2  # a altura da luz (espaço do normal map) rende ~2x na tela a 45 graus
 const L_MIN := 0.08  # comprimento mínimo da sombra / altura do sprite (luz em cima: vira mancha)
 const Y_MIN := 0.2  # espessura vertical mínima do eixo y da sombra (luz bem ao lado: não vira linha)
+const AR_ESCALA := 0.6  # sombra de quem está no ar (Ator.ar = 1): tamanho x isto
+const AR_ALFA := 0.5  # e alfa x isto
 const SUAVIZA := 12.0  # vetor = lerp(alvo, 1 - exp(-12 dt))
 const LUZ_REF := 1.2  # intensidade da luz a partir da qual a sombra tem força total
 const GRAD_OFF := [0.0, 0.22, 0.55, 1.0]  # queda das luzes (a mesma da textura das PointLight2D, em luzes.gd)
@@ -257,9 +259,9 @@ func ativar(a: Ator, ligar: bool) -> void:
 
 
 func _blob(a: Ator, escala: float, alfa: float) -> void:
-	var k := a.larg_blob * escala / 64.0
+	var k := a.larg_blob * escala * lerpf(1.0, AR_ESCALA, a.ar) / 64.0  # no ar (a.ar > 0) a mancha encolhe e clareia
 	a.blob.scale = Vector2(k, k * 0.9)
-	a.blob.modulate.a = alfa
+	a.blob.modulate.a = alfa * lerpf(1.0, AR_ALFA, a.ar)
 	a.blob.position = a.raiz.position + Vector2(0, -1)
 
 
@@ -323,11 +325,13 @@ func atualizar(a: Ator, t: float) -> void:
 		return
 	calcular(a, t)
 	var pos: Vector2 = a.raiz.position
+	var esc := a.esc * lerpf(1.0, AR_ESCALA, a.ar)  # a sombra projetada de quem está no ar também encolhe e clareia
+	var k_ar := lerpf(1.0, AR_ALFA, a.ar)
 	if modo == MEDIA:
-		_posicionar(a.sh1, pos, a.sv[0], a.esc, a.sa[0])
+		_posicionar(a.sh1, pos, a.sv[0], esc, a.sa[0] * k_ar)
 	else:
-		_posicionar(a.sh1, pos, a.sv[0], a.esc, a.sa[0])
-		_posicionar(a.sh2, pos, a.sv[1], a.esc, a.sa[1])
+		_posicionar(a.sh1, pos, a.sv[0], esc, a.sa[0] * k_ar)
+		_posicionar(a.sh2, pos, a.sv[1], esc, a.sa[1] * k_ar)
 	_blob(a, a.b_esc, a.b_alfa)
 
 

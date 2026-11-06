@@ -3,7 +3,7 @@
     python montar_folha.py
 
 Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava nesta pasta:
-  nicao_final_albedo.png e nicao_final_normal.png: grade de 8 linhas x 38 colunas, quadros 64x96 (cor e normal, mesma silhueta)
+  nicao_final_albedo.png e nicao_final_normal.png: grade de 8 linhas x 44 colunas, quadros 64x96 (cor e normal, mesma silhueta)
   nicao_final.json: formato do jogo (quadro, linhas, colunas, pe_y) + animação -> colunas, quadros e tempo por quadro
   nicao_final_previa_x3.png: cópia de prévia (albedo ampliado 3x, sobre fundo escuro)
 
@@ -31,6 +31,7 @@ ANIMACOES = [
     ("escudo", 2, 0.10),
     ("dano", 2, 0.10),
     ("morte", 6, 0.12),
+    ("strafe", 6, 0.11),
 ]
 # tempo por quadro (s) quando o quadro tem ritmo próprio; os mesmos números do S_POR_QUADRO de cada anim_<nome>.py
 TEMPOS = {
@@ -46,6 +47,7 @@ TEMPOS = {
 COLUNAS = [("parado", 0)] + [("andar", i) for i in range(6)] + [("parado", i) for i in (1, 2, 3)]
 COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(12)]
 COLUNAS += [("escudo", i) for i in range(2)] + [("dano", i) for i in range(2)] + [("morte", i) for i in range(6)]
+COLUNAS += [("strafe", i) for i in range(6)]          # 38 a 43: andar de lado com o corpo virado para a mira (anim_strafe.py)
 
 AVISOS = {
     "combo": "golpe 1 (batida, quadros 0 a 5) e golpe 2 (pancada, 6 a 11); o impacto e o quadro 3 de cada golpe; a marreta de 3,2 passa de 40 px e cai fora do quadro em poucos quadros de diagonal (medir.py)",
@@ -112,6 +114,9 @@ def main():
         if anim in AVISOS:
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
+    # strafe: o passo vai para +x do herói (direita da tela na linha baixo); o outro lado é a mesma animação ao contrário (heroi.gd: sentido = lado).
+    # limiar_cos/histerese: o jogo troca andar -> strafe quando |cos(mira, movimento)| < limiar_cos - histerese e volta acima de limiar_cos + histerese.
+    info["animacoes"]["strafe"].update({"lado": "+x", "limiar_cos": 0.5, "histerese": 0.08})
     info["animacoes"]["combo"]["golpes"] = 2
     info["animacoes"]["combo"]["quadros_por_golpe"] = 6
     info["animacoes"]["combo"]["golpes_tipo"] = ["batida", "pancada"]

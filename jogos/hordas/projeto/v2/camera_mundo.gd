@@ -1,6 +1,9 @@
 extends Camera2D
 ## Câmera da v2: segue o herói com suavização exponencial, presa nos limites do mapa e com a posição ARREDONDADA em pixel inteiro
 ## (o pixel art não treme quando a câmera anda). A conta da posição fica em `pos` (float); `position` recebe o valor inteiro.
+## O inteiro é arredondado JUNTO com o herói: o herói é desenhado em `pos` dele arredondada (v2/ator.gd), e a câmera desconta o mesmo meio
+## pixel (`residuo` = pos do herói - pos arredondada). Sem isso, andando a 90 px/s (1,5 px por quadro) o herói dava passos 2,1,2,1 e a câmera
+## 1,2,1,2: o corpo vibrava 1 px na tela a cada quadro (30 Hz; o "mecha tremendo todo" de 04/11, medido no QA da frente TREMOR).
 
 const LARG := 960
 const ALT := 540
@@ -12,6 +15,7 @@ var tremor_amp := 0.0  # px do tremor de câmera (golpe forte, crítico, morte):
 var tremor_dur := 0.16
 var tremor_t := 0.0
 var deslocamento := Vector2.ZERO  # o tremor deste quadro (inteiro)
+var residuo := Vector2.ZERO  # o meio pixel do herói deste quadro (0 no eixo em que a câmera está presa na borda do mapa: lá ela não anda)
 var soco := 0.0  # o "soco" de zoom do impacto (0,04 = 4% mais perto), que volta sozinho em ~0,2 s
 var _rng := RandomNumberGenerator.new()  # o sorteio do tremor: fora do randf() global, de que o jogo e os testes (seed) dependem
 
@@ -33,18 +37,23 @@ func prender(c: Vector2) -> Vector2:
 ## Põe a câmera direto no alvo (início da fase, teleporte).
 func cravar(alvo: Vector2) -> void:
 	pos = prender(alvo)
+	residuo = Vector2.ZERO
 	position = pos.round()
 
 
-func seguir(alvo: Vector2, dt: float) -> void:
-	pos = prender(pos.lerp(alvo, 1.0 - exp(-suavidade * dt)))
+## `resto` = o meio pixel que o herói perdeu ao ser desenhado (heroi.pos - heroi.pr): a tela anda no mesmo passo inteiro que ele, e o corpo
+## fica parado na tela enquanto a distância câmera-herói não muda. No eixo preso na borda o resto não entra (a câmera ficaria tremendo parada).
+func seguir(alvo: Vector2, dt: float, resto := Vector2.ZERO) -> void:
+	var livre := pos.lerp(alvo, 1.0 - exp(-suavidade * dt))
+	pos = prender(livre)
+	residuo = Vector2(resto.x if pos.x == livre.x else 0.0, resto.y if pos.y == livre.y else 0.0)
 	deslocamento = Vector2.ZERO
 	if tremor_t > 0.0:
 		tremor_t -= dt
 		var a := roundi(tremor_amp * clampf(tremor_t / tremor_dur, 0.0, 1.0))
 		if a > 0:
 			deslocamento = Vector2(_rng.randi_range(-a, a), _rng.randi_range(-a, a))
-	position = pos.round() + deslocamento
+	position = (pos - residuo).round() + deslocamento
 	if soco > 0.0005:
 		soco *= exp(-14.0 * dt)
 		zoom = Vector2.ONE * (1.0 + soco)
@@ -78,7 +87,7 @@ func socar(forca: float) -> void:
 
 ## O centro da câmera sem o tremor (a mira do mouse usa este).
 func centro_base() -> Vector2:
-	return pos.round()
+	return (pos - residuo).round()
 
 
 ## O que a câmera mostra agora (mundo), com uma margem em volta.

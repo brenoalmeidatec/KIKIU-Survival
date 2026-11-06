@@ -1,6 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
 # LW-8: o roteiro de fotos do LightWolf (v2/roteiro.gd, _r_lightwolf). Roda o roteiro inteiro numa partida de verdade (herói lightwolf, mecha
-# imortal e parado, quadro a quadro como o _process do mundo) e confere: as 10 fotos saem na ordem certa (1_mecha ... 10_carta) e nenhum passo
+# imortal e parado, quadro a quadro como o _process do mundo) e confere: as 14 fotos saem na ordem certa (1_mecha, 1b_boca, 1c_outro_braco ... 10_carta) e nenhum passo
 # ficou esperando um estado até o prazo (lw_atrasos == 0: o E, o salto e o estouro do Q, o Lobo livre, o chamado e a volta aconteceram de
 # verdade). Com janela, cada foto também tem de estar no disco com o arquivo gravado; em --headless não há janela (o viewport sai vazio), então
 # ali só se conta que cada foto foi pedida, e o arquivo fica para a conferência com janela.
@@ -14,7 +14,22 @@ const LIMITE_QUADROS := 4000  # ~67 s de jogo; o roteiro leva uns 40 s
 const PREFIXO := "lw8"
 const PASTA := "user://testes_v2/v2_lightwolf_roteiro/fotos"
 const SAVE_TESTE := "user://testes_v2/v2_lightwolf_roteiro/teste.cfg"
-const ESPERADAS := ["1_mecha", "2_matriz", "3_misseis", "4_salto", "5_aceso", "6_explosao", "7_lobo", "8_chamado", "9_volta", "10_carta"]
+const ESPERADAS := [
+	"1_mecha",
+	"1b_boca",
+	"1c_outro_braco",
+	"2_matriz",
+	"2b_matriz_baixo",
+	"2c_matriz_direita",
+	"3_misseis",
+	"4_salto",
+	"5_aceso",
+	"6_explosao",
+	"7_lobo",
+	"8_chamado",
+	"9_volta",
+	"10_carta"
+]
 
 var falhas := 0
 var w

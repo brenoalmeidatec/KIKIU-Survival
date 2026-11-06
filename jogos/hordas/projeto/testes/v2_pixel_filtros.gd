@@ -135,7 +135,7 @@ func _hud_em_pixel_nativo() -> void:
 		ok(no.scale == Vector2.ONE, "%s não é escalado (%s): desenha em pixel nativo" % [no.name, no.scale])
 		ok(no.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "%s desenha em nearest" % no.name)
 	ok(ultimate.size == Vector2(96, 96), "o círculo do Q mede 96 px no próprio nó (%s)" % ultimate.size)
-	ok(habilidades.size == Vector2(261, 112), "E e secundário medem 261x112 no próprio nó (%s)" % habilidades.size)
+	ok(habilidades.size == Vector2(368, 112), "impulso, E e secundário medem 368x112 no próprio nó (%s)" % habilidades.size)
 	var ic_q: Variant = (HudUltimate as GDScript).get_script_constant_map().get("ESCALA_ICONE", 0)  # pelo mapa: no código antigo falha o teste, não o parse
 	var ic_e: Variant = (HudHabilidades as GDScript).get_script_constant_map().get("ESCALA_ICONE", 0)
 	ok(ic_q is int and ic_q >= 1, "o ícone do Q usa escala inteira (%s)" % ic_q)

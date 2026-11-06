@@ -36,14 +36,37 @@ extends RefCounted
 ##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
 ##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
 ##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
-##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 2_matriz (a matriz erguida), 3_misseis (a E no disparo),
+##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 1b_boca, 1c_outro_braco, 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mira travada), 3_misseis (a E no disparo),
 ##                         4_salto, 5_aceso e 6_explosao (o Q, Autodestruição: o piloto salta, o mecha acende, o estouro), 7_lobo (o Lobo livre), 8_chamado
 ##                         (o CHAMAR apertado) e 9_volta (o mecha de volta), e 10_carta (escolha com uma carta só dele). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=andar_seq   (o "tremendo todo" de 04/11) fotos SEGUIDAS, uma por quadro de render, do herói escolhido (o LightWolf com
+##                         --heroi=lightwolf) sem monstros: anda_00..29 (andando para a direita, sem atirar), anda_tiro_00..39 (andando e
+##                         atirando para a direita), tiro_00..29 (parado atirando), costas_tiro_00..39 (andando para a ESQUERDA atirando para
+##                         a direita: o andar_tiro de costas, ciclo ao contrário) e diag_tiro_00..39 (andando e atirando na diagonal baixo-direita).
+##                         Para medir quadro a quadro o corpo contra o cenário.
+##   --roteiro=lw_tiros    (05/11/2026, para VÍDEO com --write-movie, sem fotos) com --heroi=lightwolf: o mecha atira 1,5 s para a direita num arco de monstros
+##                         (o traçante das bolinhas, com vãos para elas voarem inteiras) e 1 s para cima à esquerda, solta a E Mísseis inteira (3 s na tela), aperta o Q,
+##                         e o Lobo livre atira 1,5 s para a direita (a cadência nova). Sai sozinho no fim; os passos que esperaram até o prazo vão para lw_atrasos.
+##   --roteiro=lw_misseis  (05/11/2026, para VÍDEO com --write-movie) com --heroi=lightwolf: o mecha parado solta a E Mísseis na diagonal (para baixo à direita)
+##                         contra 5 alvos parados e fecha 1 s depois; imprime `LW_M quadro slot x y dir16 chao16` de cada míssil a cada quadro.
+##   --roteiro=lw_q        (a explosão do Q do mecha, para vídeo no Movie Maker) o LightWolf parado, 24 monstros em volta, aperta o Q (Autodestruição)
+##                         aos 0,5 s e segue 5,5 s depois do estouro (o fusível, a bola de fogo, a onda no chão e a cratera até sumir) e fecha. Sem fotos:
+##                         grave com --write-movie (cada quadro). Imprime LW_Q com o segundo do aperto e o do estouro.
+##   --roteiro=impulso     (o Shift do mecha, v2/impulso.gd; com --heroi=lightwolf) para gravar em vídeo (Movie Maker, ~5,3 s): o mecha parado 0,6 s à esquerda de um
+##                         objeto BAIXO do mapa (lápide, runa, crânio, braseiro, caixa de oferenda, rocha, pedras ou poste: o de caminho mais limpo), com 8 monstros de
+##                         vida alta em fila à direita; aperta o Shift e atira para a direita: voa 3 s por cima da fila e do objeto, depois fica 1,7 s parado (o slot
+##                         do Shift em recarga) e sai. Imprime IMPULSO a cada 0,25 s (x, alt_px, toques, vida do 1º monstro) e IMPQ a cada quadro (o mecha na tela).
+##   --roteiro=impulso_ordem (com --heroi=lightwolf; ~6,5 s) a ordem de desenho do mecha no ar: voa por cima de uma fila um pouco mais para baixo na tela,
+##                         raspa por trás do tronco de uma árvore e pousa em cima de outra fila; depois 2 s na recarga. Imprime IMPO a cada quadro.
+##   --roteiro=lw_mira     (rodada 5, para vídeo no Movie Maker; com --heroi=lightwolf, ~10,5 s) a mira andando e atirando: o mouse virando com o
+##                         mecha andando e atirando, o andar virando com o mouse parado e o tiro segurado, o andar de costas sem tiro e a diagonal
+##                         baixo-direita atirando. Imprime MIRA a cada quadro (quadro desenhado, trecho, fonte, olhar, mouse, golpe_dir, rajadas).
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
 ##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
-##                         --playtest_q (o robô aperta o Q quando enche e a E quando pronta; o JSON traz q_prontos, q_disparos, e_disparos e q_carga por fonte),
+##                         --playtest_q (o robô aperta o Q quando enche e a E quando pronta; o JSON traz q_prontos, q_disparos, e_disparos, q_carga por fonte
+##                         e q_tamanho: a média, pesada pelo dano, do fator de carga por tamanho do alvo, ligado ou não no herói),
 ##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia),
 ##                         --playtest_fim=morte (partida curta que termina na morte real: parado, com 1 de vida, até um monstro matar).
 ##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
@@ -64,9 +87,16 @@ var playtest := false
 var pt := {}  # estado do robô de playtest (_pt_iniciar)
 var pt_disparos := 0  # quantos avisos já tinham disparado quando o chefe nasceu (a foto do disparo)
 var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do disparo sai 0,12 s depois)
+const PixelRotRoteiro := preload("res://v2/pixel_rot.gd")  # as 16 direções do desenho dos projéteis (roteiro lw_misseis)
 const LW_CARTAS := ["sifao", "ampla", "cabo"]  # as cartas só do LightWolf (dados/v2_cartas.json, herois: lightwolf)
 var lw_expl0 := 0  # o roteiro do LightWolf: quantas explosões já tinham saído antes do Q
+var lw_fonte := 0  # o roteiro do LightWolf: a fonte da mira antes das fotos da matriz de frente e de lado (volta depois)
+var lw_boca := Vector2.INF  # o roteiro do LightWolf: onde a foto 1b_boca viu o clarão de boca (a 1c procura o do outro cano)
 var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
+var seq_n := 0  # o roteiro andar_seq: quantas fotos seguidas já saíram no trecho atual
+var lw_mira_g := 0  # o roteiro lw_mira: o contador de rajadas (adagas._grupo) no último quadro
+var lw_mira_p := 0  # o roteiro lw_mira: o trecho do último quadro (o B guarda o ponto do mouse ao entrar)
+var lw_alvos: Array = []  # o roteiro lw_tiros: [monstro, posição] dos alvos parados
 
 
 func montar(m, a: Dictionary) -> void:
@@ -152,6 +182,20 @@ func atualizar(dt: float) -> void:
 				_r_inicio()
 			"lightwolf":
 				_r_lightwolf()
+			"andar_seq":
+				_r_andar_seq()
+			"lw_tiros":
+				_r_lw_tiros()
+			"lw_q":
+				_r_lw_q()
+			"lw_misseis":
+				_r_lw_misseis()
+			"impulso":
+				_r_impulso()
+			"impulso_ordem":
+				_r_impulso_ordem()
+			"lw_mira":
+				_r_lw_mira()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -202,7 +246,8 @@ func _r_cores() -> void:
 
 
 ## Uma foto de cada estado do LightWolf (LW-2 a LW-6), com `--heroi=lightwolf` (o beta só entra por esse argumento). Herói imortal e parado,
-## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia), 2_matriz (a matriz erguida), 3_misseis (a E no meio do disparo),
+## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia, atirando as rajadas pelo vão do anel, à direita), 1b_boca (o clarão no cano de uma rajada recém-saída), 1c_outro_braco (o clarão do outro cano), 2_matriz (a matriz erguida), 2b_matriz_baixo e 2c_matriz_direita (a mesma
+## matriz com a mira travada para baixo e para a direita: as molduras de frente e de lado), 3_misseis (a E no meio do disparo),
 ## 4_salto (o Q: o piloto já saltou para trás da mira e o mecha segue no lugar), 5_aceso (o mecha aceso perto de explodir), 6_explosao (0,12 s
 ## depois do estouro: onda e tela limpa), 7_lobo (o Lobo livre), 8_chamado (o CHAMAR apertado, com o aviso sobre os pés), 9_volta (o mecha de
 ## volta) e 10_carta (escolha com uma carta só do LightWolf). Um passo que espera um estado até o prazo e segue sem ele soma em lw_atrasos.
@@ -214,23 +259,72 @@ func _r_lightwolf() -> void:
 		0:
 			_preparar()
 			_cercar_lightwolf(14)
+			# 1_mecha atirando: as rajadas dos dois braços (vários projéteis em leque) pelo vão entre dois monstros do anel, à direita,
+			# para as bolinhas aparecerem voando inteiras em vez de sumirem no primeiro monstro
+			mundo.mouse_forcado = h.centro() + Vector2.from_angle(TAU / 28.0) * 200.0
+			h.ataque_forcado = true
 			passo = 1
 			t_passo = 0.0
-		1:
-			if t_passo > 0.4:
+		1:  # a foto pega uma rajada recém-saída de um braço (golpe_t ~0,08 s) e a anterior, do outro braço, já longe
+			if t_passo > 0.4 and (h.estado == h.Estado.GOLPE and h.golpe_t >= 0.08 or t_passo > 1.0):
 				_foto("1_mecha")
+				passo = 20
+				t_passo = 0.0
+		20:  # 1b_boca: o clarão de boca da rajada que acabou de sair (dura 0,1 s: a foto espera um clarão recém-aceso; no perfil Baixo ele não existe e a foto sai igual)
+			var e = c.adagas.estalos
+			var fresco := _boca_fresca(e, Vector2.INF)
+			if fresco.is_finite() or t_passo > 1.0:
+				if not fresco.is_finite() and c.adagas._fator_impactos() >= 0.5:
+					lw_atrasos += 1
+				lw_boca = fresco
+				_foto("1b_boca")
+				passo = 21
+				t_passo = 0.0
+		21:  # 1c_outro_braco: o clarão do OUTRO braço (a boca é outra, 20 px ou mais de distância), a rajada seguinte
+			var e = c.adagas.estalos
+			var fresco := _boca_fresca(e, lw_boca)
+			if fresco.is_finite() or t_passo > 1.0:
+				if not fresco.is_finite() and c.adagas._fator_impactos() >= 0.5:
+					lw_atrasos += 1
+				_foto("1c_outro_braco")
 				passo = 2
 				t_passo = 0.0
 		2:  # a matriz (LW-3): segurar o secundário ergue a barra de defesa
+			h.ataque_forcado = false  # o tiro da 1_mecha para aqui, no quadro depois da foto (ela sai no fim do quadro)
+			mundo.mouse_forcado = null
 			h.escudo_forcado = true
 			passo = 3
 			t_passo = 0.0
 		3:
 			if t_passo > 0.4:
 				_foto("2_matriz")
-				h.escudo_forcado = false
-				passo = 4
+				passo = 29
 				t_passo = 0.0
+		29:  # a foto sai no fim do quadro: a mira só muda no passo seguinte (senão a foto anterior já pega a mira nova)
+			lw_fonte = h.fonte  # as duas fotos a seguir travam a mira (a fonte do analógico não lê o mouse da janela)
+			h.fonte = h.Fonte.STICK
+			h.dir_olhar = Vector2.DOWN
+			passo = 30
+			t_passo = 0.0
+		30:  # a matriz mirando para baixo (para a câmera): as molduras de frente, largas, na frente do mecha
+			if t_passo > 0.3:
+				_foto("2b_matriz_baixo")
+				passo = 31
+				t_passo = 0.0
+		31:
+			h.dir_olhar = Vector2.RIGHT
+			passo = 32
+			t_passo = 0.0
+		32:  # a matriz mirando para a direita: as molduras de lado, estreitas
+			if t_passo > 0.3:
+				_foto("2c_matriz_direita")
+				passo = 33
+				t_passo = 0.0
+		33:
+			h.escudo_forcado = false
+			h.fonte = lw_fonte
+			passo = 4
+			t_passo = 0.0
 		4:  # a E Mísseis (LW-4) com a recarga zerada
 			h.hab_recarga = 0.0
 			h.hab_nega_t = 0.0
@@ -337,6 +431,464 @@ func _r_lightwolf() -> void:
 				passo = 18
 		18:
 			mundo.get_tree().quit()
+
+
+## Fotos seguidas (uma por quadro de render: a próxima é pedida no quadro depois da anterior) para medir o tremor do corpo contra o
+## cenário. Herói imortal, sem monstros, mira bem longe à direita (o ângulo quase não muda andando). Os trechos: andando sem atirar,
+## andando atirando e parado atirando; cada um espera a câmera assentar (1 s) antes da primeira foto.
+func _r_andar_seq() -> void:
+	var h = mundo.heroi
+	# [nome, entrada, atira, fotos, mira]: a mira fica a 4000 px do herói nessa direção (refeita a cada quadro, o ângulo não muda andando)
+	const D := Vector2(0.70710678, 0.70710678)
+	const TRECHOS := [
+		["anda", Vector2.RIGHT, false, 30, Vector2.RIGHT],
+		["anda_tiro", Vector2.RIGHT, true, 40, Vector2.RIGHT],
+		["tiro", Vector2.ZERO, true, 30, Vector2.RIGHT],
+		["costas_tiro", Vector2.LEFT, true, 40, Vector2.RIGHT],
+		["diag_tiro", D, true, 40, D],
+	]
+	if passo == 0:
+		_preparar()
+		Config.temporario("pausar_fora", false)  # gravando (Movie Maker), outra janela na frente pausaria a partida no meio da sequência
+		passo = 1
+		t_passo = 0.0
+		seq_n = 0
+	if passo > TRECHOS.size():
+		mundo.get_tree().quit()
+		return
+	var tr: Array = TRECHOS[passo - 1]
+	mundo.mouse_forcado = h.centro() + (tr[4] as Vector2) * 4000.0
+	h.entrada_forcada = tr[1]
+	h.fonte = h.Fonte.MOUSE  # a mira é o mouse (refeito a cada quadro, como um mouse que mexe): começar ou virar o andar trocava para ANDA e o diag_tiro não mirava na diagonal
+	h.ataque_forcado = tr[2]
+	if t_passo < 1.0:
+		return
+	_foto("%s_%02d" % [tr[0], seq_n])
+	seq_n += 1
+	if seq_n >= int(tr[3]):
+		passo += 1
+		t_passo = 0.0
+		seq_n = 0
+
+
+## Vídeo da mira andando e atirando (rodada 5, para o Movie Maker; veja o cabeçalho). Trechos: A) andando para a direita e depois para a
+## esquerda, atirando, com o mouse virando a cada 0,4 s; B) atirando com o mouse PARADO num ponto do mundo e o andar virando a cada 0,75 s
+## (sem evento de mouse: a fonte só fica MOUSE se o tiro segurado a mantiver); C) andando para a esquerda sem atirar, mouse à direita (de
+## costas); D) na diagonal baixo-direita atirando. Imprime MIRA a cada quadro (quadro desenhado, trecho, fonte, ângulos e se saiu rajada).
+func _r_lw_mira() -> void:
+	var h = mundo.heroi
+	const VIRAS := [Vector2.UP, Vector2.RIGHT, Vector2(-0.70710678, 0.70710678), Vector2(0.70710678, -0.70710678), Vector2.LEFT, Vector2.DOWN]
+	const ANDAS := [Vector2.DOWN, Vector2.LEFT, Vector2.UP, Vector2.RIGHT]
+	const DUR := [0.0, 4.0, 3.0, 2.0, 1.5]
+	if passo >= 1:
+		_mira_log()
+	if passo == 0:
+		_preparar()
+		Config.temporario("pausar_fora", false)  # gravando, outra janela na frente pausaria a partida
+		mundo.cam.cravar(h.pos)
+		passo = 1
+		t_passo = 0.0
+		lw_mira_g = mundo.combate.adagas._grupo
+	if passo >= DUR.size():
+		h.ataque_forcado = false
+		h.entrada_forcada = Vector2.ZERO
+		mundo.get_tree().quit()
+		return
+	match passo:
+		1:
+			h.entrada_forcada = Vector2.RIGHT if t_passo < 2.0 else Vector2.LEFT
+			h.ataque_forcado = true
+			# o índice para no último trecho de 0,4 s: no quadro em que t_passo chega a 4,0 o índice 10 escolheria LEFT por 1 quadro (falso do roteiro)
+			mundo.mouse_forcado = h.centro() + (VIRAS[mini(int(t_passo / 0.4), 9) % VIRAS.size()] as Vector2) * 4000.0
+			h.fonte = h.Fonte.MOUSE  # o mouse mexe neste trecho (o _input faria isto)
+		2:
+			if lw_mira_p != 2:
+				mundo.mouse_forcado = h.centro() + Vector2(60, -40)  # o mouse para num ponto do mundo
+				h.fonte = h.Fonte.MOUSE
+			h.entrada_forcada = ANDAS[int(t_passo / 0.75) % ANDAS.size()]
+			h.ataque_forcado = true
+		3:
+			h.entrada_forcada = Vector2.LEFT
+			h.ataque_forcado = false
+			if lw_mira_p != 3:
+				# o mouse "mexe" no mesmo quadro em que o andar vira (sem tiro, a virada passaria a fonte para ANDA antes do roteiro voltar para MOUSE:
+				# o mecha olharia para o passo por 1 quadro, um falso do roteiro). Igual a um mouse que mexe depois da virada.
+				h._anda_ant = Vector2.LEFT
+			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+			h.fonte = h.Fonte.MOUSE
+		4:
+			h.entrada_forcada = Vector2(0.70710678, 0.70710678)
+			h.ataque_forcado = true
+			mundo.mouse_forcado = h.centro() + Vector2(0.70710678, 0.70710678) * 4000.0
+			h.fonte = h.Fonte.MOUSE
+	lw_mira_p = passo
+	if t_passo >= float(DUR[passo]):
+		passo += 1
+		t_passo = 0.0
+
+
+## Uma linha MIRA por quadro do roteiro lw_mira, no começo do quadro seguinte: é o estado que o último quadro desenhado mostrou.
+func _mira_log() -> void:
+	var h = mundo.heroi
+	var g: int = mundo.combate.adagas._grupo
+	var m: Vector2 = mundo.mouse_mundo() - h.centro()
+	print(
+		(
+			"MIRA f=%d p=%d fonte=%d olhar=%.1f mouse=%.1f golpe=%.1f tiro=%d col=%d lin=%d pr=%s"
+			% [
+				Engine.get_frames_drawn(),
+				passo,
+				int(h.fonte),
+				rad_to_deg(h.dir_olhar.angle()),
+				rad_to_deg(m.angle()),
+				rad_to_deg(h.golpe_dir.angle()),
+				g - lw_mira_g,
+				h.coluna,
+				h.linha,
+				str(h.pr)
+			]
+		)
+	)
+	lw_mira_g = g
+
+
+## Vídeo do canhão, dos Mísseis e da pistola do Lobo (veja o cabeçalho): um passo por estado, com prazo em cada espera.
+func _r_lw_tiros() -> void:
+	var h = mundo.heroi
+	for k in lw_alvos.size():  # os alvos ficam parados onde nasceram (senão a horda encosta no mecha e as bolinhas não chegam a voar)
+		if is_instance_valid(lw_alvos[k][0]):
+			lw_alvos[k][0].pos = lw_alvos[k][1]
+	match passo:
+		0:
+			_preparar()
+			lw_alvos.clear()
+			for i in 5:  # arco à direita, de -40 a 40 graus, a 150 e 185 px alternados (no fim do alcance de 170): parte acerta, parte passa no vão
+				var a := deg_to_rad(-40.0 + 20.0 * float(i))
+				var r := 150.0 if i % 2 == 0 else 185.0
+				var m = mundo.nascer_monstro("inimigo_espantalho", h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				lw_alvos.append([m, m.pos])
+			mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+			h.ataque_forcado = true
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 1.5:
+				mundo.mouse_forcado = h.centro() + Vector2(-160, -110)
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 1.0:
+				h.ataque_forcado = false
+				mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo > 0.2:
+				h.hab_recarga = 0.0
+				h.hab_nega_t = 0.0
+				if not h.habilidade():
+					lw_atrasos += 1
+				passo = 4
+				t_passo = 0.0
+		4:  # o aperto fica guardado e a E começa no quadro seguinte: espera ela começar e depois acabar (senão o Q entra no buffer durante a E)
+			if h.estado == h.Estado.HABILIDADE:
+				passo = 40
+				t_passo = 0.0
+			elif t_passo > 1.0:
+				lw_atrasos += 1
+				passo = 40
+				t_passo = 0.0
+		40:
+			if h.estado != h.Estado.HABILIDADE or t_passo > 5.0:
+				passo = 5
+				t_passo = 0.0
+		5:
+			if t_passo > 0.5:
+				h.esp_carga = h.esp_carga_max
+				if not h.especial():
+					lw_atrasos += 1
+				passo = 6
+				t_passo = 0.0
+		6:
+			if h.forma_lobo and h.estado == h.Estado.LIVRE and t_passo > 0.3:
+				mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+				h.ataque_forcado = true
+				passo = 7
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				lw_atrasos += 1
+				passo = 7
+				t_passo = 0.0
+		7:
+			if t_passo > 1.5:
+				h.ataque_forcado = false
+				print("LW_TIROS fim atrasos=%d" % lw_atrasos)
+				mundo.get_tree().quit()
+
+
+## Os mísseis da E para o vídeo: o mecha parado mira para baixo à direita (5 alvos parados num arco de 15 a 75 graus) e, no meio da E, para a direita
+## (2 alvos a -15 e 5 graus, a mira do vídeo da rodada 4); solta a E inteira e fecha 1 s depois. A cada quadro imprime `LW_M quadro slot x y dir16 chao16`
+## de cada míssil desenhado (posição desenhada inteira, a direção quantizada do desenho e a do chão), para medir o vídeo quadro a quadro. Sem `_ang_visual`
+## (o código antes da rodada 5) imprime a direção do chão nos dois campos. Com --fotos=PASTA salva também o viewport do mundo de cada quadro (mNNNNN.png).
+func _r_lw_misseis() -> void:
+	var h = mundo.heroi
+	var ad = mundo.combate.adagas
+	for k in lw_alvos.size():
+		if is_instance_valid(lw_alvos[k][0]):
+			lw_alvos[k][0].pos = lw_alvos[k][1]
+	if passo > 0:
+		if pasta != "" and passo < 3:  # --fotos=PASTA: o viewport do mundo (960x540, 1 px de arte = 1 px) do quadro anterior, para medir sem a escala da janela
+			mundo.sv.get_texture().get_image().save_png(pasta.path_join("m%05d.png" % (Engine.get_frames_drawn() - 1)))
+		var idx := int(ad._proj_nomes.get("missil", -1))
+		for i in ad.MAX:
+			if ad.a_rest[i] > 0.0 and ad.a_proj[i] == idx and ad.a_visual_oculto[i] == 0:
+				var pv: Vector2 = ad._pos_visual(i).round()
+				var chao := (ad.a_dir[i] as Vector2).angle()
+				var d16: Vector2i = PixelRotRoteiro.direcao16(ad._ang_visual(i) if ad.has_method("_ang_visual") else chao)
+				var c16: Vector2i = PixelRotRoteiro.direcao16(chao)
+				print("LW_M %d %d %d %d %d %d" % [Engine.get_frames_drawn(), i, int(pv.x), int(pv.y), d16.y * 4 + d16.x, c16.y * 4 + c16.x])
+	match passo:
+		0:
+			_preparar()
+			Config.temporario("pausar_fora", false)  # gravando, outra janela na frente pausaria a partida no meio
+			lw_alvos.clear()
+			for i in 7:
+				var a := deg_to_rad(15.0 + 15.0 * float(i) if i < 5 else -15.0 + 20.0 * float(i - 5))
+				var r := 170.0 if i % 2 == 0 else 210.0
+				var m = mundo.nascer_monstro("inimigo_espantalho", h.pos + Vector2(cos(a) * r, sin(a) * r), false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				lw_alvos.append([m, m.pos])
+			mundo.mouse_forcado = h.centro() + Vector2(160, 120)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.3:
+				h.hab_recarga = 0.0
+				h.hab_nega_t = 0.0
+				if not h.habilidade():
+					lw_atrasos += 1
+				print("LW_M aperto quadro=%d cam=%s" % [Engine.get_frames_drawn(), mundo.cam.pos])
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 1.5:
+				mundo.mouse_forcado = h.centro() + Vector2(220, 0)
+			if (h.estado != h.Estado.HABILIDADE and t_passo > 0.5) or t_passo > 6.0:
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo > 1.0:
+				print("LW_M fim atrasos=%d" % lw_atrasos)
+				mundo.get_tree().quit()
+
+
+## A explosão do Q do mecha para o vídeo: aperta aos 0,5 s e fecha 5,5 s depois do estouro.
+func _r_lw_q() -> void:
+	var h = mundo.heroi
+	var esp = mundo.combate.especial
+	match passo:
+		0:
+			_preparar()
+			_cercar_lightwolf(24)
+			mundo.mouse_forcado = h.centro() + Vector2(200, 0)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.5:
+				lw_expl0 = esp.explosoes
+				h.esp_carga = h.esp_carga_max
+				if not h.especial():
+					lw_atrasos += 1
+				print("LW_Q aperto t=%.2f" % mundo.t)
+				passo = 2
+				t_passo = 0.0
+		2:
+			if esp.explosoes > lw_expl0:
+				print("LW_Q estouro t=%.2f" % mundo.t)
+				passo = 3
+				t_passo = 0.0
+			elif t_passo > 3.0:
+				lw_atrasos += 1
+				passo = 4
+		3:
+			if t_passo > 5.5:
+				passo = 4
+		4:
+			print("LW_Q fim atrasos=%d" % lw_atrasos)
+			mundo.get_tree().quit()
+
+
+const IMP_BAIXOS := ["lapide", "runa", "cranio", "braseiro", "caixa_oferenda", "rocha", "pedras", "poste_lanterna"]
+var imp_fila: Array = []  # o roteiro impulso: os monstros da fila
+var imp_log_t := 0.0
+var imp_arvore = null  # o roteiro impulso_ordem: a árvore em que o voo raspa
+
+
+func _r_impulso() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			var alvo = null
+			var melhor := INF
+			var centro: Vector2 = mundo.limite_andavel.get_center()
+			for o in mundo.cenario.objetos:
+				if not (str(o.chave) in IMP_BAIXOS):
+					continue
+				var faixa := Rect2(o.pos + Vector2(-230, -70), Vector2(720, 140))  # o caminho do voo: quanto menos objeto em volta, mais limpo o vídeo
+				var n := 0
+				for q in mundo.cenario.objetos:
+					if q != o and faixa.has_point(q.pos):
+						n += 1
+				var nota: float = float(n) * 10000.0 + o.pos.distance_to(centro)
+				if nota < melhor:
+					melhor = nota
+					alvo = o
+			var base: Vector2 = alvo.pos + Vector2(-200, 0) if alvo != null else h.pos
+			print("IMPULSO objeto=%s em %s" % [str(alvo.chave) if alvo != null else "nenhum", str(alvo.pos) if alvo != null else "-"])
+			h.definir_pos(base)
+			mundo.cam.cravar(base)
+			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+			imp_fila.clear()
+			for i in 8:
+				var m = mundo.nascer_monstro(
+					"inimigo_cao_ossos" if i % 2 == 0 else "inimigo_aranha_tecela", base + Vector2(60.0 + 55.0 * float(i), 0.0 if i % 2 == 0 else 8.0), false
+				)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				m.atordoa_t = 999.0
+				m.recarga = 999.0
+				imp_fila.append(m)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo >= 0.6:
+				h.correr_forcado = true
+				h.ataque_forcado = true
+				passo = 2
+				t_passo = 0.0
+		2:
+			h.correr_forcado = false
+			if h.imp_t <= 0.0 and t_passo > 0.5:
+				h.ataque_forcado = false
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo >= 1.7:
+				mundo.get_tree().quit()
+				return
+	var rel: Vector2 = h.pr - mundo.cam.centro_base()
+	print("IMPQ %d %.1f %.1f" % [Engine.get_frames_drawn(), rel.x, rel.y])  # onde o mecha está na tela (px do mundo a partir do centro): para recortar o vídeo em volta dele
+	imp_log_t += mundo.combate.dt_local if mundo.combate.dt_local > 0.0 else 0.0
+	if imp_log_t >= 0.25:
+		imp_log_t = 0.0
+		var v1: float = imp_fila[0].vida if not imp_fila.is_empty() else 0.0
+		print(
+			(
+				"IMPULSO t=%.2f x=%.1f y=%.1f alt=%d voo=%.2f rec=%.2f toques=%d vida1=%.0f"
+				% [mundo.t, h.pos.x, h.pos.y, h.alt_px, h.imp_t, h.imp_recarga, mundo.combate.impulso.toques, v1]
+			)
+		)
+
+
+## Roteiro impulso_ordem: a ordem de desenho do mecha no ar (rodada 5). Uma árvore do mapa (objeto grande, o de caminho mais limpo) a 420 px à direita
+## do mecha, que fica 14 px acima do pé dela; entre os dois, uma fila de 4 monstros 8 a 22 px mais para baixo na tela; e uma segunda fila onde o voo
+## acaba (o pouso em cima dela). Aperta o Shift sem atirar: voa por cima da 1ª fila, raspa na árvore (por trás do tronco) e pousa na 2ª fila; depois
+## fica 2 s parado (o "x.x S" da recarga na HUD) e sai. Imprime IMPO a cada quadro: quadro, o mecha na tela, alt_px, ordem_px, o pé da árvore na tela, a recarga, frente=<monstros da fila
+## encostando no corpo desenhado do mecha e ordenados NA FRENTE dele> e sil=<alfa da silhueta de oclusão>.
+func _r_impulso_ordem() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			var arvore = null
+			var melhor := INF
+			var centro: Vector2 = mundo.limite_andavel.get_center()
+			for o in mundo.cenario.objetos:
+				var lc: float = float(o.get("larg_col")) if o.get("larg_col") != null else 99.0  # código antigo (sem larg_col): só a altura
+				if lc <= 22.0 or o.alt <= 100.0:
+					continue
+				var faixa := Rect2(o.pos + Vector2(-480, -80), Vector2(980, 160))
+				var n := 0
+				for q in mundo.cenario.objetos:
+					if q != o and faixa.has_point(q.pos):
+						n += 1
+				var nota: float = float(n) * 10000.0 + o.pos.distance_to(centro)
+				if nota < melhor:
+					melhor = nota
+					arvore = o
+			imp_arvore = arvore
+			var base: Vector2 = arvore.pos + Vector2(-420, -14) if arvore != null else h.pos
+			print("IMPO arvore=%s em %s" % [str(arvore.chave) if arvore != null else "nenhuma", str(arvore.pos) if arvore != null else "-"])
+			h.definir_pos(base)
+			mundo.cam.cravar(base)
+			mundo.mouse_forcado = h.centro() + Vector2(4000, 0)
+			imp_fila.clear()
+			var lugares := []
+			for i in 4:
+				lugares.append(base + Vector2(50.0 + 34.0 * float(i), 8.0 + 14.0 * float(i % 2)))
+			for i in 6:
+				lugares.append(base + Vector2(600.0 + 34.0 * float(i), 8.0 + 14.0 * float(i % 2)))
+			for i in lugares.size():
+				var m = mundo.nascer_monstro("inimigo_cao_ossos" if i % 2 == 0 else "inimigo_aranha_tecela", lugares[i], false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				m.atordoa_t = 999.0
+				m.recarga = 999.0
+				imp_fila.append(m)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo >= 0.6:
+				h.correr_forcado = true
+				passo = 2
+				t_passo = 0.0
+		2:
+			h.correr_forcado = false
+			if h.imp_t <= 0.0 and t_passo > 0.5:
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo >= 2.0:
+				mundo.get_tree().quit()
+				return
+	var rel: Vector2 = h.pr - mundo.cam.centro_base()
+	var pe_arv: Vector2 = (imp_arvore.pos - mundo.cam.centro_base()) if imp_arvore != null else Vector2.ZERO
+	# quantos monstros da fila, encostando no corpo desenhado do mecha, saem NA FRENTE dele no y-sort (fatia da horda acima do y de ordem do herói)
+	var y_h: float = h.raiz.position.y + (h.sprite.position.y if h.raiz.y_sort_enabled else 0.0)
+	var corpo: Rect2 = mundo.oclusao._corpo(h.pos - Vector2(0.0, float(h.alt_px)), h.tipo, 1.0)
+	var frente := 0
+	for m in imp_fila:
+		if float(m.chave_y) > y_h and corpo.intersects(mundo.oclusao._corpo(m.pos, m.tipo, float(m.esc))):
+			frente += 1
+	print(
+		(
+			"IMPO %d %.1f %.1f %d %d %.1f %.1f %.2f frente=%d sil=%.2f"
+			% [
+				Engine.get_frames_drawn(),
+				rel.x,
+				rel.y,
+				h.alt_px,
+				int(h.get("ordem_px")) if h.get("ordem_px") != null else 0,
+				pe_arv.x,
+				pe_arv.y,
+				h.imp_recarga,
+				frente,
+				mundo.oclusao.alfa()
+			]
+		)
+	)
+
+
+## A posição de um clarão de boca recém-aceso (restam pelo menos metade dos 0,1 s) a 20 px ou mais de `longe` (Vector2.INF = qualquer um); Vector2.INF se não há.
+func _boca_fresca(e, longe: Vector2) -> Vector2:
+	for k in e.BOCA_VAGAS:
+		if e.boca_tempo[k] >= float(e.DUR[e.BOCA]) * 0.5 and (not longe.is_finite() or (e.boca_pos[k] as Vector2).distance_to(longe) >= 20.0):
+			return e.boca_pos[k]
+	return Vector2.INF
 
 
 func _cercar_lightwolf(n: int) -> void:
@@ -1683,6 +2235,7 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 			"abate": snappedf(float(c.especial.carga_total.abate), 0.1),
 			"recebido": snappedf(float(c.especial.carga_total.recebido), 0.1)
 		},
+		"q_tamanho": snappedf(float(c.especial.tamanho_soma.pesado) / maxf(float(c.especial.tamanho_soma.util), 1.0), 0.001),
 		"quadros": pt.quadros,
 		"proc_ms": _pt_pcts(pt.proc_ms),
 		"quadro_ms": _pt_pcts(pt.quadro_ms),
