@@ -1,5 +1,5 @@
 {
-	"_ajuda": "Registro das folhas do pixelfx (MIT) tocadas por v2/fx_folha.gd. Uma entrada por id. Obrigatórios: arquivo (relativo a assets/v2/pixelfx/), quadro [w,h], colunas, quadros, fps, pivo [x,y] (o ponto da folha que cai em pos). Opcionais: loop (false), escala (inteira, 1; fração mistura pixels de tamanhos diferentes: gere uma folha no tamanho certo com fonte_arte/pixelfx/gerar_folhas.py e registre com outro id), cor ([r,g,b,a] ou '#rrggbb', multiplica a folha), camada ('glow' acima do escurecimento, ou 'mundo'; padrão glow), aditivo (false), passo (1; 2 pula um quadro a cada tick), limite (8; teto de cópias vivas do id), fps_calmo (0; com 'Reduzir piscadas' o id toca a essa taxa em vez de fps: a chama usa 1,5, nenhum pixel troca mais de 2 vezes por segundo), intervalo (0; segundos mínimos entre dois tocar do mesmo id), decorativo (true; some no perfil Baixo), clarao (false; o alfa segue a opção Tremor e clarões). Como regenerar e registrar: docs/PIXELFX.md.",
+	"_ajuda": "Registro das folhas do pixelfx (MIT) tocadas por v2/fx_folha.gd. Uma entrada por id. Obrigatórios: arquivo (relativo a assets/v2/pixelfx/), quadro [w,h], colunas, quadros, fps, pivo [x,y] (o ponto da folha que cai em pos). Opcionais: loop (false), escala (inteira, 1; fração mistura pixels de tamanhos diferentes: gere uma folha no tamanho certo com fonte_arte/pixelfx/gerar_folhas.py e registre com outro id), cor ([r,g,b,a] ou '#rrggbb', multiplica a folha), camada ('glow' acima do escurecimento, ou 'mundo'; padrão glow), aditivo (false), passo (1; 2 pula um quadro a cada tick), limite (8; teto de cópias vivas do id), intervalo (0; segundos mínimos entre dois tocar do mesmo id), decorativo (true; some no perfil Baixo), clarao (false; o alfa segue a opção Tremor e clarões). Como regenerar e registrar: docs/PIXELFX.md.",
 	"marca_dur": 0.6,
 	"marcas": {
 		"nuvem_veneno": "veneno",
@@ -16,15 +16,9 @@
 		"cortina_sangue": "sangue"
 	},
 	"status": {
-		"_ajuda": "Pool do fx_status (v2/fx_status.gd): quem tem status visível sobre o monstro. max_monstros: quantos monstros têm efeito ao mesmo tempo (o pico medido de bichos queimando na tela, com folga: a aura e o raio acendem poucos de cada vez e o resto fica só com o corpo em brasa do shader); reserva_elite: dessas vagas, quantas só elite e chefe podem ocupar (o monstro comum para em max_monstros - reserva_elite, para uma horda queimando não tirar a chama do chefe). limite: efeitos vivos por tipo, somando os monstros (fogo = uma chama por monstro, relógio da lentidão, estrelas do atordoamento). fogo.faixas: a chama sobe pelo tamanho do monstro (altura do quadro, `alt`): o primeiro id cujo alt_ate for maior que o alt do monstro; os ids vivem em efeitos (folhas de fonte_arte/chama/gerar_chama.py). fogo.base: onde a chama nasce, fração do alt acima dos pés (as costas), e fogo.alt_min/alt_max prendem o alt usado na conta.",
-		"max_monstros": 12,
-		"reserva_elite": 2,
-		"limite": {"fogo": 12, "lento": 6, "atordoa": 6},
+		"_ajuda": "Fogo no corpo (v2/status_corpo.gd, o shader do sprite: vale para o monstro em lote, elite e chefe). A chama não é sprite solto: é pintada SÓ nos pixels em que o monstro tem alfa 1, com as folhas chama_p, chama_m e chama_g (assets/v2/pixelfx/status/, geradas por fonte_arte/chama/gerar_chama.py; cada quadro é um ladrilho que se repete na largura do monstro). fogo.corpo.altura: altura da chama, fração da altura da célula do monstro, contada da base dela (0,4 = 40%). sobra: quantos px a ponta da chama pode passar acima do contorno do monstro (0 = recorte puro; o máximo útil é 2). corte [p, m]: a folha usada é a P se a altura da chama (altura x célula) é de até p px, a M até m px, senão a G. quadros_s: quadros por segundo da chama (12 quadros em loop). quadros_calmo: o mesmo com 'Reduzir piscadas' ligado (1,5: nenhum pixel troca mais de 2 vezes por segundo; as brasas soltas no corpo também somem). Perfil Baixo: sem efeito (o monstro só é tingido).",
 		"fogo": {
-			"faixas": [{"id": "chama_p", "alt_ate": 56}, {"id": "chama_m", "alt_ate": 120}, {"id": "chama_g", "alt_ate": 9999}],
-			"base": 0.45,
-			"alt_min": 16,
-			"alt_max": 200
+			"corpo": {"altura": 0.4, "sobra": 1, "corte": [30, 56], "quadros_s": 14, "quadros_calmo": 1.5}
 		}
 	},
 	"efeitos": {
@@ -41,45 +35,6 @@
 			"aditivo": true,
 			"limite": 8,
 			"intervalo": 0.15,
-			"decorativo": true
-		},
-		"chama_p": {
-			"arquivo": "status/chama_p.png",
-			"quadro": [40, 48],
-			"colunas": 6,
-			"quadros": 12,
-			"fps": 14,
-			"fps_calmo": 1.5,
-			"loop": true,
-			"pivo": [20, 48],
-			"camada": "glow",
-			"limite": 12,
-			"decorativo": true
-		},
-		"chama_m": {
-			"arquivo": "status/chama_m.png",
-			"quadro": [72, 88],
-			"colunas": 6,
-			"quadros": 12,
-			"fps": 14,
-			"fps_calmo": 1.5,
-			"loop": true,
-			"pivo": [36, 88],
-			"camada": "glow",
-			"limite": 8,
-			"decorativo": true
-		},
-		"chama_g": {
-			"arquivo": "status/chama_g.png",
-			"quadro": [104, 128],
-			"colunas": 6,
-			"quadros": 12,
-			"fps": 14,
-			"fps_calmo": 1.5,
-			"loop": true,
-			"pivo": [52, 128],
-			"camada": "glow",
-			"limite": 4,
 			"decorativo": true
 		},
 		"slowed": {

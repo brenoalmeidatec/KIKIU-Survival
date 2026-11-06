@@ -14,7 +14,7 @@ const MAX_MONSTROS := 10  # monstros com efeito ao mesmo tempo
 const FOGO := 0
 const LENTO := 1
 const ATORDOA := 2
-const IDS := ["burning", "slowed", "stunned"]
+const IDS := ["", "slowed", "stunned"]  # o fogo não tem folha: a chama é pintada pelo shader do corpo (v2/status_corpo.gd), LIMITE[0] = 0
 const LIMITE := [0, 6, 6]  # efeitos por tipo, somando os monstros (o herói lento fica de fora: usa o 8 do registro)
 const ATORDOA_MIN := 0.4  # só vale atordoamento longo (muralha, batida, escudo perfeito); o corte comum de 0,3 s não acende estrelas
 const FATIAS := 6  # a lista de monstros é varrida inteira em ~6 quadros

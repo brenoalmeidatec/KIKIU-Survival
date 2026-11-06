@@ -1,15 +1,17 @@
 extends "res://testes/isolamento_v2.gd"
-## A chama (e o gelo, o veneno, o choque e o sangue) de elite e chefe não pode ser cortada pela borda da célula. Elite e chefe usam folhas grandes `_xN`
-## com 0 px de margem nos lados, e um Sprite2D com região só desenha o retângulo da região: o shader de status (v2/status_corpo.gd) nunca rodava fora
-## dele. A correção estica o quadrado em `FOLGA_NO` px (vertex) e zera o que a folga lê das células vizinhas (fragment).
-## Parte 1 (qualquer modo): o monstro com nó liga o material com `folga` e `centro` certos. Parte 2 (só com janela, sem --headless): desenha de verdade
-## uma célula 100% opaca, vizinha de outra célula opaca, e mede em pixel se a chama sai da célula e se a vizinha não vaza.
-## Parte 3 (só com janela): o FOGO num corpo oval com contorno escuro, por 3 s de relógio: o corpo continua legível (poucas brasas, sem confete), as línguas de fora
-## sobem até 8-9 px mudando no máximo 1 px por quadro (12 por segundo) e nenhum pixel troca de cor mais de 2 vezes por segundo (teto do v2_piscadas, MAX_TROCAS_S).
+## O gelo, o veneno, o choque e o sangue de elite e chefe não podem ser cortados pela borda da célula (e o fogo não pode vazar dela). Elite e chefe usam folhas
+## grandes `_xN` com 0 px de margem nos lados, e um Sprite2D com região só desenha o retângulo da região: o shader de status (v2/status_corpo.gd) nunca rodava
+## fora dele. A correção estica o quadrado em `FOLGA_NO` px (vertex) e zera o que a folga lê das células vizinhas (fragment).
+## Parte 1 (qualquer modo): o monstro com nó liga o material com `folga` e `centro` certos. Parte 2 (só com janela, sem --headless): desenha de verdade uma
+## célula 100% opaca, vizinha de outra célula opaca, e mede em pixel: o FOGO fica dentro da célula (a chama é pintada só no corpo; a de fora é só a `sobra` dos dados
+## e nunca passa da folga), a célula continua inteira e a vizinha não vaza para a folga. Parte 3 (só com janela): o FOGO num corpo oval com contorno escuro, por 3 s de
+## relógio: o corpo continua legível (o miolo escurecido e aquecido, o contorno do bicho intacto, sem confete de brasa). A chama em si (altura, silhueta, fluidez,
+## piscadas) é medida em v2_chama_corpo.
 ## Roda: godot --path jogos/hordas/projeto res://testes/v2_status_borda.tscn  (imprime "v2_status_borda falhas=0")
 const Anim := preload("res://v2/anim_golpes.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const StatusCorpo := preload("res://v2/status_corpo.gd")
+const Piscadas := preload("res://v2/piscadas.gd")
 const PASSO := 1.0 / 60.0
 const CEL := 24  # lado da célula sintética, em px
 const FORA := Color(0.0, 0.0, 0.35)  # o fundo do teste: o que não foi desenhado
@@ -65,7 +67,7 @@ func _parte_no() -> void:
 		)
 		ok(
 			float(folga.x if folga is Vector2 else 0.0) >= 2.0 and float(folga.y if folga is Vector2 else 0.0) >= 8.0,
-			"a folga cobre o arco do choque (2 px) e a chama (8 px)"
+			"a folga cobre o arco do choque (2 px) e a gota do sangue (8 px)"
 		)
 	m.queima_t = 0.0
 	for i in 6:
@@ -127,25 +129,25 @@ func _parte_pixel() -> void:
 			if not _vazio(img.get_pixel(x, y)):
 				dentro_ok += 1
 	ok(dentro_ok == CEL * CEL, "a célula continua inteira desenhada (%d de %d px)" % [dentro_ok, CEL * CEL])
-	# a chama sobe da borda de cima (1 px acima da célula é sempre chama: o corpo está a 1 px) e sai dos lados (2 px)
-	var cima := 0
+	# o fogo não sai da célula: a chama é pintada só no corpo (numa célula opaca, a `sobra` dos dados só vale acima de pixel vazio, e aqui não há)
+	var vazou_fogo := 0
+	for y in img.get_height():
+		for x in img.get_width():
+			if (x < x0 or x >= x1 or y < y0 or y >= y1) and not _vazio(img.get_pixel(x, y)):
+				vazou_fogo += 1
+	ok(vazou_fogo == 0, "o fogo fica dentro da célula: nada pintado fora dela (%d px)" % vazou_fogo)
+	# e tem chama dentro: o rodapé da célula (a chama nasce na base) não é só o cinza escurecido do corpo
+	var chama_base := 0
 	for x in range(x0, x1):
-		if not _vazio(img.get_pixel(x, y0 - 1)):
-			cima += 1
-	ok(cima == CEL, "a chama passa da borda de cima da célula (%d de %d colunas)" % [cima, CEL])
-	# dos lados a chama sai em 0, 1 ou 2 px, por faixa de 2 linhas, e muda devagar: tem de existir em boa parte das linhas
-	var lados := 0
-	for y in range(y0, y1):
-		if not _vazio(img.get_pixel(x0 - 1, y)):
-			lados += 1
-		if not _vazio(img.get_pixel(x1, y)):
-			lados += 1
-	ok(lados >= CEL / 2, "o fogo passa das bordas dos lados da célula (%d de %d px)" % [lados, CEL * 2])
+		var c := img.get_pixel(x, y1 - 2)
+		if c.r > 0.8 and c.g > 0.15:
+			chama_base += 1
+	ok(chama_base >= CEL / 2, "há chama na base da célula (%d de %d colunas)" % [chama_base, CEL])
 	# a folga lê as células vizinhas da folha: o que não é chama tem de ficar transparente (o fundo)
 	var vazou := 0
 	var fora_da_folga := 0
 	for y in range(y0 - 3, y1 + 3):
-		for x in [x0 - 4, x0 - 3, x1 + 2, x1 + 3]:  # além do alcance do fogo (2 px dos lados)
+		for x in [x0 - 4, x0 - 3, x1 + 2, x1 + 3]:  # a folga lê as células vizinhas da folha: tem de estar vazia
 			if not _vazio(img.get_pixel(x, y)):
 				vazou += 1
 			fora_da_folga += 1
@@ -169,22 +171,11 @@ func _parte_pixel() -> void:
 	sv.queue_free()
 
 
-## Cor do pixel numa língua de fogo a `d` px do corpo (a cor vem só da distância: o pixel liga e desliga, não troca de cor).
-func _cor_lingua(d: int) -> Color:
-	if d <= 1:
-		return Color(1.0, 0.945, 0.659)
-	if d <= 3:
-		return Color(0.965, 0.659, 0.118)
-	if d <= 6:
-		return Color(0.878, 0.322, 0.102)
-	return Color(0.549, 0.11, 0.039)
-
-
 func _perto(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < 0.03 and absf(a.g - b.g) < 0.03 and absf(a.b - b.b) < 0.03
 
 
-## Um corpo oval de contorno escuro queimando por 3 s: legível, sem confete, línguas suaves e nenhum pixel piscando.
+## Um corpo oval de contorno escuro queimando por 3 s: legível (o miolo acima da chama, o contorno do bicho intacto) e sem confete de brasa.
 func _parte_vivo() -> void:
 	var atlas := Image.create(CEL, CEL, false, Image.FORMAT_RGBA8)
 	atlas.fill(Color(0, 0, 0, 0))
@@ -194,15 +185,19 @@ func _parte_vivo() -> void:
 			var e := pow((x - 12.0) / 9.0, 2.0) + pow((y - 14.0) / 5.0, 2.0)
 			if e <= 1.0:
 				corpo[Vector2i(x, y)] = true
-	var interior := []  # sem contorno e sem a faixa de 2 px logo abaixo da borda de cima
+	var interior := []  # sem contorno e sem a faixa de 2 px logo abaixo da borda de cima, só acima da chama (a chama cobre os 40% de baixo da célula)
+	var contorno := []
 	for k in corpo:
 		var borda := false
 		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 			if not corpo.has(k + d):
 				borda = true
 		atlas.set_pixelv(k, Color(0.04, 0.04, 0.04, 1.0) if borda else Color(0.5, 0.5, 0.5, 1.0))
-		if not borda and corpo.has(k - Vector2i(0, 1)) and corpo.has(k - Vector2i(0, 2)):
+		if borda:
+			contorno.append(k)
+		elif corpo.has(k - Vector2i(0, 1)) and corpo.has(k - Vector2i(0, 2)) and k.y < CEL * 0.6 - 1.0:
 			interior.append(k)
+	Config.temporario(Piscadas.OPCAO, false)  # sem 'Reduzir piscadas' a chama corre e as brasas do corpo ficam
 	var tex := ImageTexture.create_from_image(atlas)
 	var margem := 12
 	var sv := SubViewport.new()
@@ -266,56 +261,12 @@ func _parte_vivo() -> void:
 	var media_brasa := soma_brasa / float(quadros.size())
 	ok(media_brasa >= 0.005 and media_brasa <= 0.08, "poucas brasas no corpo: %.1f%% do miolo em média (de 0,5%% a 8%%)" % (media_brasa * 100.0))
 	ok(pior_brasa <= 0.15, "nenhum quadro vira confete: no máximo %.1f%% do miolo em brasa (teto 15%%)" % (pior_brasa * 100.0))
-	# 2. as línguas de fora: alcançam 6 a 9 px e a altura de cada coluna muda no máximo 1 px entre dois quadros a menos de 1/12 s
-	var alta := 0
-	var salto := 0
-	for i in quadros.size():
-		for x in range(margem + 4, margem + 21):
-			var run := 0
-			for d in range(1, 10):
-				var y: int = _topo_do_corpo(corpo, x - margem) + margem - d
-				if y < 0 or not _perto(quadros[i].get_pixel(x, y), _cor_lingua(d)):
-					break
-				run += 1
-			alta = maxi(alta, run)
-			if i > 0 and tempos[i] - tempos[i - 1] < 80:
-				var run0 := 0
-				for d in range(1, 10):
-					var y: int = _topo_do_corpo(corpo, x - margem) + margem - d
-					if y < 0 or not _perto(quadros[i - 1].get_pixel(x, y), _cor_lingua(d)):
-						break
-					run0 += 1
-				if absi(run - run0) > 1:
-					salto += 1
-	ok(alta >= 6 and alta <= 9, "a língua mais alta chega a %d px (de 6 a 9)" % alta)
-	ok(salto == 0, "a altura de uma língua muda no máximo 1 px por quadro (%d saltos maiores)" % salto)
-	# 3. nenhum pixel troca de cor mais que 2 vezes em qualquer janela de 1 s (o teto do v2_piscadas é MAX_TROCAS_S; aqui o alvo é 2)
-	var pior := 0
-	var pior_xy := Vector2i.ZERO
-	for y in sv.size.y:
-		for x in sv.size.x:
-			var trocas: Array[int] = []
-			var ant: Color = quadros[0].get_pixel(x, y)
-			for i in range(1, quadros.size()):
-				var c: Color = quadros[i].get_pixel(x, y)
-				if not _perto(c, ant) or absf(c.a - ant.a) > 0.01:
-					trocas.append(tempos[i])
-					ant = c
-			for a in trocas.size():
-				var q := 0
-				for b in range(a, trocas.size()):
-					if trocas[b] - trocas[a] < 1000:
-						q += 1
-				if q > pior:
-					pior = q
-					pior_xy = Vector2i(x - margem, y - margem)
-	ok(pior <= 2, "nenhum pixel troca de cor mais que 2 vezes por segundo (pior: %d em %s)" % [pior, pior_xy])
+	# 2. o contorno escuro do bicho fica por cima da chama, em todos os quadros (a chama cobre a faixa de baixo do oval, y >= 14)
+	var comido := 0
+	for im in quadros:
+		for k in contorno:
+			var c: Color = im.get_pixel(k.x + margem, k.y + margem)
+			if c.r + c.g + c.b > 0.45:
+				comido += 1
+	ok(comido == 0, "o contorno escuro do bicho não vira chama (%d pixels em %d quadros)" % [comido, quadros.size()])
 	sv.queue_free()
-
-
-## A linha (y) do pixel de corpo mais alto da coluna x do oval.
-func _topo_do_corpo(corpo: Dictionary, x: int) -> int:
-	for y in CEL:
-		if corpo.has(Vector2i(x, y)):
-			return y
-	return 0

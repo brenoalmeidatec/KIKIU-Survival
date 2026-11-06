@@ -1,7 +1,10 @@
 extends RefCounted
 ## Status que tomam o corpo inteiro do monstro: fogo, gelo, veneno, choque e sangue são desenhados pelo próprio shader do sprite, lendo o alfa do
-## quadro atual. Por isso seguem a silhueta em toda direção e em todo quadro, sem nó nem folha por monstro. A chama sobe a partir do contorno
-## e cobre o corpo; o gelo recolore e solta pontas; o veneno borbulha; o choque estala; o sangue escorre. Tudo em pixel inteiro, a 12 quadros por segundo.
+## quadro atual. Por isso seguem a silhueta em toda direção e em todo quadro, sem nó nem folha por monstro. A chama é DENTRO do monstro: o shader escurece
+## o corpo e pinta, só nos pixels onde ele tem alfa 1, uma folha de chama (fonte_arte/chama/gerar_chama.py) ancorada na base da célula e com `altura` (~40%)
+## dela, no máximo `sobra` px acima do contorno (0 = recorte puro); o contorno escuro do bicho fica por cima. O gelo recolore e solta pontas; o veneno
+## borbulha; o choque estala; o sangue escorre. Tudo em pixel inteiro (a chama a 14 quadros por segundo, o resto a 12). Os números moram em
+## dados/v2_pixelfx.json, status.fogo.corpo.
 ## O lote da horda recebe o estado no alfa da instância (v2/horda.gd). Elite e chefe usam `material_no`.
 ## Perfil Baixo: estado 0 (fica a tinta do monstro.gd). Guia: docs/visual_2_5d/estilo_pixelfx.md.
 
@@ -12,6 +15,47 @@ const VENENO := 3
 const CHOQUE := 4
 const SANGUE := 5
 const ESTADOS := {"veneno": VENENO, "choque": CHOQUE, "sangue": SANGUE}
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a chama troca de quadro devagar e as brasas do corpo somem
+const PASTA_CHAMA := "res://assets/v2/pixelfx/status/"
+const TAMANHOS_CHAMA := ["p", "m", "g"]  # as três folhas: o shader escolhe pela altura da chama (`chama_corte`)
+
+## Parte global do shader do corpo (o do lote e o de elite e chefe a põem antes de tudo, logo após `shader_type`): as três folhas da chama, os números
+## vindos dos dados e a leitura de um pixel da chama. Cada folha tem 6 colunas x 2 linhas de quadros (12) e o quadro é um LADRILHO que emenda no eixo x: o
+## monstro largo repete o ladrilho, cada repetição num quadro diferente. `texelFetch`: 1 texel da folha por pixel do monstro, sem filtro nem escala em x.
+## O quadro cresce da base da célula (`tam.y - 1`) para cima; em y a folha é amostrada por vizinho mais próximo até a altura alvo `hf` (fração da célula).
+const UNIFORMS := """
+uniform sampler2D chama_p;
+uniform sampler2D chama_m;
+uniform sampler2D chama_g;
+uniform float chama_alt = 0.4;
+uniform float chama_sobra = 1.0;
+uniform float chama_fps = 14.0;
+uniform vec2 chama_corte = vec2(30.0, 56.0);
+uniform float calmo = 0.0;
+vec3 chama_texel(vec2 fs, vec2 p, vec2 tam, float sem, float hf, float tempo) {
+	float d = tam.y - 1.0 - p.y;
+	if (d < 0.0) { return vec3(0.0); }
+	float sy = floor(d * fs.y / hf);
+	if (sy >= fs.y) { return vec3(0.0); }
+	float xx = p.x + floor(fract(sin(sem * 12.9898) * 43758.5453) * fs.x);
+	float k = floor(xx / fs.x);
+	float q = mod(floor(tempo * chama_fps) + floor(mod(sem * 5.0, 12.0)) + k * 5.0, 12.0);
+	return vec3(vec2(mod(q, 6.0), floor(q / 6.0)) * fs + vec2(xx - k * fs.x, fs.y - 1.0 - sy), 1.0);
+}
+vec4 chama_cor(vec2 p, vec2 tam, float sem, float tempo) {
+	float hf = max(floor(chama_alt * tam.y + 0.5), 1.0);
+	if (hf <= chama_corte.x) {
+		vec3 r = chama_texel(vec2(textureSize(chama_p, 0)) / vec2(6.0, 2.0), p, tam, sem, hf, tempo);
+		return r.z > 0.5 ? texelFetch(chama_p, ivec2(r.xy), 0) : vec4(0.0);
+	}
+	if (hf <= chama_corte.y) {
+		vec3 r = chama_texel(vec2(textureSize(chama_m, 0)) / vec2(6.0, 2.0), p, tam, sem, hf, tempo);
+		return r.z > 0.5 ? texelFetch(chama_m, ivec2(r.xy), 0) : vec4(0.0);
+	}
+	vec3 r = chama_texel(vec2(textureSize(chama_g, 0)) / vec2(6.0, 2.0), p, tam, sem, hf, tempo);
+	return r.z > 0.5 ? texelFetch(chama_g, ivec2(r.xy), 0) : vec4(0.0);
+}
+"""
 
 ## Espera: `vec4 c` (a cor do sprite), `vec2 p` (pixel na célula, pode sair dela), `vec2 tam` (célula), `vec2 base` (canto da célula no atlas),
 ## `float est` (estado) e `float sem` (semente do monstro). TEXTURE é o atlas. Escreve em `c`.
@@ -38,9 +82,10 @@ const GLSL := """
 	float h2 = fract(sin(dot(vec2(floor(p.x / 2.0) + sem, floor((p.y + t * 2.0) / 3.0)), vec2(39.346, 11.135))) * 24634.6345);
 	float h3 = fract(sin(dot(p + vec2(sem, t), vec2(73.156, 52.235))) * 13758.5453);
 	float lum = dot(c.rgb, vec3(0.3, 0.59, 0.11));
-	if (est < 1.5) {  // fogo: o corpo fica legível (escurecido e aquecido, estável) e a chama sai do contorno em línguas que sobem
+	if (est < 1.5) {  // fogo: o corpo fica legível (escurecido e aquecido) e a chama é pintada só dentro dele (mais `chama_sobra` px acima do contorno)
+		bool chama = false;
 		if (corpo > 0.5) {
-			if (lum < 0.1) { c.rgb = c.rgb * 0.6; }  // o contorno do bicho fica: ele continua legível dentro do fogo
+			if (lum < 0.1) { c.rgb = c.rgb * 0.6; }  // o contorno e os detalhes escuros do bicho ficam por cima da chama: ele continua legível dentro do fogo
 			else {
 				c.rgb = c.rgb * vec3(0.7, 0.42, 0.3);
 				float a1 = p.y >= 1.0 ? texture(TEXTURE, (base + p - vec2(0.0, 1.0) + 0.5) / ta).a : 0.0;
@@ -50,32 +95,15 @@ const GLSL := """
 				float hr = fract(sin(dot(p + vec2(sem, te), vec2(73.156, 52.235))) * 13758.5453);
 				if (a1 < 0.5) { c.rgb = vec3(0.965, 0.659, 0.118); }  // a faixa logo abaixo da borda de cima brilha
 				else if (a2 < 0.5) { c.rgb = vec3(0.878, 0.322, 0.102); }
-				else if (hr > 0.96) { c.rgb = hr > 0.985 ? vec3(0.965, 0.659, 0.118) : vec3(0.878, 0.322, 0.102); }  // poucas brasas no corpo
+				else if (calmo < 0.5 && hr > 0.96) { c.rgb = hr > 0.985 ? vec3(0.965, 0.659, 0.118) : vec3(0.878, 0.322, 0.102); }  // poucas brasas no corpo (com "Reduzir piscadas" não)
+				chama = true;
 			}
-		} else {
-			float col = floor(p.x / 2.0);
-			float ca = fract(sin(dot(vec2(col, sem), vec2(12.9898, 78.233))) * 43758.5453);
-			float cb = fract(sin(dot(vec2(col, sem), vec2(39.346, 11.135))) * 24634.6345);
-			// Cada pixel de fora tem UMA fonte só (língua, brasa ou lado), para nunca somar trocas: a língua liga e desliga ao ser cruzada por uma onda lenta
-			// (período de 1,6 a 3,5 s) e, de cor fixa pela distância, troca no máximo 2 vezes por segundo. Nas colunas de brasa a língua é baixa (até 5 px) e a
-			// brasa sobe só acima disso (6 a 9 px), então as duas nunca disputam o mesmo pixel. t é inteiro e a derivada da onda não passa de 0,93: a altura muda
-			// no máximo 1 px por quadro.
-			bool com_brasa = ca > 0.55;
-			float alto = com_brasa ? floor(3.6 + 1.5 * sin(t * (0.15 + 0.17 * cb) + ca * 6.2832 + col * 0.8)) : floor(5.5 + 2.9 * sin(t * (0.15 + 0.17 * cb) + ca * 6.2832 + col * 0.8));
-			float lin = floor(p.y / 2.0);  // nos lados: a mesma ideia em 0, 1 ou 2 px, por faixa de 2 linhas
-			float hl = fract(sin(dot(vec2(lin, sem), vec2(73.156, 52.235))) * 13758.5453);
-			float alcance = floor(1.2 + 1.3 * sin(t * (0.15 + 0.15 * hl) + hl * 6.2832 + lin * 0.9));
-			if (baixo < 98.0) {
-				if (baixo <= alto) {  // a cor vem só da distância ao corpo: amarelo claro, laranja, vermelho e vermelho escuro na ponta alta
-					c = vec4(baixo <= 1.0 ? vec3(1.0, 0.945, 0.659) : (baixo <= 3.0 ? vec3(0.965, 0.659, 0.118) : (baixo <= 6.0 ? vec3(0.878, 0.322, 0.102) : vec3(0.549, 0.11, 0.039))), 1.0);
-				} else if (com_brasa && mod(p.x, 2.0) == floor(cb * 2.0)) {  // brasa solta que sobe acima da ponta, a cada ~2 s
-					float ciclo = 20.0 + floor(ca * 12.0);
-					float fase = mod(t + floor(cb * ciclo), ciclo);
-					if (fase < 8.0 && baixo == 6.0 + floor(fase * 0.5)) { c = vec4(baixo < 8.0 ? vec3(1.0, 0.945, 0.659) : vec3(0.965, 0.659, 0.118), 1.0); }
-				}
-			} else if (lado <= alcance) {
-				c = vec4(lado < 1.5 ? vec3(0.965, 0.659, 0.118) : vec3(0.878, 0.322, 0.102), 1.0);
-			}
+		} else if (baixo <= chama_sobra) {
+			chama = true;  // a ponta da chama passa do contorno em até `chama_sobra` px (com 0 nunca entra aqui: `baixo` de um pixel vazio é 1 ou mais)
+		}
+		if (chama) {
+			vec4 f = chama_cor(p, tam, sem, TIME);
+			if (f.a > 0.5) { c = vec4(f.rgb, 1.0); }
 		}
 	} else if (est < 2.5) {  // gelo: o corpo vira gelo em 3 tons, com a borda branca e pontas paradas para fora
 		if (corpo > 0.5) {
@@ -110,7 +138,8 @@ const GLSL := """
 	}
 """
 ## Folga (px) que o quadrado do sprite de elite e chefe ganha com status, para a chama, o arco, a bolha e a gota passarem do contorno da célula:
-## x nos dois lados, y em cima (a chama sobe até 8 px) e embaixo (a gota do sangue cai até 8 px). É a mesma folga do lote (v2/horda.gd).
+## x nos dois lados, y em cima (a bolha do veneno sobe até 6 px) e embaixo (a gota do sangue cai até 8 px). A chama do fogo não usa a folga: fica no corpo
+## (no máximo `chama_sobra` px acima dele). É a mesma folga do lote (v2/horda.gd).
 const FOLGA_NO := Vector2(4.0, 9.0)
 
 ## Para Sprite2D de elite e chefe: `regiao` é o recorte do quadro no atlas, em px. Um Sprite2D com região só desenha o retângulo da região, e as folhas
@@ -121,7 +150,9 @@ const FOLGA_NO := Vector2(4.0, 9.0)
 ## (flip_h) inverte o UV mas não a posição, então o sentido do UV vem de onde o canto leu a célula.
 const SHADER_NO := (
 	"""shader_type canvas_item;
-uniform float estado = 0.0;
+"""
+	+ UNIFORMS
+	+ """uniform float estado = 0.0;
 uniform float semente = 0.0;
 uniform vec4 regiao = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec2 centro = vec2(0.0);
@@ -165,4 +196,32 @@ static func material_no(semente: float) -> ShaderMaterial:
 	m.shader = _shader_no
 	m.set_shader_parameter("semente", semente)
 	m.set_shader_parameter("folga", FOLGA_NO)
+	preparar(m)
 	return m
+
+
+static var _chamas: Array = []
+
+
+## Liga a um material do corpo (o do lote da horda ou o de elite e chefe) as folhas da chama e os números dos dados (status.fogo.corpo), e o ritmo atual.
+static func preparar(m: ShaderMaterial) -> void:
+	if _chamas.is_empty():
+		for t in TAMANHOS_CHAMA:
+			_chamas.append(load(PASTA_CHAMA + "chama_" + t + ".png"))
+	for i in TAMANHOS_CHAMA.size():
+		m.set_shader_parameter("chama_" + TAMANHOS_CHAMA[i], _chamas[i])
+	var d: Dictionary = Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).get("corpo", {})
+	m.set_shader_parameter("chama_alt", clampf(float(d.get("altura", 0.4)), 0.1, 0.9))
+	m.set_shader_parameter("chama_sobra", clampf(float(d.get("sobra", 1.0)), 0.0, 4.0))
+	var corte: Array = d.get("corte", [30, 56])
+	m.set_shader_parameter("chama_corte", Vector2(float(corte[0]), float(corte[1])))
+	ritmo(m)
+
+
+## O ritmo da chama agora: 14 quadros por segundo; com "Reduzir piscadas", 1,5 (nenhum pixel troca mais de 2 vezes por segundo) e sem as brasas do corpo.
+## Chame a cada quadro: a opção muda a qualquer hora.
+static func ritmo(m: ShaderMaterial) -> void:
+	var calmo := Piscadas.ligado()
+	var d: Dictionary = Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).get("corpo", {})
+	m.set_shader_parameter("calmo", 1.0 if calmo else 0.0)
+	m.set_shader_parameter("chama_fps", float(d.get("quadros_calmo", 1.5)) if calmo else float(d.get("quadros_s", 14.0)))
