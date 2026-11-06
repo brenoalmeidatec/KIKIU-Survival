@@ -100,22 +100,23 @@ func _testes() -> void:
 
 
 func _t_portao() -> void:
+	# desde 05/11/2026 (pedido do Alisson: "tire o mecha do oculto e já ponha como o terceiro personagem principal") o LightWolf não tem
+	# mais "beta": aparece para todo mundo, em 3º na escolha (Brendan, Nick, LightWolf), com o retrato do lobo encostado no mecha (#584).
 	Herois.forcado = ""
 	Progressao.args_teste = []
-	var ids := Herois.lista().map(func(h): return str(h.id))
-	ok(not ids.has("lightwolf") and not Herois.existe("lightwolf"), "sem beta o LightWolf não aparece na lista (%s)" % str(ids))
-	ok(Herois.escolhido() != "lightwolf" and ids.size() >= 8, "sem beta ninguém joga de LightWolf e os outros heróis seguem (%d)" % ids.size())
+	var ids: Array = Herois.lista().map(func(h): return str(h.id))
+	ok(ids.has("lightwolf") and Herois.existe("lightwolf"), "sem beta o LightWolf aparece na lista (%s)" % str(ids))
+	ok(ids.size() >= 3 and ids[2] == "lightwolf", "o LightWolf é o 3º herói (%s)" % str(ids))
 	var livres: Array = Personagens.nomes_livres().map(func(n): return str(n.nome))
-	ok(not livres.has("LightWolf") and livres.has("Brendan"), "sem beta o nome LightWolf não é oferecido na criação (%s)" % str(livres))
-	ok(Personagens.heroi_do_nome("LightWolf") == "hazaki", "sem beta um save de LightWolf joga de Hazaki, sem quebrar")
-	Progressao.args_teste = ["--beta-tester"]
-	ok(Herois.existe("lightwolf") and Herois.lista().size() == ids.size() + 1, "com --beta-tester o LightWolf entra na lista")
-	livres = Personagens.nomes_livres().map(func(n): return str(n.nome))
-	ok(livres.has("LightWolf") and Personagens.heroi_do_nome("LightWolf") == "lightwolf", "com beta o nome é oferecido e vale o herói lightwolf")
-	Progressao.args_teste = []
-	ok(not Herois.existe("lightwolf"), "sem beta de novo, some de novo")
+	ok(livres.has("LightWolf") and Personagens.heroi_do_nome("LightWolf") == "lightwolf", "o nome LightWolf é oferecido e vale o herói lightwolf")
+	var nomes: Array = Personagens.nomes().map(func(n): return str(n.nome))
+	ok(nomes.slice(0, 3) == ["Brendan", "Nick", "LightWolf"], "a escolha oferece Brendan, Nick e LightWolf primeiro (%s)" % str(nomes))
+	var ret := Personagens.retrato_do_nome("LightWolf")
+	ok(ret != "" and load(ret) is Texture2D, "o LightWolf tem o retrato pronto do lobo com o mecha (%s)" % ret)
+	ok(Personagens.retrato_do_nome("Brendan") == "", "quem não tem o campo retrato segue com o quadro da folha")
+	ok(not ids.has("lightwolf_lobo"), "a forma Lobo continua fora da escolha")
 	Herois.forcado = "lightwolf"
-	ok(Herois.existe("lightwolf") and Herois.escolhido() == "lightwolf", "herói forçado por teste ou foto passa pelo portão")
+	ok(Herois.existe("lightwolf") and Herois.escolhido() == "lightwolf", "herói forçado por teste ou foto continua valendo")
 	Herois.forcado = ""
 	Progressao.args_teste = null
 
@@ -125,7 +126,7 @@ func _t_dados() -> void:
 	for x in Herois.catalogo().herois:
 		if str(x.id) == "lightwolf":
 			h = x
-	ok(not h.is_empty() and bool(h.get("beta", false)), "lightwolf está no catálogo com beta: true")
+	ok(not h.is_empty() and not bool(h.get("beta", false)), "lightwolf está no catálogo sem beta (personagem principal)")
 	if h.is_empty():
 		return
 	var c: Dictionary = h.cfg

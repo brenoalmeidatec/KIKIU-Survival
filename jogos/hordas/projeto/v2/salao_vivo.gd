@@ -308,8 +308,10 @@ func _caixa_corpo(pes: Vector2) -> Rect2:
 	var qw := float(_corpo_tamanho.x)
 	var qh := float(_corpo_tamanho.y)
 	var area: Rect2 = _corpo_caixas.get(chave, Rect2(0, 0, qw, qh))
-	var canto := Vector2(pes.x - qw * ESCALA_HEROI / 2.0, pes.y - qh * ESCALA_HEROI + 6.0)
-	return Rect2(canto + area.position * ESCALA_HEROI, area.size * ESCALA_HEROI)
+	var esc_v = _ctx.get("_escala")  # salao.gd desenha a folha grande (o mecha) em 1x; sem o campo, a escala de sempre
+	var e: float = float(esc_v) if esc_v != null else ESCALA_HEROI
+	var canto := Vector2(pes.x - qw * e / 2.0, pes.y - qh * e + 6.0)
+	return Rect2(canto + area.position * e, area.size * e)
 
 
 ## A caixa do corpo de um quadro da folha (coluna c, linha l), em px do quadro: começa na primeira linha com pelo menos 4 pixels opacos

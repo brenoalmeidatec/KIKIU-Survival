@@ -125,7 +125,7 @@ func _t_dados_novos() -> void:
 	var armas := {}
 	for h in Herois.lista():
 		armas[str(h.arma)] = true
-	ok(armas.size() == 8, "oito heróis, oito armas diferentes (%s)" % str(armas.keys()))
+	ok(armas.size() == Herois.lista().size() and armas.size() >= 9, "cada herói com a sua arma, LightWolf incluído (%s)" % str(armas.keys()))
 	var haz_folha: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "hazaki_samurai.json"))
 	for id in NOVOS:
 		var h := Herois.heroi(id)
