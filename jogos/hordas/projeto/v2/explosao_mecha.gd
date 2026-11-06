@@ -20,8 +20,17 @@ extends RefCounted
 ## Perfil Baixo: as três peças ficam (são o essencial: o tamanho, o alcance e a marca); o que é extra (partículas, luz, brilho do fusível) fica em especial.gd.
 ## API: montar(glow, mundo_no, explosao, vel) [vel = comum.limpa.vel], preparar() [desenha os quadros uma vez por sessão], explodir(centro, rect), atualizar(dt), limpar(), viva() -> bool, cratera_viva() -> bool, quadro_bola() -> int,
 ## quadro_cratera() -> int (testes: -1 = nada).
+## RODADA 7 (05/11, pedido do Alisson: "no ult ainda tô achando a explosão estranha ... acho que faltam frames"): no perfil normal, sem "Reduzir piscadas", a bola é
+## a FOLHA nova (assets/v2/efeitos/lw_q_bola.png, gerada por fonte_arte/explosao_lw_q/gerar_bola.py: 36 quadros, ~27 por s de relógio, com tempos NÃO uniformes pelos
+## `pesos` de explosao.folha: o estalo branco e os chicotes rápidos, a cúpula em duas camadas defasadas com arcos elétricos e anel de choque no ar, o miolo que abre e a
+## dissipação em fumaça que esfarela, com cauda lenta), no MESMO tempo total de antes (BOLA_QUADROS / BOLA_FPS do mundo = 1,33 s de relógio). Somam-se as partículas
+## (v2/explosao_particulas.gd: detritos, faíscas, brasas, fumaça em blobs e pontos de calor no chão), dois anéis a mais no chão (o claro de dentro e o de poeira) e a
+## onda principal com raio ondulado que quebra em arcos depois da metade. Com "Reduzir piscadas" a bola é a de 25 quadros desenhada aqui (a calma, medida a ~0 Hz na
+## rodada 6), as partículas ficam de cor única e a onda tem lacunas fixas desde o 1º quadro. No perfil Baixo (`explodir(..., leve = true)`): a bola de 25 quadros, a onda
+## de 1 px e a cratera, sem partícula, sem anel extra (como era).
 
 const Piscadas := preload("res://v2/piscadas.gd")
+const Particulas := preload("res://v2/explosao_particulas.gd")
 const ACHATA := 0.62
 const BOLA_QUADROS := 25  # até a rodada 6 eram 10 (0,53 s de relógio); agora 25 a 15 por s do mundo = 1,33 s de relógio (2,5x), o mesmo desenho em mais quadros
 const BOLA_FPS := 15.0
@@ -45,9 +54,15 @@ const FUNDO := Color(0.05, 0.05, 0.07)
 const CHAMUSCA := Color(0.17, 0.14, 0.13)
 const BRASA := Color(0.5, 0.88, 1.0)
 
+const ONDA_ARCOS := 40  # setores do anel principal: depois da metade do caminho alguns somem (as lacunas dos arcos; o dano segue redondo)
+
 static var _cache := {}  # os quadros já desenhados nesta sessão, pela chave dos tamanhos (desenhar custa ~0,5 s: uma vez só, não a cada partida)
 
-var bola: Array = []  # [k] -> Texture2D
+var bola: Array = []  # [k] -> Texture2D (a bola calma de 25 quadros: "Reduzir piscadas" e perfil Baixo)
+var bola_cheia: Array = []  # [k] -> Texture2D (a folha da rodada 7, perfil normal); vazia se a folha faltar
+var folha := {}  # explosao.folha do JSON
+var _fim_quadro := PackedFloat32Array()  # o instante (s do mundo) em que cada quadro da folha acaba
+var particulas  # Particulas
 var cratera: Array = []  # [0] quente, [1] fria, [2..] esfarelando
 var raio_bola := 84
 var raio_cratera := 56
@@ -63,6 +78,9 @@ var t := -1.0  # s desde o estouro; < 0 = nada
 var onda_max := 0.0  # raio (px, eixo x) em que a onda cobre a câmera inteira
 var explosoes := 0  # testes
 var _pulou_branco := false
+var _cheia := false  # esta explosão usa a folha nova (e as partículas e anéis extras)
+var _leve := false  # perfil Baixo nesta explosão
+var _calmo := false  # "Reduzir piscadas" nesta explosão
 
 
 func montar(glow: Node, mundo_no: Node, e: Dictionary, vel: float) -> void:
@@ -73,6 +91,9 @@ func montar(glow: Node, mundo_no: Node, e: Dictionary, vel: float) -> void:
 	cratera_esfarela = clampf(float(cr.get("esfarela", cratera_esfarela)), 0.1, cratera_dur)
 	cratera_quente = clampf(float(cr.get("quente", cratera_quente)), 0.0, cratera_dur - cratera_esfarela)
 	vel_onda = maxf(1.0, vel)
+	folha = e.get("folha", {})
+	particulas = Particulas.new()
+	particulas.montar(e.get("particulas", {}))
 	if glow != null:
 		no_bola = Node2D.new()
 		no_bola.draw.connect(_desenhar_bola)
@@ -93,23 +114,74 @@ func preparar() -> void:
 	if not _cache.has(chave):
 		_gerar_bola()
 		_gerar_cratera()
-		_cache[chave] = [bola, cratera]
+		_cache[chave] = [bola, cratera, _carregar_folha()]
 	bola = _cache[chave][0]
 	cratera = _cache[chave][1]
+	bola_cheia = _cache[chave][2]
+	_tempos_folha()
+
+
+## Os quadros da folha nova, recortados em texturas (uma vez por sessão). Vazio se a folha ou os números dela faltarem: aí a bola calma vale para todos.
+func _carregar_folha() -> Array:
+	var out: Array = []
+	var arq := str(folha.get("arquivo", ""))
+	if arq == "" or not ResourceLoader.exists(arq):
+		return out
+	var tex: Texture2D = load(arq)
+	var im := tex.get_image()
+	var cel: Array = folha.get("celula", [0, 0])
+	var w := int(cel[0])
+	var h := int(cel[1])
+	var cols := maxi(1, int(folha.get("colunas", 1)))
+	var n := int(folha.get("quadros", 0))
+	if w <= 0 or h <= 0:
+		return out
+	for k in n:
+		var r := Rect2i((k % cols) * w, (k / cols) * h, w, h)
+		if r.end.x > im.get_width() or r.end.y > im.get_height():
+			return []
+		out.append(ImageTexture.create_from_image(im.get_region(r)))
+	return out
+
+
+## O fim de cada quadro da folha em s do mundo: os `pesos` normalizados para a MESMA duração da bola calma (BOLA_QUADROS / BOLA_FPS), o tempo aprovado.
+func _tempos_folha() -> void:
+	_fim_quadro.clear()
+	var pesos: Array = folha.get("pesos", [])
+	if pesos.size() != bola_cheia.size() or pesos.is_empty():
+		bola_cheia = []
+		return
+	var soma := 0.0
+	for p in pesos:
+		soma += float(p)
+	var acc := 0.0
+	var total := float(BOLA_QUADROS) / BOLA_FPS
+	for p in pesos:
+		acc += float(p) / soma * total
+		_fim_quadro.append(acc)
 
 
 ## O estouro em `p` (onde o mecha ficou, no chão). `rect` = o retângulo que a limpeza cobre (câmera mais a margem): a onda vai até cobri-lo.
-func explodir(p: Vector2, rect: Rect2) -> void:
+## `leve` = perfil Baixo (sem partículas nem anéis extras, a bola calma).
+func explodir(p: Vector2, rect: Rect2, leve := false) -> void:
 	preparar()
 	centro = p.round()
 	t = 0.0
-	_pulou_branco = Piscadas.ligado()
+	_calmo = Piscadas.ligado()
+	_leve = leve
+	_cheia = not _calmo and not leve and not bola_cheia.is_empty()
+	_pulou_branco = _calmo and not _cheia
 	onda_max = 0.0
 	for k in 4:
 		var canto := Vector2(rect.position.x if k % 2 == 0 else rect.end.x, rect.position.y if k < 2 else rect.end.y)
 		var d := canto - centro
 		onda_max = maxf(onda_max, Vector2(d.x, d.y / ACHATA).length())
 	explosoes += 1
+	if particulas != null:
+		if leve:
+			particulas.limpar()
+		else:
+			particulas.emitir(centro, explosoes * 7919 + 13, _calmo, float(raio_bola), vel_onda, onda_max)
 	_redesenhar()
 
 
@@ -117,13 +189,19 @@ func atualizar(dt: float) -> void:
 	if t < 0.0:
 		return
 	t += dt
+	if particulas != null:
+		particulas.atualizar(dt)
 	if t >= cratera_dur and t >= _bola_dur():
 		t = -1.0
+		if particulas != null:
+			particulas.limpar()
 	_redesenhar()
 
 
 func limpar() -> void:
 	t = -1.0
+	if particulas != null:
+		particulas.limpar()
 	_redesenhar()
 
 
@@ -139,6 +217,16 @@ func _bola_dur() -> float:
 	return float(BOLA_QUADROS - _salto()) / BOLA_FPS
 
 
+## Os quadros da bola desta explosão (a folha nova ou a calma). Testes.
+func quadros_bola() -> Array:
+	return bola_cheia if _cheia else bola
+
+
+## Esta explosão usa a folha nova? Testes.
+func cheia() -> bool:
+	return _cheia
+
+
 ## Quantos quadros do começo a bola pula: a fase branca inteira com "Reduzir piscadas", nenhum fora dele.
 func _salto() -> int:
 	return FASE_QUADROS if _pulou_branco else 0
@@ -148,6 +236,11 @@ func _salto() -> int:
 func quadro_bola() -> int:
 	if t < 0.0 or t >= _bola_dur():
 		return -1
+	if _cheia:
+		for k in _fim_quadro.size():
+			if t < _fim_quadro[k]:
+				return k
+		return _fim_quadro.size() - 1
 	return mini(BOLA_QUADROS - 1, int(t * BOLA_FPS) + _salto())
 
 
@@ -179,10 +272,20 @@ func _redesenhar() -> void:
 
 
 func _desenhar_bola() -> void:
+	if t < 0.0:
+		return
+	if particulas != null and not _leve:
+		particulas.desenhar_fundo(no_bola)
 	var k := quadro_bola()
 	if k >= 0:
-		var tex: Texture2D = bola[k]
-		no_bola.draw_texture(tex, centro + Vector2(-raio_bola, -raio_bola - BOLA_SOBE))
+		if _cheia:
+			var c: Array = folha.get("centro", [0, 0])
+			no_bola.draw_texture(bola_cheia[k], centro - Vector2(int(c[0]), int(c[1]) + int(BOLA_SOBE)))
+		else:
+			var tex: Texture2D = bola[k]
+			no_bola.draw_texture(tex, centro + Vector2(-raio_bola, -raio_bola - BOLA_SOBE))
+	if particulas != null and not _leve:
+		particulas.desenhar_frente(no_bola)
 
 
 ## O chão: a cratera e, por cima dela, a onda de 1 px (as duas embaixo dos monstros e do herói).
@@ -191,17 +294,51 @@ func _desenhar_chao() -> void:
 	if k >= 0:
 		var tex: Texture2D = cratera[k]
 		no_chao.draw_texture(tex, centro - Vector2(tex.get_width() / 2, tex.get_height() / 2))
+	if t < 0.0:
+		return
+	var extra := not _leve
+	if extra:
+		if particulas != null:
+			particulas.desenhar_chao(no_chao)
+		_anel_extra(0.065, 0.35, CIANO_CLARO, [3, 2, 1])  # o claro de dentro, um pouco atrás da frente
+		_anel_extra(0.16, 0.25, FUMACA_ESC, [2, 2, 2])  # o de poeira
 	var r := raio_onda()
 	if r > 0.0:
 		var cor := CIANO_CLARO if r < onda_max * 0.5 else CIANO
 		var n := maxi(24, int(TAU * r / ONDA_PASSO))
 		var ultimo := Vector2.INF
+		var quebra := 0.0  # a fração de setores que já viraram lacuna
+		if extra:
+			quebra = 0.25 if _calmo else clampf((r / maxf(onda_max, 1.0) - 0.5) * 0.7, 0.0, 0.35)
 		for i in n:
 			var a := TAU * float(i) / float(n)
-			var q := (centro + Vector2(cos(a) * r, sin(a) * r * ACHATA)).round()
+			var rr := r
+			if extra:
+				if quebra > 0.0 and _h(int(a / TAU * float(ONDA_ARCOS)), 0, 61) < quebra:
+					continue
+				rr += 1.5 * sin(3.0 * a + 0.7) + 1.0 * sin(5.0 * a + 2.1) + 0.8 * sin(8.0 * a + 4.0)  # ondula (+-3 px), fixo pelo ângulo
+			var q := (centro + Vector2(cos(a) * rr, sin(a) * rr * ACHATA)).round()
 			if q != ultimo:
 				no_chao.draw_rect(Rect2(q, Vector2(2, 1)), cor)
 				ultimo = q
+
+
+## Um anel a mais no chão que sai `atraso` s (mundo) depois do estouro a 0,8 da velocidade da onda, vai até `alcance` x onda_max e some em degraus de
+## espessura (`grossuras`, um por terço do caminho), sem alfa.
+func _anel_extra(atraso: float, alcance: float, cor: Color, grossuras: Array) -> void:
+	var r := (t - atraso) * vel_onda * 0.8
+	var fim := onda_max * alcance
+	if r <= 0.0 or r >= fim:
+		return
+	var g: int = grossuras[clampi(int(r / fim * 3.0), 0, 2)]
+	var n := maxi(24, int(TAU * r / ONDA_PASSO))
+	var ultimo := Vector2.INF
+	for i in n:
+		var a := TAU * float(i) / float(n)
+		var q := (centro + Vector2(cos(a) * r, sin(a) * r * ACHATA)).round()
+		if q != ultimo:
+			no_chao.draw_rect(Rect2(q, Vector2(2, g)), cor)
+			ultimo = q
 
 
 # ------------------------------------------------------------------ os quadros (desenhados uma vez)
