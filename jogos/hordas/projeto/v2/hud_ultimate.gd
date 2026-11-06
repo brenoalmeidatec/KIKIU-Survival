@@ -11,16 +11,16 @@ const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o pulso do anel e do halo fica parado
 const EstiloPremium := preload("res://v2/estilo_premium.gd")
-const DIAMETRO := 64.0  # o nó inteiro: o círculo (60) e, embaixo, a tecla Q por cima da borda
-const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó é escalado (`scale`): 96 px na tela, o desenho segue no espaço de 64
-const RAIO_FUNDO := 29.0
-const RAIO_ANEL := 26.5  # o centro do anel de carga
-const LARG_ANEL := 4.0
+const DIAMETRO := 96.0  # o nó inteiro (decisão do Alisson, #368: o HUD da partida é 1,5x): o círculo e, embaixo, a tecla Q por cima da borda. Desenhado em pixel nativo, sem `scale`
+const RAIO_FUNDO := 46.0
+const RAIO_ANEL := 43.0  # o centro do anel de carga: a borda de dentro (40) fica fora do canto mais distante dos ícones a 2x
+const LARG_ANEL := 6.0
 const PONTOS := 72  # segmentos do arco: o círculo fica liso sem custar nada (um desenho só quando muda)
-const TAM_PORCENTO := 14
-const TAM_VAZIO := 10
+const ESCALA_ICONE := 2  # o ícone do Q (32x32, 1 px de arte) é desenhado em 2x inteiro: 64 px, o pixel do ícone é do tamanho dos outros
+const TAM_PORCENTO := 16  # Press Start 2P: só 8 ou 16 (a grade da fonte)
+const TAM_VAZIO := 8
 const ICONE := "ultimate_q"  # o ícone genérico, só para herói sem arte própria
-const PASTA_ICONES := "res://assets/v2/especial_q/"  # o ícone do Q de cada herói, 32x32 (gerar_objetos.py especial_q), pelo nome da chave dele
+const PASTA_ICONES := "res://assets/v2/especial_q/"  # o ícone do Q de cada herói, 32x32 (gerar_objetos.py especial_q), desenhado em 2x, pelo nome da chave dele
 const FUNDO := Color(Paleta.PAINEL, 0.92)
 const TRILHO := Color(Paleta.HABILIDADE_FUNDO, 0.95)
 
@@ -33,7 +33,7 @@ var _icone_chave := "#"  # nenhuma chave de herói é "#": força o primeiro car
 
 
 func _ready() -> void:
-	scale = Vector2(ESCALA, ESCALA)
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	size = Vector2(DIAMETRO, DIAMETRO)
 	process_priority = 101  # depois de "Habilidades" (100): lê o estado do mesmo quadro
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -61,7 +61,7 @@ func _draw() -> void:
 	if _slots == null:
 		return
 	var fonte := get_theme_font("font")
-	var c := Vector2(DIAMETRO, DIAMETRO) * 0.5 - Vector2(0.0, 2.0)  # o círculo sobe 2 px: a tecla fica na borda de baixo do nó
+	var c := Vector2(DIAMETRO, DIAMETRO) * 0.5 - Vector2(0.0, 1.0)  # o círculo sobe 1 px: a tecla fica na borda de baixo do nó
 	var tem: bool = _slots.q_implementada
 	var pronta: bool = tem and (_slots.q_pronta or _slots.q_ativa)
 	var f := clampf(float(_slots.q_carga_pct) / 100.0, 0.0, 1.0) if tem else 0.0
@@ -74,23 +74,26 @@ func _draw() -> void:
 		cor = cor_heroi.lerp(Paleta.BRANCO, 0.45 * pulso)
 	# o halo de quando está pronta: um círculo suave atrás que respira
 	if pronta:
-		draw_circle(c, RAIO_FUNDO + 3.0, Color(cor_heroi, 0.12 + 0.2 * pulso), true, -1.0, true)
-	draw_circle(c, RAIO_FUNDO, FUNDO, true, -1.0, true)
+		draw_circle(c, RAIO_FUNDO + 4.0, Color(cor_heroi, 0.12 + 0.2 * pulso), true, -1.0, false)
+	draw_circle(c, RAIO_FUNDO, FUNDO, true, -1.0, false)
 	if pronta:  # cheia (100%): um aro de luz por fora e o miolo tingido; nunca mais apagado do que a 99%
-		draw_arc(c, RAIO_FUNDO + 1.5, 0.0, TAU, PONTOS, Color(cor_heroi.lerp(Paleta.BRANCO, 0.5), 0.35 + 0.55 * pulso), 2.0, true)
-		draw_circle(c, RAIO_ANEL - LARG_ANEL * 0.5, Color(cor_heroi, 0.14 + 0.18 * pulso), true, -1.0, true)
-	draw_arc(c, RAIO_ANEL, 0.0, TAU, PONTOS, TRILHO, LARG_ANEL, true)
+		draw_arc(c, RAIO_FUNDO + 2.0, 0.0, TAU, PONTOS, Color(cor_heroi.lerp(Paleta.BRANCO, 0.5), 0.35 + 0.55 * pulso), 3.0, false)
+		draw_circle(c, RAIO_ANEL - LARG_ANEL * 0.5, Color(cor_heroi, 0.14 + 0.18 * pulso), true, -1.0, false)
+	draw_arc(c, RAIO_ANEL, 0.0, TAU, PONTOS, TRILHO, LARG_ANEL, false)
 	if f > 0.0:
-		draw_arc(c, RAIO_ANEL, -PI * 0.5, -PI * 0.5 + TAU * f, PONTOS, cor if tem else Paleta.HABILIDADE_DESATIVADA, LARG_ANEL, true)
-	draw_arc(c, RAIO_FUNDO, 0.0, TAU, PONTOS, Color(EstiloPremium.OURO, 0.9 if pronta else 0.45), 1.5, true)  # o filete dourado do visual premium
-	draw_arc(c, RAIO_ANEL - LARG_ANEL * 0.5 - 1.0, 0.0, TAU, PONTOS, Color(Paleta.PRETO, 0.5), 1.0, true)
+		draw_arc(c, RAIO_ANEL, -PI * 0.5, -PI * 0.5 + TAU * f, PONTOS, cor if tem else Paleta.HABILIDADE_DESATIVADA, LARG_ANEL, false)
+	draw_arc(c, RAIO_FUNDO, 0.0, TAU, PONTOS, Color(EstiloPremium.OURO, 0.9 if pronta else 0.45), 2.0, false)  # o filete dourado do visual premium
+	draw_arc(c, RAIO_ANEL - LARG_ANEL * 0.5 - 1.0, 0.0, TAU, PONTOS, Color(Paleta.PRETO, 0.5), 2.0, false)
 	var arte := _arte()
 	if arte != null and tem:
 		var alfa := 1.0 if pronta else 0.32
 		var tinta := cor_heroi.lerp(Paleta.BRANCO, 0.35) if pronta else Paleta.HABILIDADE_DESATIVADA
-		draw_texture(arte, c - arte.get_size() * 0.5, Color(tinta, alfa))
+		var lado := arte.get_size() * float(ESCALA_ICONE)
+		draw_texture_rect(arte, Rect2((c - lado * 0.5).round(), lado), false, Color(tinta, alfa))
 	if not tem:
-		draw_string(fonte, c + Vector2(-DIAMETRO * 0.5, 4.0), "EM BREVE", HORIZONTAL_ALIGNMENT_CENTER, DIAMETRO, TAM_VAZIO, Paleta.HABILIDADE_DESATIVADA)
+		draw_string(
+			fonte, (c + Vector2(-DIAMETRO * 0.5, 4.0)).round(), "EM BREVE", HORIZONTAL_ALIGNMENT_CENTER, DIAMETRO, TAM_VAZIO, Paleta.HABILIDADE_DESATIVADA
+		)
 	elif not pronta:
 		_texto_contornado(fonte, c, _slots._rotulo_q(), cor_heroi.lerp(Paleta.BRANCO, 0.35))
 	# a tecla por cima da borda de baixo do círculo (o mesmo selo do E e do secundário, v2/glifos.gd)
@@ -111,6 +114,6 @@ func _arte() -> Texture2D:
 ## O texto da % centrado no círculo, com contorno escuro para ler sobre o ícone apagado.
 func _texto_contornado(fonte: Font, c: Vector2, texto: String, cor: Color) -> void:
 	var tam := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_PORCENTO)
-	var pos := Vector2(c.x - tam.x * 0.5, c.y + fonte.get_ascent(TAM_PORCENTO) * 0.5 - 1.0)
+	var pos := Vector2(c.x - tam.x * 0.5, c.y + fonte.get_ascent(TAM_PORCENTO) * 0.5 - 1.0).round()
 	draw_string_outline(fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_PORCENTO, 4, Color(0.0, 0.0, 0.0, 0.9))
 	draw_string(fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_PORCENTO, cor)

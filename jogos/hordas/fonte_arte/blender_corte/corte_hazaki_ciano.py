@@ -22,13 +22,19 @@ import corte_hazaki as b  # noqa: E402  (blocos de geometria/material compartilh
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SAIDA = os.path.abspath(ARGS[0]) if ARGS else AQUI
-N2, T2, ESC = 12, 64, 2
+# sem CORTE_TAM: o estudo antigo (64x64 dobrado, pixel de 2 px). Com CORTE_TAM=N: quadro de N px desenhado direto, 1 px de arte = 1 px do jogo.
+N2 = 12
+T2, ESC = (b.TAM, 1) if os.environ.get("CORTE_TAM") else (64, 2)
 R2 = 0.82
+RAIO_MAX = 0.93   # nada passa daqui (o quadro vai ate 1,0): o desenho nao pode encostar na borda do PNG, senao o contorno sai reto
+ESC_MAX = RAIO_MAX / R2  # teto da escala do fantasma
 
 
 def material_ciano(nome):
     """Corpo cheio de bordas nitidas; calor alto na borda INTERNA (branco azulado), baixo na externa (turquesa)."""
     m = bpy.data.materials.new(nome)
+    if m.node_tree is None:  # Blender 4.5 precisa ligar os nos; no 5.x a arvore ja existe
+        m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
     uvn = nt.nodes.new("ShaderNodeUVMap")
@@ -94,12 +100,13 @@ def monta():
     arco("trilha_1", 0.15, R2 - 0.09, [(f, max(c - .12, 0), p, i) for f, c, p, i in atras(1)])
     arco("trilha_2", 0.10, R2 - 0.17, [(f, max(c - .25, 0), p, i) for f, c, p, i in atras(2)])
     fant = [(f, 1.03, 0.0, 0.0 if f < 4 else max(.55 - .09 * (f - 4), 0)) for f in range(1, N2 + 1)]
-    arco("fantasma", 0.26, R2, fant, escala=[(f, 1.0 + 0.012 * max(f - 3, 0) ** 1.5) for f in range(1, N2 + 1)])
+    arco("fantasma", 0.26, R2, fant, escala=[(f, min(1.0 + 0.012 * max(f - 3, 0) ** 1.5, ESC_MAX)) for f in range(1, N2 + 1)])
     flash = [(f, 1.03, 0.0, 0.7 if f == 4 else 0.0) for f in range(1, N2 + 1)]
     arco("flash", 0.38, R2 + 0.02, flash)
     # estrela do impacto
     mb, _ = b.emissivo("branco", 1.0)
-    ix, iy = math.cos(b.rad(-30)) * R2, math.sin(b.rad(-30)) * R2
+    R_ESTRELA = R2 - 0.10  # um pouco para dentro do arco: a lente de 0,36 do impacto nao pode passar da borda do quadro (com a camera girada, nenhum giro corta)
+    ix, iy = math.cos(b.rad(-30)) * R_ESTRELA, math.sin(b.rad(-30)) * R_ESTRELA
     for nome, comp, rot in (("estrela_a", 0.36, 20), ("estrela_b", 0.24, 110)):
         o = b.lente(nome, comp, 0.03, mb, 0.1)
         for f in range(1, N2 + 1):
@@ -122,12 +129,34 @@ def monta():
                 b.keyar(o, f, loc=(x0, y0, 0.2), esc=(0.0001, 0.0001, 1))
                 continue
             s = 1.0 if t < vida - 1 else 0.5
-            b.keyar(o, f, loc=(x0 + math.cos(d) * vel * t, y0 + math.sin(d) * vel * t - 0.006 * t * t, 0.2), esc=(s, s, 1))
+            px, py = x0 + math.cos(d) * vel * t, y0 + math.sin(d) * vel * t - 0.006 * t * t
+            dist = math.hypot(px, py)
+            if dist > RAIO_MAX:  # o pixel que se desprende para antes da borda do quadro
+                px, py = px * RAIO_MAX / dist, py * RAIO_MAX / dist
+            b.keyar(o, f, loc=(px, py, 0.2), esc=(s, s, 1))
+
+
+def quantiza_ciano(q):
+    a, rgb = q[..., 3], q[..., :3].mean(axis=2)
+    a = np.where(a < 0.14, 0.0, np.round(a * 4.0) / 4.0)             # pixel art: 4 degraus de transparencia
+    h = np.where(a > 0, np.round(np.clip(rgb, 0, 1) * 3.0) / 3.0, 0.0)
+    # pixel solto (sem nenhum vizinho visivel nos 8 lados) e ruido da amostragem de 4 pontos, nao desenho: some
+    vis = np.pad(a > 0, 1)
+    viz = sum(vis[1 + dy : 1 + dy + a.shape[0], 1 + dx : 1 + dx + a.shape[1]] for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy, dx) != (0, 0))
+    a = np.where(viz > 0, a, 0.0)
+    h = np.where(a > 0, h, 0.0)
+    o = np.zeros_like(q)
+    o[..., 0] = o[..., 1] = o[..., 2] = h
+    o[..., 3] = a
+    return o
 
 
 def renderiza():
     cena = bpy.context.scene
     os.makedirs(os.path.join(SAIDA, "saida_ciano"), exist_ok=True)
+    if len(b.GIROS) > 1:
+        b.folha_giros(os.path.join(SAIDA, "saida_ciano"), N2, quantiza_ciano, os.path.join(SAIDA, "corte_hazaki_ciano_giros.png"), T2)
+        return
     cena.render.filepath = os.path.join(SAIDA, "saida_ciano", "quadro_")
     bpy.ops.render.render(animation=True)
     quadros = []
@@ -137,12 +166,7 @@ def renderiza():
         img.alpha_mode = "STRAIGHT"
         q = np.array(img.pixels[:], dtype=np.float32).reshape(T2, T2, 4)
         bpy.data.images.remove(img)
-        a, rgb = q[..., 3], q[..., :3].mean(axis=2)
-        a = np.where(a < 0.14, 0.0, np.round(a * 4.0) / 4.0)             # pixel art: 4 degraus de transparencia
-        h = np.where(a > 0, np.round(np.clip(rgb, 0, 1) * 3.0) / 3.0, 0.0)
-        o = np.zeros_like(q)
-        o[..., 0] = o[..., 1] = o[..., 2] = h
-        o[..., 3] = a
+        o = quantiza_ciano(q)
         quadros.append(np.repeat(np.repeat(o, ESC, axis=0), ESC, axis=1))      # dobra com pixel nitido
     folha = np.concatenate(quadros, axis=1)
     img = bpy.data.images.new("folha", T2 * ESC * N2, T2 * ESC, alpha=True)

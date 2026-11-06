@@ -18,36 +18,17 @@ const MAX_ONDAS := 6
 const MAX_FOLHAS := 14  # efeitos de folha (Blender): 0..5 cristal, anel e espiral; 6..13 a centelha de acerto
 const PRIM_CENTELHA := 6
 const MAX_MARCAS := 2  # marcas sustentadas ao mesmo tempo
-# nome -> [folha, quadros]; feitas no Blender em fonte_arte/blender_efeitos, mesmo formato do corte (RGB = calor, A = intensidade)
-const FOLHAS := {
-	"cristal": [preload("res://assets/v2/efeitos/efeito_cristal_folha.png"), 14.0],
-	"estrela": [preload("res://assets/v2/efeitos/efeito_estrela_folha.png"), 9.0],
-	"anel": [preload("res://assets/v2/efeitos/efeito_anel_folha.png"), 18.0],
-	"espiral": [preload("res://assets/v2/efeitos/efeito_espiral_folha.png"), 12.0],
-}
-const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_pfx.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
-const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_pfx_ciano.png")  # variante: so a energia ciano, 12 quadros
-# o corte so gira em 16 direcoes (passos de 22,5 graus): 0, 90, 180 e 270 sao a mesma folha com o UV trocado no shader, e os outros tres
-# angulos de cada folha (22,5, 45 e 67,5) vem prontos, girados com RotSprite (fonte_arte/blender_corte/girar_corte.py), sem pixel solto
-const CORTE_DIRECOES := 16
-const FOLHAS_CORTE_GIRADAS := [
-	[
-		FOLHA_CORTE,
-		preload("res://assets/v2/efeitos/corte_pfx_r1.png"),
-		preload("res://assets/v2/efeitos/corte_pfx_r2.png"),
-		preload("res://assets/v2/efeitos/corte_pfx_r3.png"),
-	],
-	[
-		FOLHA_CORTE_CIANO,
-		preload("res://assets/v2/efeitos/corte_pfx_ciano_r1.png"),
-		preload("res://assets/v2/efeitos/corte_pfx_ciano_r2.png"),
-		preload("res://assets/v2/efeitos/corte_pfx_ciano_r3.png"),
-	],
-]
+# As folhas do corte e dos efeitos (feitas no Blender, fonte_arte/blender_corte/folhas_1px.py) existem em VARIOS TAMANHOS, cada um desenhado direto no
+# tamanho final: 1 px de arte = 1 px do jogo, escala 1. O jogo escolhe o tamanho mais perto do pedido (nada de ampliar por fator fracionario).
+# A lista de tamanhos vem de dados/v2_folhas_fx.json (RGB = calor, A = intensidade; mesmo formato de sempre). O corte usa a versao pixelfx de cada
+# tamanho (rastro largo e faiscas desenhados ponto a ponto por cima da folha do Blender, fonte_arte/blender_corte/corte_pfx.py).
+const ARQUIVOS_FX := {"corte": "corte_pfx_e%d", "corte_ciano": "corte_pfx_ciano_e%d"}  # os demais: efeito_<nome>_e%d
+const CORTE_DIRECOES := 16  # o corte so gira em 16 direcoes (passos de 22,5 graus): a folha traz 4 linhas (0, 22,5, 45 e 67,5 graus, desenhadas) e os
+# quartos de volta (0, 90, 180 e 270) sao a mesma linha com o UV trocado no shader, exato
 const PixelRot := preload("res://v2/pixel_rot.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": sem clarão de tela, flash de acerto em tinta fixa
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
-const CORTE_CRESCE := 0.3  # fração do corte em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
+const CORTE_CRESCE := 0.3  # fração da estocada (o corte de folha tem tamanho fixo) em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
 
 const SHADER_CORTE := """
 shader_type canvas_item;
@@ -62,7 +43,9 @@ uniform float fixo = 0.0;  // 1 = rampa ciano fixa (variante ciano) em vez da co
 uniform float ang = 0.0;  // modos 0 e 1 (formas calculadas por pixel do mundo): a direção do golpe, girada aqui e não no nó
 uniform float giros = 0.0;  // modo 2: quantos quartos de volta (0 a 3) a folha gira; troca exata do UV, sem reamostrar o pixel art
 uniform float suave = 1.0;  // 1 = funde o quadro com o próximo (o meio-quadro que a folha não tem; Anim.suave)
-uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
+uniform float filas = 1.0;  // linhas da folha (o corte tem 4: a cena girada em 0, 22,5, 45 e 67,5 graus)
+uniform float fila = 0.0;  // qual linha usar (0 a filas - 1)
+uniform sampler2D folha : filter_nearest;  // feita no Blender (fonte_arte/blender_corte/folhas_1px.py), do tamanho do quad: os quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
 void fragment() {
 	if (modo > 1.5) {
@@ -74,9 +57,10 @@ void fragment() {
 		else if (giros > 1.5) d = -d;
 		else if (giros > 0.5) d = vec2(d.y, -d.x);
 		vec2 uv = d + 0.5;
-		vec4 t = texture(folha, vec2((uv.x + q) / quadros, uv.y));
+		float vy = (uv.y + fila) / filas;
+		vec4 t = texture(folha, vec2((uv.x + q) / quadros, vy));
 		if (suave > 0.5 && q < quadros - 1.0) {
-			t = mix(t, texture(folha, vec2((uv.x + q + 1.0) / quadros, uv.y)), fract(fq));
+			t = mix(t, texture(folha, vec2((uv.x + q + 1.0) / quadros, vy)), fract(fq));
 		}
 		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.85);
 		if (fixo > 0.5) {
@@ -252,9 +236,23 @@ var _oi := 0
 var _cortes: Array[Sprite2D] = []
 var _cortes_t := PackedFloat32Array()
 var _cortes_dur := PackedFloat32Array()
-var _cortes_esc := PackedFloat32Array()  # a escala final de cada corte (o rastro cresce até ela)
+var _cortes_esc := PackedFloat32Array()  # a escala final de cada estocada (o rastro cresce até ela)
+var _cortes_fixo := PackedByteArray()  # 1 = o corte e de folha: o quad e do tamanho do quadro, escala 1, nada cresce
 var _ci := 0
-var variante := "katana"  # qual folha o corte usa: "katana" (katana + linha de anime) ou "ciano" (so a energia ciano)
+var variante := "katana":  # qual folha o corte usa: "katana" (katana + linha de anime) ou "ciano" (so a energia ciano, carregada so quando pedida)
+	set(v):
+		variante = v
+		if v == "ciano":
+			_carregar_fx("corte_ciano")
+
+# folhas por tamanho (dados/v2_folhas_fx.json): nome -> larguras, alturas e texturas, na mesma ordem; mais um quad branco de cada tamanho
+var _fx_larg := {}  # nome -> PackedInt32Array
+var _fx_alt := {}  # nome -> PackedInt32Array
+var _fx_quadros := {}  # nome -> int
+var _fx_linhas := {}  # nome -> int
+var _fx_tex := {}  # nome -> Array[Texture2D]
+var _fx_quad := {}  # nome -> Array[Texture2D] (branco, do tamanho do quadro: o Sprite2D com escala 1 fica exatamente do tamanho do quadro)
+var _tex_branca: Texture2D  # 64x64 branca: o quad dos desenhos calculados no shader (estocada, eco, explosão), esses sim com escala
 
 # luzes rápidas
 var _luzes: Array[PointLight2D] = []
@@ -399,7 +397,8 @@ func fragmentar(m, fora: Vector2) -> void:
 func _montar_cortes() -> void:
 	var im := Image.create(64, 64, false, Image.FORMAT_RGBA8)
 	im.fill(Color.WHITE)
-	var tex := ImageTexture.create_from_image(im)
+	_tex_branca = ImageTexture.create_from_image(im)
+	var tex := _tex_branca
 	var sh := Shader.new()
 	sh.code = SHADER_CORTE
 	for i in MAX_CORTES:
@@ -414,6 +413,7 @@ func _montar_cortes() -> void:
 	_cortes_t.resize(MAX_CORTES)
 	_cortes_dur.resize(MAX_CORTES)
 	_cortes_esc.resize(MAX_CORTES)
+	_cortes_fixo.resize(MAX_CORTES)
 	_cortes_t.fill(9.0)
 	_cortes_dur.fill(1.0)
 
@@ -421,7 +421,12 @@ func _montar_cortes() -> void:
 func _montar_folhas() -> void:
 	var sh := Shader.new()
 	sh.code = SHADER_CORTE
-	var tex: Texture2D = _cortes[0].texture
+	for nome in Dados.json("v2_folhas_fx"):
+		if nome != "corte_ciano" and not str(nome).begins_with("_"):  # o ciano (variante do Rastro de katana) so carrega quando pedido
+			_carregar_fx(nome)
+	if variante == "ciano":
+		_carregar_fx("corte_ciano")
+	var tex: Texture2D = _tex_branca
 	for i in MAX_FOLHAS:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -459,7 +464,7 @@ func _montar_chao(m) -> void:
 func _montar_explosoes() -> void:
 	var sh := Shader.new()
 	sh.code = SHADER_EXPLOSAO
-	var tex: Texture2D = _cortes[0].texture
+	var tex: Texture2D = _tex_branca
 	for i in MAX_EXPLOSOES:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -550,7 +555,48 @@ static func _esc_px(e: float) -> float:
 	return maxf(1.0, roundf(e))
 
 
-## Qual folha pré-girada e quantos quartos de volta o corte em `ang` (rad) usa: (índice 0 a 3 da folha, giros 0 a 3), em 16 direções.
+## Carrega (uma vez) as folhas de `nome` em todos os tamanhos de dados/v2_folhas_fx.json, com o quad branco de cada tamanho.
+func _carregar_fx(nome: String) -> void:
+	if _fx_tex.has(nome):
+		return
+	var def: Dictionary = Dados.json("v2_folhas_fx").get(nome, {})
+	if def.is_empty():
+		push_error("v2_folhas_fx: sem a folha '%s'" % nome)
+		return
+	var larg := PackedInt32Array()
+	var alt := PackedInt32Array()
+	var texs: Array[Texture2D] = []
+	var quads: Array[Texture2D] = []
+	var modelo: String = str(ARQUIVOS_FX.get(nome, "efeito_%s_e%%d" % nome))
+	for par in def.tam:
+		larg.append(int(par[0]))
+		alt.append(int(par[1]))
+		texs.append(load("res://assets/v2/efeitos/%s.png" % (modelo % int(par[0]))))
+		var im := Image.create(int(par[0]), int(par[1]), false, Image.FORMAT_L8)
+		im.fill(Color.WHITE)
+		quads.append(ImageTexture.create_from_image(im))
+	_fx_larg[nome] = larg
+	_fx_alt[nome] = alt
+	_fx_quadros[nome] = int(def.quadros)
+	_fx_linhas[nome] = int(def.linhas)
+	_fx_tex[nome] = texs
+	_fx_quad[nome] = quads
+
+
+## Índice do tamanho de `larguras` mais perto de `pedido` (px de largura do desenho), pela razão: o mais perto vence e o pedido que passa
+## das pontas fica com a ponta (nunca amplia a folha).
+static func tamanho_perto(larguras: PackedInt32Array, pedido: float) -> int:
+	var melhor := 0
+	var erro := INF
+	for i in larguras.size():
+		var e := absf(log(float(larguras[i]) / maxf(pedido, 1.0)))
+		if e < erro:
+			erro = e
+			melhor = i
+	return melhor
+
+
+## Qual linha da folha (a cena girada 0, 22,5, 45 ou 67,5 graus) e quantos quartos de volta o corte em `ang` (rad) usa: (linha 0 a 3, giros 0 a 3), em 16 direções.
 ## Com `lado` negativo o shader espelha o quadro ANTES de girar, e espelhar depois de girar `a` é girar `-a` depois de espelhar:
 ## por isso o espelhado escolhe a direção oposta.
 static func corte_direcao(ang: float, lado: float) -> Vector2i:
@@ -569,10 +615,22 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var r := alcance * (1.45 if folha else 1.25)  # na folha o arco ocupa 0,8 da meia-largura
 	s.position = origem.round()
 	s.rotation = 0.0  # nada de pixel art girado em tempo de execução: a folha vem pré-girada (corte_direcao) e o resto o shader calcula por pixel
-	_cortes_esc[i] = r / 32.0
-	s.scale = Vector2.ONE * (r / 32.0) * (0.88 if Anim.suave else 1.0)
-	s.visible = true
+	var nome_folha := "corte_ciano" if variante == "ciano" else "corte"
 	var mat := s.material as ShaderMaterial
+	_cortes_fixo[i] = 1 if folha else 0
+	if folha:  # o quad é do tamanho do quadro da folha escolhida (2 r, o mais perto): escala 1, 1 px de arte = 1 px do jogo
+		_carregar_fx(nome_folha)
+		var k := tamanho_perto(_fx_larg[nome_folha], 2.0 * r)
+		s.texture = _fx_quad[nome_folha][k]
+		s.scale = Vector2.ONE
+		mat.set_shader_parameter("folha", _fx_tex[nome_folha][k])
+		mat.set_shader_parameter("quadros", float(_fx_quadros[nome_folha]))
+		mat.set_shader_parameter("filas", float(_fx_linhas[nome_folha]))
+	else:  # a estocada é calculada no shader por pixel do mundo (sem folha): o quad com escala só define a área
+		s.texture = _tex_branca
+		_cortes_esc[i] = r / 32.0
+		s.scale = Vector2.ONE * (r / 32.0) * (0.88 if Anim.suave else 1.0)
+	s.visible = true
 	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
@@ -580,10 +638,9 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	mat.set_shader_parameter("modo", 2.0 if folha else (1.0 if tipo == "estocada" else 0.0))
 	var ciano := variante == "ciano"
 	var dir := corte_direcao(ang, lado)
-	mat.set_shader_parameter("folha", FOLHAS_CORTE_GIRADAS[1 if ciano else 0][dir.x])
+	mat.set_shader_parameter("fila", float(dir.x) if folha else 0.0)
 	mat.set_shader_parameter("giros", float(dir.y) if folha else 0.0)
 	mat.set_shader_parameter("ang", 0.0 if folha else ang)
-	mat.set_shader_parameter("quadros", 12.0 if ciano else 16.0)
 	mat.set_shader_parameter("fixo", 1.0 if ciano else 0.0)
 	mat.set_shader_parameter("cor", cor)
 	_cortes_t[i] = 0.0
@@ -611,7 +668,7 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 
 
 ## Efeito de folha do Blender no chão ("cristal", "anel", "espiral") ou a centelha de acerto ("estrela", no ar). `raio` = metade da largura
-## do desenho; o chão achata em 0,62 no Y. Reaproveita o shader do corte e um pool fixo: não cria nó.
+## do desenho; usa o tamanho de folha mais perto (o chão já vem achatado em 0,62 no Y na própria folha). Reaproveita o shader do corte e um pool fixo: não cria nó.
 func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> void:
 	var cristal := nome == "cristal"
 	var estrela := nome == "estrela"
@@ -626,14 +683,15 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 	else:
 		i = _fo_i
 		_fo_i = (_fo_i + 1) % PRIM_CENTELHA
-	var d: Array = FOLHAS[nome]
+	var k := tamanho_perto(_fx_larg[nome], 2.0 * raio)  # o quad é do tamanho do quadro da folha mais perto (o chão já vem achatado nela): escala 1
 	var s := _fo[i]
 	s.position = p.round()
-	s.scale = Vector2(raio / 32.0, raio / 32.0 * (1.0 if estrela else 0.62))
+	s.texture = _fx_quad[nome][k]
+	s.scale = Vector2.ONE
 	s.visible = true
 	var mat := s.material as ShaderMaterial
-	mat.set_shader_parameter("folha", d[0])
-	mat.set_shader_parameter("quadros", d[1])
+	mat.set_shader_parameter("folha", _fx_tex[nome][k])
+	mat.set_shader_parameter("quadros", float(_fx_quadros[nome]))
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
@@ -1030,7 +1088,7 @@ func atualizar(dt: float) -> void:
 			continue
 		var pr := _cortes_t[i] / _cortes_dur[i]
 		(s.material as ShaderMaterial).set_shader_parameter("prog", pr)
-		if Anim.suave:  # abre rápido e assenta (ease-out), em vez de nascer já do tamanho final
+		if Anim.suave and _cortes_fixo[i] == 0:  # só a estocada: abre rápido e assenta (ease-out). O corte de folha não escala (tamanho do quadro, 1 px)
 			var k := clampf(pr / CORTE_CRESCE, 0.0, 1.0)
 			s.scale = Vector2.ONE * _cortes_esc[i] * (0.88 + 0.12 * (1.0 - (1.0 - k) * (1.0 - k)))
 	# clarão

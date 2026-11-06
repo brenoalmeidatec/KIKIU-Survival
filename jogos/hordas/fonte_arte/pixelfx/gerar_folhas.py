@@ -5,6 +5,10 @@ fracionaria vira uma folha nova ja no tamanho final, e o jogo a toca em escala 1
 borrar a borda entre quadros), com media em alfa pre-multiplicado e limpeza de pixel: alfa em poucos degraus, nada de pixel fantasma e nada
 de pixel solto fraco (a faisca solta BRILHANTE fica: ela e o efeito).
 
+Alem das folhas redesenhadas (FOLHAS), as que o jogo toca em escala 1 (UM_PARA_UM: spawn-portal do chefe, soul-rise, collect-burst)
+tambem passam pelo mesmo fecho de pixel art: alfa em ate 6 degraus e paleta enxuta (fonte_arte/quantizar_alfa.py), porque a folha
+original do pixelfx tem 250 niveis de transparencia e dezenas de milhares de cores.
+
 Uso (a partir da raiz do repositorio):  python jogos/hordas/fonte_arte/pixelfx/gerar_folhas.py
 Fontes: jogos/hordas/fonte_arte/pixelfx/originais/<categoria>/<nome>.png (folha original do pixelfx) ou, se nao houver la, a de
 jogos/hordas/projeto/assets/v2/pixelfx/<categoria>/<nome>.png. Saida: assets/v2/pixelfx/<categoria>/<nome>-e<NN>.png (NN = escala x 100) e,
@@ -22,6 +26,8 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.abspath(os.path.join(AQUI, "..", ".."))
 ASSETS = os.path.join(RAIZ, "projeto", "assets", "v2", "pixelfx")
 ORIGINAIS = os.path.join(AQUI, "originais")
+sys.path.insert(0, os.path.join(AQUI, ".."))
+from quantizar_alfa import MODO_BRILHO, quantizar_imagem  # noqa: E402  (fonte_arte/quantizar_alfa.py)
 
 # nome, categoria, escala, quadro [w,h], colunas, quadros (so os usados), pivo [x,y]
 FOLHAS = [
@@ -32,6 +38,15 @@ FOLHAS = [
     ("loot-beam", "pickups", 0.55, (96, 176), 12, 72, (48, 162)),
     ("level-up", "ui", 0.75, (176, 138), 9, 18, (88, 114)),
 ]
+
+# folhas tocadas em escala 1, sem redesenho: nome, categoria, cores da paleta (a folha original fica em originais/ ou, se faltar, no jogo)
+UM_PARA_UM = [
+    ("spawn-portal", "spawn", 64),
+    ("soul-rise", "spawn", 64),
+    ("collect-burst", "pickups", 48),
+]
+# cores da paleta de cada folha redesenhada (nome da folha -> cores)
+CORES = {"spawn-portal": 64, "summon-rise": 64, "chest-open": 64, "loot-beam": 48, "level-up": 64}
 
 DEGRAUS = 6  # niveis de alfa (alem do zero)
 ALFA_MIN = 0.12  # abaixo disso o pixel some (neblina que nao fecha um pixel)
@@ -82,6 +97,7 @@ def gerar(nome, cat, esc, quadro, colunas, quadros, pivo):
         cx, cy = (i % colunas) * w, (i // colunas) * h
         r = reduzir_quadro(arr[cy : cy + h, cx : cx + w], nw, nh)
         out.paste(Image.fromarray((r * 255.0 + 0.5).astype(np.uint8), "RGBA"), ((i % colunas) * nw, (i // colunas) * nh))
+    out = quantizar_imagem(out, DEGRAUS, CORES.get(nome, 64))
     sufixo = "-e%d" % round(esc * 100)
     dest = os.path.join(ASSETS, cat, nome + sufixo + ".png")
     out.save(dest, optimize=True)
@@ -94,6 +110,16 @@ def gerar(nome, cat, esc, quadro, colunas, quadros, pivo):
     }
 
 
+def fechar_um_para_um(nome, cat, cores):
+    """Folha em escala 1: mesmo tamanho e quadros, so alfa em degraus e paleta enxuta. Grava em assets/v2/pixelfx/<cat>/<nome>.png."""
+    img = quantizar_imagem(Image.open(achar(cat, nome)).convert("RGBA"), DEGRAUS, cores, MODO_BRILHO)
+    dest = os.path.join(ASSETS, cat, nome + ".png")
+    img.save(dest, optimize=True)
+    return "%s/%s.png" % (cat, nome)
+
+
 if __name__ == "__main__":
     for f in FOLHAS:
         print(f[0], f[2], json.dumps(gerar(*f)))
+    for f in UM_PARA_UM:
+        print(f[0], "1x", fechar_um_para_um(*f))

@@ -29,8 +29,11 @@ except NameError:
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SAIDA = os.path.abspath(ARGS[0]) if ARGS else AQUI
 
-TAM = 128
+TAM = int(os.environ.get("CORTE_TAM", "128"))  # lado do quadro em px; o jogo usa uma folha por tamanho (folhas_1px.py)
 N = 16
+# CORTE_GIROS=1: a folha sai com 4 linhas, a cena inteira girada em 0, 22,5, 45 e 67,5 graus (a camera gira, entao cada giro e desenhado de verdade
+# no tamanho final, sem reamostrar pixel). Os outros 12 dos 16 angulos do jogo sao quartos de volta trocados no shader.
+GIROS = (0.0, 22.5, 45.0, 67.5) if os.environ.get("CORTE_GIROS") == "1" else (0.0,)
 ARCO = math.radians(125.0)
 MEIO = ARCO / 2
 R_EXT = 0.80
@@ -87,6 +90,8 @@ def mat(nt, op, a, b=None, clamp=False):
 def emissivo(nome, calor, alfa=1.0, animado=False):
     """Emissivo cinza (calor 0..1) com alfa fixo ou animado (devolve o no 'alfa' para keyar)."""
     m = bpy.data.materials.new(nome)
+    if m.node_tree is None:  # Blender 4.5 precisa ligar os nos; no 5.x a arvore ja existe
+        m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
     em = nt.nodes.new("ShaderNodeEmission")
@@ -108,6 +113,8 @@ def emissivo(nome, calor, alfa=1.0, animado=False):
 
 def material_rastro(nome):
     m = bpy.data.materials.new(nome)
+    if m.node_tree is None:  # Blender 4.5 precisa ligar os nos; no 5.x a arvore ja existe
+        m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
     uvn = nt.nodes.new("ShaderNodeUVMap")
@@ -384,8 +391,40 @@ def quantiza(q):
     return out
 
 
+def folha_giros(pasta, n, quantiza_fn, destino, tam=None):
+    """Renderiza os `n` quadros da animacao uma vez por giro da camera e empilha as linhas (giro 0 em cima) em `destino`."""
+    tam = tam or TAM
+    linhas = []
+    for gi, graus in enumerate(GIROS):
+        cena.camera.rotation_euler[2] = rad(graus)  # a camera gira +graus: o desenho gira -graus na imagem, ou seja, horario na tela, como o Godot
+        cena.render.filepath = os.path.join(pasta, "g%d_q_" % gi)
+        bpy.ops.render.render(animation=True)
+        quadros = []
+        for f in range(1, n + 1):
+            img = bpy.data.images.load(os.path.join(pasta, "g%d_q_%04d.png" % (gi, f)))
+            img.colorspace_settings.name = "Non-Color"
+            img.alpha_mode = "STRAIGHT"
+            q = np.array(img.pixels[:], dtype=np.float32).reshape(tam, tam, 4)
+            bpy.data.images.remove(img)
+            quadros.append(quantiza_fn(q))
+        linhas.append(np.concatenate(quadros, axis=1))
+    folha = np.concatenate(linhas[::-1], axis=0)  # o array do Blender e de baixo para cima: a ultima linha fica no fim
+    img = bpy.data.images.new("folha", tam * n, tam * len(GIROS), alpha=True)
+    img.colorspace_settings.name = "Non-Color"
+    img.alpha_mode = "STRAIGHT"
+    img.pixels = folha.reshape(-1).tolist()
+    img.filepath_raw = destino
+    img.file_format = "PNG"
+    img.save()
+    cena.camera.rotation_euler[2] = 0.0
+    print("FOLHA OK", destino)
+
+
 def renderiza_e_monta():
     os.makedirs(os.path.join(SAIDA, "saida"), exist_ok=True)
+    if len(GIROS) > 1:
+        folha_giros(os.path.join(SAIDA, "saida"), N, quantiza, os.path.join(SAIDA, "corte_hazaki_giros.png"))
+        return
     cena.render.filepath = os.path.join(SAIDA, "saida", "quadro_")
     bpy.ops.render.render(animation=True)
     quadros = [quantiza(le(os.path.join(SAIDA, "saida", "quadro_%04d.png" % f))) for f in range(1, N + 1)]

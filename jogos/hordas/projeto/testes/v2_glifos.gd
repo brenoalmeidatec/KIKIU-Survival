@@ -136,9 +136,18 @@ func _mouse_e_teclas() -> void:
 		ok(acesos["e"].size() == acesos["d"].size(), "os dois botões têm o mesmo tamanho (altura %s)" % altura)
 		for q in ["e", "d", "m"]:
 			ok(Glifos.pixels_mouse(q).size() == ref.size(), "o botão aceso não muda a silhueta (altura %s)" % altura)
-	# o selo do HUD (E, Q e secundário) usa o mouse inteiro e a teclinha na altura dos glifos, com a letra maior que a das dicas
-	ok(Glifos.largura_selo("secundario") == 12.0, "o selo do secundário é o mouse inteiro, 12 px (%s)" % Glifos.largura_selo("secundario"))
-	ok(Glifos.ALTURA_SELO == Glifos.ALTURA and Glifos.TAM_SELO > 8, "o selo do HUD tem 16 px de altura e a letra maior que 8")
+	# o selo do HUD (E, Q e secundário) é desenhado em pixel nativo no tamanho final do HUD (1,5x, sem `scale` no nó): 24 px de altura, a letra da Press Start 2P
+	# no dobro da nativa (16) e o mouse refeito pixel a pixel em 18x24 (não o de 12x16 ampliado)
+	ok(Glifos.largura_selo("secundario") == 18.0, "o selo do secundário é o mouse inteiro de 18 px (%s)" % Glifos.largura_selo("secundario"))
+	ok(Glifos.ALTURA_SELO == 24.0 and Glifos.TAM_SELO in [8, 16], "o selo do HUD tem 24 px de altura e a letra na grade da fonte (%s)" % Glifos.TAM_SELO)
+	ok(Glifos.MOUSE_SELO.size() == int(Glifos.ALTURA_SELO), "o mouse do selo tem a altura do selo (%d)" % Glifos.MOUSE_SELO.size())
+	ok(Glifos.MOUSE_SELO.all(func(l): return String(l).length() == 18), "o mouse do selo tem 18 px em todas as linhas")
+	var ref_selo := Glifos.pixels_mouse("", true)
+	for q in ["e", "d", "m"]:
+		ok(Glifos.pixels_mouse(q, true).size() == ref_selo.size(), "o mouse do selo: o botão '%s' aceso não muda a silhueta" % q)
+		var acesos_selo := Glifos.pixels_mouse(q, true).filter(func(px): return px[1] == "A")
+		ok(not acesos_selo.is_empty(), "o mouse do selo: o botão '%s' aceso pinta pixels" % q)
+		ok(acesos_selo.all(func(px): return (px[0].x < 9) == (q == "e") or q == "m"), "o mouse do selo: o botão '%s' fica do lado certo" % q)
 	ok(Glifos.largura_selo("habilidade") >= Glifos.ALTURA_SELO, "o selo do E é pelo menos quadrado (%s)" % Glifos.largura_selo("habilidade"))
 	ok(Glifos.texto("secundario") == "Mouse D", "o texto do mouse (para quem só lê texto) segue 'Mouse D'")
 	Glifos.definir(Glifos.Disp.XBOX)

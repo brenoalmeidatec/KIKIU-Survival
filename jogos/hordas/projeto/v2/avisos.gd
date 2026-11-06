@@ -8,6 +8,7 @@ extends RefCounted
 const MAX := 24
 const ACHATA := 0.62
 const MIOLO_MIN := 6.0  # px: abaixo disso o miolo do aviso não vira polígono (os pontos arredondados coincidem, #127)
+const PixelRot := preload("res://v2/pixel_rot.gd")  # a pedra que cai gira só em passos de 90 graus
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o chão cresce sem pulsar
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas dos ataques inimigos (indice_perigo.json; docs/combate_v2)
 ## Estilo do aviso: 0 = só o chão pisca (como antes); 1 = QUEDA, uma pedra de energia cai do céu no círculo e estoura no disparo (a chuva do
@@ -405,8 +406,8 @@ func _desenhar_quedas() -> void:
 		no_corpo.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
 		no_corpo.draw_circle(Vector2.ZERO, 3.0 + 7.0 * e, Color(0, 0, 0, 0.15 + 0.3 * e))
 		no_corpo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		var ang := (-QUEDA_DE).angle()
+		var ang := PixelRot.quarto((-QUEDA_DE).angle())  # a pedra gira só em passos de 90 graus
 		var q := Anim.quadro_em(f, t[i] + float(i) * 0.1)
 		var e_r := maxf(e - 0.1 * (0.35 + e), 0.0)
-		Anim.desenhar(no_corpo, f, (q + int(f.n) - 1) % int(f.n), p + QUEDA_DE * (1.0 - e_r), ang, Vector2(0.85, 0.85), Color(1, 1, 1, 0.4))
+		Anim.desenhar(no_corpo, f, (q + int(f.n) - 1) % int(f.n), p + QUEDA_DE * (1.0 - e_r), ang, Vector2.ONE, Color(1, 1, 1, 0.4))
 		Anim.desenhar(no_corpo, f, q, p + QUEDA_DE * (1.0 - e), ang)

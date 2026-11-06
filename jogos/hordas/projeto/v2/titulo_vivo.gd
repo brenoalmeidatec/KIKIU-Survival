@@ -171,7 +171,7 @@ func _brasas() -> CPUParticles2D:
 	p.amount = 40
 	p.lifetime = 4.5
 	p.preprocess = 4.5
-	p.texture = _textura_pixel(2, 2)
+	p.texture = _textura_pixel(3, 3)  # 3 px de lado e escala 1 na arte (na tela o nó _efeitos acompanha a cobertura e o zoom lento do fundo: exceção aceita, como a câmera)
 	p.position = Vector2(170, 330)
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	p.emission_rect_extents = Vector2(170, 110)
@@ -183,7 +183,7 @@ func _brasas() -> CPUParticles2D:
 	p.tangential_accel_min = -6.0
 	p.tangential_accel_max = 6.0
 	p.scale_amount_min = 1.0
-	p.scale_amount_max = 2.0
+	p.scale_amount_max = 1.0
 	var cores := [Color(1, 0.9, 0.5, 0), Color(1, 0.85, 0.4, 1), Color(1, 0.38, 0.08, 0.85), Color(0.6, 0.1, 0.05, 0)]
 	p.color_ramp = _rampa(cores, [0.0, 0.1, 0.6, 1.0])
 	p.material = _aditivo()
@@ -228,10 +228,6 @@ func _folhas() -> CPUParticles2D:
 	p.initial_velocity_min = 8.0
 	p.initial_velocity_max = 16.0
 	p.gravity = Vector2(5, 5)
-	p.angular_velocity_min = -120.0
-	p.angular_velocity_max = 120.0
-	p.angle_min = 0.0
-	p.angle_max = 360.0
 	p.color_initial_ramp = _rampa([Color(0.55, 0.08, 0.06), Color(0.9, 0.32, 0.1)], [0.0, 1.0])
 	p.color_ramp = _rampa([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)], [0.0, 0.08, 0.85, 1.0])
 	return p

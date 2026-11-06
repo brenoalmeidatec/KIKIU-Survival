@@ -42,6 +42,8 @@ const SURGINDO := 2
 ## e o alcance (alcance, frente, raio, sombra, altura, balanco e a passada); `tinta` (padrão branco) multiplica a cor da folha (escurece os canais que
 ## não são da cor); `mistura` (cor + alfa) refaz o bicho por cima em modo aditivo, para a cor da fusão aparecer mesmo sobre uma base de outra cor;
 ## `gris` (padrão falso) usa a folha em tons de cinza, para a tinta trocar a cor em vez de só escurecer;
+## `folha_grande` ({folha, quadro, pe}, opcional) = folha PRÓPRIA desse tamanho (o modelo `escala` vez maior renderizado já no tamanho final, gerador com
+## DRAGAO_ESCALA etc.): o desenho passa a ser 1x (pixel do mesmo tamanho do resto) e o alcance, a sombra e a passada seguem a `escala`; sem o arquivo, vale a escala inteira;
 ## `halo` (padrão 1) engrossa o halo do espírito; qualquer outro campo da ficha (cor_fx, tempos, rastro...) escrito no alias vale por cima da base.
 ## Os números de jogo (dano, tique, vel) são os da carta da fusão.
 const FICHAS := {
@@ -216,6 +218,7 @@ const FICHAS := {
 	{
 		"como": ["dragao_filhote"],
 		"escala": 1.5,
+		"folha_grande": {"folha": "res://assets/v2/armas/dragao_de_brasa_dir.png", "quadro": Vector2(89, 90), "pe": Vector2(44, 49)},
 		"tinta": Color(1.0, 0.7, 0.55),
 		"mistura": Color(1.0, 0.75, 0.25, 0.4),
 		"cor_fx": Color(1.0, 0.42, 0.1),
@@ -309,6 +312,13 @@ static func resolver(chave: String) -> Dictionary:
 		var al: Dictionary = FICHAS[str(partes[0])]
 		var e := float(al.get("escala", 1.0))
 		r.esc = maxf(1.0, roundf(e))  # o desenho só amplia por inteiro (pixel art); alcance e corpo seguem o `e` exato
+		var fg = al.get("folha_grande")
+		if fg is Dictionary and ResourceLoader.exists(str(fg.folha)):  # folha própria: desenha em 1x, sem ampliar
+			r.folha = fg.folha
+			r.quadro = fg.quadro
+			r.pe = fg.pe
+			r.esc = 1.0
+			r.grande = true
 		for k in ["alcance", "frente", "raio", "sombra", "altura", "balanco", "peito", "boca"]:
 			if r.has(k):
 				r[k] = float(r[k]) * e
@@ -318,7 +328,7 @@ static func resolver(chave: String) -> Dictionary:
 				c.append(float(x) * e)  # o pé corre `e` vezes mais por ciclo: o corpo maior não escorrega
 			r.ciclo = c
 		for k in al:
-			if k != "como" and k != "escala":
+			if k != "como" and k != "escala" and k != "folha_grande":
 				r[k] = al[k]
 	_pronta[chave] = r
 	return r
@@ -354,7 +364,16 @@ static func tex_de(it: Dictionary) -> Texture2D:
 	if fid == "":
 		return tex(str(it.a.id))
 	var base: String = fid.split("/")[-1]
+	if bool(ficha_de(it).get("grande", false)):
+		return tex_caminho(str(ficha_de(it).folha))
 	return tex_gris(base) if bool(ficha_de(it).get("gris", false)) else tex_base(base)
+
+
+## Uma folha pelo caminho do png (as folhas grandes das fusões e a corrida de perfil), no mesmo cache.
+static func tex_caminho(caminho: String) -> Texture2D:
+	if not _tex.has(caminho):
+		_tex[caminho] = load(caminho) as Texture2D
+	return _tex[caminho]
 
 
 static func tex_base(base: String) -> Texture2D:
@@ -370,6 +389,12 @@ static func folhas_pendentes(id: String) -> Array:
 	var r: Array = []
 	var gris := eh_alias(id) and bool(FICHAS[id].get("gris", false))
 	for b in bases(id):
+		var fg = FICHAS[id].get("folha_grande") if eh_alias(id) else null
+		var caminho_grande := str(fg.folha) if fg is Dictionary and ResourceLoader.exists(str(fg.folha)) else ""
+		if caminho_grande != "":  # a fusão com folha própria usa só ela (a da base nem entra)
+			if not _tex.has(caminho_grande):
+				r.append(caminho_grande)
+			continue
 		if not _tex.has(b):
 			r.append(b)
 		if gris and not _tex.has(b + "#gris"):

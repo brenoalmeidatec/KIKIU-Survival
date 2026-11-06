@@ -3295,3 +3295,31 @@ O Alisson liberou o notebook só até 17h, então a rodada 7 parou antes de junt
 - **Pronto, revisado e ajustado, com push:** `alisson/lw-r7-q` (fc285f75: bola da Q com 36 quadros + partículas da explosão, Reduzir piscadas medido) e `alisson/lw-r7-misseis` (ccf479bf: partículas no voo e no impacto dos mísseis). As duas saem de 4db42710.
 - **Falta:** mesclar as duas no `alisson/lw-canhao-matriz` com --no-ff (localmente as duas entraram sem conflito, mas a bateria de testes NÃO rodou e o merge foi desfeito), rodar a bateria v2_lightwolf*/v2_lw_*/v2_misseis*/v2_piscadas/v2_pixel_*/v2_herois*/v2_partida, depois a verificação enxuta (Q padrão + Reduzir piscadas, mísseis; folha de quadros-chave + MP4 + Q a 0,5x) e o ok visual do Alisson.
 - Script da rodada: workflow lw-rodada7 (run wf_d0e397a5-fb7); dá para retomar com resumeFromRunId — pesquisa, implementação, revisão e ajuste voltam do cache e só a integração roda de novo.
+## 2026-11-05 (noite): análise do trabalho de 03 a 05/11 e #618 integrado com a main nova (Claude do Alisson (PC))
+- **Registro do merge do #620:** o #620 (LightWolf rodadas 1 a 6, strafe de todos os heróis e tremor) foi mesclado pelo Alisson (conta LightWolfMan) em 05/11 às 17h14, no commit bc5fd94a, com CI 8/8 verde no head. Não havia linha de merge no LOGBOOK. As entradas das 16h57 e 17h00 ainda dizem "PR NÃO mesclado", e isso agora está desatualizado. Não houve revisão independente do conjunto integrado.
+- **Análise** (workflow só de leitura, com 5 analistas e um crítico; a evidência ficou fora do repo). Achados que valem para o próximo trabalho:
+  - **Bug provável (só lido, não reproduzido):** `monstro.gd` `reviver()` zera `v_estado`, mas não tira o `sprite.material` do status (#619). Uma elite ou chefe que volta do pool pode nascer com o fogo ou o gelo antigo. Falta teste que reutilize uma elite que morreu queimando.
+  - **Mira de todos os heróis (#620):** `mundo.gd` ~900 põe a fonte da mira em MOUSE em qualquer movimento do mouse, sem limiar, e andar não devolve a fonte para ANDA (`heroi.gd` ~735). Um esbarrão no mouse prende a mira no cursor para quem joga no teclado ou no controle.
+  - **Pool de efeitos:** `MAX_FX` 48 em `armas_novas.gd` agora é dividido por muito mais efeitos (#619). Ninguém viu saturar.
+  - **Chama de elite e chefe:** a chama do status (`status_corpo.gd`) é cortada pela célula nas folhas grandes `_xN`, que têm margem de 0 px nos lados.
+  - **Grade de pixel em tempo de execução**, fora das folhas (decisão do Alisson):
+    - soco de 14% em `tocar_fx`;
+    - `desenhar_suave` mistura quadros com alfa no perfil Médio e no Alto;
+    - nuvens com escala de 0,93 a 1,375 e alfa 0,45;
+    - crítico e morte do chefe em 2x;
+    - sombra no ar do mecha com escala e alfa fracionários.
+  - **Desempenho:** o benchmark do #619 ficou preso em 100 ms e foi feito no perfil Baixo, onde o shader de status e o `desenhar_suave` ficam desligados. Médio e Alto no i5-3470 nunca foram medidos.
+- **#618 integrado com a main (bc5fd94a)**, com `git merge origin/main` em `alisson/pixel2-integra`, sem rebase. Foram 7 conflitos:
+  - `adagas.gd` e `especial.gd` ficaram com o lado da main, que já tinha a mesma coisa do #615 feita pelo notebook (`_ang_visual`, `_desenhar_casco`);
+  - `pixel_rot.gd` ficou com o lado do #618 (só o comentário);
+  - `LICENCAS_ARTE.md` ficou com os dois blocos;
+  - HUD: o card do IMPULSO foi refeito no HUD nativo do #612. São 106x112, com o ícone de 32 px a 2x e sem `FOLGA_MOLDURA`, que o #618 tinha removido e quebraria o script sem o git acusar. O nó fica em 368x112, de x 586 a 954, e o E continua em x 693. `hud.tscn`, `v2_hud.gd` e `v2_pixel_filtros.gd` foram ajustados.
+  - O `sprite_giro.gd` era o mesmo arquivo nos dois lados.
+  - **Testes:** 58 cenas locais com `falhas=0` e sem SCRIPT ERROR (HUD, impulso, pixel, sprite_giro, mísseis, LightWolf, mecha, matriz, strafe, chefe, golem, andante, efeitos e partida). O gdformat ficou limpo.
+  - **Visual:** captura em janela de verdade do HUD com o LightWolf (`--roteiro=impulso`). O card aparece pronto, com a barra do voo encolhendo e a recarga de 4,4 e depois 2,9 s, alinhado com o E e a Matriz. A imagem não foi versionada.
+  - **Revisão independente** (Haiku): "aprovo com ressalvas". A ressalva real era o `DESIGN.md` com o HUD antigo, e já foi corrigida.
+- **Pendente:**
+  - o Alisson mesclar o #618 e depois fechar os #611 a #617 como incluídos;
+  - a rodada 7 (`lw-r7-q`, `lw-r7-misseis`), que entra sem conflito na main e ainda não tem PR;
+  - o Beta 2, que não tem tag;
+  - as correções pós-#619 da lista acima (material preso, limiar do mouse, `MAX_FX`, folga da chama).

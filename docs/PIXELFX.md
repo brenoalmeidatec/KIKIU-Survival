@@ -15,7 +15,7 @@ No clone do pixelfx (`C:\Dev\KIKIU\notas\pixelfx`): `node tools/render.mjs <cate
 
 ## Registrar um efeito novo
 
-1. Copie o PNG para `assets/v2/pixelfx/<categoria>/` e abra o projeto uma vez no Godot (`--headless --import`) para gerar o `.import`; versione os dois.
+1. Pixel art não tem alfa gradual: a folha original do pixelfx traz 250 níveis de transparência e dezenas de milhares de cores. Ponha a original em `fonte_arte/pixelfx/originais/<categoria>/`, acrescente-a em `UM_PARA_UM` (ou em `FOLHAS`, se precisar de outro tamanho) de `fonte_arte/pixelfx/gerar_folhas.py` e rode o script: ele grava em `assets/v2/pixelfx/` com o alfa em 6 degraus e a paleta enxuta (`fonte_arte/quantizar_alfa.py`; o `testes/v2_alfa_pixel.tscn` falha com folha de alfa gradual). Copie o PNG para `assets/v2/pixelfx/<categoria>/` e abra o projeto uma vez no Godot (`--headless --import`) para gerar o `.import`; versione os dois.
 2. Acrescente a entrada em `dados/v2_pixelfx.json`, em `efeitos`, usando como id o nome do efeito. Obrigatórios: `arquivo` (relativo a `assets/v2/pixelfx/`), `quadro` [w,h], `colunas`, `quadros`, `fps`, `pivo` [x,y]. Opcionais: `loop`, `escala` (inteira), `cor` (`[r,g,b,a]` ou `"#rrggbb"`, multiplica a folha), `camada` (`glow`, padrão, ou `mundo`), `aditivo`, `passo` (2 pula um quadro por tick), `limite` (8), `intervalo` (s entre dois `tocar` do mesmo id), `decorativo` (true) e `clarao` (o alfa segue "Tremor e clarões"). Corte os quadros vazios do fim em `quadros`.
 3. Chame `fx_folha.tocar`/`prender` de onde o efeito acontece, e `soltar` ao acabar (o `limpar_partida` já devolve tudo).
 4. Registre o PNG no fim de `docs/LICENCAS_ARTE.md` (origem pixelfx MIT e o efeito de origem). Cubra o uso novo em `testes/v2_fx_folha.gd` ou num teste do módulo.

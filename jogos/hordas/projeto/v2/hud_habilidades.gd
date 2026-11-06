@@ -14,15 +14,18 @@ extends Control
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": os quadros que pulsam ficam num tom fixo
-const TAM_CARD := Vector2(86.0, 74.0)
-const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó inteiro é escalado (`scale`): o desenho e `size` ficam no espaço de 86x74 por card
-const ESPACO_CARD := 2.0
-const TAM_IMP := Vector2(70.0, 74.0)  # o card do impulso: mais estreito, para o nó (x 585 a 954 na tela) não encostar na barra de XP (que acaba em x 580)
+const TAM_CARD := Vector2(130.0, 112.0)  # decisão do Alisson (#368): o HUD da partida é 1,5x. O desenho é em pixel nativo (sem `scale`): 130x112 por card (112 = 22 de margem da moldura + 15 x 6 do miolo da arte, todo inteiro), 261x112 os dois
+const ESPACO_CARD := 1.0
+const TAM_IMP := Vector2(106.0, 112.0)  # o card do impulso (era 70x74 a 1,5x = 105x111): mais estreito, para o nó (x 586 a 954 na tela) não encostar na barra de XP (que acaba em x 580); 106 = 68 do quadro + 2 x 19
 const X_E := TAM_IMP.x + ESPACO_CARD  # onde começa o card E (o do impulso fica antes dele)
 const COR_IMP := Color(0.75, 0.95, 1.0)  # o azul claro do mecha (o mesmo de v2/mecha.gd)
 const TEXTO_RECARGA_IMP := Paleta.TEXTO_APAGADO  # o "x.x S" da recarga do impulso: o cinza do DESATIVADO dava ~2,5:1 no fundo do card; este passa de 4,5:1
 const PASTA_ICONE_IMP := "res://assets/v2/habilidade_shift/"  # <chave do herói>.png: o ícone do impulso (arte própria em pixel, docs/LICENCAS_ARTE.md)
-const TAM_ICON := Vector2(44.0, 44.0)  # o ícone (32 px) com 6 px de folga; era 48 e encolheu para o selo da tecla caber com 16 px de altura
+const TAM_ICON := Vector2(68.0, 68.0)  # o quadro do ícone: o ícone de 32 px a 2x (64) com 2 px de folga
+const ESCALA_ICONE := 2  # os ícones (32x32, 1 px de arte) são desenhados em 2x inteiro: o pixel do ícone é do tamanho dos outros
+const TOPO_ICONE := 6.0  # a borda de pedra (4 px) mais 2 de folga
+const BASE_ROTULO := 86.0  # a linha de base do rótulo (Press Start 2P de 8 px): entre o quadro do ícone e o selo da tecla
+const BORDA_QUADRO := 2.0  # a espessura do quadro do ícone, que leva a cor do estado
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
 const COR_ESCUDO := Color(0.45, 0.82, 1.0)  # o azul do escudo (o mesmo do desenho dele no mundo, v2/escudo.gd)
 const PASTA_ICONE_S := "res://assets/v2/secundario_s/"  # <chave do herói>.png: o ícone próprio do slot S (opcional; senão vale o de carta)
@@ -38,7 +41,6 @@ const FUNDO_CARD := Color(Paleta.PAINEL, 0.88)
 const MOLDURA := preload("res://v2/hud/moldura_habilidade.png")  # 9-slice da arte do Codex (#290), margem 11 (v2/hud/molduras_codex.json)
 const MOLDURA_MARGEM := Vector2(11.0, 11.0)
 const MOLDURA_APAGADA := Color(1.0, 1.0, 1.0, 0.75)  # slot desabilitado: a mesma moldura a 0,75 de alfa (DESIGN.md, botões)
-const FOLGA_MOLDURA := 4.0  # espessura da borda de pedra: o quadro do ícone começa depois dela
 
 var estado_e := "indisponivel"  # indisponivel | ruptura | habilidade
 var e_icone := "ruptura"  # o id do ícone da E (assets/v2/icones_cartas)
@@ -88,7 +90,7 @@ var _heroi_id := 0
 
 func _ready() -> void:
 	Glifos.ao_mudar(queue_redraw)  # o selo da tecla segue o dispositivo em uso (E e botão direito no teclado, LB e LT no controle)
-	scale = Vector2(ESCALA, ESCALA)  # o tamanho na tela é size * scale (261x111)
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	size = Vector2(X_E + TAM_CARD.x * 2.0 + ESPACO_CARD, TAM_CARD.y)  # a posição é do hud.tscn (canto inferior direito; o HUD cola na borda do canvas)
 	process_priority = 100  # corre depois do HUD; o círculo do Q (101) lê o estado que este nó acabou de sincronizar
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -259,7 +261,7 @@ func _desenhar_impulso(fonte: Font) -> void:
 	var card := Rect2(Vector2.ZERO, TAM_IMP)
 	draw_rect(card, FUNDO_CARD)
 	_moldura_pedra(card, true)
-	var icon_pos := Vector2((TAM_IMP.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
+	var icon_pos := Vector2((TAM_IMP.x - TAM_ICON.x) * 0.5, TOPO_ICONE)
 	var cor := DESATIVADO
 	if imp_pronta:
 		cor = COR_IMP.lerp(Paleta.BRANCO, 0.45) if imp_ativo and _pulsa() else COR_IMP
@@ -268,13 +270,16 @@ func _desenhar_impulso(fonte: Font) -> void:
 	draw_rect(Rect2(icon_pos, TAM_ICON), FUNDO)
 	_moldura(Rect2(icon_pos, TAM_ICON), cor)
 	var arte := arte_imp()
-	if arte != null:
-		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, Color.WHITE if imp_pronta else DESATIVADO)
+	if arte != null:  # o ícone de 32 px a 2x inteiro no centro do quadro, como nos outros cards
+		var lado := arte.get_size() * float(ESCALA_ICONE)
+		draw_texture_rect(arte, Rect2((icon_pos + (TAM_ICON - lado) * 0.5).round(), lado), false, Color.WHITE if imp_pronta else DESATIVADO)
 	_cortina(icon_pos, imp_recarga_px)
 	if imp_ativo:  # o voo que falta: a barrinha embaixo do ícone encolhe até o fim
-		draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 4.0), Vector2((TAM_ICON.x - 4.0) * float(imp_voo_px) / 20.0, 2.0)), COR_IMP)
+		draw_rect(Rect2(icon_pos + Vector2(3.0, TAM_ICON.y - 8.0), Vector2(roundf((TAM_ICON.x - 6.0) * float(imp_voo_px) / 20.0), 4.0)), COR_IMP)
 	var rotulo := imp_nome if imp_pronta else ("%.1f S" % imp_recarga_s if imp_recarga_s > 0.0 else "RECARGA")
-	draw_string(fonte, Vector2(0.0, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else TEXTO_RECARGA_IMP)
+	draw_string(
+		fonte, Vector2(0.0, BASE_ROTULO), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else TEXTO_RECARGA_IMP
+	)
 	Glifos.desenhar_selo(self, "correr", TAM_IMP.x * 0.5, TAM_IMP.y - Glifos.ALTURA_SELO, cor, imp_pronta, DESATIVADO)
 
 
@@ -294,19 +299,20 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var card := Rect2(origem, TAM_CARD)
 	draw_rect(card, FUNDO_CARD)
 	_moldura_pedra(card, e_disponivel if e else s_disponivel)
-	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
+	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, TOPO_ICONE)
 	var icone := Rect2(icon_pos, TAM_ICON)
 	var cor := _cor_do_card(e, _pulsa())
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
 	var arte: Texture2D = arte_e() if e else arte_s()
 	if arte != null:
-		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro; apagado quando não está disponível
+		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) a 2x inteiro no centro do quadro; apagado quando não está disponível
 		var tinta := Color.WHITE if (e_disponivel if e else s_pronta) else DESATIVADO
-		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, tinta)
+		var lado := arte.get_size() * float(ESCALA_ICONE)
+		draw_texture_rect(arte, Rect2((icon_pos + (TAM_ICON - lado) * 0.5).round(), lado), false, tinta)
 	elif e:
 		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura (reserva, se o ícone faltar).
-		var p := icon_pos + (TAM_ICON - Vector2(48.0, 48.0)) * 0.5  # o desenho de reserva foi feito num quadro de 48: fica centrado no atual
+		var p := (icon_pos + (TAM_ICON - Vector2(48.0, 48.0)) * 0.5).round()  # o desenho de reserva foi feito num quadro de 48: fica centrado no atual
 		var esquerda := PackedVector2Array([Vector2(6, 14), Vector2(18, 8), Vector2(21, 16), Vector2(17, 23), Vector2(21, 30), Vector2(17, 38), Vector2(6, 32)])
 		var direita := PackedVector2Array(
 			[Vector2(27, 8), Vector2(41, 14), Vector2(41, 32), Vector2(25, 39), Vector2(29, 29), Vector2(25, 23), Vector2(29, 16)]
@@ -317,27 +323,32 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 			draw_colored_polygon(placa, Color(cor, 0.24))
 			var contorno: PackedVector2Array = placa.duplicate()
 			contorno.append(placa[0])
-			draw_polyline(contorno, cor, 1.5)
+			draw_polyline(contorno, cor, 2.0)
 		var fenda := PackedVector2Array([p + Vector2(24, 8), p + Vector2(26, 16), p + Vector2(21, 23), p + Vector2(26, 30), p + Vector2(22, 39)])
-		draw_polyline(fenda, Paleta.CARGA_PERFEITA if perfeita else cor, 2.5)
-		draw_polyline(PackedVector2Array([p + Vector2(21, 23), p + Vector2(15, 20), p + Vector2(11, 22)]), cor, 1.5)
-		draw_polyline(PackedVector2Array([p + Vector2(26, 30), p + Vector2(33, 26), p + Vector2(37, 27)]), cor, 1.5)
+		draw_polyline(fenda, Paleta.CARGA_PERFEITA if perfeita else cor, 3.0)
+		draw_polyline(PackedVector2Array([p + Vector2(21, 23), p + Vector2(15, 20), p + Vector2(11, 22)]), cor, 2.0)
+		draw_polyline(PackedVector2Array([p + Vector2(26, 30), p + Vector2(33, 26), p + Vector2(37, 27)]), cor, 2.0)
 	if e and e_disponivel:
 		var f := clampf(float(carga_px) / 20.0, 0.0, 1.0)
 		_cortina(icon_pos, recarga_px)
 		if recarga_px <= 0 and carga_px > 0:
-			draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 5.0), Vector2((TAM_ICON.x - 4.0) * f, 3.0)), cor)
+			draw_rect(Rect2(icon_pos + Vector2(3.0, TAM_ICON.y - 8.0), Vector2(roundf((TAM_ICON.x - 6.0) * f), 4.0)), cor)
 		if contragolpe_px > 0:
-			draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 3.0), Vector2((TAM_ICON.x - 4.0) * float(contragolpe_px) / 20.0, 2.0)), Paleta.CONTRAGOLPE)
+			draw_rect(
+				Rect2(icon_pos + Vector2(3.0, TAM_ICON.y - 5.0), Vector2(roundf((TAM_ICON.x - 6.0) * float(contragolpe_px) / 20.0), 3.0)), Paleta.CONTRAGOLPE
+			)
 	elif not e and s_disponivel:
 		_cortina(icon_pos, s_recarga_px)
 		if s_ativo:  # erguido: o quadro pulsa
 			var pulso := Piscadas.pulso(float(Time.get_ticks_msec()) / 1000.0, 2.0)
-			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), TAM_ICON - Vector2(2.0, 2.0)), Color(COR_ESCUDO, 0.10 + 0.22 * pulso))
+			draw_rect(
+				Rect2(icon_pos + Vector2(BORDA_QUADRO, BORDA_QUADRO), TAM_ICON - Vector2(BORDA_QUADRO, BORDA_QUADRO) * 2.0),
+				Color(COR_ESCUDO, 0.10 + 0.22 * pulso)
+			)
 	var rotulo := _rotulo_e() if e else _rotulo_s()
 	var texto_aceso := e_disponivel if e else s_pronta
 	var cor_texto := cor if texto_aceso else DESATIVADO
-	draw_string(fonte, Vector2(origem.x, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
+	draw_string(fonte, Vector2(origem.x, BASE_ROTULO), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
 	# o selo da tecla na borda de baixo do card (E e LB numa teclinha, o botão direito no mouse desenhado), do mesmo tamanho dos glifos das telas
 	Glifos.desenhar_selo(self, "habilidade" if e else "secundario", origem.x + TAM_CARD.x * 0.5, TAM_CARD.y - Glifos.ALTURA_SELO, cor, texto_aceso, DESATIVADO)
 
@@ -369,10 +380,11 @@ func _cor_do_card(e: bool, pulsa: bool) -> Color:
 func _cortina(icon_pos: Vector2, px: int) -> void:
 	if px <= 0:
 		return
-	var altura := (TAM_ICON.y - 2.0) * clampf(float(px) / 20.0, 0.0, 1.0)
-	draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(TAM_ICON.x - 2.0, altura)), Color(Paleta.PRETO, 0.56))
+	var b := BORDA_QUADRO
+	var altura := roundf((TAM_ICON.y - b * 2.0) * clampf(float(px) / 20.0, 0.0, 1.0))
+	draw_rect(Rect2(icon_pos + Vector2(b, b), Vector2(TAM_ICON.x - b * 2.0, altura)), Color(Paleta.PRETO, 0.56))
 	if px < 20:
-		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura), Vector2(TAM_ICON.x - 2.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
+		draw_rect(Rect2(icon_pos + Vector2(b, b + altura), Vector2(TAM_ICON.x - b * 2.0, 2.0)), Color(Paleta.RECARGA_LINHA, 0.95))
 
 
 ## Arte própria da E; os ícones antigos continuam sendo a reserva (inclusive a Ruptura do Hazaki).
@@ -428,7 +440,7 @@ func _rotulo_e() -> String:
 	return e_texto
 
 
-## A moldura de pedra do slot (9-slice, centro transparente). O estado (pronto, recarga, negado) continua no quadro de 1 px do ícone.
+## A moldura de pedra do slot (9-slice, centro transparente). O estado (pronto, recarga, negado) continua no quadro do ícone (2 px).
 func _moldura_pedra(retangulo: Rect2, ativa: bool) -> void:
 	RenderingServer.canvas_item_add_nine_patch(
 		get_canvas_item(),
@@ -445,10 +457,11 @@ func _moldura_pedra(retangulo: Rect2, ativa: bool) -> void:
 
 
 func _moldura(retangulo: Rect2, cor: Color) -> void:
-	draw_rect(Rect2(retangulo.position.x, retangulo.position.y, retangulo.size.x, 1.0), cor)
-	draw_rect(Rect2(retangulo.position.x, retangulo.end.y - 1.0, retangulo.size.x, 1.0), cor)
-	draw_rect(Rect2(retangulo.position.x, retangulo.position.y + 1.0, 1.0, retangulo.size.y - 2.0), cor)
-	draw_rect(Rect2(retangulo.end.x - 1.0, retangulo.position.y + 1.0, 1.0, retangulo.size.y - 2.0), cor)
+	var b := BORDA_QUADRO
+	draw_rect(Rect2(retangulo.position.x, retangulo.position.y, retangulo.size.x, b), cor)
+	draw_rect(Rect2(retangulo.position.x, retangulo.end.y - b, retangulo.size.x, b), cor)
+	draw_rect(Rect2(retangulo.position.x, retangulo.position.y + b, b, retangulo.size.y - b * 2.0), cor)
+	draw_rect(Rect2(retangulo.end.x - b, retangulo.position.y + b, b, retangulo.size.y - b * 2.0), cor)
 
 
 func _tem_propriedade(obj, nome: String) -> bool:

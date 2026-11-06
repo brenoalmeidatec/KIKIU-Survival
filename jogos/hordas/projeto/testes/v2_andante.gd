@@ -247,7 +247,28 @@ func checar_fusao(id: String) -> void:
 		var f := Andante.resolver("%s/%s" % [id, b])
 		# o desenho só amplia por inteiro (pixel art): 1,5 vira 2, 1,15 vira 1; o alcance segue o `e` exato
 		var esc := float(f.esc)
-		ok(esc == maxf(1.0, roundf(e)) and esc == floorf(esc), "%s/%s: escala inteira do desenho (%.2f)" % [id, b, esc])
+		var fg = al.get("folha_grande")
+		if fg is Dictionary:
+			# folha própria: o desenho é 1x (pixel do tamanho do resto), nada de ampliar; o quadro e o pé são os da base na escala lógica (arredondados)
+			ok(esc == 1.0 and bool(f.get("grande", false)), "%s/%s: folha grande desenhada em 1x (esc %.2f)" % [id, b, esc])
+			ok(f.folha == fg.folha and f.quadro == fg.quadro and f.pe == fg.pe, "%s/%s: a ficha usa a folha grande" % [id, b])
+			var bq: Vector2 = base.quadro
+			var bpe: Vector2 = base.pe
+			ok(
+				absf(float(f.quadro.x) - bq.x * e) <= 1.0 and absf(float(f.quadro.y) - bq.y * e) <= 1.0,
+				"%s/%s: o quadro grande é o da base x %.2f (o tamanho lógico não muda)" % [id, b, e]
+			)
+			ok(absf(float(f.pe.x) - bpe.x * e) <= 1.5 and absf(float(f.pe.y) - bpe.y * e) <= 1.5, "%s/%s: o pé grande é o da base x %.2f" % [id, b, e])
+			var png := Image.load_from_file(ProjectSettings.globalize_path(str(fg.folha)))
+			var qg: Vector2 = fg.quadro
+			ok(png != null and png.get_size() == Vector2i(int(qg.x) * 16, int(qg.y) * 5), "%s/%s: a folha grande tem 16 x 5 quadros de %s" % [id, b, qg])
+			var jg = JSON.parse_string(FileAccess.get_file_as_string(str(fg.folha).get_basename() + ".json"))
+			ok(
+				jg is Dictionary and Vector2(float(jg.quadro[0]), float(jg.quadro[1])) == qg and Vector2(float(jg.pe_x), float(jg.pe_y)) == fg.pe,
+				"%s/%s: o .json da folha grande bate com a ficha" % [id, b]
+			)
+		else:
+			ok(esc == maxf(1.0, roundf(e)) and esc == floorf(esc), "%s/%s: escala inteira do desenho (%.2f)" % [id, b, esc])
 		ok(f.tinta == al.get("tinta", Color.WHITE), "%s/%s: tinta do alias" % [id, b])
 		for k in ["alcance", "frente", "raio", "sombra"]:
 			ok(is_equal_approx(float(f[k]), float(base[k]) * e), "%s/%s: %s escala com o desenho" % [id, b, k])
@@ -292,7 +313,11 @@ func checar_fusao(id: String) -> void:
 			(
 				it != null
 				and str(it.fid) == "%s/%s" % [id, b]
-				and Andante.tex_de(it) == (Andante.tex_gris(str(b)) if bool(al.get("gris", false)) else Andante.tex_base(str(b)))
+				and (
+					Andante.tex_de(it) == Andante.tex_caminho(str(al.folha_grande.folha))
+					if al.has("folha_grande")
+					else Andante.tex_de(it) == (Andante.tex_gris(str(b)) if bool(al.get("gris", false)) else Andante.tex_base(str(b)))
+				)
 			),
 			"%s/%s: o item guarda a ficha e usa a folha da base" % [id, b]
 		)

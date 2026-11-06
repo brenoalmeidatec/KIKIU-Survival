@@ -4,9 +4,9 @@ extends RefCounted
 ##   - passos de 90 graus (a grade se mantém: é só trocar linha por coluna), com `quarto`;
 ##   - versões pré-giradas e desenhadas na hora de fazer a arte (o corte da katana, ver Efeitos.corte_direcao);
 ##   - formas calculadas por pixel do mundo no shader (o crescente do eco), que não têm texel para girar;
-##   - os projéteis de adagas.gd (adaga, plasma, míssil e as folhas `<proj>_heroi`): 16 direções, três cópias pré-giradas por textura mais
-##     os quartos de volta por transformação (ver sprite_giro.gd e `direcao16` abaixo).
-## Ainda NÃO coberto: lâminas e trechos de armas.gd e armas_novas.gd, e o escudo.gd. Esta regra vale para o que já passou por ela.
+##   - sprites de arma e projétil que apontam para uma direção (adagas.gd, armas.gd, armas_novas.gd, AnimGolpes.desenhar): 16 direções,
+##     três cópias pré-giradas por textura mais os quartos de volta por transformação (ver sprite_giro.gd e `direcao16` abaixo).
+## Ainda NÃO coberto: o escudo.gd. Esta regra vale para o que já passou por ela.
 ## Luzes (PointLight2D) e polígonos de UI ficam de fora: não são pixel art.
 
 const QUARTO := PI / 2.0

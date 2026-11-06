@@ -425,16 +425,16 @@ text = ""
 layout_mode = 0
 offset_left = 432.0
 offset_top = 412.0
-offset_right = 496.0
-offset_bottom = 476.0
+offset_right = 528.0
+offset_bottom = 508.0
 script = ExtResource("16_ultimate")
 
 [node name="Habilidades" type="Control" parent="Raiz"]
 layout_mode = 0
-offset_left = 585.0
-offset_top = 423.0
-offset_right = 831.0
-offset_bottom = 497.0
+offset_left = 586.0
+offset_top = 422.0
+offset_right = 954.0
+offset_bottom = 534.0
 script = ExtResource("12_habilidades")
 
 [node name="Golpes" type="Control" parent="Raiz"]
