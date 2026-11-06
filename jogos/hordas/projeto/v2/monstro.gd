@@ -152,6 +152,17 @@ func aplicar_stats(d: Dictionary, k_vida := 1.0, k_dano := 1.0) -> void:
 	definir_escala(1.0)
 
 
+## Tira do corpo todo o desenho de status da vida anterior: o material do shader (fogo, gelo, veneno, choque, sangue) e a cor do sprite de elite e
+## chefe, que ficariam no nó do pool e apareceriam na elite seguinte. O lote não tem nó: para ele basta o `v_estado`.
+func _limpar_corpo() -> void:
+	v_estado = StatusCorpo.NADA
+	if _mat_corpo != null:
+		_mat_corpo.set_shader_parameter("estado", 0.0)
+	if sprite != null:
+		sprite.material = null
+		sprite.modulate = Color.WHITE
+
+
 ## Faz dele a VARIAÇÃO `t` do elenco do mapa (v2/elenco.gd): tinta e multiplicadores de vida, dano e velocidade. Vem DEPOIS de `aplicar_stats` e de
 ## `reviver` (que zera a tinta e enche a vida).
 func aplicar_variante(t: Dictionary) -> void:
@@ -180,7 +191,10 @@ func reviver(p: Vector2) -> void:
 	queima_t = 0.0
 	lento_t = 0.0
 	marca_t = 0.0
-	v_estado = 0
+	marca_k = 0
+	queima_dps = 0.0
+	queima_fonte = ""
+	_limpar_corpo()
 	elite = false
 	mod_elite = ""
 	chefe = false
