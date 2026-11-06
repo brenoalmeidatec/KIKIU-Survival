@@ -1,49 +1,74 @@
 extends RefCounted
 ## As GOTAS DE FOGO de quem queima (decisão do Alisson, 06/11; receita do Enter the Gungeon: o corpo tingido por v2/status_corpo.gd + partículas pequenas).
-## Cada monstro queimando ganha de 2 a 4 gotas de 1 a 3 px que NASCEM de um pixel opaco do próprio corpo, sobem com uma leve curva lateral, vão do amarelo-claro ao
-## vermelho escuro e somem em 0,4 a 0,8 s. Nunca saem da silhueta de lado (no máximo `sobra_lado` px além da caixa do corpo) e passam no máximo `sobra_cabeca` px da
-## cabeça (fagulha). Onde nascem: uma lista de pontos pré-calculada UMA vez por tipo e quadro da folha (`pontos_do_quadro`: varre o alfa, sorteia até `pontos` pixels
-## opacos, com viés `bias_baixo` para a metade de baixo), então nunca nasce na folga vazia da célula (4 a 26 px embaixo em alguns bichos).
-## Pool FIXO em dados (v2_pixelfx.json, status.fogo.gotas): `pool` gotas no total, vagas de `por_monstro` gotas, das quais as últimas `vagas_elite` são só de elite e chefe; quem passa
-## do limite fica só com o tingimento. UM nó com um desenho só (z_index 30, acima dos monstros), RNG próprio (o da partida não é tocado), nenhum nó nasce na partida.
-## Perfil Baixo (Anim.suave desligado): nenhuma gota. "Reduzir piscadas": 1 gota por monstro, parada na cor laranja, sobe devagar e nasce com folga entre uma e outra
-## (nenhum pixel troca mais de 2 vezes por segundo, medido em testes/v2_chama_particulas.gd).
-## API: montar(c), atualizar(dt), limpar(), pontos_do_quadro(m) -> Dictionary, vivas() -> int, monstros() -> int, gota(i) -> Dictionary (testes).
+## Cada monstro queimando ganha de 10 (pequeno) a 14 (médio e grande) gotas vivas, 18 a 20 no elite e no chefe, e CADA GOTA É UMA MINI-ANIMAÇÃO: uma labareda de 3 a 5 px de largura
+## e 4 a 8 de altura, de uma folha procedural de 8 quadros (fonte_arte/chama/gerar_gotas.py -> assets/v2/efeitos/chama_gotas.png): nasce gorda e clara, estica, a ponta
+## tremula, a ponta se destaca em fagulha, o corpo sobe e encolhe, escurece (amarelo-claro, âmbar, laranja, vermelho, vermelho escuro) e some. O QUADRO AVANÇA PELA IDADE DA GOTA
+## (não por relógio global): cada gota está numa fase diferente e o nascimento é contínuo, sem ondas. A ÂNCORA (centro da base da labareda) NASCE num pixel opaco do próprio corpo
+## (lista pré-calculada UMA vez por tipo e quadro da folha, com viés `bias_baixo` para a metade de baixo: o pé pega fogo). Sobem com aceleração leve e balanço senoidal próprio;
+## a posição é float e só o fim do passo arredonda para pixel inteiro. As gotas novas ficam ATRÁS das velhas (duas passadas de desenho: jovens, depois velhas).
+## A gota inteira nunca sai de lado mais que `sobra_lado` px além da caixa opaca do corpo e a ponta passa no máximo `sobra_cabeca` px da cabeça (acima disso ela fica na altura
+## máxima até acabar a vida, como uma coroa de fogo, sem estourar de uma vez).
+## Pool FIXO em dados (v2_pixelfx.json, status.fogo.gotas): `vagas` vagas comuns de `por_vaga` gotas mais `vagas_elite` vagas só de elite e chefe de `por_vaga_elite` gotas
+## (40 x 14 + 4 x 20 = 640); quem passa do limite fica só com o tingimento. UM nó com um desenho só (z_index 30, acima dos monstros; uma chamada por gota, mesma textura: o Godot
+## junta num lote), RNG próprio (o da partida não é tocado), nenhum nó nasce na partida.
+## Perfil Baixo (Anim.suave desligado): nenhuma gota. "Reduzir piscadas": 3 a 4 gotas por monstro CONGELADAS num quadro médio (sem trocar de quadro nem balançar), subindo
+## devagar e com folga entre uma e outra (nenhum pixel troca mais de 2 vezes por segundo, medido em testes/v2_chama_particulas.gd).
+## API: montar(c), atualizar(dt), limpar(), pontos_do_quadro(m) -> Dictionary, vivas() -> int, monstros() -> int, gota(i), pixels(vaga) (testes).
 
 const Anim := preload("res://v2/anim_golpes.gd")
 const Piscadas := preload("res://v2/piscadas.gd")
 const SEED_RNG := 6677
 const FATIAS := 6  # a lista de monstros é varrida inteira em ~6 quadros
+const PASTA := "res://assets/v2/"
 
 var combate
 var no: Node2D = null
 var cfg: Dictionary = {}
-var pool := 160
-var por_slot := 4  # gotas reservadas por vaga (o máximo de `por_monstro`)
-var n_slots := 40
+var n_slots := 44  # vagas comuns + vagas de elite
+var n_comuns := 40
 var vagas_elite := 4  # as últimas vagas: só elite e chefe
 var ativos := 0
 var _rng := RandomNumberGenerator.new()
-var _formas: Array = []  # por forma: Array de Vector2i (pixels preenchidos, relativos ao canto de cima à esquerda)
-var _pesos: Array = []
-var _cores: Array = []
-var _fases: Array = []
+var _tex: Texture2D = null
+var _img: Image = null
+var _cw := 9  # célula da folha
+var _ch := 12
+var _ax := 4  # âncora na célula (centro da base)
+var _ay := 11
+var _nq := 8  # quadros por fila
+var _ntam := 4  # tamanhos (fila = tamanho * 2 + variante)
+var _px_q: Array = []  # por fila * quadros + quadro: PackedInt32Array (dx, dy, cor_rgba8) em px relativos à âncora
+var _ex0 := PackedInt32Array()  # por fila * quadros + quadro: caixa dos pixels relativa à âncora
+var _ex1 := PackedInt32Array()
+var _topo := PackedInt32Array()  # linhas acima da âncora do pixel mais alto
+var _cls: Array = []  # por classe: {ate: px, gotas: [min, max], pesos: PackedFloat32Array}
+var _base := PackedInt32Array()  # por vaga: índice da 1ª gota
+var _cap := PackedInt32Array()  # por vaga: quantas gotas tem
+var _p := {}  # os parâmetros do modo atual (normal ou calmo)
+var _calmo_ant := false
+var _sob_cab := 6.0
+var _sob_lado := 2.0
+var _jovem := 0.35
 var _cache := {}  # id da textura -> {chave -> {pts, x0, y0, x1, y1}}
 var _imgs := {}  # id da textura -> Image
 var _cursor := 0
 var _m: Array = []  # por vaga: o monstro, ou null
 var _n := PackedInt32Array()  # por vaga: quantas gotas vale
+var _nc := PackedInt32Array()  # por vaga: quantas vale em "Reduzir piscadas"
+var _classe := PackedInt32Array()  # por vaga: a classe de tamanho do monstro
 var _est := PackedInt32Array()  # por gota: 0 = livre, 1 = esperando, 2 = no ar
 var _idade := PackedFloat32Array()
 var _vida := PackedFloat32Array()
 var _espera := PackedFloat32Array()
-var _x0 := PackedFloat32Array()  # onde nasceu, em px da tela relativo ao ponto dos pés do monstro (pr)
+var _x0 := PackedFloat32Array()  # onde nasceu (a âncora), em px da tela relativo ao ponto dos pés do monstro (pr)
 var _y0 := PackedFloat32Array()
 var _vel := PackedFloat32Array()
+var _acel := PackedFloat32Array()
 var _amp := PackedFloat32Array()
 var _fase := PackedFloat32Array()
-var _forma := PackedInt32Array()
-var _ox := PackedInt32Array()  # onde a gota está agora (px inteiros relativos a pr), o que o desenho usa
+var _fila := PackedInt32Array()  # linha da folha (tamanho * 2 + variante)
+var _quadro := PackedInt32Array()
+var _ox := PackedInt32Array()  # onde a âncora está agora (px inteiros relativos a pr, arredondados), o que o desenho usa
 var _oy := PackedInt32Array()
 
 
@@ -51,37 +76,41 @@ func montar(c) -> void:
 	combate = c
 	_rng.seed = SEED_RNG
 	cfg = Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).get("gotas", {})
-	pool = maxi(int(cfg.get("pool", 160)), 4)
-	var pm: Array = cfg.get("por_monstro", [2, 4])
-	por_slot = maxi(int(pm[1]), 1)
-	n_slots = maxi(pool / por_slot, 1)
-	vagas_elite = clampi(int(cfg.get("vagas_elite", 4)), 0, n_slots - 1)
-	_formas.clear()
-	_pesos.clear()
-	var fs: Dictionary = cfg.get("formas", {})
-	var nomes: Array = fs.keys()
-	nomes.sort()
-	for nome in nomes:
-		var e: Dictionary = fs[nome]
-		var px: Array = []
-		var linhas: Array = e.get("linhas", [])
-		for y in linhas.size():
-			var row := str(linhas[y])
-			for x in row.length():
-				if row[x] == "X":
-					px.append(Vector2i(x, y))
-		_formas.append(px)
-		_pesos.append(float(e.get("peso", 1.0)))
-	_cores.clear()
-	for k in cfg.get("cores", []):
-		_cores.append(Color8(int(k[0]), int(k[1]), int(k[2])))
-	_fases = cfg.get("fases", [0.25, 0.55, 0.8])
+	n_comuns = maxi(int(cfg.get("vagas", 40)), 1)
+	vagas_elite = clampi(int(cfg.get("vagas_elite", 4)), 0, 64)
+	n_slots = n_comuns + vagas_elite
+	var por_c := maxi(int(cfg.get("por_vaga", 14)), 1)
+	var por_e := maxi(int(cfg.get("por_vaga_elite", 20)), 1)
+	_base.resize(n_slots)
+	_cap.resize(n_slots)
+	var total := 0
+	for i in n_slots:
+		_base[i] = total
+		_cap[i] = por_c if i < n_comuns else por_e
+		total += _cap[i]
+	_sob_cab = float(cfg.get("sobra_cabeca", 6))
+	_sob_lado = float(cfg.get("sobra_lado", 2))
+	_jovem = float(cfg.get("jovem", 0.35))
+	_carregar_folha()
+	_cls.clear()
+	for nome in ["pequeno", "medio", "grande", "especial"]:
+		var e: Dictionary = cfg.get("classes", {}).get(nome, {})
+		var pesos := PackedFloat32Array()
+		pesos.resize(_ntam)
+		var tams: Array = cfg.get("folha", {}).get("tamanhos", [])
+		for k in tams.size():
+			pesos[k] = float(e.get("tamanhos", {}).get(tams[k], 0.0))
+		_cls.append({"ate": float(e.get("ate_px", 99999)), "gotas": e.get("gotas", [10, 10]), "pesos": pesos})
+	_p = _parametros(false)
+	_calmo_ant = false
 	_m.resize(n_slots)
 	_n.resize(n_slots)
-	for t in [_est, _forma, _ox, _oy]:
-		t.resize(pool)
-	for t in [_idade, _vida, _espera, _x0, _y0, _vel, _amp, _fase]:
-		t.resize(pool)
+	_nc.resize(n_slots)
+	_classe.resize(n_slots)
+	for t in [_est, _fila, _quadro, _ox, _oy]:
+		t.resize(total)
+	for t in [_idade, _vida, _espera, _x0, _y0, _vel, _acel, _amp, _fase]:
+		t.resize(total)
 	var pai = combate.mundo.get("no_mundo")
 	if pai is Node:
 		no = Node2D.new()
@@ -89,6 +118,65 @@ func montar(c) -> void:
 		no.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		no.draw.connect(_desenhar)
 		pai.add_child(no)
+
+
+## Carrega a folha e mede, por fila e quadro, os pixels (para os testes) e a caixa (para a sobra de lado e de cima).
+func _carregar_folha() -> void:
+	var f: Dictionary = cfg.get("folha", {})
+	var cel: Array = f.get("celula", [9, 12])
+	var anc: Array = f.get("ancora", [4, 11])
+	_cw = int(cel[0])
+	_ch = int(cel[1])
+	_ax = int(anc[0])
+	_ay = int(anc[1])
+	_nq = maxi(int(f.get("quadros", 8)), 1)
+	_ntam = maxi(f.get("tamanhos", []).size(), 1)
+	var arq := PASTA + str(f.get("arquivo", "efeitos/chama_gotas.png"))
+	_tex = load(arq) if ResourceLoader.exists(arq) else null
+	_px_q.clear()
+	_ex0.clear()
+	_ex1.clear()
+	_topo.clear()
+	if _tex == null:
+		push_error("chama_gotas: folha ausente " + arq)
+		return
+	_img = _tex.get_image()
+	for fila in _ntam * 2:
+		for q in _nq:
+			var lista := PackedInt32Array()
+			var x0 := 999
+			var x1 := -999
+			var topo := 0
+			for y in _ch:
+				for x in _cw:
+					var c := _img.get_pixel(q * _cw + x, fila * _ch + y)
+					if c.a < 0.5:
+						continue
+					lista.append(x - _ax)
+					lista.append(y - _ay)
+					lista.append(int(c.to_rgba32()))
+					x0 = mini(x0, x - _ax)
+					x1 = maxi(x1, x - _ax)
+					topo = maxi(topo, _ay - y)
+			if lista.is_empty():
+				x0 = 0
+				x1 = 0
+			_px_q.append(lista)
+			_ex0.append(x0)
+			_ex1.append(x1)
+			_topo.append(topo)
+
+
+## Os parâmetros do modo (normal ou "Reduzir piscadas": o que está em `calmo` troca o normal).
+func _parametros(calmo: bool) -> Dictionary:
+	var r := {}
+	var c: Dictionary = cfg.get("calmo", {})
+	for k in ["vida_s", "sobe_px_s", "acel_px_s2", "balanco_px", "atraso_s"]:
+		var v: Array = c[k] if (calmo and c.has(k)) else cfg.get(k, [0.0, 0.0])
+		r[k] = [float(v[0]), float(v[1])]
+	r["balanco_hz"] = float(cfg.get("balanco_hz", 6.0))
+	r["quadro_fixo"] = int(c.get("quadro", 2)) if calmo else -1
+	return r
 
 
 func limpar() -> void:
@@ -113,27 +201,37 @@ func vivas() -> int:
 	return n
 
 
-## A gota i para os testes: {ativa, x, y (px relativos a pr), idade, vida, forma, monstro}.
+## O tamanho do pool (fixo).
+func n_gotas() -> int:
+	return _est.size()
+
+
+## Quantas gotas a vaga i guarda (o máximo de uma vaga comum ou de elite).
+func cap_da_vaga(i: int) -> int:
+	return _cap[i]
+
+
+## A gota i para os testes: {ativa, x, y (a âncora, px relativos a pr), idade, vida, fila, quadro, x0, y0}.
 func gota(i: int) -> Dictionary:
-	return {
-		"ativa": _est[i] == 2, "x": _ox[i], "y": _oy[i], "idade": _idade[i], "vida": _vida[i], "forma": _forma[i], "monstro": _m[i / por_slot], "x0": _x0[i], "y0": _y0[i]
-	}
+	return {"ativa": _est[i] == 2, "x": _ox[i], "y": _oy[i], "idade": _idade[i], "vida": _vida[i], "fila": _fila[i], "quadro": _quadro[i], "x0": _x0[i], "y0": _y0[i]}
 
 
-## Os pixels que as gotas desenham agora, em px relativos ao ponto dos pés (pr) de cada monstro, de TODAS as vagas somadas: {Vector2i: Color}. Os testes medem aqui.
+## Os pixels que as gotas desenham agora, em px relativos ao ponto dos pés (pr) de cada monstro, de TODAS as vagas somadas (ou só a `so_vaga`): {Vector2i: Color}, na
+## mesma ordem do desenho (jovens primeiro, velhas por cima). Os testes medem aqui.
 func pixels(so_vaga := -1) -> Dictionary:
 	var r := {}
-	var calmo := _calmo()
 	for i in n_slots:
 		if _m[i] == null or (so_vaga >= 0 and i != so_vaga):
 			continue
-		for j in por_slot:
-			var g := i * por_slot + j
-			if _est[g] != 2:
-				continue
-			var c := _cor(_idade[g] / maxf(_vida[g], 0.001), calmo)
-			for p in _formas[_forma[g]]:
-				r[Vector2i(_ox[g] + p.x, _oy[g] + p.y)] = c
+		for passo in 2:
+			for j in _n_vivas(i):
+				var g: int = _base[i] + j
+				if _est[g] != 2 or (_idade[g] < _vida[g] * _jovem) != (passo == 0):
+					continue
+				var lista: PackedInt32Array = _px_q[_fila[g] * _nq + _quadro[g]]
+				for k in lista.size() / 3:
+					var rgba: int = lista[k * 3 + 2]
+					r[Vector2i(_ox[g] + lista[k * 3], _oy[g] + lista[k * 3 + 1])] = Color8((rgba >> 24) & 255, (rgba >> 16) & 255, (rgba >> 8) & 255)
 	return r
 
 
@@ -142,19 +240,12 @@ func vaga_de(m) -> int:
 	return _m.find(m)
 
 
-func n_gotas() -> int:
-	return pool
+func _n_vivas(i: int) -> int:
+	return mini(_nc[i], _cap[i]) if _calmo() else mini(_n[i], _cap[i])
 
 
 func _calmo() -> bool:
 	return Piscadas.ligado()
-
-
-func _par(chave: String) -> Array:
-	var c: Dictionary = cfg.get("calmo", {})
-	if _calmo() and c.has(chave):
-		return c[chave]
-	return cfg.get(chave, [0.0, 0.0])
 
 
 # ------------------------------------------------------------------ onde as gotas nascem
@@ -162,6 +253,7 @@ func _par(chave: String) -> Array:
 ## A escala do desenho do monstro (lote: `escala`; com nó: `esc`).
 static func escala_de(m) -> int:
 	return maxi(int(roundf(m.escala if m.lote else m.esc)), 1)
+
 
 
 ## Os pontos de nascimento do quadro atual do monstro (cache por textura, coluna e linha): {pts: PackedInt32Array (x, y, x, y, ...) em px do quadro, x0, y0, x1, y1:
@@ -230,6 +322,10 @@ func atualizar(dt: float) -> void:
 		if ativos > 0:
 			limpar()
 		return
+	var calmo := _calmo()
+	if calmo != _calmo_ant:
+		_calmo_ant = calmo
+		_p = _parametros(calmo)
 	for i in n_slots:
 		if _m[i] != null:
 			_passo_vaga(i, dt)
@@ -247,40 +343,45 @@ func _passo_vaga(i: int, dt: float) -> void:
 	if not _vaga_vale(m):
 		_soltar(i)
 		return
-	var base := i * por_slot
-	var calmo := _calmo()
-	var quer: int = mini(_n[i], 1) if calmo else _n[i]
+	var base: int = _base[i]
+	var quer := _n_vivas(i)
 	var s := escala_de(m)
 	var dados := pontos_do_quadro(m)
-	for j in por_slot:
+	var lim := _limites(m, dados, s)
+	var topo_max: float = lim.y0 - _sob_cab
+	var at: Array = _p.atraso_s
+	var fixo: int = _p.quadro_fixo
+	var hz: float = _p.balanco_hz
+	var nq := _nq
+	for j in _cap[i]:
 		var g := base + j
 		if j >= quer:
 			_est[g] = 0
 			continue
 		if _est[g] == 0:
 			_est[g] = 1
-			_espera[g] = _rng.randf_range(0.0, float(_par("atraso_s")[1]))
+			_espera[g] = _rng.randf_range(0.0, float(_p.vida_s[1]) if fixo < 0 else float(at[1]))  # começam espalhadas: sem onda
 		if _est[g] == 1:
 			_espera[g] -= dt
-			if _espera[g] > 0.0 or not _nascer(g, m, dados, s):
+			if _espera[g] > 0.0 or not _nascer(g, m, dados, s, i):
 				continue
-		_idade[g] += dt
-		if _idade[g] >= _vida[g]:
+		var t: float = _idade[g] + dt
+		_idade[g] = t
+		if t >= _vida[g]:
 			_est[g] = 1
-			_espera[g] = _rng.randf_range(float(_par("atraso_s")[0]), float(_par("atraso_s")[1]))
+			_espera[g] = _rng.randf_range(at[0], at[1])
 			continue
-		var oy := _y0[g] - _vel[g] * _idade[g]
-		var ox := _x0[g] + _amp[g] * sin(_idade[g] * 5.6 + _fase[g])
-		var lim := _limites(m, dados, s)
-		if oy < lim.y0 - float(cfg.get("sobra_cabeca", 3)):
-			_idade[g] = _vida[g]  # chegou à altura máxima: some
-			_est[g] = 1
-			_espera[g] = _rng.randf_range(float(_par("atraso_s")[0]), float(_par("atraso_s")[1]))
-			continue
-		var folga := float(cfg.get("sobra_lado", 2))
-		ox = clampf(ox, lim.x0 - folga, lim.x1 + folga)
-		_ox[g] = int(floorf(ox))
-		_oy[g] = int(floorf(oy))
+		var q := fixo if fixo >= 0 else mini(int(t / _vida[g] * nq), nq - 1)
+		var idx: int = _fila[g] * nq + q
+		_quadro[g] = q
+		var y: float = _y0[g] - (_vel[g] + 0.5 * _acel[g] * t) * t
+		var x: float = _x0[g] + _amp[g] * sin(t * hz + _fase[g])
+		y = maxf(y, topo_max + float(_topo[idx]))  # a ponta não passa da sobra da cabeça: fica na altura máxima até acabar a vida
+		var lo := ceili(lim.x0 - _sob_lado - float(_ex0[idx]))
+		var hi := floori(lim.x1 + _sob_lado - float(_ex1[idx]))
+		var xi := roundi(x)
+		_ox[g] = clampi(xi, lo, hi) if lo <= hi else (lo + hi) / 2  # a gota INTEIRA fica a no máximo `sobra_lado` px da caixa
+		_oy[g] = roundi(y)  # só aqui, no fim, a posição float vira pixel inteiro
 
 
 ## A caixa dos pixels opacos do quadro atual em px da tela relativos a pr: {x0, x1, y0, y1} (espelho e escala já aplicados).
@@ -301,55 +402,78 @@ func _limites(m, dados: Dictionary, s: int) -> Dictionary:
 	}
 
 
-## Nasce a gota g do monstro m num pixel opaco do quadro atual. Devolve false se o quadro não tem pixel opaco.
-func _nascer(g: int, m, dados: Dictionary, s: int) -> bool:
+## Nasce a gota g do monstro m (vaga i): a âncora num pixel opaco do quadro atual. Devolve false se o quadro não tem pixel opaco.
+func _nascer(g: int, m, dados: Dictionary, s: int, i: int) -> bool:
 	var pts: PackedInt32Array = dados.pts
 	if pts.is_empty():
 		return false
-	var k := _rng.randi() % (pts.size() / 2)
-	var lx := pts[k * 2]
-	var ly := pts[k * 2 + 1]
 	var w := int(m.tipo.w)
-	if m.espelha:
-		lx = w - 1 - lx
-	_x0[g] = float(lx - w / 2) * s + float(s - 1) * 0.5
-	_y0[g] = (float(ly) - float(m.tipo.pe)) * s + float(s - 1) * 0.5
-	var v: Array = _par("sobe_px_s")
-	_vel[g] = _rng.randf_range(float(v[0]), float(v[1]))
-	var vi: Array = _par("vida_s")
-	_vida[g] = _rng.randf_range(float(vi[0]), float(vi[1]))
-	_amp[g] = _rng.randf_range(-1.0, 1.0) * (float(cfg.calmo.get("curva_px", 0)) if _calmo() else float(cfg.get("curva_px", 2)))
+	var tentativas := 8 if fixo_calmo() else 1  # "Reduzir piscadas": as gotas nunca se sobrepõem (sobreposição que acaba é uma troca de cor)
+	var achou := false
+	for _t in tentativas:
+		var k := _rng.randi() % (pts.size() / 2)
+		var lx := pts[k * 2]
+		var ly := pts[k * 2 + 1]
+		if m.espelha:
+			lx = w - 1 - lx
+		var nx := float(lx - w / 2) * s + float(s - 1) * 0.5
+		var ny := (float(ly) - float(m.tipo.pe)) * s + float(s - 1) * 0.5
+		achou = true
+		if tentativas > 1:
+			for j in _cap[i]:
+				var o: int = _base[i] + j
+				if o != g and _est[o] == 2 and absf(_x0[o] - nx) < 8.0 and absf(_y0[o] - ny) < 14.0:
+					achou = false
+					break
+		if achou:
+			_x0[g] = nx
+			_y0[g] = ny
+			break
+	if not achou:
+		return false
+	var v: Array = _p.sobe_px_s
+	_vel[g] = _rng.randf_range(v[0], v[1])
+	var a: Array = _p.acel_px_s2
+	_acel[g] = _rng.randf_range(a[0], a[1])
+	var vi: Array = _p.vida_s
+	_vida[g] = _rng.randf_range(vi[0], vi[1])
+	var b: Array = _p.balanco_px
+	_amp[g] = _rng.randf_range(-1.0, 1.0) * _rng.randf_range(b[0], b[1])
 	_fase[g] = _rng.randf() * TAU
-	var fm_ok: Array = []
-	if _calmo():
-		for nome in cfg.calmo.get("formas", []):
-			fm_ok.append(_indice_forma(str(nome)))
-	_forma[g] = _sortear_forma(fm_ok)
+	_fila[g] = _sortear_tamanho(i) * 2 + (_rng.randi() & 1)
 	_idade[g] = 0.0
+	_quadro[g] = 0
 	_est[g] = 2
-	_ox[g] = int(floorf(_x0[g]))
-	_oy[g] = int(floorf(_y0[g]))
+	_ox[g] = roundi(_x0[g])
+	_oy[g] = roundi(_y0[g])
 	return true
 
 
-func _indice_forma(nome: String) -> int:
-	var nomes: Array = cfg.get("formas", {}).keys()
-	nomes.sort()
-	return maxi(nomes.find(nome), 0)
+func fixo_calmo() -> bool:
+	return int(_p.quadro_fixo) >= 0
 
 
-func _sortear_forma(entre: Array) -> int:
+## O tamanho (coluna de tamanhos da folha) por peso da classe do monstro; em "Reduzir piscadas" só os tamanhos listados em `calmo.tamanhos`.
+func _sortear_tamanho(i: int) -> int:
+	var pesos: PackedFloat32Array = _cls[_classe[i]].pesos
+	var ok: Array = []
+	if _calmo():
+		var nomes: Array = cfg.get("folha", {}).get("tamanhos", [])
+		for nome in cfg.get("calmo", {}).get("tamanhos", []):
+			ok.append(nomes.find(nome))
 	var total := 0.0
-	for k in _formas.size():
-		if entre.is_empty() or entre.has(k):
-			total += _pesos[k]
+	for k in pesos.size():
+		total += pesos[k] if (ok.is_empty() or ok.has(k)) else 0.0
 	var x := _rng.randf() * total
-	for k in _formas.size():
-		if entre.is_empty() or entre.has(k):
-			x -= _pesos[k]
-			if x <= 0.0:
+	var ult := 0
+	for k in pesos.size():
+		if ok.is_empty() or ok.has(k):
+			if pesos[k] > 0.0:
+				ult = k
+			x -= pesos[k]
+			if x <= 0.0 and pesos[k] > 0.0:
 				return k
-	return 0
+	return ult
 
 
 func _soltar(i: int) -> void:
@@ -357,12 +481,24 @@ func _soltar(i: int) -> void:
 		return
 	_m[i] = null
 	_n[i] = 0
-	for j in por_slot:
-		_est[i * por_slot + j] = 0
+	for j in _cap[i]:
+		_est[_base[i] + j] = 0
 	ativos -= 1
 
 
-## Uma fatia da lista de monstros por quadro: quem queima, está na tela e não tem vaga ganha uma (elite e chefe podem usar as vagas reservadas).
+## A classe de tamanho do monstro (pelo alto da caixa opaca no quadro atual, em px da tela): 0 pequeno, 1 médio, 2 grande, 3 elite e chefe.
+func _classe_de(m, especial: bool) -> int:
+	if especial:
+		return 3
+	var dados := pontos_do_quadro(m)
+	var alto := float(int(dados.y1) - int(dados.y0) + 1) * escala_de(m)
+	for c in 2:
+		if alto <= float(_cls[c].ate):
+			return c
+	return 2
+
+
+## Uma fatia da lista de monstros por quadro: quem queima, está na tela e não tem vaga ganha uma (elite e chefe usam as vagas reservadas primeiro).
 func _varrer() -> void:
 	var ms: Array = combate.mundo.monstros
 	var n := ms.size()
@@ -377,49 +513,47 @@ func _varrer() -> void:
 			continue
 		var especial: bool = m.elite or m.chefe
 		var v := -1
-		var ate := n_slots if especial else n_slots - vagas_elite
-		for i in ate:
-			if _m[i] == null:
-				v = i
-				break
+		if especial:
+			for i in range(n_comuns, n_slots):
+				if _m[i] == null:
+					v = i
+					break
+		if v < 0:
+			for i in n_comuns:
+				if _m[i] == null:
+					v = i
+					break
 		if v < 0:
 			continue
 		_m[v] = m
-		var pm: Array = cfg.get("por_monstro", [2, 4])
-		_n[v] = _rng.randi_range(int(pm[0]), int(pm[1]))
+		_classe[v] = _classe_de(m, especial)
+		var gs: Array = _cls[_classe[v]].gotas
+		_n[v] = mini(_rng.randi_range(int(gs[0]), int(gs[1])), _cap[v])
+		var gc: Array = cfg.get("calmo", {}).get("gotas", [3, 4])
+		_nc[v] = mini(_rng.randi_range(int(gc[0]), int(gc[1])), _cap[v])
 		ativos += 1
-		for j in por_slot:
-			_est[v * por_slot + j] = 0
+		for j in _cap[v]:
+			_est[_base[v] + j] = 0
 
 
 # ------------------------------------------------------------------ desenho
 
 func _desenhar() -> void:
-	if no == null:
+	if no == null or _tex == null:
 		return
-	var calmo := _calmo()
+	var sz := Vector2(_cw, _ch)
 	for i in n_slots:
 		var m = _m[i]
 		if m == null:
 			continue
 		var pe: Vector2 = m.pr
-		var px := floorf(pe.x)
-		var py := floorf(pe.y)
-		for j in por_slot:
-			var g := i * por_slot + j
-			if _est[g] != 2:
-				continue
-			var c := _cor(_idade[g] / maxf(_vida[g], 0.001), calmo)
-			for p in _formas[_forma[g]]:
-				no.draw_rect(Rect2(px + _ox[g] + p.x, py + _oy[g] + p.y, 1.0, 1.0), c)
-
-
-func _cor(f: float, calmo: bool) -> Color:
-	if calmo:
-		var k = cfg.calmo.get("cor", [246, 168, 30])
-		return Color8(int(k[0]), int(k[1]), int(k[2]))
-	var idx := 0
-	for lim in _fases:
-		if f >= float(lim):
-			idx += 1
-	return _cores[mini(idx, _cores.size() - 1)]
+		var px := floorf(pe.x) - _ax
+		var py := floorf(pe.y) - _ay
+		var base: int = _base[i]
+		var quer := _n_vivas(i)
+		for passo in 2:  # 0: as jovens (atrás), 1: as velhas (por cima)
+			for j in quer:
+				var g := base + j
+				if _est[g] != 2 or (_idade[g] < _vida[g] * _jovem) != (passo == 0):
+					continue
+				no.draw_texture_rect_region(_tex, Rect2(px + _ox[g], py + _oy[g], sz.x, sz.y), Rect2(_quadro[g] * _cw, _fila[g] * _ch, sz.x, sz.y))

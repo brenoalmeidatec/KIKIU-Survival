@@ -16,37 +16,41 @@
 		"cortina_sangue": "sangue"
 	},
 	"status": {
-		"_ajuda": "Fogo no corpo: o shader do sprite (v2/status_corpo.gd) escurece e aquece o monstro e põe a borda de brasa por dentro; as GOTAS DE FOGO (v2/chama_gotas.gd) são partículas que nascem de pixels opacos do próprio corpo e sobem. fogo.gotas: pool = gotas no total (fixo, nenhum nó nasce na partida); por_monstro [min, max] gotas vivas (o máximo vezes as vagas dá o pool); vagas = pool / máximo de por_monstro (40); as últimas vagas_elite são só para elite e chefe; quem passa do limite fica só com o tingimento); pontos = quantos pixels opacos por quadro da folha entram na lista de nascimento (calculada uma vez por tipo e quadro); cobertura_media_min_px = piso que o teste exige (média de pixels de gota por quadro num monstro queimando); bias_baixo = quantas vezes mais provável nascer na metade de baixo; vida_s [min, max]; sobe_px_s [min, max]; curva_px = amplitude lateral; sobra_cabeca = até quantos px acima do topo opaco a gota sobe antes de sumir; sobra_lado = até quantos px além da caixa opaca ela pode ir de lado; atraso_s = espera entre uma gota e a seguinte da mesma vaga; cores do amarelo-claro ao vermelho escuro e fases (fração da vida em que troca); formas = pixels (X) de cada gota (peso = chance). calmo = o que muda com 'Reduzir piscadas' (1 gota por monstro, parada na cor laranja, sobe devagar, folga entre gotas: nenhum pixel troca mais de 2 vezes por segundo). Perfil Baixo: sem gotas (só o tingimento).",
+		"_ajuda": "Fogo no corpo: o shader do sprite (v2/status_corpo.gd) escurece e aquece o monstro e põe a borda de brasa por dentro; as GOTAS DE FOGO (v2/chama_gotas.gd) são mini-animações de labareda que nascem de pixels opacos do próprio corpo e sobem. fogo.gotas: folha = a folha procedural (fonte_arte/chama/gerar_gotas.py: arquivo, celula [w,h], ancora [x,y] = centro da base, quadros por fila, tamanhos na ordem das colunas de filas; cada tamanho tem 2 variantes, fila = tamanho*2 + variante); vagas = vagas comuns (monstros queimando ao mesmo tempo com gotas) de por_vaga gotas cada; vagas_elite = vagas reservadas só para elite e chefe, de por_vaga_elite gotas (pool = vagas*por_vaga + vagas_elite*por_vaga_elite = 640, fixo, nenhum nó nasce na partida; quem passa do limite fica só com o tingimento); classes = o tamanho do monstro (alto da caixa opaca em px da tela: pequeno até ate_px, médio até ate_px, grande acima; especial = elite e chefe): gotas [min, max] vivas e tamanhos = peso de cada tamanho de labareda; pontos = quantos pixels opacos por quadro da folha do monstro entram na lista de nascimento (calculada uma vez por tipo e quadro); bias_baixo = quantas vezes mais provável nascer na metade de baixo (o pé pega fogo); cobertura_media_min_px = piso que o teste exige (média de pixels de gota por quadro num lobo queimando; a versão de 2 a 4 gotas de 1 a 3 px dava ~8); vida_s [min, max] = a vida de uma gota, durante a qual os 8 quadros passam; sobe_px_s = velocidade inicial de subida e acel_px_s2 = aceleração (leve), ambos [min, max]; balanco_px = amplitude do balanço senoidal lateral e balanco_hz = velocidade dele (rad/s); sobra_cabeca = até quantos px acima do topo opaco a ponta sobe (depois fica lá); sobra_lado = até quantos px além da caixa opaca a gota inteira pode ir de lado; atraso_s = espera entre o fim de uma gota e o nascimento da seguinte na mesma posição da vaga; jovem = fração da vida em que a gota ainda é nova e desenhada ATRÁS das velhas. calmo = o que muda com 'Reduzir piscadas': gotas [min, max] por monstro, congeladas no quadro (índice) dado, só dos tamanhos listados, sem balanço, subindo devagar e com folga entre uma e outra (nenhum pixel troca mais de 2 vezes por segundo). Perfil Baixo: sem gotas (só o tingimento).",
 		"fogo": {
 			"gotas": {
-				"pool": 160,
-				"por_monstro": [2, 4],
+				"folha": {"arquivo": "efeitos/chama_gotas.png", "celula": [9, 12], "ancora": [4, 11], "quadros": 8, "tamanhos": ["p", "m", "g", "xg"]},
+				"vagas": 40,
+				"por_vaga": 14,
 				"vagas_elite": 4,
-				"pontos": 48,
-				"bias_baixo": 2.0,
-				"cobertura_media_min_px": 6,
-				"vida_s": [0.4, 0.8],
-				"sobe_px_s": [14, 24],
-				"curva_px": 2,
-				"sobra_cabeca": 3,
-				"sobra_lado": 2,
-				"atraso_s": [0.0, 0.15],
-				"cores": [[255, 241, 168], [246, 168, 30], [224, 82, 26], [140, 28, 10]],
-				"fases": [0.25, 0.55, 0.8],
-				"formas": {
-					"alta": {"linhas": ["X", "X", "X"], "peso": 2},
-					"gorda": {"linhas": [".X", "XX"], "peso": 2},
-					"media": {"linhas": ["X", "X"], "peso": 2},
-					"fagulha": {"linhas": ["X"], "peso": 1}
+				"por_vaga_elite": 20,
+				"classes": {
+					"pequeno": {"ate_px": 30, "gotas": [9, 11], "tamanhos": {"p": 3, "m": 2}},
+					"medio": {"ate_px": 52, "gotas": [13, 14], "tamanhos": {"p": 1, "m": 3, "g": 2}},
+					"grande": {"gotas": [14, 14], "tamanhos": {"m": 2, "g": 3, "xg": 1}},
+					"especial": {"gotas": [18, 20], "tamanhos": {"m": 2, "g": 3, "xg": 3}}
 				},
+				"pontos": 64,
+				"bias_baixo": 3.0,
+				"cobertura_media_min_px": 60,
+				"vida_s": [0.55, 0.95],
+				"sobe_px_s": [10, 18],
+				"acel_px_s2": [20, 40],
+				"balanco_px": [1, 2],
+				"balanco_hz": 6.0,
+				"sobra_cabeca": 6,
+				"sobra_lado": 2,
+				"atraso_s": [0.0, 0.12],
+				"jovem": 0.35,
 				"calmo": {
-					"por_monstro": [1, 1],
+					"gotas": [3, 4],
+					"quadro": 2,
 					"vida_s": [1.5, 2.0],
-					"sobe_px_s": [2, 3],
-					"curva_px": 0,
+					"sobe_px_s": [0.5, 0.8],
+					"acel_px_s2": [0, 0],
+					"balanco_px": [0, 0],
 					"atraso_s": [1.0, 1.4],
-					"cor": [246, 168, 30],
-					"formas": ["gorda", "fagulha"]
+					"tamanhos": ["m", "g"]
 				}
 			}
 		}

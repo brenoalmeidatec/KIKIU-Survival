@@ -1,17 +1,21 @@
 extends "res://testes/isolamento_v2.gd"
 ## As GOTAS DE FOGO de quem queima (v2/chama_gotas.gd; o corpo tingido é de v2/status_corpo.gd). Roda em qualquer modo (headless também): mede o estado das gotas.
-## (1) Os dados: pool de 160, 2 a 4 gotas por monstro, vida de 0,4 a 0,8 s, gotas de 1 a 3 px.
-## (2) Os pontos de nascimento de TODO tipo de monstro e de todo quadro da folha: são pixels opacos, dentro da caixa opaca (num sprite com folga vazia embaixo a
-##     gota não nasce na folga: a maior folga medida vem no relatório).
-## (3) Num lobo queimando por 4 s (parado): cobertura média de pixels de gota por quadro >= o piso dos dados (a head 17d7b0a9 não tem gota nenhuma: 0), cada gota NASCE
-##     sobre pixel opaco do quadro, nunca sai de lado além de 2 px da caixa opaca nem passa de 3 px acima dela, SOBE (termina acima de onde nasceu), vive de 0,4 a 0,8 s.
-## (4) Pool fixo: 60 monstros queimando não criam nó, as gotas vivas nunca passam de 160, e o elite queimando ganha vaga mesmo com as comuns cheias.
-## (5) "Reduzir piscadas": nenhum pixel das gotas troca mais de 2 vezes em qualquer janela de 1 s (medido quadro a quadro por 6 s). Perfil Baixo: nenhuma gota.
+## (1) Os dados: pool fixo de 640 (40 vagas x 14 + 4 vagas de elite x 20), classes por tamanho (10 / 14 / 14 / 18-20 gotas), vida de ~0,55 a 0,95 s, sobra de lado <= 3 e de cabeça <= 6 px.
+## (2) A folha procedural (assets/v2/efeitos/chama_gotas.png, de fonte_arte/chama/gerar_gotas.py): 4 tamanhos x 2 variantes x 8 quadros, alfa 0/1, 5 cores, labaredas de 3 a 5 px de
+##     largura e 4 a 8 de altura que NASCEM claras e gordas, esticam, encolhem e ESCURECEM até o vermelho escuro; cada quadro é diferente do anterior.
+## (3) Os pontos de nascimento de TODO tipo de monstro e de todo quadro da folha: são pixels opacos, dentro da caixa opaca (num sprite com folga vazia embaixo a gota não nasce na folga).
+## (4) Num lobo queimando por 4 s (parado): cobertura média de pixels de gota por quadro >= o piso (40 px; a config antiga, 2 a 4 gotas de 1 a 3 px, dava ~8 e falha), 10 a 16 gotas vivas,
+##     a âncora de cada gota NASCE sobre pixel opaco do quadro, o quadro vem da IDADE da gota (cada uma numa fase), nascimento contínuo (sem onda), mais nascimentos na metade de baixo,
+##     a gota INTEIRA nunca sai de lado além de 2 px da caixa opaca nem a ponta passa de 6 px acima dela, SOBE, vive no máximo 0,95 s.
+## (5) Pool fixo: 60 monstros queimando não criam nó, as gotas vivas nunca passam do pool, e o elite queimando ganha vaga reservada mesmo com as comuns cheias.
+## (6) "Reduzir piscadas": 3 a 4 gotas congeladas no quadro médio; nenhum pixel troca mais de 2 vezes em qualquer janela de 1 s (6 s). Perfil Baixo: nenhuma gota.
+## (7) Custo: 40 monstros queimando, tempo médio do passo (atualizar) e do desenho por quadro, em ms (impresso; o teto aqui é folgado, o CI é lento).
 ## Roda: godot --path jogos/hordas/projeto res://testes/v2_chama_particulas.tscn  (imprime "v2_chama_particulas falhas=0")
 const Anim := preload("res://v2/anim_golpes.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const Piscadas := preload("res://v2/piscadas.gd")
 const PASSO := 1.0 / 60.0
+const PISO_MIN := 40  # o piso de cobertura não pode ser afrouxado nos dados abaixo disso
 const TIPO := "inimigo_cao_ossos"
 var falhas := 0
 var _dados: Dictionary = {}
@@ -60,6 +64,7 @@ func _mundo():
 func _ready() -> void:
 	_dados = Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).get("gotas", {})
 	_parte_dados()
+	_parte_folha()
 	var w = _mundo()
 	_parte_pontos(w)
 	_parte_lobo(w)
@@ -71,6 +76,9 @@ func _ready() -> void:
 	_parte_calmo(w3)
 	_parte_baixo(w3)
 	w3.queue_free()
+	var w4 = _mundo()
+	await _parte_custo(w4)
+	w4.queue_free()
 	print("v2_chama_particulas falhas=", falhas)
 	get_tree().quit(1 if falhas else 0)
 
@@ -78,22 +86,106 @@ func _ready() -> void:
 func _parte_dados() -> void:
 	var d := _dados
 	ok(not d.is_empty(), "os dados têm status.fogo.gotas")
-	ok(int(d.get("pool", 0)) >= 120 and int(d.get("pool", 0)) <= 200, "o pool é de ~160 (%s)" % str(d.get("pool")))
-	var pm: Array = d.get("por_monstro", [0, 0])
-	ok(int(pm[0]) == 2 and int(pm[1]) == 4, "2 a 4 gotas vivas por monstro")
+	var pool: int = int(d.get("vagas", 0)) * int(d.get("por_vaga", 0)) + int(d.get("vagas_elite", 0)) * int(d.get("por_vaga_elite", 0))
+	ok(pool >= 600 and pool <= 680, "o pool é de ~640: 40 x 14 + 4 x 20 (%d)" % pool)
+	var c: Dictionary = d.get("classes", {})
+	ok(c.has("pequeno") and c.has("medio") and c.has("grande") and c.has("especial"), "classes pequeno, medio, grande e especial")
+	if c.has("pequeno") and c.has("medio") and c.has("especial"):
+		ok(int(c.pequeno.gotas[0]) >= 9 and int(c.pequeno.gotas[1]) <= 11, "monstro pequeno: ~10 gotas")
+		ok(int(c.medio.gotas[0]) >= 13 and int(c.medio.gotas[1]) <= int(d.por_vaga), "monstro médio: ~14 gotas, no máximo o da vaga")
+		ok(int(c.especial.gotas[0]) >= 18 and int(c.especial.gotas[1]) <= int(d.por_vaga_elite), "elite e chefe: 18 a 20 gotas, no máximo o da vaga reservada")
 	var vi: Array = d.get("vida_s", [0, 0])
-	ok(is_equal_approx(float(vi[0]), 0.4) and is_equal_approx(float(vi[1]), 0.8), "vida de 0,4 a 0,8 s")
-	var maior := 0
-	for k in d.get("formas", {}):
-		var px := 0
-		for l in d.formas[k].linhas:
-			px += str(l).count("X")
-		maior = maxi(maior, px)
-	ok(maior >= 2 and maior <= 3, "as gotas têm de 1 a 3 px (a maior tem %d)" % maior)
-	ok(d.get("formas", {}).size() >= 3 and d.get("formas", {}).size() <= 4, "3 a 4 formas")
-	ok(d.get("cores", []).size() == 4, "4 cores: amarelo-claro, laranja, vermelho, vermelho escuro")
-	ok(int(d.get("sobra_lado", 99)) <= 2 and int(d.get("sobra_cabeca", 99)) <= 4, "a sobra de lado é de até 2 px e a da cabeça de poucos px")
+	ok(float(vi[0]) >= 0.5 and float(vi[1]) <= 1.0 and float(vi[0]) < float(vi[1]), "vida de ~0,55 a 0,95 s")
+	ok(int(d.get("sobra_lado", 99)) <= 3 and int(d.get("sobra_cabeca", 99)) <= 6, "sobra de lado <= 3 px e de cabeça <= 6 px")
+	ok(float(d.get("cobertura_media_min_px", 0)) >= PISO_MIN, "o piso de cobertura é de pelo menos %d px (%s)" % [PISO_MIN, str(d.get("cobertura_media_min_px"))])
+	var f: Dictionary = d.get("folha", {})
+	ok(int(f.get("quadros", 0)) >= 6 and int(f.get("quadros", 0)) <= 8 and f.get("tamanhos", []).size() >= 3, "folha: 6 a 8 quadros e 3 ou 4 tamanhos")
 	ok(not Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).has("corpo"), "o ramo antigo da chama no shader (status.fogo.corpo) saiu dos dados")
+
+
+## A folha procedural: lê o PNG e mede.
+func _parte_folha() -> void:
+	var f: Dictionary = _dados.get("folha", {})
+	var im := Image.load_from_file(ProjectSettings.globalize_path("res://assets/v2/" + str(f.get("arquivo", "efeitos/chama_gotas.png"))))
+	ok(im != null and not im.is_empty(), "a folha das gotas existe")
+	if im == null or im.is_empty():
+		return
+	var cw: int = int(f.celula[0])
+	var ch: int = int(f.celula[1])
+	var ay: int = int(f.ancora[1])
+	var nq: int = int(f.quadros)
+	var nt: int = f.tamanhos.size()
+	ok(im.get_width() == cw * nq and im.get_height() == ch * nt * 2, "a folha tem %d quadros x %d filas de células %dx%d (%dx%d)" % [nq, nt * 2, cw, ch, im.get_width(), im.get_height()])
+	var cores := {}
+	var meio_alfa := 0
+	var ant := ""
+	var iguais := 0
+	var maior_w := 0
+	var maior_h := 0
+	var menor_w := 99
+	var menor_h := 99
+	var ok_forma := true
+	var escurece := true
+	var encolhe := true
+	for fila in nt * 2:
+		var lum_prev := 9.0
+		var seq := [0, 2, 3, 5, 6, nq - 1]
+		var area2 := 0
+		var w_max := 0
+		var h_max := 0
+		ant = ""
+		for q in nq:
+			var n := 0
+			var x0 := 99
+			var x1 := -1
+			var y0 := 99
+			var y1 := -1
+			var lum := 0.0
+			var sig := ""
+			for y in ch:
+				for x in cw:
+					var c := im.get_pixel(q * cw + x, fila * ch + y)
+					if c.a > 0.0 and c.a < 1.0:
+						meio_alfa += 1
+					if c.a >= 0.5:
+						n += 1
+						cores[c.to_html(false)] = true
+						x0 = mini(x0, x)
+						x1 = maxi(x1, x)
+						y0 = mini(y0, y)
+						y1 = maxi(y1, y)
+						lum += 0.3 * c.r + 0.59 * c.g + 0.11 * c.b
+						sig += "%d,%d,%s;" % [x, y, c.to_html(false)]
+			if n == 0:
+				ok_forma = false
+				continue
+			lum /= float(n)
+			if q == 2:
+				area2 = n
+				w_max = x1 - x0 + 1
+				h_max = ay - y0 + 1
+			if q == nq - 1:
+				encolhe = encolhe and n < area2
+			if seq.has(q):  # a fagulha (brasa) do meio é um pouco mais clara que o corpo: compara só os quadros da sequência
+				if lum > lum_prev + 0.001:
+					escurece = false
+				lum_prev = lum
+			if sig == ant:
+				iguais += 1
+			ant = sig
+			ok_forma = ok_forma and x0 >= 0 and x1 < cw and y1 <= ay
+		maior_w = maxi(maior_w, w_max)
+		maior_h = maxi(maior_h, h_max)
+		menor_w = mini(menor_w, w_max)
+		menor_h = mini(menor_h, h_max)
+	print("folha: %dx%d px, %d cores, %d px com alfa fracionário; labaredas (quadro 2) de %dx%d a %dx%d px" % [im.get_width(), im.get_height(), cores.size(), meio_alfa, menor_w, menor_h, maior_w, maior_h])
+	ok(meio_alfa == 0, "alfa só 0 ou 1 (%d px fracionários)" % meio_alfa)
+	ok(cores.size() >= 4 and cores.size() <= 6, "paleta de 4 a 6 cores (%d)" % cores.size())
+	ok(menor_w >= 3 and maior_w <= 5 and menor_h >= 4 and maior_h <= 8, "labaredas de 3 a 5 px de largura e 4 a 8 de altura (%dx%d a %dx%d)" % [menor_w, menor_h, maior_w, maior_h])
+	ok(ok_forma, "todo quadro tem pixels e cabe na célula, acima da âncora")
+	ok(iguais == 0, "nenhum quadro repete o anterior (%d repetidos)" % iguais)
+	ok(escurece, "do quadro 0 ao último a cor só escurece (amarelo-claro, laranja, vermelho, vermelho escuro)")
+	ok(encolhe, "o último quadro é menor que o quadro 2 (vira fagulha)")
 
 
 ## Todo tipo, todo quadro: a lista de nascimento só tem pixel opaco, dentro da caixa opaca; e mede a folga vazia embaixo.
@@ -143,21 +235,23 @@ func _parte_lobo(w) -> void:
 	var p0: Vector2 = w.heroi.pos
 	var lobo = w.nascer_monstro(TIPO, p0 + Vector2(40, 30))
 	lobo.atordoa_t = 99.0  # parado: as posições relativas ao pé são as da tela
+	lobo.vida = 99999.0  # o fogo de 60 s não mata o lobo no meio da medição
+	lobo.vida_max = 99999.0
 	_quadros(w, 10)
 	ok(g.vivas() == 0, "sem fogo, nenhuma gota")
 	lobo.queimar(0.0, 60.0)
-	_quadros(w, 20)
+	_quadros(w, 60)  # deixa o regime firmar (as gotas nascem espalhadas)
 	var v: int = g.vaga_de(lobo)
 	ok(v >= 0 and g.monstros() == 1, "o lobo queimando ganha uma vaga (vaga %d, %d monstros)" % [v, g.monstros()])
 	if v < 0:
 		return
-	var por := 4
+	var por: int = g.cap_da_vaga(v)
 	var tex: Texture2D = lobo.tipo.alb
 	var im: Image = tex.get_image()
 	var tw := int(lobo.tipo.w)
 	var th := int(lobo.tipo.h)
 	var pe := int(lobo.tipo.pe)
-	var s := 1
+	var s: int = g.escala_de(lobo)
 	var soma := 0
 	var quadros := 240
 	var fora_lado := 0
@@ -170,55 +264,89 @@ func _parte_lobo(w) -> void:
 	var vida_ruim := 0
 	var max_vivas := 0
 	var min_vivas := 99
+	var soma_vivas := 0
 	var pool_ok := true
+	var quadro_ruim := 0
+	var quadros_distintos := 0
+	var nasc_baixo := 0
+	var nasc_por_janela := {}  # janela de 6 quadros -> nascimentos
+	for k in por:  # as gotas que já estão no ar no começo da medição não contam como nascimento
+		var g0: Dictionary = g.gota(g._base[v] + k)
+		if g0.ativa:
+			viva_ant[g._base[v] + k] = {"y0": g0.y0, "ult": g0.y, "t": g0.idade}
 	for q in quadros:
 		w.avancar(PASSO)
 		var dados: Dictionary = g.pontos_do_quadro(lobo)
 		var lim: Dictionary = g._limites(lobo, dados, s)
 		var vivas := 0
+		var pxs: Dictionary = g.pixels(v)
+		var px_x0 := 99999
+		var px_x1 := -99999
+		var px_y0 := 99999
+		for pp in pxs:
+			px_x0 = mini(px_x0, pp.x)
+			px_x1 = maxi(px_x1, pp.x)
+			px_y0 = mini(px_y0, pp.y)
+		if not pxs.is_empty():
+			if float(px_x0) < lim.x0 - 2.0 - 0.001 or float(px_x1) > lim.x1 + 2.0 + 0.001:
+				fora_lado += 1
+			if float(px_y0) < lim.y0 - 6.0 - 0.001:
+				fora_topo += 1
+		var vistos := {}
 		for k in por:
-			var i: int = v * por + k
+			var i: int = g._base[v] + k
 			var gt: Dictionary = g.gota(i)
 			if gt.ativa:
 				vivas += 1
-				if gt.x < lim.x0 - 2.0 - 0.001 or gt.x > lim.x1 + 2.0 + 0.001:
-					fora_lado += 1
-				if gt.y < lim.y0 - 3.0 - 1.0:
-					fora_topo += 1
+				vistos[gt.quadro] = true
+				if gt.quadro != mini(int(gt.idade / gt.vida * 8.0), 7):
+					quadro_ruim += 1
 				if not viva_ant.has(i) or gt.idade < viva_ant[i].t:
 					if viva_ant.has(i):
 						terminou += 1
 						subiu += 1 if int(viva_ant[i].ult) < int(viva_ant[i].y0) else 0
-						if viva_ant[i].t < 0.35 or viva_ant[i].t > 0.85:
+						if viva_ant[i].t > 0.96:
 							vida_ruim += 1
-					# nasceu: o pixel de origem é opaco no quadro atual
+					# nasceu: o pixel de origem (a âncora) é opaco no quadro atual
 					var lx := int(floorf(gt.x0)) + tw / 2
 					var ly := int(floorf(gt.y0)) + pe
 					if lobo.espelha:
 						lx = tw - 1 - lx
 					nasceu += 1
+					nasc_por_janela[q / 6] = int(nasc_por_janela.get(q / 6, 0)) + 1
+					if float(ly) >= (float(dados.y0) + float(dados.y1)) * 0.5:
+						nasc_baixo += 1
 					if lx < 0 or ly < 0 or lx >= tw or ly >= th or im.get_pixel(lobo.coluna * tw + lx, lobo.linha * th + ly).a < 0.5:
 						nasc_fora += 1
 					viva_ant[i] = {"y0": gt.y0, "ult": gt.y, "t": gt.idade}
 				else:
 					viva_ant[i].ult = gt.y
 					viva_ant[i].t = gt.idade
-			elif viva_ant.has(i) and viva_ant[i].t > 0.0:
-				pass
+		quadros_distintos += vistos.size()
 		max_vivas = maxi(max_vivas, vivas)
 		min_vivas = mini(min_vivas, vivas)
-		soma += g.pixels(v).size()
+		soma_vivas += vivas
+		soma += pxs.size()
 		pool_ok = pool_ok and g.vivas() <= g.n_gotas()
 	var media := float(soma) / float(quadros)
-	print("lobo: cobertura média %.1f px de gota por quadro, %d gotas nasceram, %d terminaram, %d sobem, vivas %d a %d" % [media, nasceu, terminou, subiu, min_vivas, max_vivas])
-	ok(media >= float(_dados.get("cobertura_media_min_px", 4)), "cobertura média de gota por quadro: %.1f px (piso %s)" % [media, str(_dados.get("cobertura_media_min_px"))])
-	ok(nasceu >= 20, "muitas gotas nasceram em 4 s (%d)" % nasceu)
-	ok(nasc_fora == 0, "toda gota nasce sobre pixel opaco do quadro (%d de %d fora)" % [nasc_fora, nasceu])
+	var pior_janela := 0
+	for k in nasc_por_janela:
+		pior_janela = maxi(pior_janela, int(nasc_por_janela[k]))
+	var media_dist := float(quadros_distintos) / float(quadros)
+	print("lobo (classe %d): cobertura média %.1f px de gota por quadro, %d gotas nasceram (%.0f%% na metade de baixo), %d terminaram, %d sobem, vivas %d a %d (média %.1f), %.1f quadros distintos por instante, no máximo %d nascimentos em 0,1 s" % [g._classe[v], media, nasceu, 100.0 * nasc_baixo / maxf(nasceu, 1), terminou, subiu, min_vivas, max_vivas, float(soma_vivas) / quadros, media_dist, pior_janela])
+	var piso := maxf(float(_dados.get("cobertura_media_min_px", 4)), float(PISO_MIN))
+	ok(media >= piso, "cobertura média de gota por quadro: %.1f px (piso %.0f)" % [media, piso])
+	ok(nasceu >= 60, "muitas gotas nasceram em 4 s (%d)" % nasceu)
+	ok(nasc_fora == 0, "toda gota nasce (a âncora) sobre pixel opaco do quadro (%d de %d fora)" % [nasc_fora, nasceu])
+	ok(float(nasc_baixo) / maxf(nasceu, 1) >= 0.6, "o nascimento se concentra na metade de baixo do corpo (%.0f%%)" % (100.0 * nasc_baixo / maxf(nasceu, 1)))
 	ok(fora_lado == 0, "nenhuma gota passa de 2 px da caixa opaca de lado (%d)" % fora_lado)
-	ok(fora_topo == 0, "nenhuma gota passa de 3 px acima da caixa opaca (%d)" % fora_topo)
-	ok(terminou >= 10 and subiu >= int(terminou * 0.9), "as gotas SOBEM: terminam acima de onde nasceram (%d de %d)" % [subiu, terminou])
-	ok(vida_ruim == 0, "toda gota vive de 0,4 a 0,8 s (%d fora)" % vida_ruim)
-	ok(max_vivas <= 4 and max_vivas >= 2, "de 2 a 4 gotas vivas (%d a %d)" % [min_vivas, max_vivas])
+	ok(fora_topo == 0, "nenhuma ponta passa de 6 px acima da caixa opaca (%d)" % fora_topo)
+	ok(terminou >= 40 and subiu >= int(terminou * 0.85), "as gotas SOBEM: terminam acima de onde nasceram (%d de %d)" % [subiu, terminou])
+	ok(vida_ruim == 0, "nenhuma gota vive mais de 0,95 s (%d)" % vida_ruim)
+	ok(quadro_ruim == 0, "o quadro de cada gota vem da idade dela (%d fora)" % quadro_ruim)
+	ok(media_dist >= 4.0, "as gotas vivas estão em fases diferentes: %.1f quadros distintos por instante" % media_dist)
+	ok(pior_janela <= 5, "nascimento contínuo, sem onda: no máximo 5 gotas nascem na mesma janela de 0,1 s (%d)" % pior_janela)
+	ok(float(soma_vivas) / quadros >= 10.0 and max_vivas <= 16, "10 a 16 gotas vivas no lobo (%d a %d, média %.1f)" % [min_vivas, max_vivas, float(soma_vivas) / quadros])
 	ok(pool_ok, "as gotas vivas nunca passam do pool")
 	ok(lobo._estado_corpo() == 1, "o lobo queimando segue com o tingimento do corpo (estado FOGO)")
 	lobo.queima_t = 0.0
@@ -242,18 +370,26 @@ func _parte_pool(w) -> void:
 	for q in 120:
 		w.avancar(PASSO)
 		pico = maxi(pico, g.vivas())
-	var teto := int(_dados.get("pool", 160))
+	var teto: int = g.n_gotas()
+	var dentro: int = int(_dados.get("vagas", 40)) * int(_dados.get("por_vaga", 14)) + int(_dados.get("vagas_elite", 4)) * int(_dados.get("por_vaga_elite", 20))
 	print("pool: pico %d gotas vivas, %d monstros com vaga, de %d" % [pico, g.monstros(), teto])
-	ok(pico <= teto and pico >= 60, "60 monstros queimando: gotas vivas no máximo %d (pico %d)" % [teto, pico])
-	ok(g.n_gotas() == teto, "o pool tem tamanho fixo (%d)" % g.n_gotas())
-	ok(g.monstros() <= teto / 4 - int(_dados.get("vagas_elite", 4)), "os comuns ocupam no máximo as vagas comuns (%d)" % g.monstros())
+	ok(teto == dentro and teto >= 600 and teto <= 680, "o pool tem tamanho fixo e é o dos dados (%d)" % teto)
+	ok(pico <= teto and pico >= 300, "60 monstros queimando: gotas vivas no máximo %d (pico %d)" % [teto, pico])
+	ok(g.monstros() <= int(_dados.get("vagas", 40)), "os comuns ocupam no máximo as vagas comuns (%d)" % g.monstros())
 	ok(_nos_total(w.no_mundo) - nos0 <= 0, "nenhum nó nasceu por causa das gotas (+%d)" % (_nos_total(w.no_mundo) - nos0))
 	var elite = c.elites.nascer(TIPO, "", p0 + Vector2(0, 80))
 	if elite != null:
 		elite.atordoa_t = 99.0
 		elite.queimar(0.0, 60.0)
-		_quadros(w, 60)
-		ok(g.vaga_de(elite) >= 0, "o elite queimando ganha vaga reservada com as comuns cheias")
+		_quadros(w, 90)
+		var ve: int = g.vaga_de(elite)
+		ok(ve >= int(_dados.get("vagas", 40)), "o elite queimando ganha vaga RESERVADA com as comuns cheias (vaga %d)" % ve)
+		if ve >= 0:
+			var vivas_e := 0
+			for k in g.cap_da_vaga(ve):
+				if g.gota(g._base[ve] + k).ativa:
+					vivas_e += 1
+			ok(g.cap_da_vaga(ve) == int(_dados.get("por_vaga_elite", 20)) and vivas_e >= 14, "o elite tem de 14 a 20 gotas vivas (%d de %d)" % [vivas_e, g.cap_da_vaga(ve)])
 	else:
 		ok(false, "o elite nasceu")
 
@@ -292,19 +428,32 @@ func _parte_calmo(w) -> void:
 	Config.temporario(Piscadas.OPCAO, true)
 	var lobo = w.nascer_monstro(TIPO, p0 + Vector2(40, 30))
 	lobo.atordoa_t = 99.0
+	lobo.vida = 99999.0
+	lobo.vida_max = 99999.0
 	lobo.queimar(0.0, 60.0)
 	_quadros(w, 30)
 	var v: int = g.vaga_de(lobo)
 	ok(v >= 0, "com Reduzir piscadas o lobo queimando também ganha vaga")
 	if v >= 0:
-		var pior := _trocas(w, g, v, 360)
+		var pior := _trocas(w, g, v, 720)
 		var maximo := 0
-		for q in 120:
+		var vivas_max := 0
+		var quadros_vistos := {}
+		for q in 240:
 			w.avancar(PASSO)
 			maximo = maxi(maximo, g.pixels(v).size())
-		print("calmo: pior pixel troca %d vezes em 1 s; no máximo %d px de gota por quadro" % [pior, maximo])
+			var vivas := 0
+			for k in g.cap_da_vaga(v):
+				var gt: Dictionary = g.gota(g._base[v] + k)
+				if gt.ativa:
+					vivas += 1
+					quadros_vistos[gt.quadro] = true
+			vivas_max = maxi(vivas_max, vivas)
+		print("calmo: pior pixel troca %d vezes em 1 s (12 s medidos); no máximo %d px de gota por quadro, %d gotas vivas, quadros vistos %s" % [pior, maximo, vivas_max, str(quadros_vistos.keys())])
 		ok(pior <= 2, "Reduzir piscadas: nenhum pixel troca mais de 2 vezes em 1 s (pior %d)" % pior)
-		ok(maximo >= 1, "Reduzir piscadas: ainda há gota (%d px)" % maximo)
+		ok(maximo >= 6, "Reduzir piscadas: ainda há gota (%d px)" % maximo)
+		ok(vivas_max >= 2 and vivas_max <= 4, "Reduzir piscadas: 3 a 4 gotas por monstro, congeladas (%d vivas)" % vivas_max)
+		ok(quadros_vistos.size() == 1, "Reduzir piscadas: as gotas ficam num quadro só, sem animar (%s)" % str(quadros_vistos.keys()))
 	Config.temporario(Piscadas.OPCAO, false)
 
 
@@ -318,3 +467,49 @@ func _parte_baixo(w) -> void:
 	_quadros(w, 60)
 	ok(g.vivas() == 0 and g.monstros() == 0, "perfil Baixo: nenhuma gota")
 	Anim.suave = true
+
+
+## O custo de 40 monstros queimando: o passo (atualizar) e o desenho (o nó desenha 1 chamada por gota), em ms por quadro. Espera quadros de verdade (await) para o nó desenhar.
+func _parte_custo(w) -> void:
+	var c = w.combate
+	var g = c.chama_gotas
+	var p0: Vector2 = w.heroi.pos
+	for k in 40:
+		var mk = w.nascer_monstro(TIPO, p0 + Vector2(-140 + 7 * k, 30 + 8 * (k % 5)))
+		mk.atordoa_t = 99.0
+		mk.queimar(0.0, 90.0)
+	_quadros(w, 120)
+	var desenho_us := 0
+	var desenhos := 0
+	var chamou := Callable(self, "_medir_desenho").bind(g)
+	if g.no != null:
+		g.no.draw.disconnect(g._desenhar)
+		g.no.draw.connect(chamou)
+	var passo_us := 0
+	var n := 120
+	for q in n:
+		var t0 := Time.get_ticks_usec()
+		g.atualizar(PASSO)
+		passo_us += Time.get_ticks_usec() - t0
+		await get_tree().process_frame
+	desenho_us = _desenho_us
+	desenhos = _desenhos
+	var vivas: int = g.vivas()
+	var px: int = g.pixels().size()
+	print("custo: 40 monstros queimando (%d gotas vivas, %d px quentes): passo %.3f ms por quadro; desenho (_desenhar: %d chamadas) %.3f ms por quadro em %d desenhos" % [vivas, px, float(passo_us) / n / 1000.0, vivas, float(desenho_us) / maxf(desenhos, 1) / 1000.0, desenhos])
+	ok(g.monstros() == 40 and vivas >= 300, "40 monstros queimando: %d monstros com vaga, %d gotas vivas" % [g.monstros(), vivas])
+	ok(float(passo_us) / n / 1000.0 < 8.0, "o passo de 40 monstros queimando custa menos de 8 ms por quadro (folgado para o CI)")
+	if g.no != null:
+		g.no.draw.disconnect(chamou)
+		g.no.draw.connect(g._desenhar)
+
+
+var _desenho_us := 0
+var _desenhos := 0
+
+
+func _medir_desenho(g) -> void:
+	var t0 := Time.get_ticks_usec()
+	g._desenhar()
+	_desenho_us += Time.get_ticks_usec() - t0
+	_desenhos += 1
