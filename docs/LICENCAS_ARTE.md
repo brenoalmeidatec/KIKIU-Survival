@@ -306,3 +306,8 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Partículas dos micro-mísseis do LightWolf (rodada 7), Claude do Alisson, 05/11/2026
 
 - `jogos/hordas/projeto/v2/misseis_particulas.gd` e o ajuste de `v2/misseis_rastro.gd`: faíscas, fagulhas, nuvem de largada, anel de choque, detritos e fumaça do acerto desenhados EM CÓDIGO (draw_rect em pixel inteiro, alfa 0/1, paletas próprias). Nenhuma imagem, som ou receita de terceiros; a D.Va (Overwatch) foi só referência de sensação, sem copiar arte, forma ou som. Licença: a do projeto.
+
+## Teia da aranha: folhas e pose de disparo, Claude do Alisson (notebook), 06/11/2026
+
+- `jogos/hordas/projeto/assets/v2/teias/teia_abre.png`, `teia_queima.png`, `teia_corte.png`, `teia_quebra.png`, `teia_some.png`, `teia_bolota.png` e `teia_abre_ar.png` (alfa 0/255, fios de 1 px, paleta própria de azul-branco, fogo, brasa e cinza): arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/teia/gerar_teia.py` (Python, Pillow e numpy, sementes fixas, sem nenhuma imagem de entrada). A referência `notas/artes_chatgpt/A25_teia_ref.png` foi gerada para o projeto no ChatGPT e serviu SÓ de direção de paleta e de ritmo; nenhum pixel dela foi copiado nem recortado, e ela não entra no jogo.
+- As colunas `disparo0..3` das folhas `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_aranha_tecela.*` e `inimigo_aranha_tecela_x2.*` vêm do modelo 3D próprio da aranha (`fonte_arte/modelos3d/floresta.py`, pose `acoes.disparo`) renderizado no Blender 4.5 pelo pipeline de sempre (`prototipos/cara_nova/gerar_cara_nova.py`). Arte PRÓPRIA, sem material de terceiros. A chama dos propulsores do mecha que acende a teia é a que já existe em `v2/propulsor.gd` (desenho em código). Licença: a do projeto.
