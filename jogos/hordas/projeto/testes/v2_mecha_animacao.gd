@@ -74,8 +74,8 @@ func _ready() -> void:
 	zerar()
 	ok(h.habilidade() and h.hab_id == "misseis", "a E real inicia os mísseis")
 	# mira livre (05/11/2026): parado na E o mecha respira pelo "parado" da folha (nunca o combo, que tem o clarão dos canhões)
-	var parado_cols: Array = h.tipo.info.animacoes.parado.colunas
-	var combo_cols: Array = h.tipo.info.animacoes.combo.colunas
+	var parado_cols: Array = h.tipo.info.animacoes.parado.colunas.map(func(x): return int(x))  # o JSON traz float
+	var combo_cols: Array = h.tipo.info.animacoes.combo.colunas.map(func(x): return int(x))
 	for i in 30:
 		passos(1)
 		ok(
