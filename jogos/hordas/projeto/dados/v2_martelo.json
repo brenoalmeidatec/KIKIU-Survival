@@ -1,0 +1,18 @@
+{
+	"_ajuda": "O golpe de MARTELO do Nick (kanabo), lido por v2/efeitos.gd (martelo_rastro, martelo_chao) e v2/combate.gd (golpe_comecou, golpear). Os passos do combo com \"fx\": \"martelo\" em v2_herois.json usam estas folhas (dados/v2_folhas_fx.json: martelo_rastro, martelo_impacto, martelo_onda; arte em fonte_arte/martelo/gerar_martelo.py) no lugar do arco de lâmina da katana. \"rastro\": raio_alcance = o quadro do rastro tem 2 x alcance x isto de lado (a arte foi desenhada para 1,3: a cabeça toca o chão a 0,8 do alcance), dur_max = teto da duração do rastro em s. \"impacto\" (a batida): ponto = onde cai, em fração do alcance à frente do herói; raio_alcance = metade da largura do desenho em fração do alcance; dur = s do desenho; tremor_sem_acerto = tremor de câmera (px) quando a batida não acerta ninguém (com acerto vale o `tremor` do passo). \"onda\" (a pancada em volta): raio_alcance e dur como no impacto. \"repete_calmo\": com Reduzir piscadas, o impacto e a onda (a parte que acende e apaga) só recomeçam depois de tantos s, para ficar abaixo de 3 trocas de luz por segundo; o rastro, o dano e o tremor não mudam. Tudo em pixel inteiro, sem rotação livre: o rastro tem 16 direções pré-desenhadas.",
+	"rastro": {
+		"raio_alcance": 1.3,
+		"dur_max": 0.52
+	},
+	"impacto": {
+		"ponto": 0.8,
+		"raio_alcance": 0.62,
+		"dur": 0.5,
+		"tremor_sem_acerto": 1.0
+	},
+	"onda": {
+		"raio_alcance": 1.1,
+		"dur": 0.7
+	},
+	"repete_calmo": 1.0
+}

@@ -49,6 +49,8 @@ extends RefCounted
 ##                         e o Lobo livre atira 1,5 s para a direita (a cadência nova). Sai sozinho no fim; os passos que esperaram até o prazo vão para lw_atrasos.
 ##   --roteiro=lw_misseis  (05/11/2026, para VÍDEO com --write-movie) com --heroi=lightwolf: o mecha parado solta a E Mísseis na diagonal (para baixo à direita)
 ##                         contra 5 alvos parados e fecha 1 s depois; imprime `LW_M quadro slot x y dir16 chao16` de cada míssil a cada quadro.
+##   --roteiro=martelo    (06/11/2026, para VÍDEO com --write-movie, com --heroi=nicao) o Nick parado bate sem parar 3,5 s (batida, pancada, batida...) para a direita
+##                         contra 6 espantalhos parados; sai sozinho. Serve para ver o rastro do martelo, o impacto, a onda de choque e a câmera tremendo.
 ##   --roteiro=lw_q        (a explosão do Q do mecha, para vídeo no Movie Maker) o LightWolf parado, 24 monstros em volta, aperta o Q (Autodestruição)
 ##                         aos 0,5 s e segue 5,5 s depois do estouro (o fusível, a bola de fogo, a onda no chão e a cratera até sumir) e fecha. Sem fotos:
 ##                         grave com --write-movie (cada quadro). Imprime LW_Q com o segundo do aperto e o do estouro.
@@ -190,6 +192,8 @@ func atualizar(dt: float) -> void:
 				_r_lw_q()
 			"lw_misseis":
 				_r_lw_misseis()
+			"martelo":
+				_r_martelo()
 			"impulso":
 				_r_impulso()
 			"impulso_ordem":
@@ -682,6 +686,42 @@ func _r_lw_misseis() -> void:
 		3:
 			if t_passo > 1.0:
 				print("LW_M fim atrasos=%d" % lw_atrasos)
+				mundo.get_tree().quit()
+
+
+## O golpe de martelo do Nick para o vídeo: 6 espantalhos parados num arco à direita, o Nick bate sem parar (mouse à direita) por 3,5 s e fecha.
+func _r_martelo() -> void:
+	var h = mundo.heroi
+	for k in lw_alvos.size():
+		if is_instance_valid(lw_alvos[k][0]):
+			lw_alvos[k][0].pos = lw_alvos[k][1]
+	match passo:
+		0:
+			_preparar()
+			Config.temporario("pausar_fora", false)  # gravando, outra janela na frente pausaria a partida no meio
+			lw_alvos.clear()
+			for i in 6:
+				var a := deg_to_rad(-35.0 + 14.0 * float(i))
+				var r := 52.0 if i % 2 == 0 else 78.0
+				var m = mundo.nascer_monstro("inimigo_espantalho", h.pos + Vector2(cos(a) * r, sin(a) * r * 0.8), false)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+				lw_alvos.append([m, m.pos])
+			mundo.mouse_forcado = h.centro() + Vector2(200, 0)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.4:
+				h.ataque_forcado = true
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 3.5:
+				h.ataque_forcado = false
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo > 0.6:
 				mundo.get_tree().quit()
 
 
