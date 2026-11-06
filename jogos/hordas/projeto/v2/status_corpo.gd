@@ -22,7 +22,7 @@ const GLSL := """
 	float t = floor(TIME * 12.0);
 	float baixo = 99.0;  // px até o corpo, olhando para baixo: a chama nasce do contorno
 	float cima = 99.0;  // px até o corpo, olhando para cima: o que escorre
-	for (int k = 0; k < 9; k++) {
+	for (int k = 0; k < 10; k++) {
 		float f = float(k);
 		vec2 q = p + vec2(0.0, f);
 		if (baixo > 98.0 && q.x >= 0.0 && q.y >= 0.0 && q.x < tam.x && q.y < tam.y && texture(TEXTURE, (base + q + 0.5) / ta).a > 0.5) { baixo = f; }
@@ -38,19 +38,44 @@ const GLSL := """
 	float h2 = fract(sin(dot(vec2(floor(p.x / 2.0) + sem, floor((p.y + t * 2.0) / 3.0)), vec2(39.346, 11.135))) * 24634.6345);
 	float h3 = fract(sin(dot(p + vec2(sem, t), vec2(73.156, 52.235))) * 13758.5453);
 	float lum = dot(c.rgb, vec3(0.3, 0.59, 0.11));
-	if (est < 1.5) {  // fogo: o corpo arde em línguas que sobem; por fora, a chama sai do contorno
-		float alto = 3.0 + 5.0 * h1;
-		float d = corpo > 0.5 ? 0.0 : min(baixo, lado * 2.0);
+	if (est < 1.5) {  // fogo: o corpo fica legível (escurecido e aquecido, estável) e a chama sai do contorno em línguas que sobem
 		if (corpo > 0.5) {
-			float k = h2 + (p.y / tam.y) * 0.3;
 			if (lum < 0.1) { c.rgb = c.rgb * 0.6; }  // o contorno do bicho fica: ele continua legível dentro do fogo
-			else if (k > 1.05) { c.rgb = vec3(1.9, 1.6, 0.8); }
-			else if (k > 0.86) { c.rgb = vec3(1.9, 0.95, 0.22); }
-			else if (k > 0.68) { c.rgb = vec3(1.5, 0.38, 0.08); }
-			else { c.rgb = c.rgb * vec3(0.62, 0.4, 0.32); }
-		} else if (d <= alto) {
-			float k = d / alto;
-			c = vec4(k < 0.35 ? vec3(1.9, 1.5, 0.7) : (k < 0.7 ? vec3(1.9, 0.85, 0.2) : vec3(1.4, 0.3, 0.07)), 1.0);
+			else {
+				c.rgb = c.rgb * vec3(0.7, 0.42, 0.3);
+				float a1 = p.y >= 1.0 ? texture(TEXTURE, (base + p - vec2(0.0, 1.0) + 0.5) / ta).a : 0.0;
+				float a2 = p.y >= 2.0 ? texture(TEXTURE, (base + p - vec2(0.0, 2.0) + 0.5) / ta).a : 0.0;
+				float hp = fract(sin(dot(p + vec2(sem, 3.0), vec2(91.7, 17.3))) * 43758.5453);
+				float te = floor(TIME + hp);  // cada pixel sorteia a brasa no seu próprio compasso, 1 vez por segundo
+				float hr = fract(sin(dot(p + vec2(sem, te), vec2(73.156, 52.235))) * 13758.5453);
+				if (a1 < 0.5) { c.rgb = vec3(0.965, 0.659, 0.118); }  // a faixa logo abaixo da borda de cima brilha
+				else if (a2 < 0.5) { c.rgb = vec3(0.878, 0.322, 0.102); }
+				else if (hr > 0.96) { c.rgb = hr > 0.985 ? vec3(0.965, 0.659, 0.118) : vec3(0.878, 0.322, 0.102); }  // poucas brasas no corpo
+			}
+		} else {
+			float col = floor(p.x / 2.0);
+			float ca = fract(sin(dot(vec2(col, sem), vec2(12.9898, 78.233))) * 43758.5453);
+			float cb = fract(sin(dot(vec2(col, sem), vec2(39.346, 11.135))) * 24634.6345);
+			// Cada pixel de fora tem UMA fonte só (língua, brasa ou lado), para nunca somar trocas: a língua liga e desliga ao ser cruzada por uma onda lenta
+			// (período de 1,6 a 3,5 s) e, de cor fixa pela distância, troca no máximo 2 vezes por segundo. Nas colunas de brasa a língua é baixa (até 5 px) e a
+			// brasa sobe só acima disso (6 a 9 px), então as duas nunca disputam o mesmo pixel. t é inteiro e a derivada da onda não passa de 0,93: a altura muda
+			// no máximo 1 px por quadro.
+			bool com_brasa = ca > 0.55;
+			float alto = com_brasa ? floor(3.6 + 1.5 * sin(t * (0.15 + 0.17 * cb) + ca * 6.2832 + col * 0.8)) : floor(5.5 + 2.9 * sin(t * (0.15 + 0.17 * cb) + ca * 6.2832 + col * 0.8));
+			float lin = floor(p.y / 2.0);  // nos lados: a mesma ideia em 0, 1 ou 2 px, por faixa de 2 linhas
+			float hl = fract(sin(dot(vec2(lin, sem), vec2(73.156, 52.235))) * 13758.5453);
+			float alcance = floor(1.2 + 1.3 * sin(t * (0.15 + 0.15 * hl) + hl * 6.2832 + lin * 0.9));
+			if (baixo < 98.0) {
+				if (baixo <= alto) {  // a cor vem só da distância ao corpo: amarelo claro, laranja, vermelho e vermelho escuro na ponta alta
+					c = vec4(baixo <= 1.0 ? vec3(1.0, 0.945, 0.659) : (baixo <= 3.0 ? vec3(0.965, 0.659, 0.118) : (baixo <= 6.0 ? vec3(0.878, 0.322, 0.102) : vec3(0.549, 0.11, 0.039))), 1.0);
+				} else if (com_brasa && mod(p.x, 2.0) == floor(cb * 2.0)) {  // brasa solta que sobe acima da ponta, a cada ~2 s
+					float ciclo = 20.0 + floor(ca * 12.0);
+					float fase = mod(t + floor(cb * ciclo), ciclo);
+					if (fase < 8.0 && baixo == 6.0 + floor(fase * 0.5)) { c = vec4(baixo < 8.0 ? vec3(1.0, 0.945, 0.659) : vec3(0.965, 0.659, 0.118), 1.0); }
+				}
+			} else if (lado <= alcance) {
+				c = vec4(lado < 1.5 ? vec3(0.965, 0.659, 0.118) : vec3(0.878, 0.322, 0.102), 1.0);
+			}
 		}
 	} else if (est < 2.5) {  // gelo: o corpo vira gelo em 3 tons, com a borda branca e pontas paradas para fora
 		if (corpo > 0.5) {

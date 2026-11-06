@@ -4,6 +4,8 @@ extends "res://testes/isolamento_v2.gd"
 ## dele. A correção estica o quadrado em `FOLGA_NO` px (vertex) e zera o que a folga lê das células vizinhas (fragment).
 ## Parte 1 (qualquer modo): o monstro com nó liga o material com `folga` e `centro` certos. Parte 2 (só com janela, sem --headless): desenha de verdade
 ## uma célula 100% opaca, vizinha de outra célula opaca, e mede em pixel se a chama sai da célula e se a vizinha não vaza.
+## Parte 3 (só com janela): o FOGO num corpo oval com contorno escuro, por 3 s de relógio: o corpo continua legível (poucas brasas, sem confete), as línguas de fora
+## sobem até 8-9 px mudando no máximo 1 px por quadro (12 por segundo) e nenhum pixel troca de cor mais de 2 vezes por segundo (teto do v2_piscadas, MAX_TROCAS_S).
 ## Roda: godot --path jogos/hordas/projeto res://testes/v2_status_borda.tscn  (imprime "v2_status_borda falhas=0")
 const Anim := preload("res://v2/anim_golpes.gd")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -26,6 +28,7 @@ func _ready() -> void:
 		print("v2_status_borda: sem janela, a medição em pixel foi pulada (rode sem --headless)")
 	else:
 		await _parte_pixel()
+		await _parte_vivo()
 	print("v2_status_borda falhas=", falhas)
 	get_tree().quit(1 if falhas else 0)
 
@@ -130,13 +133,14 @@ func _parte_pixel() -> void:
 		if not _vazio(img.get_pixel(x, y0 - 1)):
 			cima += 1
 	ok(cima == CEL, "a chama passa da borda de cima da célula (%d de %d colunas)" % [cima, CEL])
+	# dos lados a chama sai em 0, 1 ou 2 px, por faixa de 2 linhas, e muda devagar: tem de existir em boa parte das linhas
 	var lados := 0
 	for y in range(y0, y1):
 		if not _vazio(img.get_pixel(x0 - 1, y)):
 			lados += 1
 		if not _vazio(img.get_pixel(x1, y)):
 			lados += 1
-	ok(lados == CEL * 2, "o fogo passa das bordas dos lados da célula (%d de %d px)" % [lados, CEL * 2])
+	ok(lados >= CEL / 2, "o fogo passa das bordas dos lados da célula (%d de %d px)" % [lados, CEL * 2])
 	# a folga lê as células vizinhas da folha: o que não é chama tem de ficar transparente (o fundo)
 	var vazou := 0
 	var fora_da_folga := 0
@@ -163,3 +167,155 @@ func _parte_pixel() -> void:
 		g.resize(img.get_width() * 8, img.get_height() * 8, Image.INTERPOLATE_NEAREST)
 		g.save_png(dbg)
 	sv.queue_free()
+
+
+## Cor do pixel numa língua de fogo a `d` px do corpo (a cor vem só da distância: o pixel liga e desliga, não troca de cor).
+func _cor_lingua(d: int) -> Color:
+	if d <= 1:
+		return Color(1.0, 0.945, 0.659)
+	if d <= 3:
+		return Color(0.965, 0.659, 0.118)
+	if d <= 6:
+		return Color(0.878, 0.322, 0.102)
+	return Color(0.549, 0.11, 0.039)
+
+
+func _perto(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) < 0.03 and absf(a.g - b.g) < 0.03 and absf(a.b - b.b) < 0.03
+
+
+## Um corpo oval de contorno escuro queimando por 3 s: legível, sem confete, línguas suaves e nenhum pixel piscando.
+func _parte_vivo() -> void:
+	var atlas := Image.create(CEL, CEL, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0, 0, 0, 0))
+	var corpo := {}  # Vector2i -> true: o oval (rx 9, ry 5, centro 12,14)
+	for y in CEL:
+		for x in CEL:
+			var e := pow((x - 12.0) / 9.0, 2.0) + pow((y - 14.0) / 5.0, 2.0)
+			if e <= 1.0:
+				corpo[Vector2i(x, y)] = true
+	var interior := []  # sem contorno e sem a faixa de 2 px logo abaixo da borda de cima
+	for k in corpo:
+		var borda := false
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if not corpo.has(k + d):
+				borda = true
+		atlas.set_pixelv(k, Color(0.04, 0.04, 0.04, 1.0) if borda else Color(0.5, 0.5, 0.5, 1.0))
+		if not borda and corpo.has(k - Vector2i(0, 1)) and corpo.has(k - Vector2i(0, 2)):
+			interior.append(k)
+	var tex := ImageTexture.create_from_image(atlas)
+	var margem := 12
+	var sv := SubViewport.new()
+	sv.size = Vector2i(CEL + margem * 2, CEL + margem * 2)
+	sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(sv)
+	var fundo := ColorRect.new()
+	fundo.color = FORA
+	fundo.size = Vector2(sv.size)
+	sv.add_child(fundo)
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.region_enabled = true
+	s.region_rect = Rect2(0, 0, CEL, CEL)
+	s.centered = false
+	s.position = Vector2(margem, margem)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var mat := StatusCorpo.material_no(7.0)
+	mat.set_shader_parameter("estado", float(StatusCorpo.FOGO))
+	mat.set_shader_parameter("regiao", Vector4(0, 0, CEL, CEL))
+	mat.set_shader_parameter("centro", Vector2(CEL, CEL) * 0.5)
+	s.material = mat
+	sv.add_child(s)
+	for i in 4:
+		await get_tree().process_frame
+	var quadros: Array[Image] = []
+	var tempos: Array[int] = []
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 3000:
+		await RenderingServer.frame_post_draw
+		var im: Image = sv.get_texture().get_image()
+		if im == null or im.is_empty():
+			ok(false, "o teste conseguiu a imagem do corpo queimando")
+			sv.queue_free()
+			return
+		quadros.append(im)
+		tempos.append(Time.get_ticks_msec() - t0)
+	ok(quadros.size() >= 30, "o corpo queimando rendeu quadros suficientes (%d)" % quadros.size())
+	# 1. o corpo fica legível: o miolo é o cinza escurecido e aquecido, e poucos pixels viram brasa
+	var contagem := {}  # a cor mais comum do miolo (a conta exata depende do render): é o corpo escurecido, sem brasa
+	for k in interior:
+		var h := quadros[0].get_pixel(k.x + margem, k.y + margem).to_html(false)
+		contagem[h] = int(contagem.get(h, 0)) + 1
+	var base := Color.BLACK
+	var mais := 0
+	for h in contagem:
+		if contagem[h] > mais:
+			mais = contagem[h]
+			base = Color(h)
+	ok(base.r > base.g and base.g > base.b and base.r < 0.5, "o miolo é o corpo escurecido e aquecido (%s)" % base.to_html(false))
+	var soma_brasa := 0.0
+	var pior_brasa := 0.0
+	for im in quadros:
+		var brasa := 0
+		for k in interior:
+			if not _perto(im.get_pixel(k.x + margem, k.y + margem), base):
+				brasa += 1
+		var f := float(brasa) / float(interior.size())
+		soma_brasa += f
+		pior_brasa = maxf(pior_brasa, f)
+	var media_brasa := soma_brasa / float(quadros.size())
+	ok(media_brasa >= 0.005 and media_brasa <= 0.08, "poucas brasas no corpo: %.1f%% do miolo em média (de 0,5%% a 8%%)" % (media_brasa * 100.0))
+	ok(pior_brasa <= 0.15, "nenhum quadro vira confete: no máximo %.1f%% do miolo em brasa (teto 15%%)" % (pior_brasa * 100.0))
+	# 2. as línguas de fora: alcançam 6 a 9 px e a altura de cada coluna muda no máximo 1 px entre dois quadros a menos de 1/12 s
+	var alta := 0
+	var salto := 0
+	for i in quadros.size():
+		for x in range(margem + 4, margem + 21):
+			var run := 0
+			for d in range(1, 10):
+				var y: int = _topo_do_corpo(corpo, x - margem) + margem - d
+				if y < 0 or not _perto(quadros[i].get_pixel(x, y), _cor_lingua(d)):
+					break
+				run += 1
+			alta = maxi(alta, run)
+			if i > 0 and tempos[i] - tempos[i - 1] < 80:
+				var run0 := 0
+				for d in range(1, 10):
+					var y: int = _topo_do_corpo(corpo, x - margem) + margem - d
+					if y < 0 or not _perto(quadros[i - 1].get_pixel(x, y), _cor_lingua(d)):
+						break
+					run0 += 1
+				if absi(run - run0) > 1:
+					salto += 1
+	ok(alta >= 6 and alta <= 9, "a língua mais alta chega a %d px (de 6 a 9)" % alta)
+	ok(salto == 0, "a altura de uma língua muda no máximo 1 px por quadro (%d saltos maiores)" % salto)
+	# 3. nenhum pixel troca de cor mais que 2 vezes em qualquer janela de 1 s (o teto do v2_piscadas é MAX_TROCAS_S; aqui o alvo é 2)
+	var pior := 0
+	var pior_xy := Vector2i.ZERO
+	for y in sv.size.y:
+		for x in sv.size.x:
+			var trocas: Array[int] = []
+			var ant: Color = quadros[0].get_pixel(x, y)
+			for i in range(1, quadros.size()):
+				var c: Color = quadros[i].get_pixel(x, y)
+				if not _perto(c, ant) or absf(c.a - ant.a) > 0.01:
+					trocas.append(tempos[i])
+					ant = c
+			for a in trocas.size():
+				var q := 0
+				for b in range(a, trocas.size()):
+					if trocas[b] - trocas[a] < 1000:
+						q += 1
+				if q > pior:
+					pior = q
+					pior_xy = Vector2i(x - margem, y - margem)
+	ok(pior <= 2, "nenhum pixel troca de cor mais que 2 vezes por segundo (pior: %d em %s)" % [pior, pior_xy])
+	sv.queue_free()
+
+
+## A linha (y) do pixel de corpo mais alto da coluna x do oval.
+func _topo_do_corpo(corpo: Dictionary, x: int) -> int:
+	for y in CEL:
+		if corpo.has(Vector2i(x, y)):
+			return y
+	return 0
