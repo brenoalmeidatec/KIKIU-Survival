@@ -306,3 +306,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Partículas dos micro-mísseis do LightWolf (rodada 7), Claude do Alisson, 05/11/2026
 
 - `jogos/hordas/projeto/v2/misseis_particulas.gd` e o ajuste de `v2/misseis_rastro.gd`: faíscas, fagulhas, nuvem de largada, anel de choque, detritos e fumaça do acerto desenhados EM CÓDIGO (draw_rect em pixel inteiro, alfa 0/1, paletas próprias). Nenhuma imagem, som ou receita de terceiros; a D.Va (Overwatch) foi só referência de sensação, sem copiar arte, forma ou som. Licença: a do projeto.
+
+## Golpe de martelo do Nick (rastro, impacto e onda de choque), Claude do Alisson, 06/11/2026
+
+- `jogos/hordas/projeto/assets/v2/efeitos/efeito_martelo_rastro_e*.png`, `efeito_martelo_impacto_e*.png` e `efeito_martelo_onda_e*.png` (16 folhas, uma por tamanho; alfa só nos 4 degraus do estilo): arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/martelo/gerar_martelo.py` (numpy + Pillow, sementes fixas; desenho ponto a ponto no tamanho final, nada reamostrado). O `hammer-smash` do pixelfx (MIT, `notas/pixelfx/src/fx/melee/hammer-smash.js`) foi referência só de IDEIA (martelo desce, anel de choque, rachaduras, pedrinhas); nenhuma imagem, código ou receita dele foi copiada. Licença: a do projeto.
