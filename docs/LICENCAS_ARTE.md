@@ -303,3 +303,6 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Bola da explosão do mecha do LightWolf (Q, rodada 7), Claude do Alisson (notebook), 05/11/2026
 
 - `jogos/hordas/projeto/assets/v2/efeitos/lw_q_bola.png` (36 quadros de 203x237 em grade 6x6, alfa 0/1, só as 7 cores da paleta do mecha): arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/explosao_lw_q/gerar_bola.py` (numpy + Pillow, sementes fixas). A D.Va de Overwatch foi referência só de IDEIA e ritmo (aviso, clarão curto, cúpula, onda no chão, fumaça); nenhuma forma, cor, quadro ou som copiado, e nenhuma imagem de terceiros nem gerada por IA. As partículas (`v2/explosao_particulas.gd`) são desenho em código. Licença: a do projeto.
+## Partículas dos micro-mísseis do LightWolf (rodada 7), Claude do Alisson, 05/11/2026
+
+- `jogos/hordas/projeto/v2/misseis_particulas.gd` e o ajuste de `v2/misseis_rastro.gd`: faíscas, fagulhas, nuvem de largada, anel de choque, detritos e fumaça do acerto desenhados EM CÓDIGO (draw_rect em pixel inteiro, alfa 0/1, paletas próprias). Nenhuma imagem, som ou receita de terceiros; a D.Va (Overwatch) foi só referência de sensação, sem copiar arte, forma ou som. Licença: a do projeto.
