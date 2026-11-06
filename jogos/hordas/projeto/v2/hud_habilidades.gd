@@ -277,7 +277,9 @@ func _desenhar_impulso(fonte: Font) -> void:
 	if imp_ativo:  # o voo que falta: a barrinha embaixo do ícone encolhe até o fim
 		draw_rect(Rect2(icon_pos + Vector2(3.0, TAM_ICON.y - 8.0), Vector2(roundf((TAM_ICON.x - 6.0) * float(imp_voo_px) / 20.0), 4.0)), COR_IMP)
 	var rotulo := imp_nome if imp_pronta else ("%.1f S" % imp_recarga_s if imp_recarga_s > 0.0 else "RECARGA")
-	draw_string(fonte, Vector2(0.0, BASE_ROTULO), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else TEXTO_RECARGA_IMP)
+	draw_string(
+		fonte, Vector2(0.0, BASE_ROTULO), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_IMP.x, Paleta.NUMERO_PEQUENO, cor if imp_pronta else TEXTO_RECARGA_IMP
+	)
 	Glifos.desenhar_selo(self, "correr", TAM_IMP.x * 0.5, TAM_IMP.y - Glifos.ALTURA_SELO, cor, imp_pronta, DESATIVADO)
 
 
