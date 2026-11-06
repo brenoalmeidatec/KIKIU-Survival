@@ -42,7 +42,7 @@ func _ready() -> void:
 	var c = w.combate
 	var cf = c.fx_folha
 	var st = c.fx_status
-	ok(st != null and cf.tem("burning") and cf.tem("slowed") and cf.tem("stunned"), "o combate monta o fx_status e o registro tem os três status")
+	ok(st != null and cf.tem("slowed") and cf.tem("stunned"), "o combate monta o fx_status e o registro tem o relógio e as estrelas")
 	var nos0 := _nos_total(w.glow)  # a camada onde moram as âncoras e os nós de desenho do fx_folha
 	var p0: Vector2 = w.heroi.pos
 

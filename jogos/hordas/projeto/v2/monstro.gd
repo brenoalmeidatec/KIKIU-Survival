@@ -439,6 +439,7 @@ func _corpo_no() -> void:
 		_mat_corpo.set_shader_parameter("estado", float(novo))
 		var r: Rect2 = sprite.region_rect
 		_mat_corpo.set_shader_parameter("regiao", Vector4(r.position.x, r.position.y, r.size.x, r.size.y))
+		_mat_corpo.set_shader_parameter("centro", sprite.offset + r.size * 0.5)  # o sprite não é centralizado: o quadrado vai de offset a offset + região
 	elif v_estado != StatusCorpo.NADA:
 		sprite.material = null
 	v_estado = novo
