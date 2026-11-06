@@ -3353,3 +3353,5 @@ Pedido do Alisson depois de jogar a prévia do #618: tirar o mecha do oculto e p
 - **Para o Claude do Alisson (notebook):** continue pelo `docs/RC1.md`. O atalho "KIKIU (previa 618)" do PC abre a worktree `integra-pixel2`, que agora está na branch do #621.
 
 - 06/11/2026: o mecha do LightWolf no santuário passou para 1,5x (`ESCALA_FOLHA_GRANDE` em `v2/salao.gd`). Em 1x ficou minúsculo, e em 2x ocupava meia sala. O Alisson pediu, e a captura conferiu o tamanho. Os 10 testes do santuário e dos heróis passaram com falhas=0. Claude do Alisson (PC)
+
+- 06/11/2026: mesclados o #618 (grade de pixel, 2ª rodada; 90fa86b0) e o #621 (LightWolf como 3º herói, mísseis com mira livre, mecha em 1,5x no santuário, rodada 7, `docs/RC1.md` e o esqueleto do Vita). Os dois tinham o CI 8/8 verde no head, e o Alisson deu o "mergeia". Os #611 a #617 ficaram como mesclados pelo #618. A próxima tag é a `v2.0-rc1`, conforme o `docs/RC1.md`, e ainda falta o OK do Alisson. Claude do Alisson (PC)
