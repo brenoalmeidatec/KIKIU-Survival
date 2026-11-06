@@ -217,7 +217,18 @@ func cap_da_vaga(i: int) -> int:
 
 ## A gota i para os testes: {ativa, x, y (a âncora, px relativos a pr), idade, vida, fila, quadro, x0, y0}.
 func gota(i: int) -> Dictionary:
-	return {"ativa": _est[i] == 2, "x": _ox[i], "y": _oy[i], "idade": _idade[i], "vida": _vida[i], "fila": _fila[i], "quadro": _quadro[i], "x0": _x0[i], "y0": _y0[i], "esc": _esg[i]}
+	return {
+		"ativa": _est[i] == 2,
+		"x": _ox[i],
+		"y": _oy[i],
+		"idade": _idade[i],
+		"vida": _vida[i],
+		"fila": _fila[i],
+		"quadro": _quadro[i],
+		"x0": _x0[i],
+		"y0": _y0[i],
+		"esc": _esg[i]
+	}
 
 
 ## Os pixels que as gotas desenham agora, em px relativos ao ponto dos pés (pr) de cada monstro, de TODAS as vagas somadas (ou só a `so_vaga`): {Vector2i: Color}, na
@@ -269,6 +280,7 @@ func _calmo() -> bool:
 
 # ------------------------------------------------------------------ onde as gotas nascem
 
+
 ## A escala INTEIRA do sprite do dono, a que a gota herda (1 comum, 2 elite, 3 chefe): `escala` é o tamanho lógico (elite e chefe com a folha `_xN` desenham em esc = 1 mas
 ## continuam valendo N; sem a folha, esc = N), então a gota segue `escala`, não `esc`.
 static func escala_gota(m) -> int:
@@ -278,7 +290,6 @@ static func escala_gota(m) -> int:
 ## A escala do desenho do monstro NA GRADE DA FOLHA DELE (lote: `escala`; com nó: `esc`): a que mede a caixa opaca e os pontos de nascimento.
 static func escala_de(m) -> int:
 	return maxi(int(roundf(m.escala if m.lote else m.esc)), 1)
-
 
 
 ## Os pontos de nascimento do quadro atual do monstro (cache por textura, coluna e linha): {pts: PackedInt32Array (x, y, x, y, ...) em px do quadro, x0, y0, x1, y1:
@@ -339,6 +350,7 @@ func _sortear(im: Image, r: Rect2i, uso: Rect2i) -> PackedInt32Array:
 
 
 # ------------------------------------------------------------------ a vida das gotas
+
 
 func atualizar(dt: float) -> void:
 	if combate == null:
@@ -566,6 +578,7 @@ func _varrer() -> void:
 
 # ------------------------------------------------------------------ desenho
 
+
 func _desenhar() -> void:
 	if no == null or _tex == null:
 		return
@@ -585,4 +598,6 @@ func _desenhar() -> void:
 				if _est[g] != 2 or (_idade[g] < _vida[g] * _jovem) != (passo == 0):
 					continue
 				var e: int = _esg[g]  # a escala do dono: o retângulo é a célula x e, a âncora cai num bloco e x e
-				no.draw_texture_rect_region(_tex, Rect2(px0 + _ox[g] - _ax * e, py0 + _oy[g] - _ay * e, sz.x * e, sz.y * e), Rect2(_quadro[g] * _cw, _fila[g] * _ch, sz.x, sz.y))
+				no.draw_texture_rect_region(
+					_tex, Rect2(px0 + _ox[g] - _ax * e, py0 + _oy[g] - _ay * e, sz.x * e, sz.y * e), Rect2(_quadro[g] * _cw, _fila[g] * _ch, sz.x, sz.y)
+				)

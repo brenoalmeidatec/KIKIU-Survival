@@ -94,11 +94,17 @@ func _parte_dados() -> void:
 	if c.has("pequeno") and c.has("medio") and c.has("especial"):
 		ok(int(c.pequeno.gotas[0]) >= 9 and int(c.pequeno.gotas[1]) <= 11, "monstro pequeno: ~10 gotas")
 		ok(int(c.medio.gotas[0]) >= 13 and int(c.medio.gotas[1]) <= int(d.por_vaga), "monstro médio: ~14 gotas, no máximo o da vaga")
-		ok(int(c.especial.gotas[0]) >= 12 and int(c.especial.gotas[1]) <= int(d.por_vaga_elite), "elite e chefe: 12 a 14 gotas (em escala x2 ou x3), no máximo o da vaga reservada")
+		ok(
+			int(c.especial.gotas[0]) >= 12 and int(c.especial.gotas[1]) <= int(d.por_vaga_elite),
+			"elite e chefe: 12 a 14 gotas (em escala x2 ou x3), no máximo o da vaga reservada"
+		)
 	var vi: Array = d.get("vida_s", [0, 0])
 	ok(float(vi[0]) >= 0.5 and float(vi[1]) <= 1.0 and float(vi[0]) < float(vi[1]), "vida de ~0,55 a 0,95 s")
 	ok(int(d.get("sobra_lado", 99)) <= 3 and int(d.get("sobra_cabeca", 99)) <= 6, "sobra de lado <= 3 px e de cabeça <= 6 px")
-	ok(float(d.get("cobertura_media_min_px", 0)) >= PISO_MIN, "o piso de cobertura é de pelo menos %d px (%s)" % [PISO_MIN, str(d.get("cobertura_media_min_px"))])
+	ok(
+		float(d.get("cobertura_media_min_px", 0)) >= PISO_MIN,
+		"o piso de cobertura é de pelo menos %d px (%s)" % [PISO_MIN, str(d.get("cobertura_media_min_px"))]
+	)
 	var f: Dictionary = d.get("folha", {})
 	ok(int(f.get("quadros", 0)) >= 6 and int(f.get("quadros", 0)) <= 8 and f.get("tamanhos", []).size() >= 3, "folha: 6 a 8 quadros e 3 ou 4 tamanhos")
 	ok(not Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).has("corpo"), "o ramo antigo da chama no shader (status.fogo.corpo) saiu dos dados")
@@ -116,7 +122,10 @@ func _parte_folha() -> void:
 	var ay: int = int(f.ancora[1])
 	var nq: int = int(f.quadros)
 	var nt: int = f.tamanhos.size()
-	ok(im.get_width() == cw * nq and im.get_height() == ch * nt * 2, "a folha tem %d quadros x %d filas de células %dx%d (%dx%d)" % [nq, nt * 2, cw, ch, im.get_width(), im.get_height()])
+	ok(
+		im.get_width() == cw * nq and im.get_height() == ch * nt * 2,
+		"a folha tem %d quadros x %d filas de células %dx%d (%dx%d)" % [nq, nt * 2, cw, ch, im.get_width(), im.get_height()]
+	)
 	var cores := {}
 	var meio_alfa := 0
 	var ant := ""
@@ -179,10 +188,18 @@ func _parte_folha() -> void:
 		maior_h = maxi(maior_h, h_max)
 		menor_w = mini(menor_w, w_max)
 		menor_h = mini(menor_h, h_max)
-	print("folha: %dx%d px, %d cores, %d px com alfa fracionário; labaredas (quadro 2) de %dx%d a %dx%d px" % [im.get_width(), im.get_height(), cores.size(), meio_alfa, menor_w, menor_h, maior_w, maior_h])
+	print(
+		(
+			"folha: %dx%d px, %d cores, %d px com alfa fracionário; labaredas (quadro 2) de %dx%d a %dx%d px"
+			% [im.get_width(), im.get_height(), cores.size(), meio_alfa, menor_w, menor_h, maior_w, maior_h]
+		)
+	)
 	ok(meio_alfa == 0, "alfa só 0 ou 1 (%d px fracionários)" % meio_alfa)
 	ok(cores.size() >= 4 and cores.size() <= 6, "paleta de 4 a 6 cores (%d)" % cores.size())
-	ok(menor_w >= 3 and maior_w <= 5 and menor_h >= 4 and maior_h <= 8, "labaredas de 3 a 5 px de largura e 4 a 8 de altura (%dx%d a %dx%d)" % [menor_w, menor_h, maior_w, maior_h])
+	ok(
+		menor_w >= 3 and maior_w <= 5 and menor_h >= 4 and maior_h <= 8,
+		"labaredas de 3 a 5 px de largura e 4 a 8 de altura (%dx%d a %dx%d)" % [menor_w, menor_h, maior_w, maior_h]
+	)
 	ok(ok_forma, "todo quadro tem pixels e cabe na célula, acima da âncora")
 	ok(iguais == 0, "nenhum quadro repete o anterior (%d repetidos)" % iguais)
 	ok(escurece, "do quadro 0 ao último a cor só escurece (amarelo-claro, laranja, vermelho, vermelho escuro)")
@@ -334,7 +351,24 @@ func _parte_lobo(w) -> void:
 	for k in nasc_por_janela:
 		pior_janela = maxi(pior_janela, int(nasc_por_janela[k]))
 	var media_dist := float(quadros_distintos) / float(quadros)
-	print("lobo (classe %d): cobertura média %.1f px de gota por quadro, %d gotas nasceram (%.0f%% na metade de baixo), %d terminaram, %d sobem, vivas %d a %d (média %.1f), %.1f quadros distintos por instante, no máximo %d nascimentos em 0,1 s" % [g._classe[v], media, nasceu, 100.0 * nasc_baixo / maxf(nasceu, 1), terminou, subiu, min_vivas, max_vivas, float(soma_vivas) / quadros, media_dist, pior_janela])
+	print(
+		(
+			"lobo (classe %d): cobertura média %.1f px de gota por quadro, %d gotas nasceram (%.0f%% na metade de baixo), %d terminaram, %d sobem, vivas %d a %d (média %.1f), %.1f quadros distintos por instante, no máximo %d nascimentos em 0,1 s"
+			% [
+				g._classe[v],
+				media,
+				nasceu,
+				100.0 * nasc_baixo / maxf(nasceu, 1),
+				terminou,
+				subiu,
+				min_vivas,
+				max_vivas,
+				float(soma_vivas) / quadros,
+				media_dist,
+				pior_janela
+			]
+		)
+	)
 	var piso := maxf(float(_dados.get("cobertura_media_min_px", 4)), float(PISO_MIN))
 	ok(media >= piso, "cobertura média de gota por quadro: %.1f px (piso %.0f)" % [media, piso])
 	ok(nasceu >= 60, "muitas gotas nasceram em 4 s (%d)" % nasceu)
@@ -347,7 +381,10 @@ func _parte_lobo(w) -> void:
 	ok(quadro_ruim == 0, "o quadro de cada gota vem da idade dela (%d fora)" % quadro_ruim)
 	ok(media_dist >= 4.0, "as gotas vivas estão em fases diferentes: %.1f quadros distintos por instante" % media_dist)
 	ok(pior_janela <= 5, "nascimento contínuo, sem onda: no máximo 5 gotas nascem na mesma janela de 0,1 s (%d)" % pior_janela)
-	ok(float(soma_vivas) / quadros >= 10.0 and max_vivas <= 16, "10 a 16 gotas vivas no lobo (%d a %d, média %.1f)" % [min_vivas, max_vivas, float(soma_vivas) / quadros])
+	ok(
+		float(soma_vivas) / quadros >= 10.0 and max_vivas <= 16,
+		"10 a 16 gotas vivas no lobo (%d a %d, média %.1f)" % [min_vivas, max_vivas, float(soma_vivas) / quadros]
+	)
 	ok(pool_ok, "as gotas vivas nunca passam do pool")
 	ok(lobo._estado_corpo() == 1, "o lobo queimando segue com o tingimento do corpo (estado FOGO)")
 	lobo.queima_t = 0.0
@@ -419,14 +456,25 @@ func _parte_elite(w) -> void:
 		max_vivas = maxi(max_vivas, vivas)
 		soma_vivas += vivas
 	var media := float(soma) / quadros
-	print("elite (x%d): cobertura média %.1f px de gota por quadro, %.1f gotas vivas (máx %d), cap %d" % [s, media, float(soma_vivas) / quadros, max_vivas, g.cap_da_vaga(v)])
+	print(
+		(
+			"elite (x%d): cobertura média %.1f px de gota por quadro, %.1f gotas vivas (máx %d), cap %d"
+			% [s, media, float(soma_vivas) / quadros, max_vivas, g.cap_da_vaga(v)]
+		)
+	)
 	ok(g.has_method("retangulo"), "a gota expõe o retângulo de desenho")
 	ok(tam_ruim == 0, "toda gota do elite é desenhada em célula x escala = %dx%d (%d fora)" % [int(cel.x) * s, int(cel.y) * s, tam_ruim])
 	ok(grade_ruim == 0, "posição (âncora) das gotas do elite em múltiplo da escala (%d fora)" % grade_ruim)
 	ok(fora_lado == 0, "elite: nenhuma gota passa de 2 x escala px da caixa opaca de lado (%d)" % fora_lado)
 	ok(fora_topo == 0, "elite: nenhuma ponta passa de 6 x escala px acima da caixa opaca (%d)" % fora_topo)
-	ok(media >= float(_dados.get("cobertura_media_min_px", 4)), "elite: cobertura média %.1f px (piso do lobo %.0f)" % [media, float(_dados.get("cobertura_media_min_px", 4))])
-	ok(float(soma_vivas) / quadros >= 9.0 and max_vivas <= g.cap_da_vaga(v), "elite: gotas vivas %.1f em média (máx %d)" % [float(soma_vivas) / quadros, max_vivas])
+	ok(
+		media >= float(_dados.get("cobertura_media_min_px", 4)),
+		"elite: cobertura média %.1f px (piso do lobo %.0f)" % [media, float(_dados.get("cobertura_media_min_px", 4))]
+	)
+	ok(
+		float(soma_vivas) / quadros >= 9.0 and max_vivas <= g.cap_da_vaga(v),
+		"elite: gotas vivas %.1f em média (máx %d)" % [float(soma_vivas) / quadros, max_vivas]
+	)
 	# o comum segue em x1: um lobo ao lado desenha o retângulo 9 x 12
 	var lobo = w.nascer_monstro(TIPO, p0 + Vector2(80, 70))
 	lobo.atordoa_t = 99.0
@@ -487,7 +535,10 @@ func _parte_pool(w) -> void:
 			for k in g.cap_da_vaga(ve):
 				if g.gota(g._base[ve] + k).ativa:
 					vivas_e += 1
-			ok(g.cap_da_vaga(ve) == int(_dados.get("por_vaga_elite", 14)) and vivas_e >= 9, "o elite tem de 9 a 14 gotas vivas (%d de %d)" % [vivas_e, g.cap_da_vaga(ve)])
+			ok(
+				g.cap_da_vaga(ve) == int(_dados.get("por_vaga_elite", 14)) and vivas_e >= 9,
+				"o elite tem de 9 a 14 gotas vivas (%d de %d)" % [vivas_e, g.cap_da_vaga(ve)]
+			)
 	else:
 		ok(false, "o elite nasceu")
 
@@ -547,7 +598,12 @@ func _parte_calmo(w) -> void:
 					vivas += 1
 					quadros_vistos[gt.quadro] = true
 			vivas_max = maxi(vivas_max, vivas)
-		print("calmo: pior pixel troca %d vezes em 1 s (12 s medidos); no máximo %d px de gota por quadro, %d gotas vivas, quadros vistos %s" % [pior, maximo, vivas_max, str(quadros_vistos.keys())])
+		print(
+			(
+				"calmo: pior pixel troca %d vezes em 1 s (12 s medidos); no máximo %d px de gota por quadro, %d gotas vivas, quadros vistos %s"
+				% [pior, maximo, vivas_max, str(quadros_vistos.keys())]
+			)
+		)
 		ok(pior <= 2, "Reduzir piscadas: nenhum pixel troca mais de 2 vezes em 1 s (pior %d)" % pior)
 		ok(maximo >= 6, "Reduzir piscadas: ainda há gota (%d px)" % maximo)
 		ok(vivas_max >= 2 and vivas_max <= 4, "Reduzir piscadas: 3 a 4 gotas por monstro, congeladas (%d vivas)" % vivas_max)
@@ -594,7 +650,12 @@ func _parte_custo(w) -> void:
 	desenhos = _desenhos
 	var vivas: int = g.vivas()
 	var px: int = g.pixels().size()
-	print("custo: 40 monstros queimando (%d gotas vivas, %d px quentes): passo %.3f ms por quadro; desenho (_desenhar: %d chamadas) %.3f ms por quadro em %d desenhos" % [vivas, px, float(passo_us) / n / 1000.0, vivas, float(desenho_us) / maxf(desenhos, 1) / 1000.0, desenhos])
+	print(
+		(
+			"custo: 40 monstros queimando (%d gotas vivas, %d px quentes): passo %.3f ms por quadro; desenho (_desenhar: %d chamadas) %.3f ms por quadro em %d desenhos"
+			% [vivas, px, float(passo_us) / n / 1000.0, vivas, float(desenho_us) / maxf(desenhos, 1) / 1000.0, desenhos]
+		)
+	)
 	ok(g.monstros() == 40 and vivas >= 300, "40 monstros queimando: %d monstros com vaga, %d gotas vivas" % [g.monstros(), vivas])
 	ok(float(passo_us) / n / 1000.0 < 8.0, "o passo de 40 monstros queimando custa menos de 8 ms por quadro (folgado para o CI)")
 	if g.no != null:
