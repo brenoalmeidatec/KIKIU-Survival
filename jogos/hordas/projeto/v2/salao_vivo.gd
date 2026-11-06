@@ -308,7 +308,7 @@ func _caixa_corpo(pes: Vector2) -> Rect2:
 	var qw := float(_corpo_tamanho.x)
 	var qh := float(_corpo_tamanho.y)
 	var area: Rect2 = _corpo_caixas.get(chave, Rect2(0, 0, qw, qh))
-	var esc_v = _ctx.get("_escala")  # salao.gd desenha a folha grande (o mecha) em 1x; sem o campo, a escala de sempre
+	var esc_v = _ctx.get("_escala")  # salao.gd desenha a folha grande (o mecha) em 1,5x; sem o campo, a escala de sempre
 	var e: float = float(esc_v) if esc_v != null else ESCALA_HEROI
 	var canto := Vector2(pes.x - qw * e / 2.0, pes.y - qh * e + 6.0)
 	return Rect2(canto + area.position * e, area.size * e)
@@ -632,7 +632,7 @@ func _montar_sombra_heroi() -> void:
 	_ator.chave = "heroi"
 	_ator.raiz = Ator.Ponto.new()
 	_ator.alt = float(h) - 3.0
-	_ator.esc = _ctx._escala  # 1 na folha grande (o mecha), 2 nos humanos: a sombra acompanha o desenho
+	_ator.esc = _ctx._escala  # 1,5 na folha grande (o mecha), 2 nos humanos: a sombra acompanha o desenho
 	_ator.rmax = 1.0
 	_ator.offset = Vector2(-w / 2.0, -h + 3.0)
 	_ator.regiao = Rect2(0, 0, w, h)

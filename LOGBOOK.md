@@ -3351,3 +3351,5 @@ Pedido do Alisson depois de jogar a prévia do #618: tirar o mecha do oculto e p
 - **Visto em janela:** a escolha com o retrato e o santuário com o mecha em 1x. **Não visto:** a E andando e girando o mouse em tempo real (coberta só por teste).
 - **Pendente (decisão do Alisson):** "mergeia" do #618 e depois do #621. A tag `v2.0-rc1` substitui o beta 2 (proposta no `docs/RC1.md`). Os PRs #578, #598, #588 e #597 entram na RC1 ou vão para a v3.
 - **Para o Claude do Alisson (notebook):** continue pelo `docs/RC1.md`. O atalho "KIKIU (previa 618)" do PC abre a worktree `integra-pixel2`, que agora está na branch do #621.
+
+- 06/11/2026: o mecha do LightWolf no santuário passou para 1,5x (`ESCALA_FOLHA_GRANDE` em `v2/salao.gd`). Em 1x ficou minúsculo, e em 2x ocupava meia sala. O Alisson pediu, e a captura conferiu o tamanho. Os 10 testes do santuário e dos heróis passaram com falhas=0. Claude do Alisson (PC)

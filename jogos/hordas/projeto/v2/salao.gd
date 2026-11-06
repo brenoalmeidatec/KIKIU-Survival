@@ -37,7 +37,8 @@ const PASSOS_POR_S := 13.0  # quadros da animação de andar por segundo (sobe c
 const ALCANCE := 70.0  # px entre os pés do herói e a estrutura ou portal para ele responder
 const JANELA_COMPRA_MS := 4000  # ECO-5: o 2º E que compra a chave de um portal trancado vale até 4 s depois do 1º
 const ESCALA := 2.0  # o herói do santuário em 2x (inteiro: pixel nítido)
-const FOLHA_GRANDE_ALT := 96  # folha com quadro mais alto que isso (o mecha do LightWolf, 128x192) já vem desenhada grande: sai em 1x
+const FOLHA_GRANDE_ALT := 96  # folha com quadro mais alto que isso (o mecha do LightWolf, 128x192) já vem desenhada grande
+const ESCALA_FOLHA_GRANDE := 1.5  # e sai em 1,5x: em 2x ocupava meia sala, em 1x ficou minúsculo (pedido do Alisson, 06/11)
 const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
 const COR_APAGADO := Paleta.TEXTO_APAGADO
@@ -69,7 +70,7 @@ var _sprite: Texture2D
 var _quadro_w := 32
 var _quadro_h := 44
 var _pe_y := 42  # linha do quadro onde ficam os pés (info.pe_y; sem ele, 2 px acima da base, como no Hazaki)
-var _escala := ESCALA  # a do herói ativo: ESCALA, ou 1 nas folhas grandes (o mecha em 2x ocupava meia sala)
+var _escala := ESCALA  # a do herói ativo: ESCALA, ou ESCALA_FOLHA_GRANDE nas folhas grandes (o mecha)
 var _passos := 4  # quadros do andar (as colunas da folha menos o "parado"): 4 no Hazaki, 6 no Nick e no Luke
 var _pos := Vector2(480, 400)  # onde estão os pés do herói
 var _dir := 0  # linha da folha de sprites: baixo, esquerda, direita, cima
@@ -136,7 +137,7 @@ func _ready() -> void:
 	_quadro_w = int(info.quadro[0])
 	_quadro_h = int(info.quadro[1])
 	_pe_y = int(info.get("pe_y", _quadro_h - 2))
-	_escala = 1.0 if _quadro_h > FOLHA_GRANDE_ALT else ESCALA
+	_escala = ESCALA_FOLHA_GRANDE if _quadro_h > FOLHA_GRANDE_ALT else ESCALA
 	_passos = maxi(int(info.colunas.size()) - 1, 1)
 	var anim_parado: Dictionary = info.get("animacoes", {}).get("parado", {})
 	if (anim_parado.get("colunas", []) as Array).size() > 0:
