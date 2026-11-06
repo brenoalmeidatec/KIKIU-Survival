@@ -8,16 +8,13 @@ extends RefCounted
 ##                                      mesmo alvo devolve a alça que já existe (dá para "reaplicar" o status todo quadro sem duplicar).
 ##   soltar(alca)                    -> devolve o efeito ao pool. Alça velha ou repetida não faz nada.
 ## Cada id tem um `limite` de cópias vivas: tocar passado dele troca a cópia mais velha; prender passado dele recusa. Pool cheio, recusa.
-## Opção "Reduzir piscadas": um id com `fps_calmo` (> 0) passa a tocar a essa taxa em vez de `fps` (a chama de status: nenhum pixel troca mais de
-## 2 vezes por segundo; 1,5 quadro por segundo dá folga ao teto de 2). `opcoes.fase` (0 a 1, fração da volta) começa o loop adiantado: monstros que
-## acendem juntos não marcham no mesmo quadro.
 ## Perfil Baixo (Anim.suave desligado): efeito `decorativo` não nasce e some dos que já estavam no ar. `clarao` escala o alfa pela opção
 ## "Tremor e clarões" (0% não acende).
 
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": folha de clarão não nasce
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (perfil Baixo = desligada)
 const PASTA := "res://assets/v2/pixelfx/"
-const MAX := 64  # efeitos ao mesmo tempo, somando todos os ids (a alça guarda o slot em 8 bits). Só o status ocupa até 25 (12 chamas, 6 relógios, 6 estrelas, o relógio do herói)
+const MAX := 48  # efeitos ao mesmo tempo, somando todos os ids (a alça guarda o slot em 8 bits)
 const LIMITE_PADRAO := 8
 const UNICO := 1
 const PRESO := 2
@@ -104,7 +101,6 @@ func registrar(id: String, e: Dictionary) -> bool:
 		"colunas": maxi(int(e.colunas), 1),
 		"quadros": quadros,
 		"fps": maxf(float(e.fps), 1.0),
-		"fps_calmo": maxf(float(e.get("fps_calmo", 0.0)), 0.0),
 		"loop": bool(e.get("loop", false)),
 		"pivo": Vector2(float(e.pivo[0]), float(e.pivo[1])),
 		"escala": _escala_inteira(id, float(e.get("escala", 1.0))),
@@ -218,7 +214,7 @@ func _alocar(id: String, modo: int, opcoes: Dictionary) -> int:
 		return -1
 	_modo[s] = modo
 	_def[s] = idx
-	_t[s] = clampf(float(opcoes.get("fase", 0.0)), 0.0, 1.0) * float(d.ticks) / _fps(d)
+	_t[s] = 0.0
 	_esc[s] = d.escala if not opcoes.has("escala") else _escala_inteira(id, float(opcoes.escala))
 	_cor[s] = cor
 	_lz[s] = d.lz
@@ -278,25 +274,9 @@ func atualizar(dt: float) -> void:
 			_liberar(s)  # o nó do alvo foi liberado sem soltar
 			continue
 		_t[s] += dt
-		if _modo[s] == UNICO and not d.loop and int(_t[s] * _fps(d)) >= d.ticks:
+		if _modo[s] == UNICO and not d.loop and int(_t[s] * d.fps) >= d.ticks:
 			_liberar(s)
 	_atualizar_desenho()
-
-
-## Quadros por segundo desta definição agora (com "Reduzir piscadas", o `fps_calmo` do id, se ele tiver um).
-func _fps(d: Dictionary) -> float:
-	return d.fps_calmo if d.fps_calmo > 0.0 and Piscadas.ligado() else d.fps
-
-
-func _quadro(d: Dictionary, t: float) -> int:
-	var tick := int(t * _fps(d))
-	tick = tick % d.ticks if d.loop else mini(tick, d.ticks - 1)
-	return mini(tick * d.passo, d.quadros - 1)
-
-
-## Que quadro da folha do id está na tela `t` s depois de o efeito nascer (os testes contam as trocas por segundo).
-func quadro_em(id: String, t: float) -> int:
-	return _quadro(_defs[_ids[id]], t) if _ids.has(id) else -1
 
 
 func _atualizar_desenho() -> void:
@@ -313,7 +293,9 @@ func _desenhar(no: Node2D, lz: int) -> void:
 		if _modo[s] == 0 or _lz[s] != lz:
 			continue
 		var d: Dictionary = _defs[_def[s]]
-		var q := _quadro(d, _t[s])
+		var tick := int(_t[s] * d.fps)
+		tick = tick % d.ticks if d.loop else mini(tick, d.ticks - 1)
+		var q := mini(tick * d.passo, d.quadros - 1)
 		var origem: Vector2 = _pos[s]
 		if _modo[s] == PRESO:
 			var a: Node2D = _alvo[s]
