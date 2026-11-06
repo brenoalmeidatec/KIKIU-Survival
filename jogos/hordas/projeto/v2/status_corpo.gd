@@ -84,18 +84,40 @@ const GLSL := """
 		}
 	}
 """
-## Para Sprite2D de elite e chefe: `regiao` é o recorte do quadro no atlas, em px. Sem folga: esses sprites já têm margem na célula.
+## Folga (px) que o quadrado do sprite de elite e chefe ganha com status, para a chama, o arco, a bolha e a gota passarem do contorno da célula:
+## x nos dois lados, y em cima (a chama sobe até 8 px) e embaixo (a gota do sangue cai até 8 px). É a mesma folga do lote (v2/horda.gd).
+const FOLGA_NO := Vector2(4.0, 9.0)
+
+## Para Sprite2D de elite e chefe: `regiao` é o recorte do quadro no atlas, em px. Um Sprite2D com região só desenha o retângulo da região, e as folhas
+## grandes (`_xN`) têm 0 px de margem nos lados: o shader de fragmento nunca roda fora dele e a chama saía cortada na borda da célula. Por isso o
+## vertex() estica o quadrado em `folga` px para os quatro lados (a posição e o UV na mesma conta, pixel inteiro, o desenho do monstro não anda) e o
+## fragment() zera o que cai fora da célula (o UV esticado lê as células vizinhas da folha). `centro` é o centro do quadrado no espaço do nó
+## (`offset` + metade da região; o sprite não é centralizado). Quem sabe de que lado cada canto está é o sinal de VERTEX - centro; o espelho
+## (flip_h) inverte o UV mas não a posição, então o sentido do UV vem de onde o canto leu a célula.
 const SHADER_NO := (
 	"""shader_type canvas_item;
 uniform float estado = 0.0;
 uniform float semente = 0.0;
 uniform vec4 regiao = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec2 centro = vec2(0.0);
+uniform vec2 folga = vec2(4.0, 9.0);
+void vertex() {
+	if (estado > 0.5) {
+		vec2 ts = 1.0 / TEXTURE_PIXEL_SIZE;
+		vec2 p = UV * ts - regiao.xy;
+		vec2 lado = vec2(VERTEX.x < centro.x ? -1.0 : 1.0, VERTEX.y < centro.y ? -1.0 : 1.0);
+		vec2 sentido = vec2((p.x > regiao.z * 0.5) == (lado.x > 0.0) ? 1.0 : -1.0, (p.y > regiao.w * 0.5) == (lado.y > 0.0) ? 1.0 : -1.0);
+		VERTEX += lado * folga;
+		UV = (regiao.xy + p + lado * sentido * folga) / ts;
+	}
+}
 void fragment() {
 	vec4 c = texture(TEXTURE, UV) * COLOR;
 	if (estado > 0.5) {
 		vec2 base = regiao.xy;
 		vec2 tam = regiao.zw;
 		vec2 p = floor(UV * vec2(textureSize(TEXTURE, 0)) - base);
+		if (p.x < 0.0 || p.y < 0.0 || p.x >= tam.x || p.y >= tam.y) { c = vec4(0.0); }
 		float est = estado;
 		float sem = semente;
 """
@@ -117,4 +139,5 @@ static func material_no(semente: float) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = _shader_no
 	m.set_shader_parameter("semente", semente)
+	m.set_shader_parameter("folga", FOLGA_NO)
 	return m

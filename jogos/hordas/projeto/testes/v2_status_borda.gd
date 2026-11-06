@@ -1,0 +1,165 @@
+extends "res://testes/isolamento_v2.gd"
+## A chama (e o gelo, o veneno, o choque e o sangue) de elite e chefe não pode ser cortada pela borda da célula. Elite e chefe usam folhas grandes `_xN`
+## com 0 px de margem nos lados, e um Sprite2D com região só desenha o retângulo da região: o shader de status (v2/status_corpo.gd) nunca rodava fora
+## dele. A correção estica o quadrado em `FOLGA_NO` px (vertex) e zera o que a folga lê das células vizinhas (fragment).
+## Parte 1 (qualquer modo): o monstro com nó liga o material com `folga` e `centro` certos. Parte 2 (só com janela, sem --headless): desenha de verdade
+## uma célula 100% opaca, vizinha de outra célula opaca, e mede em pixel se a chama sai da célula e se a vizinha não vaza.
+## Roda: godot --path jogos/hordas/projeto res://testes/v2_status_borda.tscn  (imprime "v2_status_borda falhas=0")
+const Anim := preload("res://v2/anim_golpes.gd")
+const Mundo := preload("res://v2/mundo.tscn")
+const StatusCorpo := preload("res://v2/status_corpo.gd")
+const PASSO := 1.0 / 60.0
+const CEL := 24  # lado da célula sintética, em px
+const FORA := Color(0.0, 0.0, 0.35)  # o fundo do teste: o que não foi desenhado
+var falhas := 0
+
+
+func ok(cond: bool, msg: String) -> void:
+	if not cond:
+		falhas += 1
+		print("FALHOU: ", msg)
+
+
+func _ready() -> void:
+	await _parte_no()
+	if DisplayServer.get_name() == "headless":
+		print("v2_status_borda: sem janela, a medição em pixel foi pulada (rode sem --headless)")
+	else:
+		await _parte_pixel()
+	print("v2_status_borda falhas=", falhas)
+	get_tree().quit(1 if falhas else 0)
+
+
+## O elite queimando liga o material do shader com a folga e o centro do quadrado (offset + metade da região).
+func _parte_no() -> void:
+	Anim.suave = true
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	add_child(w)
+	w.set_process(false)
+	w.combate.audio.mudo = true
+	w.reiniciar()
+	w.combate.limpar_partida()
+	w.combate.diretor.ligado = false
+	w.heroi.imortal = true
+	var m = w.combate.elites.nascer("inimigo_cao_ossos", "", w.heroi.pos + Vector2(60, 0))
+	ok(m != null and m.sprite != null, "a elite nasceu com nó")
+	if m == null:
+		return
+	m.queimar(0.2, 5.0)
+	for i in 6:
+		w.avancar(PASSO)
+	var mat := m.sprite.material as ShaderMaterial
+	ok(mat != null and m._estado_corpo() == StatusCorpo.FOGO, "queimando: o sprite da elite tem o material do status")
+	if mat != null:
+		var r: Rect2 = m.sprite.region_rect
+		var folga: Variant = mat.get_shader_parameter("folga")
+		var centro: Variant = mat.get_shader_parameter("centro")
+		ok(folga is Vector2 and folga.x > 0.0 and folga.y > 0.0, "o material leva a folga do quadrado (%s)" % [folga])
+		ok(
+			centro is Vector2 and centro == m.sprite.offset + r.size * 0.5,
+			"o material leva o centro do quadrado (%s, esperado %s)" % [centro, m.sprite.offset + r.size * 0.5]
+		)
+		ok(
+			float(folga.x if folga is Vector2 else 0.0) >= 2.0 and float(folga.y if folga is Vector2 else 0.0) >= 8.0,
+			"a folga cobre o arco do choque (2 px) e a chama (8 px)"
+		)
+	m.queima_t = 0.0
+	for i in 6:
+		w.avancar(PASSO)
+	ok(m.sprite.material == null, "o fogo acabou: o sprite volta sem material")
+	w.queue_free()
+	await get_tree().process_frame
+
+
+## O pixel é o fundo (não foi desenhado)? A cor sai do render com arredondamento de 8 bits, então compara com tolerância.
+func _vazio(c: Color) -> bool:
+	return absf(c.r - FORA.r) < 0.02 and absf(c.g - FORA.g) < 0.02 and absf(c.b - FORA.b) < 0.02
+
+
+## Desenha a célula opaca com o fogo ligado e mede a chama fora dela.
+func _parte_pixel() -> void:
+	var atlas := Image.create(CEL * 2, CEL, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0.45, 0.45, 0.45, 1.0))  # as duas células opacas, sem margem nenhuma
+	var tex := ImageTexture.create_from_image(atlas)
+	var meio := CEL  # a célula do teste é a da direita; a da esquerda é a vizinha que não pode vazar
+	var margem := 12
+	var sv := SubViewport.new()
+	sv.size = Vector2i(CEL + margem * 2, CEL + margem * 2)
+	sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(sv)
+	var fundo := ColorRect.new()
+	fundo.color = FORA
+	fundo.size = Vector2(sv.size)
+	sv.add_child(fundo)
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.region_enabled = true
+	s.region_rect = Rect2(meio, 0, CEL, CEL)
+	s.centered = false
+	s.offset = Vector2(-CEL / 2.0, -CEL)  # como o monstro: x centrado, pés na origem
+	s.position = Vector2(margem + CEL / 2.0, margem + CEL)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var mat := StatusCorpo.material_no(3.0)
+	mat.set_shader_parameter("estado", float(StatusCorpo.FOGO))
+	mat.set_shader_parameter("regiao", Vector4(meio, 0, CEL, CEL))
+	mat.set_shader_parameter("centro", s.offset + Vector2(CEL, CEL) * 0.5)
+	s.material = mat
+	sv.add_child(s)
+	for i in 4:
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var img: Image = sv.get_texture().get_image()
+	ok(img != null and img.get_width() == sv.size.x, "o teste conseguiu a imagem da janela")
+	if img == null or img.is_empty():
+		return
+	# a célula ocupa [margem, margem + CEL) nos dois eixos da imagem
+	var x0 := margem
+	var y0 := margem
+	var x1 := margem + CEL
+	var y1 := margem + CEL
+	var dentro_ok := 0
+	for y in range(y0, y1):
+		for x in range(x0, x1):
+			if not _vazio(img.get_pixel(x, y)):
+				dentro_ok += 1
+	ok(dentro_ok == CEL * CEL, "a célula continua inteira desenhada (%d de %d px)" % [dentro_ok, CEL * CEL])
+	# a chama sobe da borda de cima (1 px acima da célula é sempre chama: o corpo está a 1 px) e sai dos lados (2 px)
+	var cima := 0
+	for x in range(x0, x1):
+		if not _vazio(img.get_pixel(x, y0 - 1)):
+			cima += 1
+	ok(cima == CEL, "a chama passa da borda de cima da célula (%d de %d colunas)" % [cima, CEL])
+	var lados := 0
+	for y in range(y0, y1):
+		if not _vazio(img.get_pixel(x0 - 1, y)):
+			lados += 1
+		if not _vazio(img.get_pixel(x1, y)):
+			lados += 1
+	ok(lados == CEL * 2, "o fogo passa das bordas dos lados da célula (%d de %d px)" % [lados, CEL * 2])
+	# a folga lê as células vizinhas da folha: o que não é chama tem de ficar transparente (o fundo)
+	var vazou := 0
+	var fora_da_folga := 0
+	for y in range(y0 - 3, y1 + 3):
+		for x in [x0 - 4, x0 - 3, x1 + 2, x1 + 3]:  # além do alcance do fogo (2 px dos lados)
+			if not _vazio(img.get_pixel(x, y)):
+				vazou += 1
+			fora_da_folga += 1
+	ok(vazou == 0, "a célula vizinha da folha não vaza para a folga (%d de %d px)" % [vazou, fora_da_folga])
+	# nada desenhado fora do retângulo da célula + folga
+	var f := StatusCorpo.FOLGA_NO
+	var alem := 0
+	for y in img.get_height():
+		for x in img.get_width():
+			var fx := x < x0 - int(f.x) or x >= x1 + int(f.x)
+			var fy := y < y0 - int(f.y) or y >= y1 + int(f.y)
+			if (fx or fy) and not _vazio(img.get_pixel(x, y)):
+				alem += 1
+	ok(alem == 0, "nada passa da folga do quadrado (%d px)" % alem)
+	var dbg := OS.get_environment("KIKIU_SALVAR_BORDA")
+	if dbg != "":
+		var g := Image.create(img.get_width() * 8, img.get_height() * 8, false, Image.FORMAT_RGBA8)
+		g.copy_from(img)
+		g.resize(img.get_width() * 8, img.get_height() * 8, Image.INTERPOLATE_NEAREST)
+		g.save_png(dbg)
+	sv.queue_free()
