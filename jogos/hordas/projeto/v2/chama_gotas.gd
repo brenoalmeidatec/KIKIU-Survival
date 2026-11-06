@@ -1,6 +1,6 @@
 extends RefCounted
 ## As GOTAS DE FOGO de quem queima (decisão do Alisson, 06/11; receita do Enter the Gungeon: o corpo tingido por v2/status_corpo.gd + partículas pequenas).
-## Cada monstro queimando ganha de 10 (pequeno) a 14 (médio e grande) gotas vivas, 18 a 20 no elite e no chefe, e CADA GOTA É UMA MINI-ANIMAÇÃO: uma labareda de 3 a 5 px de largura
+## Cada monstro queimando ganha de 10 (pequeno) a 14 (médio e grande) gotas vivas, 12 a 14 no elite e no chefe (que as desenham MAIORES, ver abaixo), e CADA GOTA É UMA MINI-ANIMAÇÃO: uma labareda de 3 a 5 px de largura
 ## e 4 a 8 de altura, de uma folha procedural de 8 quadros (fonte_arte/chama/gerar_gotas.py -> assets/v2/efeitos/chama_gotas.png): nasce gorda e clara, estica, a ponta
 ## tremula, a ponta se destaca em fagulha, o corpo sobe e encolhe, escurece (amarelo-claro, âmbar, laranja, vermelho, vermelho escuro) e some. O QUADRO AVANÇA PELA IDADE DA GOTA
 ## (não por relógio global): cada gota está numa fase diferente e o nascimento é contínuo, sem ondas. A ÂNCORA (centro da base da labareda) NASCE num pixel opaco do próprio corpo
@@ -9,8 +9,11 @@ extends RefCounted
 ## A gota inteira nunca sai de lado mais que `sobra_lado` px além da caixa opaca do corpo e a ponta passa no máximo `sobra_cabeca` px da cabeça (acima disso ela fica na altura
 ## máxima até acabar a vida, como uma coroa de fogo, sem estourar de uma vez).
 ## Pool FIXO em dados (v2_pixelfx.json, status.fogo.gotas): `vagas` vagas comuns de `por_vaga` gotas mais `vagas_elite` vagas só de elite e chefe de `por_vaga_elite` gotas
-## (40 x 14 + 4 x 20 = 640); quem passa do limite fica só com o tingimento. UM nó com um desenho só (z_index 30, acima dos monstros; uma chamada por gota, mesma textura: o Godot
+## (40 x 14 + 4 x 14 = 616); quem passa do limite fica só com o tingimento. UM nó com um desenho só (z_index 30, acima dos monstros; uma chamada por gota, mesma textura: o Godot
 ## junta num lote), RNG próprio (o da partida não é tocado), nenhum nó nasce na partida.
+## A ESCALA DO DONO (sugestão do Alisson, 06/11: "os mesmos sprites nos elite com tamanho maior"): a gota usa a escala INTEIRA do sprite do dono (x1 comum, x2 elite, x3 chefe; `escala_gota`, de `Monstro.escala`: o elite e o chefe
+## desenham a folha `_xN` em esc = 1, mas o tamanho lógico continua N): o retângulo é célula x escala, cada pixel da folha vira um bloco e x e, a âncora cai em múltiplo da escala
+## (relativo aos pés), e subida, aceleração, balanço, `sobra_lado` e `sobra_cabeca` multiplicam pela escala. A caixa opaca e os pontos de nascimento seguem na grade da folha do monstro (`escala_de`).
 ## Perfil Baixo (Anim.suave desligado): nenhuma gota. "Reduzir piscadas": 3 a 4 gotas por monstro CONGELADAS num quadro médio (sem trocar de quadro nem balançar), subindo
 ## devagar e com folga entre uma e outra (nenhum pixel troca mais de 2 vezes por segundo, medido em testes/v2_chama_particulas.gd).
 ## API: montar(c), atualizar(dt), limpar(), pontos_do_quadro(m) -> Dictionary, vivas() -> int, monstros() -> int, gota(i), pixels(vaga) (testes).
@@ -70,6 +73,7 @@ var _fila := PackedInt32Array()  # linha da folha (tamanho * 2 + variante)
 var _quadro := PackedInt32Array()
 var _ox := PackedInt32Array()  # onde a âncora está agora (px inteiros relativos a pr, arredondados), o que o desenho usa
 var _oy := PackedInt32Array()
+var _esg := PackedInt32Array()  # por gota: a escala inteira do dono (1 comum, 2 elite, 3 chefe) com que ela nasceu
 
 
 func montar(c) -> void:
@@ -107,7 +111,7 @@ func montar(c) -> void:
 	_n.resize(n_slots)
 	_nc.resize(n_slots)
 	_classe.resize(n_slots)
-	for t in [_est, _fila, _quadro, _ox, _oy]:
+	for t in [_est, _fila, _quadro, _ox, _oy, _esg]:
 		t.resize(total)
 	for t in [_idade, _vida, _espera, _x0, _y0, _vel, _acel, _amp, _fase]:
 		t.resize(total)
@@ -213,7 +217,7 @@ func cap_da_vaga(i: int) -> int:
 
 ## A gota i para os testes: {ativa, x, y (a âncora, px relativos a pr), idade, vida, fila, quadro, x0, y0}.
 func gota(i: int) -> Dictionary:
-	return {"ativa": _est[i] == 2, "x": _ox[i], "y": _oy[i], "idade": _idade[i], "vida": _vida[i], "fila": _fila[i], "quadro": _quadro[i], "x0": _x0[i], "y0": _y0[i]}
+	return {"ativa": _est[i] == 2, "x": _ox[i], "y": _oy[i], "idade": _idade[i], "vida": _vida[i], "fila": _fila[i], "quadro": _quadro[i], "x0": _x0[i], "y0": _y0[i], "esc": _esg[i]}
 
 
 ## Os pixels que as gotas desenham agora, em px relativos ao ponto dos pés (pr) de cada monstro, de TODAS as vagas somadas (ou só a `so_vaga`): {Vector2i: Color}, na
@@ -229,10 +233,25 @@ func pixels(so_vaga := -1) -> Dictionary:
 				if _est[g] != 2 or (_idade[g] < _vida[g] * _jovem) != (passo == 0):
 					continue
 				var lista: PackedInt32Array = _px_q[_fila[g] * _nq + _quadro[g]]
+				var e: int = _esg[g]
 				for k in lista.size() / 3:
 					var rgba: int = lista[k * 3 + 2]
-					r[Vector2i(_ox[g] + lista[k * 3], _oy[g] + lista[k * 3 + 1])] = Color8((rgba >> 24) & 255, (rgba >> 16) & 255, (rgba >> 8) & 255)
+					var cor := Color8((rgba >> 24) & 255, (rgba >> 16) & 255, (rgba >> 8) & 255)
+					for b in e:  # cada pixel da folha vira um bloco e x e
+						for a in e:
+							r[Vector2i(_ox[g] + lista[k * 3] * e + a, _oy[g] + lista[k * 3 + 1] * e + b)] = cor
 	return r
+
+
+## O retângulo de desenho da gota i, em px relativos ao ponto dos pés (pr): a célula da folha vezes a escala do dono, com a âncora em (_ox, _oy).
+func retangulo(i: int) -> Rect2:
+	var e: int = _esg[i]
+	return Rect2(_ox[i] - _ax * e, _oy[i] - _ay * e, _cw * e, _ch * e)
+
+
+## O pixel de tela (relativo a pr) em que a âncora da gota cai, na grade de blocos `e` x `e` (e = 1: o pixel inteiro mais perto).
+static func _grade(v: float, e: int) -> int:
+	return roundi((v - float(e - 1) * 0.5) / float(e)) * e
 
 
 ## A vaga do monstro m (ou -1).
@@ -250,7 +269,13 @@ func _calmo() -> bool:
 
 # ------------------------------------------------------------------ onde as gotas nascem
 
-## A escala do desenho do monstro (lote: `escala`; com nó: `esc`).
+## A escala INTEIRA do sprite do dono, a que a gota herda (1 comum, 2 elite, 3 chefe): `escala` é o tamanho lógico (elite e chefe com a folha `_xN` desenham em esc = 1 mas
+## continuam valendo N; sem a folha, esc = N), então a gota segue `escala`, não `esc`.
+static func escala_gota(m) -> int:
+	return maxi(int(roundf(m.escala)), 1)
+
+
+## A escala do desenho do monstro NA GRADE DA FOLHA DELE (lote: `escala`; com nó: `esc`): a que mede a caixa opaca e os pontos de nascimento.
 static func escala_de(m) -> int:
 	return maxi(int(roundf(m.escala if m.lote else m.esc)), 1)
 
@@ -346,9 +371,10 @@ func _passo_vaga(i: int, dt: float) -> void:
 	var base: int = _base[i]
 	var quer := _n_vivas(i)
 	var s := escala_de(m)
+	var sg := escala_gota(m)
 	var dados := pontos_do_quadro(m)
 	var lim := _limites(m, dados, s)
-	var topo_max: float = lim.y0 - _sob_cab
+	var topo_max: float = lim.y0 - _sob_cab * sg
 	var at: Array = _p.atraso_s
 	var fixo: int = _p.quadro_fixo
 	var hz: float = _p.balanco_hz
@@ -363,7 +389,7 @@ func _passo_vaga(i: int, dt: float) -> void:
 			_espera[g] = _rng.randf_range(0.0, float(_p.vida_s[1]) if fixo < 0 else float(at[1]))  # começam espalhadas: sem onda
 		if _est[g] == 1:
 			_espera[g] -= dt
-			if _espera[g] > 0.0 or not _nascer(g, m, dados, s, i):
+			if _espera[g] > 0.0 or not _nascer(g, m, dados, s, i, sg):
 				continue
 		var t: float = _idade[g] + dt
 		_idade[g] = t
@@ -374,14 +400,15 @@ func _passo_vaga(i: int, dt: float) -> void:
 		var q := fixo if fixo >= 0 else mini(int(t / _vida[g] * nq), nq - 1)
 		var idx: int = _fila[g] * nq + q
 		_quadro[g] = q
+		var e: int = _esg[g]  # subida, aceleração e balanço já nasceram multiplicados pela escala
 		var y: float = _y0[g] - (_vel[g] + 0.5 * _acel[g] * t) * t
 		var x: float = _x0[g] + _amp[g] * sin(t * hz + _fase[g])
-		y = maxf(y, topo_max + float(_topo[idx]))  # a ponta não passa da sobra da cabeça: fica na altura máxima até acabar a vida
-		var lo := ceili(lim.x0 - _sob_lado - float(_ex0[idx]))
-		var hi := floori(lim.x1 + _sob_lado - float(_ex1[idx]))
-		var xi := roundi(x)
-		_ox[g] = clampi(xi, lo, hi) if lo <= hi else (lo + hi) / 2  # a gota INTEIRA fica a no máximo `sobra_lado` px da caixa
-		_oy[g] = roundi(y)  # só aqui, no fim, a posição float vira pixel inteiro
+		var lo := ceili((lim.x0 - _sob_lado * e - float(_ex0[idx] * e)) / float(e)) * e
+		var hi := floori((lim.x1 + _sob_lado * e - float(_ex1[idx] * e) - float(e - 1)) / float(e)) * e
+		var xi := _grade(x, e)
+		_ox[g] = clampi(xi, lo, hi) if lo <= hi else _grade(float(lo + hi) * 0.5, e)  # a gota INTEIRA fica a no máximo `sobra_lado` x escala px da caixa
+		var ymin := ceili((topo_max + float(_topo[idx] * e)) / float(e)) * e  # a ponta não passa da sobra da cabeça: fica na altura máxima até acabar a vida
+		_oy[g] = maxi(_grade(y, e), ymin)  # só aqui, no fim, a posição float vira bloco inteiro
 
 
 ## A caixa dos pixels opacos do quadro atual em px da tela relativos a pr: {x0, x1, y0, y1} (espelho e escala já aplicados).
@@ -403,7 +430,7 @@ func _limites(m, dados: Dictionary, s: int) -> Dictionary:
 
 
 ## Nasce a gota g do monstro m (vaga i): a âncora num pixel opaco do quadro atual. Devolve false se o quadro não tem pixel opaco.
-func _nascer(g: int, m, dados: Dictionary, s: int, i: int) -> bool:
+func _nascer(g: int, m, dados: Dictionary, s: int, i: int, sg: int) -> bool:
 	var pts: PackedInt32Array = dados.pts
 	if pts.is_empty():
 		return false
@@ -422,7 +449,7 @@ func _nascer(g: int, m, dados: Dictionary, s: int, i: int) -> bool:
 		if tentativas > 1:
 			for j in _cap[i]:
 				var o: int = _base[i] + j
-				if o != g and _est[o] == 2 and absf(_x0[o] - nx) < 8.0 and absf(_y0[o] - ny) < 14.0:
+				if o != g and _est[o] == 2 and absf(_x0[o] - nx) < 8.0 * sg and absf(_y0[o] - ny) < 14.0 * sg:
 					achou = false
 					break
 		if achou:
@@ -432,20 +459,21 @@ func _nascer(g: int, m, dados: Dictionary, s: int, i: int) -> bool:
 	if not achou:
 		return false
 	var v: Array = _p.sobe_px_s
-	_vel[g] = _rng.randf_range(v[0], v[1])
+	_esg[g] = sg
+	_vel[g] = _rng.randf_range(v[0], v[1]) * sg
 	var a: Array = _p.acel_px_s2
-	_acel[g] = _rng.randf_range(a[0], a[1])
+	_acel[g] = _rng.randf_range(a[0], a[1]) * sg
 	var vi: Array = _p.vida_s
 	_vida[g] = _rng.randf_range(vi[0], vi[1])
 	var b: Array = _p.balanco_px
-	_amp[g] = _rng.randf_range(-1.0, 1.0) * _rng.randf_range(b[0], b[1])
+	_amp[g] = _rng.randf_range(-1.0, 1.0) * _rng.randf_range(b[0], b[1]) * sg
 	_fase[g] = _rng.randf() * TAU
 	_fila[g] = _sortear_tamanho(i) * 2 + (_rng.randi() & 1)
 	_idade[g] = 0.0
 	_quadro[g] = 0
 	_est[g] = 2
-	_ox[g] = roundi(_x0[g])
-	_oy[g] = roundi(_y0[g])
+	_ox[g] = _grade(_x0[g], sg)
+	_oy[g] = _grade(_y0[g], sg)
 	return true
 
 
@@ -547,8 +575,8 @@ func _desenhar() -> void:
 		if m == null:
 			continue
 		var pe: Vector2 = m.pr
-		var px := floorf(pe.x) - _ax
-		var py := floorf(pe.y) - _ay
+		var px0 := floorf(pe.x)
+		var py0 := floorf(pe.y)
 		var base: int = _base[i]
 		var quer := _n_vivas(i)
 		for passo in 2:  # 0: as jovens (atrás), 1: as velhas (por cima)
@@ -556,4 +584,5 @@ func _desenhar() -> void:
 				var g := base + j
 				if _est[g] != 2 or (_idade[g] < _vida[g] * _jovem) != (passo == 0):
 					continue
-				no.draw_texture_rect_region(_tex, Rect2(px + _ox[g], py + _oy[g], sz.x, sz.y), Rect2(_quadro[g] * _cw, _fila[g] * _ch, sz.x, sz.y))
+				var e: int = _esg[g]  # a escala do dono: o retângulo é a célula x e, a âncora cai num bloco e x e
+				no.draw_texture_rect_region(_tex, Rect2(px0 + _ox[g] - _ax * e, py0 + _oy[g] - _ay * e, sz.x * e, sz.y * e), Rect2(_quadro[g] * _cw, _fila[g] * _ch, sz.x, sz.y))
