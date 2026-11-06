@@ -47,7 +47,7 @@ Estas valem em qualquer gênero, a não ser que o Breno e o Alisson decidam muda
 
 **Contorno.** Escuro de 1 px em pelo menos 90% da borda (luminância < 60). O `docs/combate_v2/SPEC_ARTE.md` pede contorno escuro também em projétil. O prompt das armas evoluídas pediu "aço escuro com contorno claro" e o conferidor exige escuro em 90% da borda, então contorno claro em projétil escuro é exceção **não codificada** (dúvida aberta, não regra). Sem pixel solto sem vizinho em 4 direções. Sprite não encosta na borda da imagem.
 
-**Rotação.** Nunca girar sprite em ângulo qualquer com filtro. Shader só troca UV em 0°, 90°, 180°, 270°. Ângulos intermediários saem pré-gerados com RotSprite (`fonte_arte/blender_corte/girar_corte.py`, variantes em 22,5°, 45°, 67,5°). IA que gira 45° e alterna duas poses: pegar o 1º quadro e girar no script.
+**Rotação.** Nunca girar sprite em ângulo qualquer com filtro. Shader só troca UV em 0°, 90°, 180°, 270°. Ângulos intermediários saem pré-desenhados: o `fonte_arte/blender_corte/corte_pfx.py` desenha cada tamanho do corte ponto a ponto em 4 linhas de folha (0°, 22,5°, 45°, 67,5°). O antigo `girar_corte.py` (RotSprite, folhas `_r1..r3`) saiu do jogo em 05/11 (#611/#619). IA que gira 45° e alterna duas poses: pegar o 1º quadro e girar no script.
 
 **Legibilidade.** Herói, objetivos e portal sempre se destacam. Monstros têm olhos vermelhos acesos. Números de dano agregados por alvo (janela de 0,1 s), "PERFEITO!" pequeno com fade, nada de depuração visível.
 
@@ -226,7 +226,7 @@ Pendências abertas (não esconder do próximo jogo): resolução-base (640x360 
 **Ferramentas**
 - `jogos/hordas/fonte_arte/modelos3d/` (`pixel3d.py`, `mapas_v2.py`), `jogos/hordas/prototipos/cara_nova/` (`gerar_cara_nova.py`, `objetos/gerar_objetos.py`)
 - `jogos/hordas/fonte_arte/pixelfx/gerar_folhas.py`, `pixelfx_status/preparar_status.py`
-- `jogos/hordas/fonte_arte/blender_corte/` (incl. `girar_corte.py`), `blender_efeitos/`, `armas_anim/` (`gerar_*.py`, `PROMPTS.md`)
+- `jogos/hordas/fonte_arte/blender_corte/` (incl. `corte_pfx.py`), `blender_efeitos/`, `armas_anim/` (`gerar_*.py`, `PROMPTS.md`)
 - `ferramentas/conferir_objeto.py`, `gifs_golpes.py`, `comparar_golpes.py`, `teste_golpes_isolados.ps1`, `playtest_v2.py`
 - `jogos/hordas/projeto/v2/hud/` (`gerar_molduras.py`, `gerar_moldura_premium.py`), `jogos/hordas/fonte_arte/lightwolf_icones/` (`reduzir_icones.py`, `reduzir_cartas.py`), `.github/workflows/ci.yml`
 
