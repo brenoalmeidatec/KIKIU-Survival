@@ -35,6 +35,7 @@ const Especial := preload("res://v2/especial.gd")
 const Mecha := preload("res://v2/mecha.gd")
 const Matriz := preload("res://v2/matriz.gd")
 const Fumaca := preload("res://v2/fumaca.gd")  # a fumaça do Luke, o secundário dele (DEF-5)
+const Teias := preload("res://v2/teias.gd")  # a teia da aranha no chão: lentidão, queima pelo mecha em voo e corte dos golpes (dados/v2_teia.json)
 const Impulso := preload("res://v2/impulso.gd")  # o impulso do mecha do LightWolf (o Shift dele)
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
@@ -78,6 +79,7 @@ var ritmo
 var matriz  # a matriz de defesa do LightWolf, o secundário do mecha (v2/matriz.gd; só age com ela erguida)
 var fumaca  # a fumaça do Luke, o secundário dele (v2/fumaca.gd; a nuvem mora no pool de armas_novas.gd)
 var impulso  # o impulso do mecha do LightWolf (v2/impulso.gd; só age com o bloco cfg.impulso, que só o mecha tem)
+var teias  # a teia da aranha (v2/teias.gd): bolotas, teias no chão, a lentidão do herói e o corte
 var mecha  # as formas Mecha e Lobo do LightWolf (v2/mecha.gd; só age em eventos, sem custo para os outros heróis)
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Luke (pool, v2/adagas.gd)
@@ -227,6 +229,8 @@ func montar(m) -> void:
 	fumaca.montar(self)
 	mecha = Mecha.new()
 	mecha.montar(self)
+	teias = Teias.new()
+	teias.montar(self)
 	impulso = Impulso.new()
 	impulso.montar(self)
 	elites = Elites.new()
@@ -359,6 +363,7 @@ func atualizar(dt: float) -> void:
 		matriz.atualizar(dt)
 		fumaca.atualizar(dt)
 		mecha.atualizar(dt)
+		teias.atualizar(dt)
 		drenar_limpa(dt)
 		baus.atualizar(dt)
 		ritmo.atualizar(dt)
@@ -740,6 +745,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		armas.lancar_lanca(origem, dir, armas.dano_da_lanca(dano_do_passo(passo)))
 	if pancada and float(armas.mods.abalo) > 0.0:  # modificador do Nick: a pancada solta uma onda de choque para a frente
 		armas.lancar_onda(origem, dir, dano_do_passo(passo) * float(armas.mods.abalo) / 100.0)
+	teias.cortar_arco(h.pos, dir, alc, arco, teias.tipo_do_passo(str(passo.nome)))  # parte a teia no chão que o golpe cobre (sem dano, hit-stop nem carga do Q)
 	processar_mortes()
 	if n > 0:
 		hit_stop(parada)
@@ -1301,6 +1307,7 @@ func limpar_partida() -> void:
 	escudo.limpar()
 	matriz.limpar()
 	fumaca.limpar()
+	teias.limpar()
 	impulso.limpar()
 	especial.limpar()
 	habilidade.limpar()
@@ -1364,6 +1371,7 @@ func liberar() -> void:
 		escudo,
 		matriz,
 		fumaca,
+		teias,
 		especial,
 		habilidade,
 		mecha,
@@ -1393,6 +1401,7 @@ func liberar() -> void:
 	escudo = null
 	matriz = null
 	fumaca = null
+	teias = null
 	ritmo = null
 	especial = null
 	habilidade = null

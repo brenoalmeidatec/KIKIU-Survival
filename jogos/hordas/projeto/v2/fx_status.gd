@@ -163,10 +163,10 @@ func _varrer() -> void:
 			return
 
 
-## O herói só sofre a lentidão da teia da Rainha Tecelã (v2/chefe.gd): o relógio fica preso ao nó dele.
+## O herói lento (a teia da Rainha Tecelã, v2/chefe.gd, ou a teia da aranha, v2/teias.gd via Heroi.lento_k): o relógio fica preso ao nó dele.
 func _heroi(fx) -> void:
 	var h = combate.mundo.heroi
-	var quer: bool = h != null and h.vivo() and combate.chefes != null and combate.chefes.heroi_lento()
+	var quer: bool = h != null and h.vivo() and ((combate.chefes != null and combate.chefes.heroi_lento()) or h.lento_k() < 1.0)
 	if _alca_heroi != 0 and not fx.vivo(_alca_heroi):
 		_alca_heroi = 0
 	if quer:

@@ -178,6 +178,7 @@ func _invocar(m) -> void:
 		var filho: Dictionary = mundo.elenco.invocado(k)  # os dois bichos pequenos do elenco do mapa (aranha e cão, no padrão)
 		var f = mundo.nascer_monstro(str(filho.sprite), m.pos + Vector2(cos(a), sin(a) * 0.6) * 22.0, true, 1.0, 1.0, filho)
 		if f != null:
+			f.teia = false  # o invocado não atira teia (só a aranha de verdade do elenco)
 			lista.append(f)
 			combate.fx.onda(f.pos, Color(m.cor_elite.r, m.cor_elite.g, m.cor_elite.b, 0.8), 16.0, 0.25)
 			combate.fx.estouro(f.pos + Vector2(0, -6), m.cor_elite, 4)

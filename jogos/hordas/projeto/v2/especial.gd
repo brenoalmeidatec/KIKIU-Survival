@@ -536,6 +536,7 @@ func _q_investida(h, dt: float) -> Vector2:
 func _raio(h) -> void:
 	_alcance = _alcance_tela(h)
 	_faixa(h, _alcance)
+	combate.teias.cortar_faixa(h.pos, _dir, _alcance, float(_c.largura) * _escala, combate.teias.tipo_especial("investida"))  # o raio parte a teia no caminho
 	_zigue(h)
 	_raio_t = 0.0
 
@@ -650,6 +651,7 @@ func _bater(h) -> void:
 	var cor := _cor(_c.cor)
 	var p: Vector2 = h.pos
 	_numeros = 0
+	combate.teias.cortar_elipse(p, raio, combate.teias.tipo_especial("terremoto"))  # a batida parte a teia no chão
 	_pulso(h, p, raio, float(b.dano), float(b.empurrao), float(b.atordoa), cor, true, float(_c.chefe_lento))
 	# a onda sai da batida e vai até onda.raio
 	var o: Dictionary = _c.onda

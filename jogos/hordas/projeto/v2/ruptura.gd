@@ -271,6 +271,7 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, atordoa: float, emp:
 	var variacao := float(g.variacao)
 	var lento := _par_chefe(f)
 	var explode := float(c.armas.mods.explode)
+	c.teias.cortar_elipse(centro, raio, c.teias.tipo_ruptura())  # a rachadura parte a teia no chão (dados/v2_teia.json > corta > ruptura)
 	_hit_m.clear()
 	_hit_d.clear()
 	_hit_dn.clear()
