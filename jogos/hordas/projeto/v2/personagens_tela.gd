@@ -228,7 +228,7 @@ func _mostrar_personagem(id: String) -> void:
 		_excluir.focus_next = caminho
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
-	_definir_retrato(true, Personagens.folha(id))
+	_definir_retrato(true, Personagens.folha(id), Personagens.retrato_do_nome(str(r.nome)))
 	_info.text = "Almas: %d\nHerói: %s" % [int(r.almas), _heroi_e_arma(Personagens.heroi(id))]
 	var linhas := []
 	var efeitos := []
@@ -247,7 +247,7 @@ func _mostrar_personagem(id: String) -> void:
 func _mostrar_nome(n: Dictionary) -> void:
 	_sem_alvo()
 	_nome.text = str(n.nome)
-	_definir_retrato(true, Personagens.folha_do_nome(str(n.nome)))
+	_definir_retrato(true, Personagens.folha_do_nome(str(n.nome)), Personagens.retrato_do_nome(str(n.nome)))
 	_info.text = "Herói: %s" % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
 	_detalhe.text = "Santuário novo: sem almas e sem melhorias."
 
@@ -281,9 +281,14 @@ func _heroi_e_arma(heroi_id: String) -> String:
 ## A foto rosto.png não aparece mais aqui. Todos usam o mesmo enquadramento: a mesma escala inteira (RETRATO_ESC), a mesma caixa
 ## (RETRATO_L x RETRATO_ALT), o corpo centrado no eixo da ficha e os pés na mesma linha. O quadro é recortado no corpo (a área
 ## opaca) e ganha uma margem (AtlasTexture.margin) até o tamanho da caixa, então o TextureRect é igual para todos os heróis.
-func _definir_retrato(visivel := true, folha_nome := "") -> void:
+## Com `imagem` (o retrato pronto do nome, Personagens.retrato_do_nome), ela entra no lugar do quadro, em 1x (já vem em pixel nativo), recortada
+## no corpo e apoiada embaixo na mesma caixa.
+func _definir_retrato(visivel := true, folha_nome := "", imagem := "") -> void:
 	var tex: Texture2D = null
-	if folha_nome != "":
+	var pronta := load(imagem) as Texture2D if imagem != "" else null
+	if pronta != null:
+		tex = _imagem_retrato(pronta)
+	elif folha_nome != "":
 		var base := Personagens.PASTA_SPRITES + folha_nome
 		var folha := load(base + "_albedo.png") as Texture2D
 		var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
@@ -310,6 +315,22 @@ func _corpo_parado(folha: Texture2D, quadro: Rect2) -> AtlasTexture:
 	var tex := _quadro_de(folha, corpo)
 	var sobra := (caixa - corpo.size).max(Vector2.ZERO)
 	tex.margin = Rect2(floorf(sobra.x / 2.0), sobra.y, sobra.x, sobra.y)  # centrado em x, apoiado embaixo (os pés na mesma linha)
+	return tex
+
+
+## O retrato pronto em 1x: recortado na área opaca, centrado em x e apoiado embaixo na caixa. A margem completa a textura até o tamanho
+## da caixa em px de tela (RETRATO_L x RETRATO_ALT), então o TextureRect desenha a imagem sem escalar (o quadro da folha usa a caixa / RETRATO_ESC).
+func _imagem_retrato(img_tex: Texture2D) -> AtlasTexture:
+	var corpo := Rect2(Vector2.ZERO, img_tex.get_size())
+	var img := img_tex.get_image()
+	if img != null:
+		var usado := img.get_used_rect()
+		if usado.size.x > 0 and usado.size.y > 0:
+			corpo = Rect2(usado)
+	var caixa := Vector2(RETRATO_L, RETRATO_ALT)
+	var tex := _quadro_de(img_tex, corpo)
+	var sobra := (caixa - corpo.size).max(Vector2.ZERO)
+	tex.margin = Rect2(floorf(sobra.x / 2.0), sobra.y, sobra.x, sobra.y)
 	return tex
 
 

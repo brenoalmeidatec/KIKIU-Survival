@@ -5,7 +5,7 @@ extends "res://testes/isolamento_v2.gd"
 #  - o pool é fixo (MAX): estressado com centenas de puffs não passa de MAX nem muda de tamanho, e o RNG da partida não é consumido;
 #  - as cores são opacas (alfa 0/1), os degraus só escurecem (nunca voltam ao claro) e com "Reduzir piscadas" o puff tem uma cor só (cinza médio), sem o âmbar;
 #  - perfil Baixo (poucas ou nenhuma partícula): nenhum puff nasce; a chama do bocal continua (é desenho do míssil, não partícula);
-#  - o DESENHO real (grava os draw_rect): retângulos inteiros de 2 a 4 px, alfa 1, sem passar do degrau; com Reduzir piscadas, a luminância por célula respeita o teto de trocas do Piscadas;
+#  - o DESENHO real (grava os draw_rect): retângulos inteiros de 2 a 4 px, alfa 1, sem passar do degrau; com Reduzir piscadas, a luminância por célula respeita o teto de trocas do Piscadas (3/s, rodada 7);
 #  - o brilho aditivo não desenha mais a linha de fogo com alfa parcial (a chama é opaca e vai no corpo), e a fumaça é desenhada ANTES das imagens.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_misseis_rastro.tscn  (imprime "v2_misseis_rastro falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -279,7 +279,9 @@ func _piscadas() -> void:
 	var pior_nuncavolta := 0  # quantas vezes uma célula ocupada ficou MAIS CLARA sem passar pelo vazio (claro sobre escuro)
 	var celulas_total := 0
 	var acima := {}  # células (do calmo) com mais de MAX_TROCAS_S trocas em 1 s
+	var antes_cfg: bool = Config.reduzir_piscadas
 	for calmo in [true, false]:
+		Config.reduzir_piscadas = calmo  # a emissão também muda com a opção (grade de 4 px + renovar o puff vivo do mesmo ponto)
 		for k in [0, 3, 6]:
 			_zerar(Vector2.from_angle(float(k) * TAU / 8.0))
 			ok(w.heroi.habilidade(), "piscadas: a E dispara (mira %d)" % k)
@@ -323,6 +325,7 @@ func _piscadas() -> void:
 							acima[[k, c]] = true
 					else:
 						pior_normal = maxi(pior_normal, t)
+	Config.reduzir_piscadas = antes_cfg
 	print(
 		(
 			"piscadas: células=%d, pior em janela de 1 s: calmo=%d, normal=%d (teto %d); células do calmo acima do teto: %d; claro sobre escuro no calmo: %d"
@@ -330,11 +333,11 @@ func _piscadas() -> void:
 		)
 	)
 	ok(celulas_total > 100, "mediu muitas células (%d)" % celulas_total)
-	# Por PIXEL é mais duro que o critério dos outros efeitos (região inteira): um quadro apagado entre dois puffs que se emendam conta 2 trocas. Sobra uma fração mínima de células (vida do puff
-	# quase igual à cadência da salva) com 4 trocas em 1 s = 2 Hz, o teto da regra ("nada pisca ACIMA de 2 Hz"); antes (degraus claro->escuro + subida) eram 8, ou 4 Hz.
-	ok(pior <= 4, "Reduzir piscadas: nenhuma célula troca de luminância mais de 4 vezes (2 Hz) em 1 s (pior %d)" % pior)
+	# Por PIXEL é mais duro que o critério dos outros efeitos (região inteira). Rodada 6 deixava 4 trocas em 1-2% das células (um quadro apagado entre dois puffs que se emendam);
+	# rodada 7: com a grade de 4 px e a renovação do puff vivo, cada pixel fica aceso pelo menos DUR_CALMA (0,64 s de tela) seguidos, e o pior caso cabe no teto do Piscadas (MAX_TROCAS_S = 3).
 	ok(
-		acima.size() * 25 < celulas_total,
-		"Reduzir piscadas: menos de 4%% das células passam de %d trocas em 1 s (%d de %d)" % [int(Piscadas.MAX_TROCAS_S), acima.size(), celulas_total]
+		pior <= int(Piscadas.MAX_TROCAS_S),
+		"Reduzir piscadas: nenhuma célula troca de luminância mais de %d vezes em 1 s (pior %d)" % [int(Piscadas.MAX_TROCAS_S), pior]
 	)
+	ok(acima.is_empty(), "Reduzir piscadas: nenhuma célula acima de %d trocas em 1 s (%d de %d)" % [int(Piscadas.MAX_TROCAS_S), acima.size(), celulas_total])
 	ok(pior_nuncavolta == 0, "Reduzir piscadas: uma célula ocupada nunca clareia (claro sobre escuro): %d" % pior_nuncavolta)

@@ -166,6 +166,8 @@ func iniciar(h) -> bool:
 	h.hab_anim_antes = str(_c.anim.get("antes", ""))
 	h.hab_anim_antes_ate = float(_c.anim.get("antes_ate", 0.0))
 	h.hab_anim_quadros = _c.anim.get("quadros", [])
+	h.hab_mira_livre = bool(_c.get("mira_livre", false))
+	h.hab_mov = float(_c.get("mov", 1.0))
 	h.hab_recarga_max = recarga_de(_c)
 	h.hab_recarga = h.hab_recarga_max
 	disparos += 1
@@ -240,6 +242,11 @@ func _missil(h, k: int) -> void:
 	var c = combate
 	var cor := _cor(_c.cor)
 	var lado := -1.0 if k % 2 == 0 else 1.0
+	if bool(_c.get("mira_livre", false)):  # cada míssil sai para a mira DESTE instante (mouse, analógico ou andar): livre em 360 graus
+		var d: Vector2 = h.mira_mundo - h.centro()
+		var m: Vector2 = d.normalized() if d.length() > 4.0 else h.dir_olhar
+		if m.length_squared() > 0.01:
+			_mira = m.normalized()
 	var perp := Vector2(-_mira.y, _mira.x)
 	var origem: Vector2 = h.pos + h.ORIGEM_GOLPE + perp * lado * float(_c.ombro) * _escala
 	var ang := deg_to_rad(float(_c.abre)) * lado * randf_range(0.15, 1.0)

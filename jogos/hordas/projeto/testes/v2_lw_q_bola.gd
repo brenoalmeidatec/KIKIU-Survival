@@ -6,6 +6,9 @@ extends "res://testes/isolamento_v2.gd"
 #  2. a piscada local: a luminância média de cada janela de 16x16 px (de 8 em 8 px; o que é transparente conta como chão médio) e, em cada janela, o menor período entre
 #     dois picos de subida (um ciclo claro-escuro-claro com amplitude de pelo menos 20 de 255); o maior número de ciclos por segundo tem de ficar em 2 Hz ou menos;
 #  3. o padrão interno: a bola só troca de padrão (`FASE_QUADROS` quadros seguidos com as mesmas cores) a cada 0,25 s de relógio ou mais.
+# RODADA 7: no normal a bola é a FOLHA nova (36 quadros com tempos não uniformes, mesma duração): mede que ela está ligada, quantos quadros distintos aparecem
+# (>= 32), os quadros por segundo de relógio (24 a 30), alfa só 0/1 e só cores da paleta. Os itens 2 e 3 (piscada local e padrão interno) valem para "Reduzir
+# piscadas" (a bola calma, ~0 Hz); o normal pode trocar mais rápido (é o pedido: mais quadros).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_lw_q_bola.tscn  (imprime "v2_lw_q_bola falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
@@ -79,12 +82,14 @@ func _medir(reduzir: bool) -> void:
 		return
 	var nome := "Reduzir piscadas" if reduzir else "normal"
 	# a luminância de cada janela, por quadro da bola (uma vez)
-	var lado: int = v.bola[0].get_width()
+	var quadros: Array = v.quadros_bola()
+	ok(v.cheia() != reduzir, "%s: a folha nova vale só fora de Reduzir piscadas" % ("Reduzir" if reduzir else "normal"))
+	var lado: int = quadros[0].get_width()
 	var n_j := (lado - JANELA) / 8 + 1
 	var lum: Array = []  # [quadro] -> PackedFloat32Array(n_j * n_j)
 	var imgs: Array = []
-	for k in v.bola.size():
-		var im: Image = v.bola[k].get_image()
+	for k in quadros.size():
+		var im: Image = quadros[k].get_image()
 		imgs.append(im)
 		lum.append(_janelas(im, n_j))
 	# toca no relógio: um passo = 1/60 s de relógio = 1,25/60 s do mundo
@@ -106,6 +111,13 @@ func _medir(reduzir: bool) -> void:
 		dur_sem_hit >= BOLA_ANTES * 2.0 - 0.02 and dur_sem_hit <= BOLA_ANTES * 2.6,
 		"%s: a bola dura de 2,0 a 2,6 vezes os %.2f s de antes (%.2f s)" % [nome, BOLA_ANTES, dur_sem_hit]
 	)
+	if not reduzir:
+		var qps := float(vistos.size()) / dur_sem_hit
+		print("bola normal: %d quadros na folha, %.1f quadros por s de relógio" % [quadros.size(), qps])
+		ok(vistos.size() >= 32, "normal: pelo menos 32 quadros distintos na tela (%d)" % vistos.size())
+		ok(qps >= 24.0 and qps <= 30.0, "normal: 24 a 30 quadros por s de relógio (%.1f)" % qps)
+		ok(_paleta_ok(imgs), "normal: alfa só 0/1 e só as cores da paleta do mecha")
+		return
 	# a piscada local de cada janela
 	var pior_hz := 0.0
 	var pior_j := -1
@@ -202,3 +214,25 @@ func _trocou_padrao(a: Image, b: Image) -> bool:
 			viu = true
 			melhor = minf(melhor, float(mudou) / float(comuns))
 	return viu and melhor > 0.08
+
+
+## Todo pixel da folha é transparente (alfa 0) ou opaco numa das 7 cores da paleta (BRANCO .. FUMACA_ESC de v2/explosao_mecha.gd).
+func _paleta_ok(imgs: Array) -> bool:
+	var pal := [Ex.BRANCO, Ex.CIANO_CLARO, Ex.CIANO, Ex.AZUL, Ex.AZUL_ESC, Ex.FUMACA, Ex.FUMACA_ESC]
+	for im in imgs:
+		for y in range(0, im.get_height()):
+			for x in range(0, im.get_width()):
+				var c: Color = im.get_pixel(x, y)
+				if c.a == 0.0:
+					continue
+				if c.a < 1.0:
+					return false
+				var achou := false
+				for p in pal:
+					if absf(c.r - p.r) < 0.01 and absf(c.g - p.g) < 0.01 and absf(c.b - p.b) < 0.01:
+						achou = true
+						break
+				if not achou:
+					print("cor fora da paleta: ", c)
+					return false
+	return true

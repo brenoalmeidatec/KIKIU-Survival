@@ -77,6 +77,7 @@ func _ready() -> void:
 	_dados()
 	_disparo()
 	_andar()
+	_mira_livre()
 	_busca()
 	_cone()
 	_reto()
@@ -159,17 +160,51 @@ func _andar() -> void:
 	h.entrada_forcada = Vector2.ZERO
 	passos(5)
 	h.entrada_forcada = Vector2(0, 1)
+	h.fonte = Heroi.Fonte.MOUSE
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
 	ok(h.habilidade(), "dispara andando")
-	var mira0: Vector2 = h.dir_olhar
 	passos(2)
 	p0 = h.pos
 	passos(30)
 	var com_e: float = (h.pos - p0).length()
 	ok(normal > 10.0 and absf(com_e / normal - 0.5) < 0.08, "anda a 50%% durante a E (normal %s, com a E %s)" % [normal, com_e])
-	ok(h.dir_olhar.is_equal_approx(mira0), "a mira fica travada no disparo")
+	ok(h.dir_olhar.x > 0.9, "andando para baixo com o mouse à direita, o mecha segue olhando o mouse (dir %s)" % h.dir_olhar)
 	ok(h.estado == Heroi.Estado.HABILIDADE and not h.hab_invul, "ainda na E, vulnerável")
 	h.entrada_forcada = Vector2.ZERO
 	passos(60)
+
+
+## Mira livre (05/11/2026, pedido do Alisson: "eles devem ser livres para qualquer posição"): no meio da E o mouse vai para o outro lado,
+## o mecha vira junto e os mísseis seguintes saem para lá; andando, as pernas tocam o ciclo (várias colunas), sem a pose parada de 3 s.
+func _mira_livre() -> void:
+	zerar()
+	var h = w.heroi
+	var ad = w.combate.adagas
+	ok(h.habilidade(), "dispara mirando para a direita")
+	ok(h.hab_mira_livre, "a E dos Mísseis é de mira livre")
+	passos(20)
+	w.mouse_forcado = h.centro() + Vector2(-100, 0)
+	passos(4)
+	ok(h.dir_olhar.x < -0.9, "o mecha vira para o mouse no meio da E (dir %s)" % h.dir_olhar)
+	var antes := {}
+	for j in ad.MAX:
+		if ad.a_rest[j] > 0.0:
+			antes[j] = true
+	passos(20)
+	var esquerda := 0
+	for j in ad.MAX:
+		if ad.a_rest[j] > 0.0 and not antes.has(j) and ad.a_dir[j].x < 0.0:
+			esquerda += 1
+	ok(esquerda >= 2, "os mísseis soltos depois saem para a esquerda (%d)" % esquerda)
+	h.entrada_forcada = Vector2(0, 1)
+	var colunas := {}
+	for i in 40:
+		passos(1)
+		colunas[h.coluna] = true
+	ok(h.estado == Heroi.Estado.HABILIDADE and colunas.size() >= 3, "andando na E as pernas andam (colunas %s)" % str(colunas.keys()))
+	h.entrada_forcada = Vector2.ZERO
+	passos(240)
+	ok(h.estado != Heroi.Estado.HABILIDADE, "a E acaba")
 
 
 ## A busca: um alvo fora do eixo (dentro do cone) é buscado e acertado; a explosão fere o vizinho que não estava no caminho.

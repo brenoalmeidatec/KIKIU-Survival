@@ -79,6 +79,16 @@ static func sprite_do_nome(nome_txt: String) -> String:
 	return ""
 
 
+## A imagem pronta do retrato do nome (campo opcional "retrato" em dados/v2_salao.json, dentro de assets/personagens/<pasta>/), ou vazio:
+## o LightWolf mostra o lobo encostado no mecha (#584). Sem o campo, a escolha usa o quadro parado da folha, como os outros.
+static func retrato_do_nome(nome_txt: String) -> String:
+	for n in nomes():
+		if str(n.nome) == nome_txt and str(n.get("retrato", "")) != "":
+			var c := "res://assets/personagens/%s/%s" % [str(n.get("pasta", "")), str(n.retrato)]
+			return c if ResourceLoader.exists(c) else ""
+	return ""
+
+
 ## A folha do personagem `id` (slot do save), ou vazio.
 static func sprite(id: String) -> String:
 	return sprite_do_nome(nome(id))

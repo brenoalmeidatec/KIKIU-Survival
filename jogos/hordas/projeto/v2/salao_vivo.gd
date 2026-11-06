@@ -308,8 +308,10 @@ func _caixa_corpo(pes: Vector2) -> Rect2:
 	var qw := float(_corpo_tamanho.x)
 	var qh := float(_corpo_tamanho.y)
 	var area: Rect2 = _corpo_caixas.get(chave, Rect2(0, 0, qw, qh))
-	var canto := Vector2(pes.x - qw * ESCALA_HEROI / 2.0, pes.y - qh * ESCALA_HEROI + 6.0)
-	return Rect2(canto + area.position * ESCALA_HEROI, area.size * ESCALA_HEROI)
+	var esc_v = _ctx.get("_escala")  # salao.gd desenha a folha grande (o mecha) em 1,5x; sem o campo, a escala de sempre
+	var e: float = float(esc_v) if esc_v != null else ESCALA_HEROI
+	var canto := Vector2(pes.x - qw * e / 2.0, pes.y - qh * e + 6.0)
+	return Rect2(canto + area.position * e, area.size * e)
 
 
 ## A caixa do corpo de um quadro da folha (coluna c, linha l), em px do quadro: começa na primeira linha com pelo menos 4 pixels opacos
@@ -630,13 +632,13 @@ func _montar_sombra_heroi() -> void:
 	_ator.chave = "heroi"
 	_ator.raiz = Ator.Ponto.new()
 	_ator.alt = float(h) - 3.0
-	_ator.esc = _ctx.ESCALA
+	_ator.esc = _ctx._escala  # 1,5 na folha grande (o mecha), 2 nos humanos: a sombra acompanha o desenho
 	_ator.rmax = 1.0
 	_ator.offset = Vector2(-w / 2.0, -h + 3.0)
 	_ator.regiao = Rect2(0, 0, w, h)
 	_ator.tex_n = tex
 	_ator.tex_b = Sombras.borrar_folha(im, w, h)
-	_ator.larg_blob = w * _ctx.ESCALA * 0.75
+	_ator.larg_blob = w * _ctx._escala * 0.75
 	_sombras.registrar_lote([_ator])
 	_sombras.definir_modo(modo_sombra)
 	_sombras.ativar(_ator, true)

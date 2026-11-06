@@ -207,8 +207,19 @@ func _retrato_certo(t, nome: String) -> void:
 	ok(tex is AtlasTexture, "retrato de %s é um quadro (AtlasTexture), não a imagem inteira" % nome)
 	if not tex is AtlasTexture:
 		return
-	# nenhum rosto: o retrato vem da folha _albedo.png do herói, nunca de assets/personagens/<pasta>/rosto.png
 	var caminho: String = tex.atlas.resource_path
+	var pronto := Personagens.retrato_do_nome(nome)
+	if pronto != "":  # retrato pronto (o LightWolf com o lobo, #584): a imagem do campo, em 1x, na mesma caixa e com os pés na base
+		ok(caminho == pronto, "retrato de %s é a imagem pronta (%s)" % [nome, caminho])
+		var reg_p: Rect2 = tex.region
+		ok(t._retrato.size == Vector2(t.RETRATO_L, t.RETRATO_ALT) and tex.get_size() == t._retrato.size, "retrato pronto de %s em 1x na caixa padrão" % nome)
+		ok(
+			reg_p.size.x <= t.RETRATO_L and reg_p.size.y <= t.RETRATO_ALT and reg_p.size.y >= 100.0,
+			"retrato pronto de %s cabe na caixa (%s)" % [nome, reg_p.size]
+		)
+		ok(is_equal_approx(tex.margin.position.y + reg_p.size.y, tex.get_height()), "pés de %s apoiados na base da caixa" % nome)
+		return
+	# nenhum rosto: o retrato vem da folha _albedo.png do herói, nunca de assets/personagens/<pasta>/rosto.png
 	ok(
 		caminho.ends_with("_albedo.png") and caminho.begins_with(Personagens.PASTA_SPRITES),
 		"retrato de %s é a folha de sprites (%s), não o rosto" % [nome, caminho]
@@ -236,10 +247,12 @@ func _todos_iguais(t) -> void:
 	var escalas := {}
 	var vistos := 0
 	for n in Personagens.nomes():
-		t._definir_retrato(true, Personagens.folha_do_nome(str(n.nome)))
+		var pronto := Personagens.retrato_do_nome(str(n.nome))
+		t._definir_retrato(true, Personagens.folha_do_nome(str(n.nome)), pronto)
 		ok(t._retrato.visible, "'%s' mostra o corpo" % n.nome)
 		tamanhos[t._retrato.size] = true
-		escalas[t._retrato.size.x / t._retrato.texture.get_width()] = true
+		if pronto == "":  # o retrato pronto (LightWolf) é 1x por natureza; a escala igual vale para os quadros de folha
+			escalas[t._retrato.size.x / t._retrato.texture.get_width()] = true
 		ok(not str(t._retrato.texture.atlas.resource_path).contains("rosto"), "'%s' sem rosto.png" % n.nome)
 		vistos += 1
 	ok(vistos >= 9, "todos os nomes checados, LightWolf incluído (%d)" % vistos)

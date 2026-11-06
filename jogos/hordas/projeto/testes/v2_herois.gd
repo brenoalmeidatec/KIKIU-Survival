@@ -152,8 +152,8 @@ func _t_dados() -> void:
 		var ps: Array = h.cfg.golpe.passos
 		ok(ps.size() >= 1, "%s tem passos de golpe" % h.id)
 	ok(
-		ids == ["hazaki", "nicao", "lucas", "matheus", "joao", "beto", "lukako", "fabio"],
-		"8 heróis na ordem hazaki, nicao, lucas, matheus, joao, beto, lukako, fabio (%s)" % str(ids)
+		ids == ["hazaki", "nicao", "lightwolf", "lucas", "matheus", "joao", "beto", "lukako", "fabio"],
+		"9 heróis na ordem hazaki, nicao, lightwolf, lucas, matheus, joao, beto, lukako, fabio (%s)" % str(ids)
 	)
 	ok(str(cat.get("_ajuda", "")) != "", "v2_herois.json tem _ajuda")
 	# o Hazaki repete v2_combate.json: nada muda para ele

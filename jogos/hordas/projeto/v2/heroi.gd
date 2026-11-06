@@ -226,6 +226,8 @@ var hab_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
 var hab_anim_antes := ""  # animação da folha ("animacoes", ex.: "escudo") que toca no começo da E, antes do passo do combo (vazio = só o passo)
 var hab_anim_antes_ate := 0.0  # até que fração da duração ela vale; o passo do combo ocupa o resto
 var hab_anim_quadros: Array = []  # quais quadros do passo tocam nesse resto (vazio = o passo inteiro)
+var hab_mira_livre := false  # a E deixa a mira e as pernas livres (mira_livre nos dados: os Mísseis do mecha); sem o campo, a mira trava e a E toca a pose dela
+var hab_mov := 1.0  # fração da velocidade de andar durante a E (o passo do andar acompanha, sem patinar)
 var hab_disparos := 0  # testes
 var hab_negados := 0  # testes
 # ruptura (tecla E)
@@ -758,7 +760,9 @@ func atualizar(dt: float) -> void:
 	# mira (sempre calculada: o golpe sai para ela). No golpe ela fica travada (o compromisso de direção do corpo a corpo), menos na mira
 	# contínua, em que o golpe é só a cadência do tiro e o _golpe segue a mira de agora.
 	var c := centro()
-	var trava := estado == Estado.ESPECIAL or estado == Estado.HABILIDADE or (estado == Estado.GOLPE and not mira_continua())
+	var trava := estado == Estado.ESPECIAL or (estado == Estado.HABILIDADE and not hab_mira_livre) or (estado == Estado.GOLPE and not mira_continua())
+	if fonte == Fonte.ANDA and estado == Estado.HABILIDADE and hab_mira_livre and v != Vector2.ZERO:
+		dir_olhar = v.normalized()  # só no teclado: a E de mira livre olha (e solta) para onde anda, como o andar comum
 	if fonte == Fonte.MOUSE and not trava:
 		var d: Vector2 = mundo.mouse_mundo() - c
 		if d.length() > 4.0:
@@ -1449,7 +1453,7 @@ func _visual(dt: float, v: Vector2) -> void:
 	_contar_pose_tiro(dt)
 	var anda_atira := _anda_atirando(v)
 	_lado_passo = _lado_strafe(v, anda_atira)
-	if (estado == Estado.LIVRE and andando) or anda_atira:
+	if (_anda_livre() and andando) or anda_atira:
 		# andando e atirando, as pernas seguem o passo de verdade: no golpe o herói anda a mov_golpe da velocidade (_golpe), e o ciclo também
 		# andando contra a mira (de costas) no andar_tiro, o ciclo toca ao contrário: o pé de apoio vai para a frente e o mecha recua
 		# sem moonwalk. A fase é contínua nos dois sentidos (nunca salta de quadro ao virar), por isso o índice usa posmod.
@@ -1460,14 +1464,19 @@ func _visual(dt: float, v: Vector2) -> void:
 			# o strafe começa na pose 0 (junta, os pés sob o corpo) nos dois lados: tocado ao contrário, a fase 0 cairia no quadro 5 (base
 			# aberta) já no primeiro passo; a semente põe o começo no fim da pose 0, que então dura o mesmo que as outras.
 			_anim = _passo_andar()
-		_anim += sentido * dt * (float(mundo.combate.cfg.heroi.mov_golpe) if estado == Estado.GOLPE else (1.45 if correndo else 1.0))
+		var ritmo := 1.45 if correndo else 1.0
+		if estado == Estado.GOLPE:
+			ritmo = float(mundo.combate.cfg.heroi.mov_golpe)
+		elif estado == Estado.HABILIDADE:
+			ritmo = hab_mov
+		_anim += sentido * dt * ritmo
 		c = 1 + posmod(floori(_anim / _passo_andar()), int(tipo.info.colunas.size()) - 1)
 		if _lado_passo != 0.0 and not anda_atira:
 			c = _coluna_anim("strafe", posmod(floori(_anim / _passo_andar()), (tipo.info.animacoes.strafe.colunas as Array).size()))
 		_parado_t = 0.0
 	else:
 		_anim = 0.0
-		if estado == Estado.LIVRE and _tem_anim("parado"):  # respira: os 4 quadros do "parado" da folha em ciclo (sem ela, a coluna 0)
+		if _anda_livre() and _tem_anim("parado"):  # respira: os 4 quadros do "parado" da folha em ciclo (sem ela, a coluna 0)
 			_parado_t = fmod(_parado_t + dt, maxf(_duracao_anim("parado"), 0.001))
 			c = _coluna_por_tempo("parado", _parado_t)
 		else:
@@ -1680,9 +1689,14 @@ func _anda_atirando(v: Vector2) -> bool:
 ## com a mira (|cos| abaixo de animacoes.strafe.limiar_cos, com histerese para não piscar perto do limite) e com a folha que tem "strafe"
 ## (ou "strafe_tiro" andando e atirando). Devolve o lado no espaço do rig (+1 = +x, a direita da tela com o herói de frente) ou 0.
 ## Com a fonte ANDA a mira é o próprio movimento, então só a mira do mouse ou do stick chega aqui.
+## O corpo anda e respira pelo ciclo comum: no LIVRE e na E de mira livre (os Mísseis do mecha andam a hab_mov da velocidade).
+func _anda_livre() -> bool:
+	return estado == Estado.LIVRE or (estado == Estado.HABILIDADE and hab_mira_livre)
+
+
 func _lado_strafe(v: Vector2, anda_atira: bool) -> float:
 	var nome := "strafe_tiro" if anda_atira else "strafe"
-	if v == Vector2.ZERO or escudo_ativo or not _tem_anim(nome) or not ((estado == Estado.LIVRE and andando) or anda_atira):
+	if v == Vector2.ZERO or escudo_ativo or not _tem_anim(nome) or not ((_anda_livre() and andando) or anda_atira):
 		return 0.0
 	var a: Dictionary = tipo.info.animacoes[nome]
 	var folga := float(a.get("histerese", 0.08))
@@ -1738,6 +1752,8 @@ func _coluna_acao(dt: float, anda_atira := false) -> int:
 		var passo := mini(esp_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
 		var p := fposmod(esp_t / maxf(esp_dur, 0.001) * esp_anim_ciclos, 0.999)
 		return _coluna_anim("combo", passo * por_golpe + int(p * por_golpe))
+	if estado == Estado.HABILIDADE and hab_mira_livre:
+		return -1  # E de mira livre (Mísseis): as pernas andam, fazem strafe e respiram como no LIVRE; nada de pose parada por 3 s
 	if estado == Estado.HABILIDADE:
 		var pose_habilidade := str(tipo.info.get("poses_habilidades", {}).get(hab_id, ""))
 		if pose_habilidade != "" and _tem_anim(pose_habilidade):
