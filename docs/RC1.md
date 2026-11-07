@@ -29,6 +29,9 @@ PRs antigos fora da RC1 (ficam abertos como referência ou fecham): #476, #330, 
 Depois do #621, **só entra correção** até a RC1: crash, save, build, travamento, texto errado, desempenho no i5.
 Recurso novo vai para a v3 (#416). Polimento visual pequeno do Isac (#459) entra se for só dados ou arte.
 
+**Exceção do Alisson (07/11):** a teia da aranha (#628) e o golpe de martelo do Nick (#630) entraram na RC1 depois do congelamento,
+a pedido dele. Os números da teia (6 teias, 12 s, recarga de 6 a 9 s, lentidão 0,5) são iniciais e se ajustam jogando.
+
 ## 3. O que precisa ser verificado antes da tag
 
 - [ ] **Partida completa nos 4 mapas** com cada um dos 3 principais (Hazaki, Nick, LightWolf), em F/M/D: o robô de
