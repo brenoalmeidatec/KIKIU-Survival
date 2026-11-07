@@ -144,6 +144,16 @@ func _ready() -> void:
 	var sem_teia: float = h.pos.x - p2.x
 	ok(sem_teia > 5.0 and absf(com_teia - sem_teia) < 1.0, "o empurrão anda o mesmo dentro e fora da teia (%.1f e %.1f px)" % [com_teia, sem_teia])
 
+	# 5b. a teia da aranha e a da Rainha Tecelã juntas: vale o MENOR (0,5), nunca o produto (0,25)
+	zerar()
+	poe_teia(c)
+	var ch = w.combate.chefes
+	ch._teia_mult = 0.5
+	ch._teia_t = 30.0
+	var as_duas := andar(c, 30)
+	ch._teia_t = 0.0
+	ok(absf(as_duas - fora * 0.5) < fora * 0.06, "aranha + Rainha: anda a METADE, não um quarto (fora %.1f px, nas duas %.1f px)" % [fora, as_duas])
+
 	# 6. NENHUM relógio sobre a cabeça do herói preso (pedido do Alisson: "não faz sentido"): a lentidão se sente no movimento
 	zerar()
 	poe_teia(h.pos)

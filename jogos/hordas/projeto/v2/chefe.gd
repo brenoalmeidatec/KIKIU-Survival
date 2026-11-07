@@ -321,7 +321,9 @@ func _teia_atualizar(dt: float) -> void:
 	if h.estado == h.Estado.LIVRE and h.vivo():
 		var andou: Vector2 = h.pos - _h_antes
 		if andou.length_squared() > 0.0001 and andou.length() < 40.0:  # um salto grande é teleporte, não passo
-			mundo.mover(h, -andou * (1.0 - _teia_mult))
+			# a teia da aranha (Heroi.lento_fontes) já cortou o passo para k: aqui só falta ir de k ao menor dos dois (vale o MENOR, nunca o produto)
+			var k: float = h.lento_k() if h.lento_estados.has(h.estado) else 1.0
+			mundo.mover(h, -andou * (1.0 - minf(_teia_mult, k) / k))
 	_h_antes = h.pos
 	_teia_marca_t -= dt
 	if _teia_marca_t <= 0.0:
