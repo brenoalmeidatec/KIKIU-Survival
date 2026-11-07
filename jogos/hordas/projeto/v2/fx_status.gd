@@ -1,5 +1,5 @@
 extends RefCounted
-## Ícones de status sobre o monstro (e sobre o herói, quando é ele quem sofre): relógio (lento_t) e estrelas (atordoa_t). O fogo não é ícone: toma o
+## Ícones de status sobre o monstro: relógio (lento_t) e estrelas (atordoa_t). O herói não leva ícone nenhum: a lentidão da teia dele se sente no movimento. O fogo não é ícone: toma o
 ## corpo inteiro pelo shader do sprite (v2/status_corpo.gd). Os ícones são
 ## tocados por `combate.fx_folha` (v2/fx_folha.gd, folhas em dados/v2_pixelfx.json). O jogo só tem estes três status; congelado, envenenado e
 ## sangrando não existem como mecânica e por isso não têm efeito aqui.
@@ -15,7 +15,7 @@ const FOGO := 0
 const LENTO := 1
 const ATORDOA := 2
 const IDS := ["", "slowed", "stunned"]  # o fogo não tem folha: a chama é pintada pelo shader do corpo (v2/status_corpo.gd), LIMITE[0] = 0
-const LIMITE := [0, 6, 6]  # efeitos por tipo, somando os monstros (o herói lento fica de fora: usa o 8 do registro)
+const LIMITE := [0, 6, 6]  # efeitos por tipo, somando os monstros
 const ATORDOA_MIN := 0.4  # só vale atordoamento longo (muralha, batida, escudo perfeito); o corte comum de 0,3 s não acende estrelas
 const FATIAS := 6  # a lista de monstros é varrida inteira em ~6 quadros
 
@@ -25,7 +25,6 @@ var _m: Array = []  # por vaga: o monstro rastreado, ou null
 var _anc: Array = []  # por vaga: a âncora (Node2D) que acompanha o monstro
 var _alca := PackedInt32Array()  # vaga * 3 + tipo: alça do fx_folha (0 = sem efeito)
 var _cont := PackedInt32Array([0, 0, 0])  # efeitos vivos por tipo
-var _alca_heroi := 0
 var _cursor := 0
 
 
@@ -46,20 +45,13 @@ func limpar() -> void:
 	for i in MAX_MONSTROS:
 		if _m[i] != null:
 			_largar(i, fx)
-	if fx != null and _alca_heroi != 0:
-		fx.soltar(_alca_heroi)
-	_alca_heroi = 0
 	_cont.fill(0)
 	ativos = 0
 
 
-## Quantos efeitos de status estão no ar sobre monstros (testes), e se o herói tem o relógio da teia.
+## Quantos efeitos de status estão no ar sobre monstros (testes).
 func n_efeitos() -> int:
 	return _cont[0] + _cont[1] + _cont[2]
-
-
-func heroi_com_efeito() -> bool:
-	return _alca_heroi != 0
 
 
 func atualizar(_dt: float) -> void:
@@ -67,14 +59,13 @@ func atualizar(_dt: float) -> void:
 		return
 	var fx = combate.fx_folha
 	if not Anim.suave:
-		if ativos > 0 or _alca_heroi != 0:
+		if ativos > 0:
 			limpar()
 		return
 	for i in MAX_MONSTROS:
 		if _m[i] != null:
 			_passo(i, fx)
 	_varrer()
-	_heroi(fx)
 
 
 ## Os efeitos da vaga seguem o estado do monstro; sem nenhum, a vaga volta.
@@ -161,17 +152,3 @@ func _varrer() -> void:
 		(_anc[v] as Node2D).visible = true
 		if ativos >= MAX_MONSTROS:
 			return
-
-
-## O herói só sofre a lentidão da teia da Rainha Tecelã (v2/chefe.gd): o relógio fica preso ao nó dele.
-func _heroi(fx) -> void:
-	var h = combate.mundo.heroi
-	var quer: bool = h != null and h.vivo() and combate.chefes != null and combate.chefes.heroi_lento()
-	if _alca_heroi != 0 and not fx.vivo(_alca_heroi):
-		_alca_heroi = 0
-	if quer:
-		if _alca_heroi == 0:
-			_alca_heroi = fx.prender("slowed", h.raiz, Vector2(0, -float(h.alt) - 4.0))
-	elif _alca_heroi != 0:
-		fx.soltar(_alca_heroi)
-		_alca_heroi = 0
