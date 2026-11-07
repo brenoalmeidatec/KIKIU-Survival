@@ -1,7 +1,6 @@
 extends RefCounted
 ## Status que tomam o corpo inteiro do monstro: fogo, gelo, veneno, choque e sangue são desenhados pelo próprio shader do sprite, lendo o alfa do
-## quadro atual. Por isso seguem a silhueta em toda direção e em todo quadro, sem nó nem folha por monstro. A chama sobe a partir do contorno
-## e cobre o corpo; o gelo recolore e solta pontas; o veneno borbulha; o choque estala; o sangue escorre. Tudo em pixel inteiro, a 12 quadros por segundo.
+## quadro atual. Por isso seguem a silhueta em toda direção e em todo quadro, sem nó nem folha por monstro. O fogo tinge o corpo (escurece, aquece e põe a borda de brasa por dentro) e o resto é de v2/chama_gotas.gd; o gelo recolore e solta pontas; o veneno borbulha; o choque estala; o sangue escorre. Tudo em pixel inteiro, a 12 quadros por segundo.
 ## O lote da horda recebe o estado no alfa da instância (v2/horda.gd). Elite e chefe usam `material_no`.
 ## Perfil Baixo: estado 0 (fica a tinta do monstro.gd). Guia: docs/visual_2_5d/estilo_pixelfx.md.
 
@@ -22,7 +21,7 @@ const GLSL := """
 	float t = floor(TIME * 12.0);
 	float baixo = 99.0;  // px até o corpo, olhando para baixo: a chama nasce do contorno
 	float cima = 99.0;  // px até o corpo, olhando para cima: o que escorre
-	for (int k = 0; k < 9; k++) {
+	for (int k = 0; k < 10; k++) {
 		float f = float(k);
 		vec2 q = p + vec2(0.0, f);
 		if (baixo > 98.0 && q.x >= 0.0 && q.y >= 0.0 && q.x < tam.x && q.y < tam.y && texture(TEXTURE, (base + q + 0.5) / ta).a > 0.5) { baixo = f; }
@@ -38,19 +37,20 @@ const GLSL := """
 	float h2 = fract(sin(dot(vec2(floor(p.x / 2.0) + sem, floor((p.y + t * 2.0) / 3.0)), vec2(39.346, 11.135))) * 24634.6345);
 	float h3 = fract(sin(dot(p + vec2(sem, t), vec2(73.156, 52.235))) * 13758.5453);
 	float lum = dot(c.rgb, vec3(0.3, 0.59, 0.11));
-	if (est < 1.5) {  // fogo: o corpo arde em línguas que sobem; por fora, a chama sai do contorno
-		float alto = 3.0 + 5.0 * h1;
-		float d = corpo > 0.5 ? 0.0 : min(baixo, lado * 2.0);
+	if (est < 1.5) {  // fogo: o corpo fica legível (escurecido e aquecido, estável) com a borda de brasa por dentro; as gotas de fogo que sobem são partículas (v2/chama_gotas.gd), não shader
 		if (corpo > 0.5) {
-			float k = h2 + (p.y / tam.y) * 0.3;
 			if (lum < 0.1) { c.rgb = c.rgb * 0.6; }  // o contorno do bicho fica: ele continua legível dentro do fogo
-			else if (k > 1.05) { c.rgb = vec3(1.9, 1.6, 0.8); }
-			else if (k > 0.86) { c.rgb = vec3(1.9, 0.95, 0.22); }
-			else if (k > 0.68) { c.rgb = vec3(1.5, 0.38, 0.08); }
-			else { c.rgb = c.rgb * vec3(0.62, 0.4, 0.32); }
-		} else if (d <= alto) {
-			float k = d / alto;
-			c = vec4(k < 0.35 ? vec3(1.9, 1.5, 0.7) : (k < 0.7 ? vec3(1.9, 0.85, 0.2) : vec3(1.4, 0.3, 0.07)), 1.0);
+			else {
+				c.rgb = c.rgb * vec3(0.7, 0.42, 0.3);
+				float a1 = p.y >= 1.0 ? texture(TEXTURE, (base + p - vec2(0.0, 1.0) + 0.5) / ta).a : 0.0;
+				float a2 = p.y >= 2.0 ? texture(TEXTURE, (base + p - vec2(0.0, 2.0) + 0.5) / ta).a : 0.0;
+				float hp = fract(sin(dot(p + vec2(sem, 3.0), vec2(91.7, 17.3))) * 43758.5453);
+				float te = floor(TIME + hp);  // cada pixel sorteia a brasa no seu próprio compasso, 1 vez por segundo
+				float hr = fract(sin(dot(p + vec2(sem, te), vec2(73.156, 52.235))) * 13758.5453);
+				if (a1 < 0.5) { c.rgb = vec3(0.965, 0.659, 0.118); }  // a faixa logo abaixo da borda de cima brilha
+				else if (a2 < 0.5) { c.rgb = vec3(0.878, 0.322, 0.102); }
+				else if (hr > 0.96) { c.rgb = hr > 0.985 ? vec3(0.965, 0.659, 0.118) : vec3(0.878, 0.322, 0.102); }  // poucas brasas no corpo
+			}
 		}
 	} else if (est < 2.5) {  // gelo: o corpo vira gelo em 3 tons, com a borda branca e pontas paradas para fora
 		if (corpo > 0.5) {
@@ -84,18 +84,40 @@ const GLSL := """
 		}
 	}
 """
-## Para Sprite2D de elite e chefe: `regiao` é o recorte do quadro no atlas, em px. Sem folga: esses sprites já têm margem na célula.
+## Folga (px) que o quadrado do sprite de elite e chefe ganha com status, para a chama, o arco, a bolha e a gota passarem do contorno da célula:
+## x nos dois lados, y em cima (a chama sobe até 8 px) e embaixo (a gota do sangue cai até 8 px). É a mesma folga do lote (v2/horda.gd).
+const FOLGA_NO := Vector2(4.0, 9.0)
+
+## Para Sprite2D de elite e chefe: `regiao` é o recorte do quadro no atlas, em px. Um Sprite2D com região só desenha o retângulo da região, e as folhas
+## grandes (`_xN`) têm 0 px de margem nos lados: o shader de fragmento nunca roda fora dele e a chama saía cortada na borda da célula. Por isso o
+## vertex() estica o quadrado em `folga` px para os quatro lados (a posição e o UV na mesma conta, pixel inteiro, o desenho do monstro não anda) e o
+## fragment() zera o que cai fora da célula (o UV esticado lê as células vizinhas da folha). `centro` é o centro do quadrado no espaço do nó
+## (`offset` + metade da região; o sprite não é centralizado). Quem sabe de que lado cada canto está é o sinal de VERTEX - centro; o espelho
+## (flip_h) inverte o UV mas não a posição, então o sentido do UV vem de onde o canto leu a célula.
 const SHADER_NO := (
 	"""shader_type canvas_item;
 uniform float estado = 0.0;
 uniform float semente = 0.0;
 uniform vec4 regiao = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec2 centro = vec2(0.0);
+uniform vec2 folga = vec2(4.0, 9.0);
+void vertex() {
+	if (estado > 0.5) {
+		vec2 ts = 1.0 / TEXTURE_PIXEL_SIZE;
+		vec2 p = UV * ts - regiao.xy;
+		vec2 lado = vec2(VERTEX.x < centro.x ? -1.0 : 1.0, VERTEX.y < centro.y ? -1.0 : 1.0);
+		vec2 sentido = vec2((p.x > regiao.z * 0.5) == (lado.x > 0.0) ? 1.0 : -1.0, (p.y > regiao.w * 0.5) == (lado.y > 0.0) ? 1.0 : -1.0);
+		VERTEX += lado * folga;
+		UV = (regiao.xy + p + lado * sentido * folga) / ts;
+	}
+}
 void fragment() {
 	vec4 c = texture(TEXTURE, UV) * COLOR;
 	if (estado > 0.5) {
 		vec2 base = regiao.xy;
 		vec2 tam = regiao.zw;
 		vec2 p = floor(UV * vec2(textureSize(TEXTURE, 0)) - base);
+		if (p.x < 0.0 || p.y < 0.0 || p.x >= tam.x || p.y >= tam.y) { c = vec4(0.0); }
 		float est = estado;
 		float sem = semente;
 """
@@ -117,4 +139,5 @@ static func material_no(semente: float) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = _shader_no
 	m.set_shader_parameter("semente", semente)
+	m.set_shader_parameter("folga", FOLGA_NO)
 	return m
