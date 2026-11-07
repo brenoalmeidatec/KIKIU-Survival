@@ -663,10 +663,19 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 			audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
 	var alc: float = alcance_do_passo(passo, h)
+	if martelo_do_passo(passo):  # o kanabo do Nick: rastro de martelo descendo (curto e grosso), não o arco de lâmina; o chão vem no acerto (golpear)
+		fx.martelo_rastro(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, cor, dur * 0.95)
+		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
+		return
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
 	audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0 if passo.nome != "estocada" else 0.0)), 0.02)
+
+
+## O passo é de martelo (kanabo)? Pelo campo "fx" do passo em v2_herois.json: a batida e a pancada do Nick.
+func martelo_do_passo(passo: Dictionary) -> bool:
+	return str(passo.get("fx", "")) == "martelo"
 
 
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
@@ -686,6 +695,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nick: empurra e atordoa mais
 	if pancada:
 		_estouro_chao(h, alc, passo)
+	elif martelo_do_passo(passo):  # a batida: o impacto cai à frente do herói (rachaduras, pedrinhas, anel de choque achatado)
+		var cm: Dictionary = Dados.json("v2_martelo").get("impacto", {})
+		fx.martelo_chao(false, h.pos + Vector2(0, -2) + dir * alc * float(cm.get("ponto", 0.8)), alc, _cor(passo.cor))
 	var cos_meio := cos(deg_to_rad(arco * 0.5))
 	var parada := 0.0
 	var tremor := 0.0
@@ -762,6 +774,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			mundo.cam.socar(0.008 + 0.006 * tremor)
 	elif pancada:
 		mundo.cam.tremer(float(passo.tremor) * 0.5, 0.15)  # o chão treme mesmo sem acertar ninguém
+	elif martelo_do_passo(passo):  # a batida no ar também faz o chão tremer um pouco
+		mundo.cam.tremer(float(Dados.json("v2_martelo").get("impacto", {}).get("tremor_sem_acerto", 1.0)), 0.12)
 	return n
 
 
@@ -769,7 +783,10 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 func _estouro_chao(h, alc: float, passo: Dictionary) -> void:
 	var cor := _cor(passo.cor)
 	var p: Vector2 = h.pos + Vector2(0, -2)
-	armas.novas.tocar_fx(Anim.de("fx_pancada").get("impacto", {}), p)
+	if martelo_do_passo(passo):  # a onda de choque circular do martelo (folha própria); "Reduzir piscadas" pode pular a parte que acende e apaga
+		fx.martelo_chao(true, p, alc, cor)
+	else:
+		armas.novas.tocar_fx(Anim.de("fx_pancada").get("impacto", {}), p)
 	fx.estouro(p, Color(0.75, 0.68, 0.55), 12)
 	fx.luz_rapida(p + Vector2(0, -6), cor, 1.8, alc * 2.6, 0.3)
 	audio.tocar("impacto", 0.5, 2.0, 0.05)

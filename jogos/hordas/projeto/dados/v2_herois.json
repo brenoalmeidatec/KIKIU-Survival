@@ -120,6 +120,7 @@
 					"passos": [
 						{
 							"nome": "batida",
+							"fx": "martelo",
 							"dano": 24,
 							"alcance": 56,
 							"arco": 150,
@@ -141,6 +142,7 @@
 						},
 						{
 							"nome": "pancada",
+							"fx": "martelo",
 							"dano": 40,
 							"alcance": 62,
 							"arco": 360,
