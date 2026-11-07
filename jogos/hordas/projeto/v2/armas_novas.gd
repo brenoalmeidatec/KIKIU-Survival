@@ -64,7 +64,9 @@ const QUEDA_ANEL := 0.35  # s da peça que cai antes do anel (Martelo do Trovão
 const ENTRADA_NUVEM := 0.3
 const VEL_ANIM_MIN := 0.5
 const VEL_ANIM_MAX := 2.5
-const MAX_FX := 48  # impactos e marcas tocando ao mesmo tempo; cheio, o mais velho dá lugar
+## Impactos e marcas tocando ao mesmo tempo; cheio, o mais velho dá lugar. Cada morte (`combate.matar`) pede um efeito, então a conta é pelo teto de vivos
+## (84 x 1,5 do Difícil x 1,3 do Pesadelo = 164) mais 28 vagas para os impactos de arma que tocam junto da limpeza da tela. testes/v2_fx_pico.gd confere os dois.
+const MAX_FX := 192
 const COR_CRIT := Color(1.0, 0.74, 0.2)  # o número do crítico (o mesmo de combate.gd)
 const RICOCHETE_ALC := 110.0  # px: até onde o tiro com `ricochete` procura o próximo alvo
 static var _tex_fumaca: Texture2D
