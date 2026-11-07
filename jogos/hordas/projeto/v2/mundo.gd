@@ -56,6 +56,7 @@ const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a ca
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
 const MARGEM_COLISAO := 120.0  # monstro só colide com as barreiras a até 120 px da tela (#336)
 const Colisao := preload("res://v2/colisao.gd")
+const Controles := preload("res://v2/controles.gd")  # BOTOES_MOUSE: quais botões contam como clique de mira
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
 ## Folhas que só os elencos dos mapas usam (#449): não entram no sorteio padrão (TIPOS_MONSTRO/PESOS_MONSTRO), mas têm atlas, stats e pool.
@@ -107,6 +108,8 @@ var status  # card "SUA BUILD" (status.gd): a tecla C liga no HUD e a pausa o mo
 var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as telas leem aqui)
 var trilha  # música de fundo (trilha.gd); null nas medições e nas fotos, que ficam mudas
 var _qualidade := QualidadeAuto.new()  # a contagem do fps travado (opção qualidade_auto)
+var _mm_acum := Vector2.ZERO  # deslocamento líquido recente do mouse em px de tela (mouse_intencional)
+var _mm_t_ms := 0
 var _qualidade_ligada := false  # só no jogo de verdade: sem teste, sem argumentos e com janela
 var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
@@ -886,6 +889,29 @@ func mouse_mundo() -> Vector2:
 	return cam.centro_base() - Vector2(LARG, ALT) / 2.0 + ap.mouse_na_tela()
 
 
+## O evento é o jogador usando o mouse DE PROPÓSITO? Só então a fonte da mira vira o MOUSE (heroi.fonte): clique (esquerdo, direito, meio ou
+## lateral; a roda não conta) ou um movimento com deslocamento líquido >= `limiar_px` px de TELA numa janela curta (`janela_s`; dados/v2_combate.json
+## > heroi > mira_mouse). O deslocamento é um vetor que se esvai com o tempo (cai a 1/e a cada `janela_s`): ida e volta (tremor, mesa batendo,
+## ruído do sensor) se anula, e um esbarrão de poucos px some sozinho. Antes, QUALQUER movimento prendia a mira no cursor e andar não a soltava
+## (regra do strafe, heroi.gd), então quem joga no teclado ou no controle perdia a mira com um toque no mouse. `agora_ms` só existe para o teste.
+func mouse_intencional(e: InputEvent, agora_ms := -1) -> bool:
+	if e is InputEventMouseButton:
+		return e.pressed and e.button_index in Controles.BOTOES_MOUSE
+	if not (e is InputEventMouseMotion):
+		return false
+	var cfg: Dictionary = combate.cfg.heroi.get("mira_mouse", {}) if combate != null else {}
+	var limiar := float(cfg.get("limiar_px", 16.0))
+	var janela_ms := maxf(1.0, float(cfg.get("janela_s", 0.25)) * 1000.0)
+	var t: int = Time.get_ticks_msec() if agora_ms < 0 else agora_ms
+	_mm_acum *= exp(-float(t - _mm_t_ms) / janela_ms)
+	_mm_t_ms = t
+	_mm_acum += (e as InputEventMouseMotion).screen_relative
+	if _mm_acum.length() >= limiar:
+		_mm_acum = Vector2.ZERO
+		return true
+	return false
+
+
 func _input(e: InputEvent) -> void:
 	if status != null and status.entrada(e):  # C liga e desliga o card da build, também sobre a escolha de cartas e o baú (que comem as teclas)
 		get_viewport().set_input_as_handled()
@@ -897,7 +923,7 @@ func _input(e: InputEvent) -> void:
 	if combate != null and combate.telas.entrada(e):
 		get_viewport().set_input_as_handled()
 		return
-	if (e is InputEventMouseMotion or e is InputEventMouseButton) and heroi != null:
+	if heroi != null and mouse_intencional(e):
 		heroi.fonte = Heroi.Fonte.MOUSE
 	if heroi != null and heroi.entrada_forcada == null and not combate.pausado:
 		heroi.entrada_evento(e)
