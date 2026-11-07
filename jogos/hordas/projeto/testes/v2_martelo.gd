@@ -80,7 +80,10 @@ func folha_de(s: Sprite2D) -> Texture2D:
 
 func _t_dados() -> void:
 	ok(w.combate.martelo_do_passo(passo_de("batida")) and w.combate.martelo_do_passo(passo_de("pancada")), "Nick: batida e pancada são passos de martelo")
-	ok(not w.combate.martelo_do_passo({"nome": "corte"}) and not w.combate.martelo_do_passo({"nome": "estocada", "fx": ""}), "katana: corte e estocada não são de martelo")
+	ok(
+		not w.combate.martelo_do_passo({"nome": "corte"}) and not w.combate.martelo_do_passo({"nome": "estocada", "fx": ""}),
+		"katana: corte e estocada não são de martelo"
+	)
 	for hid in ["hazaki", "lightwolf"]:
 		for hd in Dados.json("v2_herois").herois:
 			if str(hd.id) == hid:
@@ -91,7 +94,10 @@ func _t_dados() -> void:
 	ok(int(def.martelo_impacto.quadros) == 12 and int(def.martelo_onda.quadros) == 14, "martelo_impacto 12 quadros, martelo_onda 14")
 	for nome in ["martelo_impacto", "martelo_onda"]:
 		for par in def[nome].tam:
-			ok(absf(float(par[1]) / float(par[0]) - 0.62) < 0.035 and int(par[0]) % 2 == 0 and int(par[1]) % 2 == 0, "%s %s: par e achatada em ~0,62 (avisos.ACHATA)" % [nome, par])
+			ok(
+				absf(float(par[1]) / float(par[0]) - 0.62) < 0.035 and int(par[0]) % 2 == 0 and int(par[1]) % 2 == 0,
+				"%s %s: par e achatada em ~0,62 (avisos.ACHATA)" % [nome, par]
+			)
 	var m: Dictionary = Dados.json("v2_martelo")
 	ok(m.has("_ajuda") and m.has("rastro") and m.has("impacto") and m.has("onda") and float(m.repete_calmo) > 0.0, "v2_martelo.json: tem _ajuda e os blocos")
 
@@ -105,7 +111,10 @@ func _t_folhas_em_disco() -> void:
 			var alt := int(par[1])
 			var tex := load("res://assets/v2/efeitos/efeito_%s_e%d.png" % [nome, lar]) as Texture2D
 			var im := tex.get_image() if tex != null else null
-			ok(im != null and im.get_width() == int(d.quadros) * lar and im.get_height() == int(d.linhas) * alt, "%s %s: a folha tem %d quadros x %d linhas" % [nome, par, d.quadros, d.linhas])
+			ok(
+				im != null and im.get_width() == int(d.quadros) * lar and im.get_height() == int(d.linhas) * alt,
+				"%s %s: a folha tem %d quadros x %d linhas" % [nome, par, d.quadros, d.linhas]
+			)
 			if im == null:
 				continue
 			var ruim_alfa := 0
@@ -162,7 +171,10 @@ func _t_batida() -> void:
 	s = ultimo()
 	quad = s.texture.get_size()
 	folha = folha_de(s)
-	ok(folha != null and is_equal_approx(folha.get_width(), 12.0 * quad.x) and is_equal_approx(folha.get_height(), quad.y), "batida: o impacto usa a folha martelo_impacto (12 quadros)")
+	ok(
+		folha != null and is_equal_approx(folha.get_width(), 12.0 * quad.x) and is_equal_approx(folha.get_height(), quad.y),
+		"batida: o impacto usa a folha martelo_impacto (12 quadros)"
+	)
 	ok(absf(quad.y / quad.x - 0.62) < 0.035, "batida: o impacto vem achatado no chão (%s)" % quad)
 	var esperado: Vector2 = h.pos + Vector2(0, -2) + dir * alc * 0.8
 	ok(s.position.distance_to(esperado) <= 1.01, "batida: o impacto cai a 0,8 do alcance à frente (%s, esperado %s)" % [s.position, esperado])
@@ -180,7 +192,10 @@ func _t_pancada() -> void:
 	var s := ultimo()
 	var quad := s.texture.get_size()
 	var folha := folha_de(s)
-	ok(folha != null and is_equal_approx(folha.get_width(), 14.0 * quad.x) and is_equal_approx(folha.get_height(), quad.y), "pancada: usa a folha martelo_onda (14 quadros)")
+	ok(
+		folha != null and is_equal_approx(folha.get_width(), 14.0 * quad.x) and is_equal_approx(folha.get_height(), quad.y),
+		"pancada: usa a folha martelo_onda (14 quadros)"
+	)
 	ok(absf(quad.y / quad.x - 0.62) < 0.035, "pancada: a onda vem achatada no chão (%s)" % quad)
 	var alc: float = w.combate.alcance_do_passo(p1, h)
 	ok(quad.x >= 2.0 * alc * 0.8 and quad.x <= 2.0 * alc * 1.5, "pancada: a onda cobre o alcance (%.0f px para alcance %.0f)" % [quad.x, alc])
@@ -195,7 +210,10 @@ func _t_direcoes() -> void:
 		w.combate.golpe_comecou(h, p0, Vector2.from_angle(ang), float(p0.duracao))
 		var mat := ultimo().material as ShaderMaterial
 		var d := Efeitos.corte_direcao(ang, 1.0)
-		ok(int(mat.get_shader_parameter("fila")) == d.x and int(mat.get_shader_parameter("giros")) == d.y, "direção %d: linha %d e %d quartos de volta (pré-desenhado)" % [k, d.x, d.y])
+		ok(
+			int(mat.get_shader_parameter("fila")) == d.x and int(mat.get_shader_parameter("giros")) == d.y,
+			"direção %d: linha %d e %d quartos de volta (pré-desenhado)" % [k, d.x, d.y]
+		)
 		ok(ultimo().rotation == 0.0, "direção %d: o sprite não gira" % k)
 
 
@@ -289,7 +307,19 @@ func _t_piscadas() -> void:
 		var com: Array = _serie_golpes(modo == 0)
 		var pior_com := Piscadas.trocas_janela(com, 60)
 		ok(pior_com > 0, "ligada (%s): o chão do martelo ainda aparece de vez em quando" % ("só batidas" if modo == 0 else "combo"))
-		ok(pior_com <= Piscadas.MAX_TROCAS_S, "ligada (%s): o chão do martelo troca %d vezes na pior janela de 1 s (máximo 3)" % [("só batidas" if modo == 0 else "combo"), pior_com])
+		ok(
+			pior_com <= Piscadas.MAX_TROCAS_S,
+			"ligada (%s): o chão do martelo troca %d vezes na pior janela de 1 s (máximo 3)" % ["só batidas" if modo == 0 else "combo", pior_com]
+		)
+	# a luz do rastro também respeita o intervalo: dois rastros colados acendem uma luz só
+	zerar()
+	fx.martelo_rastro(Vector2(100, 100), 0.0, 70.0, Color.WHITE, 0.4)
+	fx.martelo_rastro(Vector2(100, 100), 0.0, 70.0, Color.WHITE, 0.4)
+	var acesas := 0
+	for l in fx._luzes:
+		if l.enabled:
+			acesas += 1
+	ok(acesas == 1, "ligada: dois rastros colados acendem 1 luz (acenderam %d)" % acesas)
 	# o intervalo: dois impactos colados, o segundo é pulado; depois do intervalo volta
 	zerar()
 	var alc := 70.0
@@ -300,7 +330,10 @@ func _t_piscadas() -> void:
 	ok(fx.martelo_chao(true, Vector2(100, 100), alc, Color.WHITE), "ligada: passado o intervalo (>= 1,0 s) volta a desenhar")
 	Config.definir(Piscadas.OPCAO, false)
 	zerar()
-	ok(fx.martelo_chao(false, Vector2(100, 100), alc, Color.WHITE) and fx.martelo_chao(false, Vector2(100, 100), alc, Color.WHITE), "desligada: nenhum impacto é pulado")
+	ok(
+		fx.martelo_chao(false, Vector2(100, 100), alc, Color.WHITE) and fx.martelo_chao(false, Vector2(100, 100), alc, Color.WHITE),
+		"desligada: nenhum impacto é pulado"
+	)
 
 
 func _t_baixo() -> void:

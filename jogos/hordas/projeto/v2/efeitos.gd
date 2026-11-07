@@ -287,6 +287,7 @@ var _ce_i := PRIM_CENTELHA
 var _mt_i := PRIM_MARTELO  # próxima vaga do martelo (anel dentro de PRIM_MARTELO..MAX_FOLHAS - 1)
 var _mt_ultimo := -9.0  # relógio (s) do último impacto/onda do martelo desenhado; só serve ao intervalo do "Reduzir piscadas"
 var _mt_relogio := 0.0
+var _mt_luz := -9.0  # relógio (s) da última luz do rastro do martelo; com "Reduzir piscadas" segue o mesmo repete_calmo do impacto
 
 # explosões grandes (SHADER_EXPLOSAO)
 var _ex: Array[Sprite2D] = []
@@ -743,6 +744,9 @@ func martelo_rastro(origem: Vector2, ang: float, alcance: float, cor: Color, dur
 	var r := alcance * float(cfg.get("raio_alcance", 1.3))
 	var d := corte_direcao(ang, 1.0)
 	_vaga_martelo("martelo_rastro", origem, 2.0 * r, cor, minf(dur, float(cfg.get("dur_max", 0.52))), d.x, d.y)
+	if Piscadas.ligado() and _mt_relogio - _mt_luz < float(Dados.json("v2_martelo").get("repete_calmo", 1.0)):
+		return  # "Reduzir piscadas": a luz do rastro acende no máximo uma vez por repete_calmo (o rastro continua em todo golpe)
+	_mt_luz = _mt_relogio
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.7, cor, 1.5, alcance * 2.0, dur * 0.8)
 
 
@@ -1051,6 +1055,7 @@ func limpar() -> void:
 	_fl_t.fill(9.0)
 	_fo_t.fill(9.0)
 	_mt_ultimo = -9.0
+	_mt_luz = -9.0
 	_mt_relogio = 0.0
 	_luzes_t.fill(9.0)
 	for s in _cortes:
