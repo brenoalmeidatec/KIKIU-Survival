@@ -15,8 +15,9 @@ const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
-const MAX_FOLHAS := 14  # efeitos de folha (Blender): 0..5 cristal, anel e espiral; 6..13 a centelha de acerto
+const MAX_FOLHAS := 20  # efeitos de folha (Blender): 0..5 cristal, anel e espiral; 6..13 a centelha de acerto; 14..19 o martelo do Nick (rastro, impacto e onda)
 const PRIM_CENTELHA := 6
+const PRIM_MARTELO := 14  # a partir daqui o pool é só do martelo (dados/v2_martelo.json): não disputa vaga com o cristal nem com a centelha
 const MAX_MARCAS := 2  # marcas sustentadas ao mesmo tempo
 # As folhas do corte e dos efeitos (feitas no Blender, fonte_arte/blender_corte/folhas_1px.py) existem em VARIOS TAMANHOS, cada um desenhado direto no
 # tamanho final: 1 px de arte = 1 px do jogo, escala 1. O jogo escolhe o tamanho mais perto do pedido (nada de ampliar por fator fracionario).
@@ -283,6 +284,10 @@ var _fo_dur := PackedFloat32Array()
 var _fo_cristal := PackedByteArray()  # 1 = o slot mostra um cristal (para ignorar explosões coladas)
 var _fo_i := 0
 var _ce_i := PRIM_CENTELHA
+var _mt_i := PRIM_MARTELO  # próxima vaga do martelo (anel dentro de PRIM_MARTELO..MAX_FOLHAS - 1)
+var _mt_ultimo := -9.0  # relógio (s) do último impacto/onda do martelo desenhado; só serve ao intervalo do "Reduzir piscadas"
+var _mt_relogio := 0.0
+var _mt_luz := -9.0  # relógio (s) da última luz do rastro do martelo; com "Reduzir piscadas" segue o mesmo repete_calmo do impacto
 
 # explosões grandes (SHADER_EXPLOSAO)
 var _ex: Array[Sprite2D] = []
@@ -309,7 +314,7 @@ var _cl_cor := Color.WHITE
 var _ex_i := 0
 var _rng := RandomNumberGenerator.new()  # sorteio dos enfeites novos: fora do randf() global, de que o jogo e os testes dependem
 
-var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0, "chao": 0}  # contadores para os testes
+var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0, "chao": 0, "martelo": 0}  # contadores para os testes
 
 
 func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
@@ -679,7 +684,7 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 	var i: int
 	if estrela:
 		i = _ce_i
-		_ce_i = PRIM_CENTELHA + (_ce_i - PRIM_CENTELHA + 1) % (MAX_FOLHAS - PRIM_CENTELHA)
+		_ce_i = PRIM_CENTELHA + (_ce_i - PRIM_CENTELHA + 1) % (PRIM_MARTELO - PRIM_CENTELHA)
 	else:
 		i = _fo_i
 		_fo_i = (_fo_i + 1) % PRIM_CENTELHA
@@ -699,6 +704,64 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 	_fo_dur[i] = dur
 	_fo_cristal[i] = 1 if cristal else 0
 	usados.folhas += 1
+
+
+## Slot do pool do martelo: folha `nome` (martelo_rastro, martelo_impacto ou martelo_onda), no tamanho mais perto de `largura` px, centrada em `p`.
+## `fila`/`giros` só valem no rastro (16 direções: 4 linhas x quartos de volta). Devolve o slot.
+func _vaga_martelo(nome: String, p: Vector2, largura: float, cor: Color, dur: float, fila := 0, giros := 0) -> int:
+	_carregar_fx(nome)
+	var i := _mt_i
+	_mt_i = PRIM_MARTELO + (_mt_i - PRIM_MARTELO + 1) % (MAX_FOLHAS - PRIM_MARTELO)
+	var k := tamanho_perto(_fx_larg[nome], largura)
+	var s := _fo[i]
+	s.position = p.round()
+	s.rotation = 0.0
+	s.texture = _fx_quad[nome][k]
+	s.scale = Vector2.ONE
+	s.visible = true
+	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("folha", _fx_tex[nome][k])
+	mat.set_shader_parameter("quadros", float(_fx_quadros[nome]))
+	mat.set_shader_parameter("filas", float(_fx_linhas[nome]))
+	mat.set_shader_parameter("fila", float(fila))
+	mat.set_shader_parameter("giros", float(giros))
+	mat.set_shader_parameter("lado", 1.0)
+	mat.set_shader_parameter("fixo", 0.0)
+	mat.set_shader_parameter("cor", cor)
+	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
+	_fo_t[i] = 0.0
+	_fo_dur[i] = maxf(dur, 0.05)
+	_fo_cristal[i] = 0
+	usados.martelo += 1
+	return i
+
+
+## O rastro do martelo descendo (curto e grosso, cabeça na frente), no lugar do arco de lâmina. `ang` = direção do golpe (rad). 16 direções
+## pré-desenhadas (corte_direcao), nada de rotação em tempo de execução. `dur` = s do golpe; o acerto cai no quadro 5 de 10.
+func martelo_rastro(origem: Vector2, ang: float, alcance: float, cor: Color, dur: float) -> void:
+	var cfg: Dictionary = Dados.json("v2_martelo").get("rastro", {})
+	var r := alcance * float(cfg.get("raio_alcance", 1.3))
+	var d := corte_direcao(ang, 1.0)
+	_vaga_martelo("martelo_rastro", origem, 2.0 * r, cor, minf(dur, float(cfg.get("dur_max", 0.52))), d.x, d.y)
+	if Piscadas.ligado() and _mt_relogio - _mt_luz < float(Dados.json("v2_martelo").get("repete_calmo", 1.0)):
+		return  # "Reduzir piscadas": a luz do rastro acende no máximo uma vez por repete_calmo (o rastro continua em todo golpe)
+	_mt_luz = _mt_relogio
+	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.7, cor, 1.5, alcance * 2.0, dur * 0.8)
+
+
+## O chão onde o martelo cai: `onda` falso = a batida (impacto no ponto `p`, à frente do herói), verdadeiro = a pancada em volta (onda de choque
+## centrada em `p`, os pés do herói). Anel achatado no chão (0,62 no Y), rachaduras que somem, pedrinhas e poeira, tudo já desenhado na folha.
+## Com "Reduzir piscadas" só recomeça depois de `repete_calmo` s (devolve falso se foi pulado, e o dano segue igual).
+func martelo_chao(onda: bool, p: Vector2, alcance: float, cor: Color) -> bool:
+	var cfg_m: Dictionary = Dados.json("v2_martelo")
+	if Piscadas.ligado() and _mt_relogio - _mt_ultimo < float(cfg_m.get("repete_calmo", 1.0)):
+		return false
+	_mt_ultimo = _mt_relogio
+	var cfg: Dictionary = cfg_m.get("onda" if onda else "impacto", {})
+	var raio := alcance * float(cfg.get("raio_alcance", 1.1 if onda else 0.62))
+	_vaga_martelo("martelo_onda" if onda else "martelo_impacto", p, 2.0 * raio, cor, float(cfg.get("dur", 0.7 if onda else 0.5)))
+	return true
 
 
 ## O eco do corte: o crescente procedural (modo 0 do shader do corte), branco-claro e maior, varrendo junto da folha do Blender.
@@ -991,6 +1054,9 @@ func limpar() -> void:
 	_cortes_t.fill(9.0)
 	_fl_t.fill(9.0)
 	_fo_t.fill(9.0)
+	_mt_ultimo = -9.0
+	_mt_luz = -9.0
+	_mt_relogio = 0.0
 	_luzes_t.fill(9.0)
 	for s in _cortes:
 		s.visible = false
@@ -1019,6 +1085,7 @@ func limpar() -> void:
 
 
 func atualizar(dt: float) -> void:
+	_mt_relogio += dt
 	_pisca_rel += dt
 	for i in MAX_FRAGMENTOS:
 		if _frag_t[i] <= 0.0:

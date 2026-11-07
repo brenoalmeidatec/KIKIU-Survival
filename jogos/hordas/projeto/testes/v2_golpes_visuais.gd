@@ -111,6 +111,12 @@ func _ready() -> void:
 				pausa_no_acerto = pausa_no_acerto or w.combate.parada_t > 0
 				for corte in w.combate.fx._cortes:
 					rastro_no_acerto = rastro_no_acerto or corte.visible
+				for j in range(w.combate.fx.PRIM_MARTELO, w.combate.fx.MAX_FOLHAS):  # o martelo do Nick: o rastro e a onda são folhas do pool próprio (v2_martelo)
+					var ativo: bool = w.combate.fx._fo_t[j] < w.combate.fx._fo_dur[j] and w.combate.fx._fo[j].visible
+					var q_par = (w.combate.fx._fo[j].material as ShaderMaterial).get_shader_parameter("quadros")
+					var quadros := float(q_par) if q_par != null else 0.0  # vaga que nunca foi usada não tem o parâmetro
+					rastro_no_acerto = rastro_no_acerto or (ativo and quadros == 10.0)
+					onda_no_acerto = onda_no_acerto or (ativo and quadros == 14.0)
 				for j in w.combate.fx.o_t.size():
 					onda_no_acerto = onda_no_acerto or w.combate.fx.o_t[j] < w.combate.fx.o_dur[j]
 				onda_no_acerto = onda_no_acerto or w.combate.armas.novas.x_ativos > 1  # a pancada é folha desde o estilo pixelfx

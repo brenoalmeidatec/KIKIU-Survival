@@ -310,3 +310,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Gotas de fogo animadas (PR #624), Claude do Alisson, 06/11/2026
 
 - `jogos/hordas/fonte_arte/chama/gerar_gotas.py` e `jogos/hordas/projeto/assets/v2/efeitos/chama_gotas.png` (72x96 px: 4 tamanhos de labareda x 2 variantes x 8 quadros, 5 cores, alfa 0/1): arte PRÓPRIA, procedural (numpy + Pillow, regra e semente fixa, nenhum arquivo ou receita de terceiros). Usada por `v2/chama_gotas.gd`. Licença: a do projeto.
+
+## Golpe de martelo do Nick (rastro, impacto e onda de choque), Claude do Alisson, 06/11/2026
+
+- `jogos/hordas/projeto/assets/v2/efeitos/efeito_martelo_rastro_e*.png`, `efeito_martelo_impacto_e*.png` e `efeito_martelo_onda_e*.png` (16 folhas, uma por tamanho; alfa só nos 4 degraus do estilo): arte PRÓPRIA, procedural, gerada por `jogos/hordas/fonte_arte/martelo/gerar_martelo.py` (numpy + Pillow, sementes fixas; desenho ponto a ponto no tamanho final, nada reamostrado). O `hammer-smash` do pixelfx (MIT, `notas/pixelfx/src/fx/melee/hammer-smash.js`) foi referência só de IDEIA (martelo desce, anel de choque, rachaduras, pedrinhas); nenhuma imagem, código ou receita dele foi copiada. Licença: a do projeto.
