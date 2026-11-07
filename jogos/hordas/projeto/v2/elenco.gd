@@ -6,7 +6,7 @@ extends RefCounted
 ## o dicionário a mundo.nascer_monstro, que o aplica. Mapa fora do arquivo usa o PADRÃO: o que o jogo sorteava antes dos elencos
 ## (v2_combate.json > diretor > tipos e v2_cartas.json > elites > tipos, sem tinta), com as mesmas contas de sorteio. Os tipos do padrão
 ## levam `liso` = true (nascem como o monstro puro, sem aplicar nada).
-## Um tipo normalizado: {id, nome, sprite, tinta (Color), desde, peso, vida, dano, vel, elite_desde (-1 = não é elite), liso}.
+## Um tipo normalizado: {id, nome, sprite, tinta (Color), desde, peso, vida, dano, vel, elite_desde (-1 = não é elite), teia (a aranha atira), liso}.
 
 const ARQUIVO := "v2_elencos"
 const SPRITE_PESADO := "inimigo_cavaleiro_oco"
@@ -71,6 +71,7 @@ static func normalizar(e: Dictionary) -> Dictionary:
 		"dano": float(e.get("dano", 1.0)),
 		"vel": float(e.get("vel", 1.0)),
 		"elite_desde": int(e.get("elite_desde", -1)),
+		"teia": bool(e.get("teia", false)),  # a aranha atira teia (v2/teias.gd)
 		"liso": false,
 	}
 
@@ -87,6 +88,7 @@ static func _liso(sprite: String, nome: String, desde: int, peso: int) -> Dictio
 		"dano": 1.0,
 		"vel": 1.0,
 		"elite_desde": desde,
+		"teia": sprite == "inimigo_aranha_tecela" and bool(Dados.json("v2_teia").get("aranha", {}).get("padrao", true)),  # o padrão: a aranha comum atira (dados/v2_teia.json > aranha > padrao)
 		"liso": true,
 	}
 

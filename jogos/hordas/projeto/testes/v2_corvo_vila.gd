@@ -74,7 +74,10 @@ func _folha() -> void:
 	ok(int(t.w) > 0 and int(t.h) > 0, "corvo: quadro com tamanho (%dx%d)" % [t.w, t.h])
 	ok(t.info.linhas == ref.info.linhas, "corvo: as mesmas 5 vistas da aranha")
 	ok(t.info.linhas.size() == 5, "corvo: 5 linhas (frente, 3/4, perfil, 3/4 costas, costas)")
-	ok(t.info.colunas.size() == ref.info.colunas.size(), "corvo: o mesmo número de quadros de andar da aranha (%d)" % t.info.colunas.size())
+	# só as colunas de andar: a aranha também tem as de disparo (disparo0..3, teia do #628), o corvo não atira
+	var andar_corvo: int = t.info.colunas.filter(func(c): return str(c).begins_with("andar")).size()
+	var andar_aranha: int = ref.info.colunas.filter(func(c): return str(c).begins_with("andar")).size()
+	ok(andar_corvo > 0 and andar_corvo == andar_aranha, "corvo: o mesmo número de quadros de andar da aranha (%d e %d)" % [andar_corvo, andar_aranha])
 	var im: Image = Sprites.png(PASTA_SPRITES + CORVO + "_albedo.png")
 	ok(im != null, "corvo: o albedo carrega")
 	if im == null:

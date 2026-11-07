@@ -98,7 +98,13 @@ var v_cor := Color.WHITE  # cor do desenho (tinta, fogo, lentidão), para o lote
 var heroi_raio_atual := 6.0  # o raio do corpo do herói no último quadro (para a IA)
 var ang_cerco := 0.0  # onde, no anel em volta do herói, este monstro quer ficar (rad): eles cercam em vez de empilhar
 var _no_cerco := false
-var n_col := 4  # colunas da folha (quadros de andar)
+var n_col := 4  # colunas da folha que são quadros de ANDAR (as que se chamam andar*)
+var col_acao := -1  # a coluna disparo0 da folha (a aranha de teia; disparo0..3 vêm em seguida), ou -1 se a folha não tem
+var teia := false  # a aranha que atira teia (a flag vem do elenco, dados/v2_elencos.json; v2/teias.gd)
+var _teia_cd := 0.0  # s até poder atirar de novo
+var _teia_fase := 0  # 0 livre, 1 preparo, 2 disparo, 3 recuperação (a aranha para e mostra as colunas disparo0..3)
+var _teia_t := 0.0  # s na fase
+var _teia_dir := Vector2.DOWN  # para onde ela olha enquanto atira
 var n_lin := 2  # linhas da folha: 2 (frente, três quartos) ou 5 (as cinco direções, ver LINHAS_DIRECOES)
 var emite: Array = []  # por linha da folha: tem algum pixel de olho na folha de emissão? (a horda pula o olho das linhas vazias)
 var fw := 40.0  # tamanho do quadro e linha dos pés (px), e o canto da folha no atlas da horda: o que o lote precisa para desenhar
@@ -122,7 +128,7 @@ func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumb
 	_alvo = p
 	_anim = rng.randf() * 4.0
 	_espera = rng.randf_range(0.0, 2.0)
-	n_col = int(t.info.colunas.size())
+	_ler_colunas(t.info)
 	n_lin = int(t.info.get("linhas", []).size())
 	emite = t.get("emite", [])
 	fw = float(t.w)
@@ -133,6 +139,21 @@ func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumb
 	sid = m.horda.novo_id()
 	montar_lote(t, p, 0, rng.randi() % 4, false)
 	_ponto = raiz
+
+
+## Quantas colunas da folha são de andar (as que se chamam andar*) e onde começa a ação de disparo (disparo0), se houver.
+func _ler_colunas(info: Dictionary) -> void:
+	var cols: Array = info.colunas
+	n_col = 0
+	col_acao = -1
+	for i in cols.size():
+		var nome := str(cols[i])
+		if nome.begins_with("disparo"):
+			if col_acao < 0:
+				col_acao = i
+		else:
+			n_col += 1
+	n_col = maxi(n_col, 1)
 
 
 ## Põe os números do tipo (dados) e a escala de força da onda.
@@ -172,6 +193,7 @@ func aplicar_variante(t: Dictionary) -> void:
 	dano *= float(t.dano)
 	vel_caca *= float(t.vel)
 	tinta = t.tinta
+	teia = bool(t.get("teia", false))
 
 
 ## Volta do pool: vivo de novo em `p`, com vida cheia. Renasce como monstro comum (em lote), mesmo que tenha sido elite ou chefe.
@@ -186,6 +208,9 @@ func reviver(p: Vector2) -> void:
 	acertos = 0
 	_batida = 0.0
 	morrendo = false
+	teia = false
+	_teia_fase = 0
+	_teia_cd = 0.0
 	cd.fill(0.0)
 	ultimo_proj = 0
 	queima_t = 0.0
@@ -235,6 +260,9 @@ func apanhar(dano_tirado: float, empurrao: Vector2, atordoamento: float) -> bool
 	emp += empurrao / peso * emp_mult
 	_batida = 0.14
 	persegue = true
+	if _teia_fase == 1:  # o golpe corta o preparo: o tiro não sai
+		_teia_fase = 0
+		_teia_cd = 1.5
 	if barra_vida_elite != null:
 		barra_vida_elite.sincronizar(self)
 	return vida <= 0.0
@@ -335,6 +363,9 @@ func _estado_corpo() -> int:
 func _escolher_quadro(v: Vector2) -> void:
 	var l := linha
 	var esp := espelha
+	var acao := _teia_fase > 0 and col_acao >= 0
+	if acao:
+		v = _teia_dir  # atirando, ela olha para onde mira
 	if n_lin >= LINHAS_DIRECOES:
 		if v.length_squared() >= 1.0:
 			l = _linha_de(v)
@@ -344,6 +375,8 @@ func _escolher_quadro(v: Vector2) -> void:
 		l = 0 if absf(v.x) < absf(v.y) * 0.5 else 1
 		esp = espelha if absf(v.x) < 1.0 else v.x < 0.0
 	var c := int(_anim / PASSO_ANIM) % n_col
+	if acao:
+		c = col_acao + _teia_coluna()
 	if v == Vector2.ZERO and atordoa_t > 0.0:
 		l = linha
 		c = coluna
@@ -504,6 +537,8 @@ func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 		_espera = 0.5
 	elif not persegue and dist < RAIO_VER:
 		persegue = true
+	if teia and not chefe and _teia_ia(dt, d, dist):
+		return Vector2.ZERO  # armando, atirando ou se recuperando: ela fica parada
 	if chefe:
 		return vel_ia * (0.5 if lento_t > 0.0 else 1.0)
 	var k_vel := vel_mult * (0.45 if lento_t > 0.0 else 1.0)
@@ -536,6 +571,44 @@ func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 		_alvo = casa + Vector2(cos(a), sin(a) * 0.6) * raio_vaga * sqrt(rng.randf())
 		return Vector2.ZERO
 	return ate.normalized() * VEL_VAGA
+
+
+## A aranha de teia (v2/teias.gd, dados/v2_teia.json > aranha): livre, ela espera a recarga e atira quando o herói está entre dist_min e dist_max (e ela na tela);
+## depois para por preparo_s (colunas disparo0 e disparo1), dispara (disparo2; a bolota sai aqui) e se recupera (disparo3). true = parada neste quadro.
+func _teia_ia(dt: float, d: Vector2, dist: float) -> bool:
+	var T = mundo.combate.teias
+	if T == null or col_acao < 0:
+		return false
+	var a: Dictionary = T.aranha
+	if _teia_fase == 0:
+		if _teia_cd > 0.0:
+			_teia_cd -= dt
+			return false
+		if (not ativo and bool(a.get("so_na_tela", true))) or dist < float(a.dist_min) or dist > float(a.dist_max) or not T.pode_lancar():
+			return false
+		_teia_fase = 1
+		_teia_t = 0.0
+		_teia_dir = d / maxf(dist, 0.01)
+		return true
+	_teia_t += dt
+	if _teia_fase == 1 and _teia_t >= float(a.preparo_s):
+		_teia_fase = 2
+		_teia_t = 0.0
+		T.disparar(self, _teia_dir)
+	elif _teia_fase == 2 and _teia_t >= float(a.disparo_s):
+		_teia_fase = 3
+		_teia_t = 0.0
+	elif _teia_fase == 3 and _teia_t >= float(a.recuperar_s):
+		_teia_fase = 0
+		_teia_cd = T.sorteio_recarga()
+	return true
+
+
+## A coluna disparo0..3 do quadro de agora: o preparo mostra 0 e 1 (metade cada), o disparo 2 e a recuperação 3.
+func _teia_coluna() -> int:
+	if _teia_fase == 1:
+		return 1 if _teia_t >= float(mundo.combate.teias.aranha.preparo_s) * 0.5 else 0
+	return 1 + _teia_fase
 
 
 ## A perseguição é em linha reta e a colisão (colisao.gd) só empurra para fora: numa quina côncava (duas formas encostadas, ou caixa e
@@ -617,6 +690,7 @@ func _trocar_folha(t: Dictionary) -> void:
 	if is_same(tipo, t):
 		return
 	tipo = t
+	_ler_colunas(t.info)
 	tex_n = t.alb
 	tex_b = t.blur
 	offset = Vector2(-t.w / 2.0, -t.pe)

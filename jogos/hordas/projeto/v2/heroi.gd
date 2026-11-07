@@ -103,6 +103,9 @@ var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (v
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
 var golpe_calor_t := 0.0  # Médio/Difícil: ao zerar fôlego, o ataque principal espera o calor baixar.
 var correndo := false
+# ---- lentidão do herói (a teia da aranha, v2/teias.gd): cada fonte tem um id e um multiplicador; vale o MENOR, nunca o produto. `lento_estados` = os Estado em que vale
+var lento_fontes := {}
+var lento_estados: Array = []
 # ---- impulso do mecha do LightWolf (v2/impulso.gd; contrato imp_* lido pela HUD, v2/hud_habilidades.gd)
 var imp_nome := ""  # "" = sem impulso nesta forma (todo herói menos o mecha): o slot do Shift some
 var imp_t := 0.0  # s de voo que faltam (> 0 = voando)
@@ -286,6 +289,7 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	folego = folego_max
 	cansado = false
 	correndo = false
+	lento_fontes.clear()
 	imp_t = 0.0
 	imp_relogio = 0.0
 	imp_recarga = 0.0
@@ -525,6 +529,14 @@ func entrada_evento(e: InputEvent) -> void:
 
 func vivo() -> bool:
 	return estado != Estado.MORTO
+
+
+## O multiplicador de velocidade das fontes de lentidão (1,0 sem nenhuma): o MENOR vale, teia e Rainha Tecelã não se multiplicam.
+func lento_k() -> float:
+	var k := 1.0
+	for v in lento_fontes.values():
+		k = minf(k, float(v))
+	return k
 
 
 ## Centro do corpo (mira, câmera, orbes vão para cá).
@@ -785,6 +797,8 @@ func atualizar(dt: float) -> void:
 			desl = mundo.combate.especial.quadro(self, dt, v)
 		Estado.HABILIDADE:
 			desl = mundo.combate.habilidade.quadro(self, dt, v)
+	if not lento_fontes.is_empty() and lento_estados.has(estado):
+		desl *= lento_k()  # antes do impulso (o mecha em voo nem registra a fonte) e do empurrão, que não é cortado
 	if imp_t > 0.0:  # o voo do impulso troca o andar (o canhão e a E seguem; v2/impulso.gd)
 		desl = imp.quadro(self, dt, v)
 	if emp.length_squared() > 4.0:

@@ -699,6 +699,9 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 	mo.reviver(p)
 	if not tipo.is_empty() and not tipo.get("liso", false):
 		mo.aplicar_variante(tipo)  # a variação do elenco do mapa (nome, tinta e números), por cima do que o sprite traz
+	if not tipo.is_empty() and bool(tipo.get("teia", false)) and mo.col_acao >= 0:  # a aranha que atira teia (o padrão também: dados/v2_teia.json)
+		mo.teia = true
+		mo._teia_cd = combate.teias.sorteio_recarga(true)
 	monstros.append(mo)
 	return mo
 

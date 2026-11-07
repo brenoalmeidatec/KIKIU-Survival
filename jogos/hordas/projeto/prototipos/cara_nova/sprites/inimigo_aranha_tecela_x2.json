@@ -1,7 +1,7 @@
 {
  "quadro": [
-  103,
-  99
+  108,
+  107
  ],
  "elevacao": 45.0,
  "ppu": 49.0,
@@ -16,7 +16,11 @@
   "andar0",
   "andar1",
   "andar2",
-  "andar3"
+  "andar3",
+  "disparo0",
+  "disparo1",
+  "disparo2",
+  "disparo3"
  ],
- "pe_y": 97
+ "pe_y": 105
 }
