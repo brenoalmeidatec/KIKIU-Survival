@@ -306,3 +306,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Partículas dos micro-mísseis do LightWolf (rodada 7), Claude do Alisson, 05/11/2026
 
 - `jogos/hordas/projeto/v2/misseis_particulas.gd` e o ajuste de `v2/misseis_rastro.gd`: faíscas, fagulhas, nuvem de largada, anel de choque, detritos e fumaça do acerto desenhados EM CÓDIGO (draw_rect em pixel inteiro, alfa 0/1, paletas próprias). Nenhuma imagem, som ou receita de terceiros; a D.Va (Overwatch) foi só referência de sensação, sem copiar arte, forma ou som. Licença: a do projeto.
+
+## Gotas de fogo animadas (PR #624), Claude do Alisson, 06/11/2026
+
+- `jogos/hordas/fonte_arte/chama/gerar_gotas.py` e `jogos/hordas/projeto/assets/v2/efeitos/chama_gotas.png` (72x96 px: 4 tamanhos de labareda x 2 variantes x 8 quadros, 5 cores, alfa 0/1): arte PRÓPRIA, procedural (numpy + Pillow, regra e semente fixa, nenhum arquivo ou receita de terceiros). Usada por `v2/chama_gotas.gd`. Licença: a do projeto.
