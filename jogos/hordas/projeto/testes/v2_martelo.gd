@@ -176,9 +176,18 @@ func _t_flash_e_rachaduras() -> void:
 				pior_claro = maxf(pior_claro, 100.0 * claro / area)
 				pior_branco = maxf(pior_branco, 100.0 * branco / area)
 				mais_escuro = maxi(mais_escuro, escuro)
-			ok(pior_claro <= FLASH_MAX_PCT, "%s %s: o flash claro cobre no máximo %.1f%% da área do anel por quadro (máx %.1f%%)" % [nome, par, pior_claro, FLASH_MAX_PCT])
-			ok(pior_branco <= BRANCO_MAX_PCT, "%s %s: o branco cheio cobre no máximo %.1f%% do anel por quadro (máx %.1f%%)" % [nome, par, pior_branco, BRANCO_MAX_PCT])
-			ok(mais_escuro >= ESCURO_MIN_PX, "%s %s: as rachaduras são ESCURAS (calor < %.2f): %d px no melhor quadro (mín %d)" % [nome, par, ESCURO_ATE, mais_escuro, ESCURO_MIN_PX])
+			ok(
+				pior_claro <= FLASH_MAX_PCT,
+				"%s %s: o flash claro cobre no máximo %.1f%% da área do anel por quadro (máx %.1f%%)" % [nome, par, pior_claro, FLASH_MAX_PCT]
+			)
+			ok(
+				pior_branco <= BRANCO_MAX_PCT,
+				"%s %s: o branco cheio cobre no máximo %.1f%% do anel por quadro (máx %.1f%%)" % [nome, par, pior_branco, BRANCO_MAX_PCT]
+			)
+			ok(
+				mais_escuro >= ESCURO_MIN_PX,
+				"%s %s: as rachaduras são ESCURAS (calor < %.2f): %d px no melhor quadro (mín %d)" % [nome, par, ESCURO_ATE, mais_escuro, ESCURO_MIN_PX]
+			)
 
 
 func _t_batida() -> void:
