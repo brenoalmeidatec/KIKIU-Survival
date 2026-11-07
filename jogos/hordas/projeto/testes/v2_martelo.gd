@@ -5,6 +5,7 @@ extends "res://testes/isolamento_v2.gd"
 #    cai o impacto (folha martelo_impacto, achatada 0,62) à frente do herói; a pancada em volta vira a onda de choque (martelo_onda, 14 quadros) nos pés;
 #  - as folhas em disco: N quadros, alfa só nos degraus do estilo, nada preso à borda do quadro, chão achatado em ~0,62;
 #  - pool fixo (o número de nós não cresce com 60 golpes), escala 1, posição inteira, 16 direções pré-desenhadas (nada de rotação livre);
+#  - o FLASH do chão é pequeno e curto (área clara por quadro ≤ FLASH_MAX_PCT da área do anel) e as RACHADURAS são escuras (calor 0, nunca luz): falha nas folhas antigas;
 #  - tremor de câmera quando a batida erra, sem alvo;
 #  - Reduzir piscadas: o chão do martelo (impacto e onda) troca de luz no máximo 3 vezes por segundo em qualquer janela de 1 s (desligada passa disso);
 #  - perfil Baixo (Anim.suave desligado): o martelo continua usando as folhas, sem quadro fundido.
@@ -15,6 +16,11 @@ const Herois := preload("res://v2/herois.gd")
 const Piscadas := preload("res://v2/piscadas.gd")
 const Anim := preload("res://v2/anim_golpes.gd")
 const PASSO := 1.0 / 60.0
+const FLASH_MAX_PCT := 9.0  # área com calor >= CLARO por quadro, em % da elipse do anel (raio da folha x 0,62); as folhas antigas passavam de 20%
+const BRANCO_MAX_PCT := 2.0  # e o branco cheio (calor 255) no máximo isto
+const CLARO := 0.6
+const ESCURO_ATE := 0.1  # calor abaixo disto com alfa = rachadura escura
+const ESCURO_MIN_PX := 40  # em algum quadro cada folha tem pelo menos isto de rachadura escura
 const TONS_ALFA := [0, 64, 128, 212, 255]  # os degraus de alfa do estilo (0 = vazio)
 var falhas := 0
 var w
@@ -41,6 +47,7 @@ func _ready() -> void:
 	zerar()
 	_t_dados()
 	_t_folhas_em_disco()
+	_t_flash_e_rachaduras()
 	_t_batida()
 	_t_pancada()
 	_t_direcoes()
@@ -136,6 +143,51 @@ func _t_folhas_em_disco() -> void:
 			ok(ruim_alfa == 0, "%s %s: o alfa só tem os degraus do estilo (%d pixels fora)" % [nome, par, ruim_alfa])
 			ok(preso == 0, "%s %s: nada preso à borda do quadro (%d)" % [nome, par, preso])
 			ok(int(vivos[0]) > 0 and int(vivos[int(d.quadros) / 2]) > 0, "%s %s: os quadros do começo e do meio têm desenho" % [nome, par])
+
+
+func _t_flash_e_rachaduras() -> void:
+	var def: Dictionary = Dados.json("v2_folhas_fx")
+	for nome in ["martelo_impacto", "martelo_onda"]:
+		var d: Dictionary = def[nome]
+		for par in d.tam:
+			var lar := int(par[0])
+			var alt := int(par[1])
+			var tex := load("res://assets/v2/efeitos/efeito_%s_e%d.png" % [nome, lar]) as Texture2D
+			var im := tex.get_image()
+			var area := PI * pow(lar / 2.0 - 2.0, 2.0) * 0.62
+			var pior_claro := 0.0
+			var pior_branco := 0.0
+			var mais_escuro := 0
+			for q in int(d.quadros):
+				var claro := 0
+				var branco := 0
+				var escuro := 0
+				for y in alt:
+					for x in lar:
+						var c := im.get_pixel(q * lar + x, y)
+						if c.a <= 0.0:
+							continue
+						if c.r >= CLARO:
+							claro += 1
+						if c.r >= 0.99:
+							branco += 1
+						if c.r < ESCURO_ATE:
+							escuro += 1
+				pior_claro = maxf(pior_claro, 100.0 * claro / area)
+				pior_branco = maxf(pior_branco, 100.0 * branco / area)
+				mais_escuro = maxi(mais_escuro, escuro)
+			ok(
+				pior_claro <= FLASH_MAX_PCT,
+				"%s %s: o flash claro cobre no máximo %.1f%% da área do anel por quadro (máx %.1f%%)" % [nome, par, pior_claro, FLASH_MAX_PCT]
+			)
+			ok(
+				pior_branco <= BRANCO_MAX_PCT,
+				"%s %s: o branco cheio cobre no máximo %.1f%% do anel por quadro (máx %.1f%%)" % [nome, par, pior_branco, BRANCO_MAX_PCT]
+			)
+			ok(
+				mais_escuro >= ESCURO_MIN_PX,
+				"%s %s: as rachaduras são ESCURAS (calor < %.2f): %d px no melhor quadro (mín %d)" % [nome, par, ESCURO_ATE, mais_escuro, ESCURO_MIN_PX]
+			)
 
 
 func _t_batida() -> void:

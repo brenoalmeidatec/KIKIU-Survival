@@ -111,6 +111,33 @@ void fragment() {
 }
 """
 
+## O chão do martelo (impacto da batida e onda da pancada) em mistura NORMAL, não aditiva: a luz do anel é só tinta clara e fina (nunca estoura em
+## branco por cima dos monstros) e as rachaduras (calor 0 na folha, fonte_arte/martelo/gerar_martelo.py) saem como terra ESCURA, o que a soma de luz não faz.
+const SHADER_CHAO_MARTELO := """
+shader_type canvas_item;
+render_mode unshaded;
+uniform float prog = 0.0;
+uniform float quadros = 12.0;
+uniform float suave = 1.0;
+uniform vec4 cor : source_color = vec4(1.0);
+uniform sampler2D folha : filter_nearest;
+vec4 tinta(vec4 t) {
+	if (t.a <= 0.0) return vec4(0.0);
+	if (t.r < 0.08) return vec4(vec3(0.07, 0.05, 0.04) * t.a, t.a * 0.9);  // rachadura: terra escura (premultiplicado)
+	vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.6);
+	return vec4(c * t.a, t.a);
+}
+void fragment() {
+	float fq = prog * quadros;
+	float q = min(floor(fq), quadros - 1.0);
+	vec4 t = tinta(texture(folha, vec2((UV.x + q) / quadros, UV.y)));
+	if (suave > 0.5 && q < quadros - 1.0) {
+		t = mix(t, tinta(texture(folha, vec2((UV.x + q + 1.0) / quadros, UV.y))), fract(fq));
+	}
+	COLOR = vec4(t.rgb / max(t.a, 0.0001), t.a);
+}
+"""
+
 ## A explosão grande dos golpes de impacto (referência: docs/visual_2_5d/referencia_kikiu, magia M2 e cristal M6): núcleo branco que
 ## estoura, dois anéis de energia em arcos que giram em sentidos opostos e abrem com ease-out, a "bolha" que fica dentro e some, e espinhos
 ## radiais no começo. Tudo num quad só (aditivo), com a grade de pixel do jogo (`px` = pixels de tela na largura) e a intensidade em degraus.
@@ -284,6 +311,8 @@ var _fo_dur := PackedFloat32Array()
 var _fo_cristal := PackedByteArray()  # 1 = o slot mostra um cristal (para ignorar explosões coladas)
 var _fo_i := 0
 var _ce_i := PRIM_CENTELHA
+var _fo_mat_add: Array = []  # por vaga de folha: o material aditivo (SHADER_CORTE) e, para o chão do martelo, o de mistura normal
+var _fo_mat_chao: Array = []
 var _mt_i := PRIM_MARTELO  # próxima vaga do martelo (anel dentro de PRIM_MARTELO..MAX_FOLHAS - 1)
 var _mt_ultimo := -9.0  # relógio (s) do último impacto/onda do martelo desenhado; só serve ao intervalo do "Reduzir piscadas"
 var _mt_relogio := 0.0
@@ -432,6 +461,8 @@ func _montar_folhas() -> void:
 	if variante == "ciano":
 		_carregar_fx("corte_ciano")
 	var tex: Texture2D = _tex_branca
+	var sh_chao := Shader.new()
+	sh_chao.code = SHADER_CHAO_MARTELO
 	for i in MAX_FOLHAS:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -443,6 +474,10 @@ func _montar_folhas() -> void:
 		s.visible = false
 		raiz.add_child(s)
 		_fo.append(s)
+		var mat_chao := ShaderMaterial.new()
+		mat_chao.shader = sh_chao
+		_fo_mat_add.append(mat)
+		_fo_mat_chao.append(mat_chao)
 	_fo_t.resize(MAX_FOLHAS)
 	_fo_dur.resize(MAX_FOLHAS)
 	_fo_cristal.resize(MAX_FOLHAS)
@@ -719,7 +754,8 @@ func _vaga_martelo(nome: String, p: Vector2, largura: float, cor: Color, dur: fl
 	s.texture = _fx_quad[nome][k]
 	s.scale = Vector2.ONE
 	s.visible = true
-	var mat := s.material as ShaderMaterial
+	var mat: ShaderMaterial = _fo_mat_add[i] if nome == "martelo_rastro" else _fo_mat_chao[i]  # o rastro soma luz; o chão (anel e rachaduras escuras) mistura
+	s.material = mat
 	mat.set_shader_parameter("folha", _fx_tex[nome][k])
 	mat.set_shader_parameter("quadros", float(_fx_quadros[nome]))
 	mat.set_shader_parameter("filas", float(_fx_linhas[nome]))

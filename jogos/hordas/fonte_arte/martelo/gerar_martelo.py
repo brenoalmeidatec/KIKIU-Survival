@@ -32,7 +32,9 @@ SAIDA = os.path.join(PROJETO, "assets", "v2", "efeitos")
 JSON_FX = os.path.join(PROJETO, "dados", "v2_folhas_fx.json")
 
 ACHATA = 0.62  # a mesma de v2/avisos.gd: o chão visto de 2.5D
-TONS = ((255, 255), (170, 212), (85, 128), (40, 64))  # (calor, intensidade), do mais claro ao mais fraco (os mesmos do corte)
+TONS = ((255, 255), (170, 212), (85, 128), (40, 64), (0, 212), (0, 128), (0, 64))  # (calor, intensidade), do mais claro ao mais fraco (os mesmos do corte)
+# Tons 4 a 6 = RACHADURA ESCURA (calor 0): o jogo desenha calor 0 como terra escura em mistura normal (v2/efeitos.gd SHADER_CHAO_MARTELO), nunca como luz.
+ESCURO = 4
 GIRO = 22.5  # graus por linha da folha do rastro
 
 # nome: quadros, linhas, larguras dos tamanhos. O jogo escolhe o tamanho mais perto do pedido (v2/efeitos.gd:tamanho_perto).
@@ -54,11 +56,11 @@ class Quadro:
         self.t = np.full((h, w), 9, dtype=np.uint8)
 
     def pinta(self, x: int, y: int, tom: int) -> None:
-        if 0 <= x < self.w and 0 <= y < self.h and 0 <= tom <= 3 and tom < self.t[y, x]:
+        if 0 <= x < self.w and 0 <= y < self.h and 0 <= tom <= 6 and tom < self.t[y, x]:
             self.t[y, x] = tom
 
     def mascara(self, m: np.ndarray, tom: int) -> None:
-        if 0 <= tom <= 3:
+        if 0 <= tom <= 6:
             self.t[m & (self.t > tom)] = tom
 
     def linha(self, x0: int, y0: int, x1: int, y1: int, tom: int, grossura: int = 1) -> None:
@@ -183,23 +185,16 @@ def chao(tipo: dict, w: int, onda: bool, semente: int) -> list:
         q = Quadro(w, h)
         u = f / (n - 1)
         vida = 1.0 - u
-        # disco de choque (só a onda): o chão inteiro dentro do anel, em xadrez, esvaziando
+        # onda: em vez do disco cheio, um anel fino e fraco que abre (sem preencher o chão, os monstros continuam à vista)
         if onda and 1 <= f <= fim_anel:
             rr = raio * (0.18 + 0.82 * ease_out(f / fim_anel)) * 0.9
-            xad = ((xs + ys).astype(int) % 2 == 0) | (f <= 2)
-            q.mascara((dist < rr) & xad, tom_de(0.5 - 0.5 * f / fim_anel + 0.1))
-        # clarão do contato (pequeno): f0 e f1; na onda, o pisão do centro
-        if f <= 2:
-            rf = raio * (0.17, 0.27, 0.14)[f] * (1.25 if onda else 1.0)
-            q.mascara(dist < rf, 0)
-            q.mascara(dist < rf * 1.35, 1 if f < 2 else 2)
+            q.mascara(np.abs(dist - rr) < 1.0, tom_de(0.45 - 0.35 * f / fim_anel))
+        # clarão do contato: PEQUENO e curto (1 a 2 quadros), só no centro, bem dentro do anel
+        if f <= 1:
+            rf = raio * (0.06, 0.09)[f] * (1.2 if onda else 1.0)
+            q.mascara(dist < rf, 0 if f == 0 else 1)
             if f == 1:
-                comp = int(raio * (0.55 if onda else 0.42))
-                for sx, sy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    if sy == 0:
-                        q.linha(w // 2, h // 2, w // 2 + sx * comp, h // 2, 1, 2 if onda else 1)
-                    else:
-                        q.linha(w // 2, h // 2, w // 2, h // 2 + int(sy * comp * ACHATA), 1)
+                q.mascara(dist < rf * 1.3, 2)
         # anel(éis) de choque, achatado
         pulsos = [(0, 1.0)] + ([(4, 0.72)] if onda else [])
         for atraso, forca in pulsos:
@@ -208,25 +203,30 @@ def chao(tipo: dict, w: int, onda: bool, semente: int) -> list:
                 continue
             ua = min(fa / fim_anel, 1.0)
             rr = raio * forca * (0.2 + 0.8 * ease_out(ua))
-            grossura = max(1.0, raio * (0.15 if onda else 0.11) * (1.0 - 0.75 * ua)) * (1.0 if atraso == 0 else 0.7)
-            nivel = (1.0 - 0.9 * ua) * (1.0 if atraso == 0 else 0.8)
+            grossura = max(1.0, raio * (0.07 if onda else 0.055) * (1.0 - 0.7 * ua)) * (1.0 if atraso == 0 else 0.7)
+            nivel = min(0.7, 1.0 - 0.9 * ua) * (1.0 if atraso == 0 else 0.8)  # teto 0,7: o anel nunca passa do 2o degrau (170 / 212)
             q.mascara(np.abs(dist - rr) < grossura * 0.5, tom_de(nivel))
             if grossura >= 2.4:  # a borda de dentro: a faixa de poeira atrás da frente da onda
                 q.mascara((np.abs(dist - (rr - grossura * 0.9)) < grossura * 0.35) & (((xs + ys).astype(int)) % 2 == 0), tom_de(nivel - 0.3))
-        # rachaduras: crescem em 3 quadros e esmaecem inteiras até sumir
+        # rachaduras ESCURAS de piso partido: crescem em 3 quadros e esmaecem (escuro 212 -> 128 -> 64 -> some); no começo, 1 px de borda clara
         if f >= 1:
             g = min((f - 1) / 3.0, 1.0) ** 0.6
-            tr = tom_de(1.05 - 1.15 * (f - 1) / (n - 2))
+            ue = (f - 1) / (n - 2)
+            tr = ESCURO if ue < 0.4 else (ESCURO + 1 if ue < 0.7 else (ESCURO + 2 if ue < 0.9 else 9))
             if tr != 9:
                 for rc in rach:
                     pts = rc["pts"]
                     ate = max(1, int(round(len(pts) * g)))
                     seg = [(w // 2, h // 2)] + [(w // 2 + int(round(x)), h // 2 + int(round(y))) for x, y in pts[:ate]]
-                    for a, b in zip(seg, seg[1:]):
-                        q.linha(a[0], a[1], b[0], b[1], tr, 2 if (onda and raio > 70 and a == seg[0]) else 1)
+                    ramos = [(a, b, 2 if (onda and raio > 70 and a == seg[0]) else 1) for a, b in zip(seg, seg[1:])]
                     if rc["galho"] and g >= 0.75:
                         (ax, ay), (bx, by) = rc["galho"]
-                        q.linha(w // 2 + int(round(ax)), h // 2 + int(round(ay)), w // 2 + int(round(bx)), h // 2 + int(round(by)), min(3, tr + 1))
+                        ramos.append(((w // 2 + int(round(ax)), h // 2 + int(round(ay))), (w // 2 + int(round(bx)), h // 2 + int(round(by))), 1))
+                    if f <= 3:  # a borda clara: 1 px acima do traço, só nos primeiros quadros (luz batendo na quina do piso)
+                        for a, b, gr in ramos:
+                            q.linha(a[0], a[1] - 1, b[0], b[1] - 1, 3 if f > 1 else 2, 1)
+                    for a, b, gr in ramos:
+                        q.linha(a[0], a[1], b[0], b[1], tr, gr)
         # pedrinhas que saltam (sobem, caem, somem)
         grande = 2 if raio > 60 else 1
         for p in ped:
