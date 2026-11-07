@@ -1,6 +1,6 @@
 # KIKIU em AppImage (Linux)
 
-`KIKIU-build-<AAAA-MM-DD>-<commit>-x86_64.AppImage` é o jogo num arquivo só, sem instalar nada: o mesmo executável do ZIP Linux, empacotado
+`KIKIU-<versão>-build-<AAAA-MM-DD>-<commit>-x86_64.AppImage` é o jogo num arquivo só, sem instalar nada: o mesmo executável do ZIP Linux, empacotado
 para abrir com dois cliques.
 
 ## Como rodar
