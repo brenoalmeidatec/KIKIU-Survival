@@ -25,6 +25,7 @@ Cada pasta de jogo é um projeto Godot independente: abrir um não importa nem e
 - 🏷️ Toda issue e PR leva a etiqueta do projeto (`kikiu`, `vita` ou `cairu`), e o título da issue começa com o nome do projeto.
 - 🧹 Ao mesclar, apague a branch (`gh pr merge --squash --delete-branch`). O PR guarda o histórico e tem o botão "Restore branch".
 - 🚫 **Nunca** versionar: `.exe`, `.zip`, `.pck`, `.godot/`, `build/`, `__pycache__`, arquivos acima de 50 MB, chaves e senhas.
+- 🧪 **Windows Sandbox em tudo que não exige GPU** (testes headless, robô, ferramentas, arquivo baixado, código de PR alheio): `ferramentas/sandbox/sandbox.ps1`. Jogar, editor, captura com janela, Blender e git ficam no Windows de verdade, e credencial nunca entra na Sandbox. Regra e instalação no Windows 10 e 11: [`docs/WINDOWS_SANDBOX.md`](docs/WINDOWS_SANDBOX.md).
 - 📓 Ao terminar um bloco de trabalho, acrescente uma entrada curta no fim do `LOGBOOK.md` (feito / pendente / próximo, e recados pro outro Claude). Nunca reescreva entradas antigas.
 - ✅ O Alisson (e o Claude dele) podem fazer o merge dos próprios PRs na `main` quando não houver erro nem risco: sem conflito, testado no Godot (2 instâncias se mexer no online), sem .exe/zip/credencial e com entrada no `LOGBOOK.md`. Na dúvida, deixe aberto.
 - 🧩 Mantenha engine e conteúdo separados (veja `jogos/cairu/ENGINE.txt` e `jogos/hordas/projeto/dados/`) e atualize o README ou o `LEIA-ME` do módulo que mudar.

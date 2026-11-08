@@ -48,6 +48,13 @@ O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) fo
 - Em dúvida (licença copyleft, "só uso pessoal", sem licença declarada), **não use**: pergunte ao Alisson. Pack pago só com o Breno.
 - O pipeline do Blender continua sendo o caminho para heróis, monstros e cenários próprios; arte livre complementa e acelera.
 
+## Windows Sandbox em tudo que não exige GPU (decisão do Alisson, 2026-11-08)
+A mesma seção está no `CLAUDE.md` e no `AGENTS.md`; quem mudar uma muda a outra. Guia completo, com a instalação no Windows 10 e no 11: `docs/WINDOWS_SANDBOX.md`.
+- **Vale para todos** (Alisson, Breno, Isac, Claude do Alisson no PC e no notebook, Claude do Breno e Codex): tudo o que não exige aceleração gráfica roda **dentro do Windows Sandbox**, pelo `ferramentas/sandbox/sandbox.ps1`. Isso inclui os testes do Godot em `--headless`, o robô de playtest headless, os scripts das `ferramentas/` que não usam git, abrir arquivo baixado (pack de arte, som, fonte, zip, build) antes de usar e rodar código de PR de outro agente antes de revisar.
+- **Fica no Windows de verdade** só o que precisa de GPU ou de credencial: jogar, o editor do Godot, captura com janela e `--write-movie`, Blender, e `git`/`gh`/login. **Credencial nunca entra na Sandbox.**
+- **Uma Sandbox por vez** (limite do Windows): lote paralelo do robô roda como vários processos dentro de uma só. No notebook, ela ocupa uma vaga da fila do Godot.
+- **Exceção, sempre dita no PR** ("rodado no Windows de verdade porque ..."): Windows Home (não tem Sandbox), Sandbox quebrada na máquina ou algo que precisa de GPU. O CI do GitHub não muda.
+
 ## Rumo à RC da v2 (decisão do Alisson, atualizada em 2026-10-29)
 A mesma seção está no `CLAUDE.md` e no `AGENTS.md`; quem mudar uma muda a outra.
 - **Canal só por arquivo e GitHub:** o Claude e o Codex conversam **apenas** pelos `.md` do repositório, issues, PRs e `LOGBOOK.md`. Nenhum agente aciona o outro direto (nada de `codex exec`, `codex queue`, `claude -p` ou MCP de um no outro) nem lê a conversa do outro para tomar decisão. Quem leva prompt de um lado para o outro é o Alisson.

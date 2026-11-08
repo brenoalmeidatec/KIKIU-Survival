@@ -21,5 +21,6 @@
 | ✨ [`PIXELFX.md`](PIXELFX.md) | Efeitos do pixelfx (MIT): tocador `v2/fx_folha.gd`, como regenerar as folhas e como registrar um efeito novo |
 | 🔊 [`LICENCAS_AUDIO.md`](LICENCAS_AUDIO.md) | Licenças das músicas |
 | 🎨 [`LICENCAS_ARTE.md`](LICENCAS_ARTE.md) | Arte, som e fontes de terceiros: o que pode (livre uso), o que não pode e o registro obrigatório |
+| 🧪 [`WINDOWS_SANDBOX.md`](WINDOWS_SANDBOX.md) | Regra do Windows Sandbox (tudo que não exige GPU roda lá) e instalação no Windows 10 e 11 |
 
 O diário do projeto (o que foi feito, o que falta) fica no [`LOGBOOK.md`](../LOGBOOK.md) da raiz.
