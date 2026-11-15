@@ -17,7 +17,7 @@ def P(x, y, z):
 
 # nome -> cor base (tom do meio das 4 faixas; o jogo e escuro, entao o casco e um azul de aco, nao o azul-gelo da referencia)
 PALETA = {
-    "Casco azul": "#5b9dd9", "Casco claro": "#e6f2ff", "Casco escuro": "#294d7b", "Junta preta": "#111925", "Vidro da cabine": "#092239",
+    "Casco azul": "#4f6480", "Casco claro": "#b48c3a", "Casco escuro": "#2f384c", "Junta preta": "#111925", "Vidro da cabine": "#092239",
     "Bocal": "#161b2a", "Haste de aço": "#46526c",
 }
 BRILHANTES = {"Neon ciano": "#7ff3ff", "Clarao do tiro": "#f2ffff"}
