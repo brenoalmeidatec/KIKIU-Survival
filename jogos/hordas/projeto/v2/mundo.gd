@@ -163,11 +163,14 @@ var _us_total := 0
 var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
+var etapas_carga: Array = []  # [nome, ms] de cada etapa da montagem (impresso com --medir e --picos): onde a entrada na partida pesa
+var _us_etapa := 0
 var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 
 func _ready() -> void:
 	var t0 := Time.get_ticks_usec()
+	_us_etapa = t0
 	CursorKikiu.aplicar("mira")
 	args = _argumentos()
 	coop_modo = str(args.get("coop", ""))  # lida e ignorada por enquanto: o solo não muda (docs/ONLINE_V2_PLANO.md, etapa 0)
@@ -204,6 +207,7 @@ func _ready() -> void:
 	add_child(ap)
 	sv = ap.montar(get_window(), args.has("escala_pura"))
 	ui = ap.ui
+	marcar_etapa("apresentacao")
 	if not modo_teste and (_modo == "medir" or args.has("sem_vsync")):
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
@@ -211,10 +215,13 @@ func _ready() -> void:
 	_montar()
 	hud = preload("res://v2/hud.gd").criar(self)
 	ui.add_child(hud)
+	marcar_etapa("hud")
 	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
 	ui.add_child(minimapa)
+	marcar_etapa("minimapa")
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	ui.add_child(pausa)
+	marcar_etapa("pausa")
 	pausa.fechou.connect(func(): _qualidade.interromper())  # a árvore não processa durante a pausa: a retomada começa uma medição nova
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
 	ui.add_child(status)
@@ -226,6 +233,7 @@ func _ready() -> void:
 		meta_res = ResultadoMeta.new()
 		ui.add_child(meta_res)
 		meta_res.montar(self)
+	marcar_etapa("status_trilha_meta")
 	Sprites.soltar_aquecidos()  # o que a tela de carregamento adiantou já foi usado: nada fica guardado durante a partida
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
@@ -239,6 +247,26 @@ func _ready() -> void:
 				% [_ms_carga, cenario.ms_carga, sprites.ms_blur, cenario.objetos.size(), cenario.n_decalques, luzes.lista.size()]
 			)
 		)
+	if _modo == "medir" or picos != null:
+		print("CARGA_ETAPAS " + texto_etapas())
+
+
+## Marca o fim de uma etapa da montagem: guarda quanto ela levou desde a marca anterior (custa um relógio; vale também fora da medição).
+func marcar_etapa(nome: String) -> void:
+	var agora := Time.get_ticks_usec()
+	etapas_carga.append([nome, (agora - _us_etapa) / 1000.0])
+	_us_etapa = agora
+
+
+## As etapas da montagem, da mais pesada para a mais leve ("cenario=812 combate=95 ..."), só as que passam de 1 ms.
+func texto_etapas() -> String:
+	var l := etapas_carga.duplicate()
+	l.sort_custom(func(a, b): return a[1] > b[1])
+	var p := []
+	for e in l:
+		if float(e[1]) >= 1.0:
+			p.append("%s=%.0f" % [e[0], e[1]])
+	return " ".join(p)
 
 
 ## Tela de carregamento (Transicoes.ir_para_carregando): o que dá para adiantar antes do _ready, um passo por quadro. Hoje são as
@@ -325,20 +353,26 @@ func _montar() -> void:
 	glow.layer = 2
 	glow.follow_viewport_enabled = true
 	sv.add_child(glow)
+	marcar_etapa("base")
 	sprites = Sprites.new()
 	sprites.com_normal = not args.has("sem_normal")
 	atm = Atmosfera.new()
 	atm.montar(glow)
+	marcar_etapa("atmosfera")
 	luzes = Luzes.new()
 	luzes.montar(sv, glow, atm, dados.get("luz_tipos", {}))
+	marcar_etapa("luzes")
 	sombras = Sombras.new()
 	sombras.montar(no_mundo)
 	sombras.luzes = luzes
 	sombras.definir_ambiente(dados.get("mapa", {}).get("sombra_ambiente", {}))  # sombra base do mapa (laboratório); sem a chave, só as luzes
+	marcar_etapa("sombras")
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
+	marcar_etapa("cenario")
 	copas = Copas.new()
 	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)), cenario)
+	marcar_etapa("copas")
 	dbg_colisao = Depuracao.new()
 	dbg_colisao.mundo = self
 	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
@@ -347,40 +381,52 @@ func _montar() -> void:
 	_rng.seed = int(dados.get("semente", 11))
 	combate = Combate.new()
 	combate.montar(self)
+	marcar_etapa("combate")
 	elenco = Elenco.new()
 	elenco.montar(id_mapa, combate.cfg.diretor, combate.cartas.cfg.elites)
 	_criar_heroi()
+	marcar_etapa("heroi")
 	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	combate.diretor.zerar()  # os primeiros relógios também usam a dificuldade recém-lida
 	combate.elites.zerar()
+	marcar_etapa("oclusao_meta")
 	horda = Horda.new()
 	horda.montar(self)
+	marcar_etapa("horda")
 	braseiros = Braseiros.new()
 	braseiros.montar(self)
+	marcar_etapa("braseiros")
 	_pre_criar_monstros()
+	marcar_etapa("pool_monstros")
 	_popular_inicial()
+	marcar_etapa("monstros_iniciais")
 	var todos: Array = cenario.objetos.duplicate()
 	todos.append(heroi)
 	todos.append_array(_todos_monstros)
 	sombras.registrar_lote(todos)
 	_sombras_prontas = true
+	marcar_etapa("sombras_lote")
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_luar(m)
 	atm.config = dados.get("atmosfera", {})
 	atm.fator_det = float(_nivel_particulas().get("amb_detritos", 1.0))  # antes do ambiente: no Baixo o emissor de detritos nem nasce
 	atm.ambiente(cam.position)
 	_vinheta()
+	marcar_etapa("luar_ambiente")
 	clima = Clima.new()
 	clima.montar(sv, id_mapa, atm.tex_brilho)
 	olho = OlhoDerrota.new()
 	sv.add_child(olho)
+	marcar_etapa("clima")
 	_ler_graficos()
+	marcar_etapa("graficos")
 	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build") or args.has("playtest"):
 		roteiro = Roteiro.new()
 		roteiro.montar(self, args)
 	avancar(0.0)
+	marcar_etapa("primeiro_passo")
 
 
 func _criar_heroi() -> void:
