@@ -80,9 +80,16 @@ func _alto_lightwolf() -> void:
 	ok(retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas == w.heroi.tipo.alb, "(6) o retrato usa a folha do herói já na placa")
 	ok(w.combate.fx_folha.adiar_deco == false and w.combate.fx_folha._defs.all(func(d): return d.tex != null), "(4) no Alto o pixelfx carrega todo")
 	# a troca para o Médio (menu de pausa): a silhueta nasce e vai para a sombra do herói e do lote
-	w.sombras.definir_modo(Sombras.MEDIA)
+	Config.g_perfil_temporario("medio")  # o menu de pausa: graficos_mudou > _ler_graficos
 	w.horda._trocar_modo(Sombras.MEDIA)
+	ok(w.sombras.modo == Sombras.MEDIA, "perfil Médio: sombra média")
 	ok(w.heroi.tipo.get("blur") != null and w.heroi.sh1.texture == w.heroi.tipo.blur, "(1) no Médio o herói ganha a silhueta borrada")
+	var sem_blur: Array = []
+	for nome in w.sprites._tipos:  # quem ainda não está em campo (o Lobo do mecha, as elites e os chefes grandes) também: nada sobe na luta
+		var t = w.sprites._tipos[nome]
+		if t is Dictionary and t.has("blur_img") and t.get("blur") == null:
+			sem_blur.append(nome)
+	ok(sem_blur.is_empty(), "(1) trocar para o Médio na pausa cria a silhueta de toda folha carregada: faltam %s" % str(sem_blur))
 	ok(w.horda.lote_sombra.mmi.texture == w.horda.atlas.get("blur") and w.horda.atlas.get("blur") != null, "(1) no Médio o lote da horda ganha a silhueta")
 	# o leque do chefe desenha o tamanho já carregado: nada sobe na hora
 	w.combate.fx.corte(w.heroi.pos, 0.0, 120.0 * 0.9, 110.0, 1.0, "corte", Color.WHITE, 0.3)

@@ -226,7 +226,7 @@ func _ready() -> void:
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	ui.add_child(pausa)
 	marcar_etapa("pausa")
-	pausa.fechou.connect(func(): _qualidade.interromper())  # a árvore não processa durante a pausa: a retomada começa uma medição nova
+	pausa.fechou.connect(_pausa_fechou)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
 	ui.add_child(status)
 	if _modo == "livre":  # medir e fotografar ficam sem música
@@ -909,6 +909,14 @@ func _suave_possivel() -> bool:
 	return not args.has("particulas") and _perfil_alcancavel_com("particulas_sim", ["medias", "muitas"])
 
 
+## A árvore não processa durante a pausa: a retomada começa uma medição nova do Ajuste dinâmico. E o jogador pode ter ligado o ajuste ou
+## subido o Perfil na pausa (isso não avisa graficos_mudou): se o Médio ficou ao alcance, as silhuetas nascem agora, ainda na tela da pausa.
+func _pausa_fechou() -> void:
+	_qualidade.interromper()
+	if _sombras_prontas and _media_possivel():
+		_criar_silhuetas()
+
+
 ## Cria agora a silhueta borrada de toda folha já carregada (herói, Lobo do mecha, monstros, elites, chefes) e a do atlas da horda, para a
 ## troca para o Médio no meio da partida não subir dezenas de MB num quadro (o mecha sozinho tem 42 MB).
 func _criar_silhuetas() -> void:
@@ -923,6 +931,8 @@ func _criar_silhuetas() -> void:
 ## valem por cima (medição e fotos).
 func _ler_graficos() -> void:
 	sombras.definir_modo(_modo_sombra())
+	if _sombras_prontas and (sombras.modo == Sombras.MEDIA or _media_possivel()):
+		_criar_silhuetas()  # trocou para o Médio na pausa: o Lobo, as elites e os chefes grandes que ainda não estão em campo também (blur_de pula o que já tem)
 	if horda != null and modo_teste == false:
 		horda.atualizar(t, cam.retangulo(), quadros)  # mudou no menu de pausa: o lote já aparece no modo novo, sem esperar a partida andar
 	# orçamento de luzes pelo perfil ("luz_relevo" da aba Gráficos): cada luz ligada custa GPU em tudo o que ela toca, e a iGPU do i5 é fraca
