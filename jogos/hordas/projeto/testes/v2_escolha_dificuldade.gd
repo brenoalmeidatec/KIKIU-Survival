@@ -61,18 +61,18 @@ func _testar() -> void:
 	ok(escolha.visible and escolha.selecionado == 1, "abrir começa na última dificuldade salva")
 	ok(escolha._mapa.text.contains("RUÍNAS DA FLORESTA"), "o cabeçalho identifica o mapa")
 	_tecla(KEY_RIGHT)
-	ok(escolha.selecionado == 2 and escolha._aviso.text.contains("2 s"), "direita seleciona Difícil e mostra 2 s de espera")
+	ok(escolha.selecionado == 2, "direita seleciona Difícil")
 	ok(FileAccess.get_md5(Meta.caminho_save) == hash_antes and confirmacoes.is_empty(), "navegar não grava nem confirma")
 	_tecla(KEY_ESCAPE)
 	ok(not escolha.visible and cancelamentos == 1 and Meta.dificuldade() == "medio", "Esc volta sem alterar o save")
 	escolha.abrir("Floresta")
 	_tecla(KEY_LEFT)
-	ok(escolha.selecionado == 0 and escolha._aviso.text.contains("livre de fôlego"), "esquerda seleciona Fácil e mostra ataque livre")
+	ok(escolha.selecionado == 0, "esquerda seleciona Fácil")
 	_tecla(KEY_ENTER)
 	ok(not escolha.visible and confirmacoes == ["facil"] and Meta.dificuldade() == "facil", "Enter salva a dificuldade e só então confirma")
 	escolha.abrir("Floresta")
 	_pad(JOY_BUTTON_DPAD_RIGHT)
-	ok(escolha.selecionado == 1 and escolha._aviso.text.contains("1,5 s"), "direcional do controle seleciona Médio com espera de 1,5 s")
+	ok(escolha.selecionado == 1, "direcional do controle seleciona Médio")
 	_pad(JOY_BUTTON_A)
 	ok(confirmacoes == ["facil", "medio"] and Meta.dificuldade() == "medio", "A confirma a escolha do controle")
 	escolha.abrir("Cidade")
@@ -108,8 +108,19 @@ func _testar() -> void:
 						cartao.get_global_rect().encloses(filho.get_global_rect()),
 						"texto '%s' %s dentro do cartão %s em %s" % [filho.text, filho.get_global_rect(), cartao.get_global_rect(), tamanho]
 					)
-		ok(escolha._aviso.get_minimum_size().y <= escolha._aviso.size.y, "o aviso cabe em " + str(tamanho))
-		ok(escolha._aviso.get_global_rect().end.y < escolha._entrar.get_global_rect().position.y, "aviso separado de Entrar em " + str(tamanho))
+		for cartao in escolha._cartoes:
+			ok(cartao.get_global_rect().end.y < escolha._entrar.get_global_rect().position.y, "cartão separado de Entrar em " + str(tamanho))
+	# Tela enxuta (15/11): cada descrição tem no máximo duas linhas curtas, e não há caixa de aviso, selo ou linha do Pesadelo.
+	for d in preload("res://v2/dificuldade.gd").opcoes():
+		var linhas := str(d.desc).split("\n")
+		ok(linhas.size() <= 2, "desc de %s em até 2 linhas" % d.id)
+		for l in linhas:
+			ok(l.length() <= 30, "linha '%s' com até 30 letras" % l)
+	var textos: Array = []
+	for l in escolha.find_children("*", "Label", true, false):
+		textos.append(l.text)
+	ok(not " ".join(textos).contains("Pesadelo") and not textos.has("ESCOLHIDA"), "sem linha do Pesadelo nem selo ESCOLHIDA")
+	ok(textos.count("SEM RECORDE") == 0, "sem recorde, a linha do recorde fica vazia")
 	EscalaUi.janela_forcada = Vector2i.ZERO
 	tela.queue_free()
 	await get_tree().process_frame

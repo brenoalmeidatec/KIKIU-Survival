@@ -44,6 +44,10 @@ O diretor concentra a leitura em `dificuldade(chave)`, `intervalo_onda()` e
 do pool evita acumular velocidade a cada renascimento. Chefes reaplicam a regra
 de velocidade depois de receber os atributos próprios da marca.
 
+O cartão mostra o `desc` como está no JSON: no máximo duas linhas curtas separadas por `\n` (o teste
+`v2_escolha_dificuldade` confere até 30 letras por linha). A regra do fôlego e o Pesadelo não têm mais texto
+próprio na tela (pedido do Alisson, 15/11): o `desc` diz se os golpes gastam fôlego.
+
 `EscolhaDificuldade` é um Control modal de 960×540, centralizado na UI do salão.
 `abrir(nome_mapa)` lê a preferência; cancelar não grava; confirmar só emite
 `confirmou(id)` depois de salvar com sucesso. O salão deve bloquear caminhada e

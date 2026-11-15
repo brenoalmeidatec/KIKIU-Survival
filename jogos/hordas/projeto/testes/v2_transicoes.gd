@@ -360,7 +360,7 @@ func _fluxo() -> void:
 		var escolha = salao.get("_escolha_dificuldade")
 		ok(is_instance_valid(escolha) and escolha.visible, "o portal mostra a escolha de dificuldade")
 		_tecla(KEY_ENTER)
-	chegou = await _ate(func(): return _na_cena(PARTIDA), 5.0)
+	chegou = await _ate(func(): return _na_cena(PARTIDA), 20.0)  # a entrada na partida passa pela tela de carregamento (thread + aquecimento)
 	ok(chegou, "o portal leva à partida")
 	await _fim_transicao()
 	await _esperar(0.6)

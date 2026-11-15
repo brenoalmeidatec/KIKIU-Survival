@@ -77,6 +77,12 @@ func montar(mundo: Node2D) -> void:
 ## Sombra do modo médio: só o alfa da folha (rgb preto), borrado UMA vez no carregamento (2 passes de caixa 3x3 separável, sem vazar
 ## entre quadros de w x h). Em tempo de execução é só uma textura a mais, sem custo de shader.
 static func borrar_folha(im: Image, w: int, h: int) -> ImageTexture:
+	return ImageTexture.create_from_image(borrar_imagem(im, w, h))
+
+
+## A conta do borrão, sem tocar no renderizador: só lê `im` e devolve uma Image nova. Pode rodar numa thread (a tela de
+## carregamento adianta as folhas da partida assim, ver Sprites.aquecer).
+static func borrar_imagem(im: Image, w: int, h: int) -> Image:
 	var cp := im.duplicate() as Image
 	cp.convert(Image.FORMAT_RGBA8)
 	var iw := cp.get_width()
@@ -108,7 +114,7 @@ static func borrar_folha(im: Image, w: int, h: int) -> ImageTexture:
 				var destino := ((cy + area.position.y + y) * iw + cx + area.position.x) * 4 + 3
 				for x in largura:
 					saida[destino + x * 4] = a[y * largura + x]
-	return ImageTexture.create_from_image(Image.create_from_data(iw, ih, false, Image.FORMAT_RGBA8, saida))
+	return Image.create_from_data(iw, ih, false, Image.FORMAT_RGBA8, saida)
 
 
 static func _caixa1d(a: PackedByteArray, iw: int, ih: int, w: int, h: int, horiz: bool) -> PackedByteArray:

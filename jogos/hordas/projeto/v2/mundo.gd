@@ -226,6 +226,7 @@ func _ready() -> void:
 		meta_res = ResultadoMeta.new()
 		ui.add_child(meta_res)
 		meta_res.montar(self)
+	Sprites.soltar_aquecidos()  # o que a tela de carregamento adiantou já foi usado: nada fica guardado durante a partida
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
 	_qualidade_ligada = DisplayServer.get_name() != "headless" and OS.get_cmdline_user_args().is_empty()
@@ -238,6 +239,26 @@ func _ready() -> void:
 				% [_ms_carga, cenario.ms_carga, sprites.ms_blur, cenario.objetos.size(), cenario.n_decalques, luzes.lista.size()]
 			)
 		)
+
+
+## Tela de carregamento (Transicoes.ir_para_carregando): o que dá para adiantar antes do _ready, um passo por quadro. Hoje são as
+## folhas de sprite que a partida usa (as dos monstros, que entram no atlas da horda, as grandes de elite e chefe, e a do herói): a leitura das imagens roda
+## no passo e a sombra borrada de cada uma roda numa thread (Sprites.aquecer). O que não ficar pronto é feito no _ready, como antes.
+static func passos_de_carga() -> Array:
+	var nomes: Array = [Herois.sprite_da_partida(Herois.escolhido())]
+	nomes.append_array(SPRITES_MONSTRO)
+	var passos: Array = []
+	for nome in nomes:
+		passos.append(Sprites.aquecer.bind(str(nome)))
+	for nome in SPRITES_MONSTRO:  # as folhas grandes das elites e dos chefes (tipo_grande): só as que existem viram trabalho
+		for n in [2, 3, 4]:
+			passos.append(Sprites.aquecer.bind("%s_x%d" % [nome, n]))
+	return passos
+
+
+## Quanto do aquecimento ainda roda em thread (0 = pronto). A tela de carregamento espera chegar a zero antes de trocar a cena.
+static func carga_pendente() -> int:
+	return Sprites.aquecendo()
 
 
 func _exit_tree() -> void:

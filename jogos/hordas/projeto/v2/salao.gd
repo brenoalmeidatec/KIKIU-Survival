@@ -672,7 +672,7 @@ func _confirmar_dificuldade(_id: String) -> bool:
 	if ao_entrar.is_valid():
 		ao_entrar.call(FLORESTA)
 	else:
-		Transicoes.ir_para(self, FLORESTA)
+		Transicoes.ir_para_carregando(self, FLORESTA, str(Mapas.buscar(id).nome))  # tela de carregamento (v2/carregando.gd)
 	return true
 
 

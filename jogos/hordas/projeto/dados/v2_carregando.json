@@ -1,0 +1,18 @@
+{
+  "_ajuda": "Tela de carregamento da partida (v2/carregando.gd, chamada por Transicoes.ir_para_carregando em v2/transicoes.gd). \"min_s\": tempo mínimo com a tela aberta, em segundos, para ela não aparecer e sumir num piscar quando a cena já está na memória (0 = sem mínimo). \"fade_s\": quanto a tela leva para sumir depois que a partida desenhou (0 com Reduzir animações e no perfil Baixo). \"quadros_antes\": quadros desenhados com a tela aberta antes de começar o trabalho pesado. \"quadros_depois\": quadros da partida desenhados por baixo antes de a tela sumir (o primeiro quadro é o mais pesado). \"barra_vel\": quanto a barra pode encher por segundo (1 = a barra inteira em 1 s); ela só enche, nunca volta. \"peso_cena\" e \"peso_passos\": fatia da barra para a carga da cena na thread e para os passos de aquecimento (as folhas de sprite e as sombras borradas); o que sobra até 1 é a montagem da partida. \"pontos_s\": segundos entre as trocas dos três pontos de CARREGANDO; mínimo 0,5 (2 trocas por segundo por pixel). Com Reduzir piscadas, Reduzir animações ou perfil Baixo os pontos ficam parados. \"dicas\": uma linha sorteada por carga, até 60 letras, sem citar tecla (o jogador pode ter trocado os controles).",
+  "min_s": 0.4,
+  "fade_s": 0.2,
+  "quadros_antes": 2,
+  "quadros_depois": 3,
+  "barra_vel": 1.5,
+  "peso_cena": 0.55,
+  "peso_passos": 0.3,
+  "pontos_s": 0.5,
+  "dicas": [
+    "No Fácil, os golpes não gastam fôlego.",
+    "Dificuldade maior rende mais almas e mais XP.",
+    "Almas compram melhorias no Santuário.",
+    "Um braseiro aceso deixa a área em volta mais segura.",
+    "No Difícil, o escudo só volta com cura."
+  ]
+}

@@ -1,6 +1,8 @@
 extends Control
 ## Escolha antes de entrar no mapa. O salão monta este Control e usa visible para interromper a caminhada.
 ## Abrir só lê a última escolha; confirmar salva antes de emitir confirmou. Cancelar não altera o save.
+## Tela enxuta (pedido do Alisson, 15/11): cada cartão tem só o nome, duas linhas curtas (`desc` do v2_dificuldade.json), o bônus
+## e o recorde quando existe. O cartão escolhido é o de borda colorida e fundo claro; não há selo, número nem caixa de explicação.
 
 signal confirmou(id: String)
 signal cancelou
@@ -15,17 +17,16 @@ const Dificuldade := preload("res://v2/dificuldade.gd")
 const Herois := preload("res://v2/herois.gd")
 const BLOCO := Vector2(960, 540)
 const CORES := [Paleta.BONUS, Paleta.OURO, Paleta.PERIGO]
+const CARTAO_Y := 166.0
+const CARTAO_ALT := 204.0
 
 var selecionado := 0
 var _montado := false
 var _confirmando := false
 var _opcoes: Array = []
 var _cartoes: Array[Button] = []
-var _marcas: Array[Label] = []
 var _recordes: Array[Label] = []  # o recorde do herói escolhido neste mapa, em cada dificuldade (Meta.recorde_hmd)
 var _mapa: Label
-var _aviso: Label
-var _aviso_caixa: Panel
 var _erro: Label
 var _entrar: Button
 var _voltar: Button
@@ -47,7 +48,8 @@ func abrir(nome_mapa: String, id_mapa := "") -> void:
 	_montar()
 	_mapa.text = "PORTAL · %s" % nome_mapa.to_upper()
 	for i in _opcoes.size():
-		_recordes[i].text = texto_recorde(Meta.recorde_hmd(Herois.escolhido(), id_mapa, str(_opcoes[i].id))) if id_mapa != "" else ""
+		var rec := Meta.recorde_hmd(Herois.escolhido(), id_mapa, str(_opcoes[i].id)) if id_mapa != "" else {}
+		_recordes[i].text = texto_recorde(rec) if bool(rec.get("tem", false)) else ""  # sem recorde, a linha fica vazia
 	selecionado = 0
 	for i in _opcoes.size():
 		if str(_opcoes[i].id) == Meta.dificuldade():
@@ -81,24 +83,15 @@ func _montar() -> void:
 	conteudo.size = BLOCO
 	conteudo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(conteudo)
-	_mapa = _texto(conteudo, "", Rect2(48, 37, 864, 24), 16, Paleta.CABECALHO)
+	_mapa = _texto(conteudo, "", Rect2(48, 44, 864, 24), 16, Paleta.CABECALHO)
 	_mapa.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	_texto(conteudo, "ESCOLHA A DIFICULDADE", Rect2(48, 61, 864, 44), 37, Paleta.OURO, true)
-	_texto(conteudo, "Escolha o ritmo da horda e a recompensa.", Rect2(48, 112, 864, 24), 16, Paleta.TEXTO_SECUNDARIO)
+	_texto(conteudo, "ESCOLHA A DIFICULDADE", Rect2(48, 68, 864, 44), 37, Paleta.OURO, true)
 	var ornamento := EstiloPremium.ornamento(864)
-	ornamento.position = Vector2(48, 135)
+	ornamento.position = Vector2(48, 122)
 	conteudo.add_child(ornamento)
 	for i in _opcoes.size():
 		_montar_cartao(conteudo, i)
-	_aviso_caixa = Panel.new()
-	_aviso_caixa.position = Vector2(48, 356)
-	_aviso_caixa.size = Vector2(864, 50)
-	_aviso_caixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	conteudo.add_child(_aviso_caixa)
-	_aviso = _texto(_aviso_caixa, "", Rect2(16, 5, 832, 40), 16, Paleta.TEXTO)
-	_aviso.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_texto(conteudo, "Pesadelo é um modificador independente desta escolha.", Rect2(48, 414, 864, 22), 16, Paleta.ALMA)
-	_erro = _texto(conteudo, "", Rect2(48, 438, 864, 22), 16, Paleta.PERIGO)
+	_erro = _texto(conteudo, "", Rect2(48, 400, 864, 22), 16, Paleta.PERIGO)
 	_voltar = _botao(conteudo, "VOLTAR", Rect2(48, 466, 168, 38), "voltar")
 	_voltar.pressed.connect(_cancelar)
 	_entrar = _botao(conteudo, "ENTRAR", Rect2(636, 466, 276, 38), "confirmar")
@@ -112,8 +105,8 @@ func _montar() -> void:
 func _montar_cartao(pai: Control, i: int) -> void:
 	var d: Dictionary = _opcoes[i]
 	var cartao := Button.new()
-	cartao.position = Vector2(48 + i * 294, 150)
-	cartao.size = Vector2(276, 204)
+	cartao.position = Vector2(48 + i * 294, CARTAO_Y)
+	cartao.size = Vector2(276, CARTAO_ALT)
 	cartao.focus_mode = Control.FOCUS_NONE
 	cartao.pressed.connect(_selecionar.bind(i))
 	pai.add_child(cartao)
@@ -125,17 +118,16 @@ func _montar_cartao(pai: Control, i: int) -> void:
 	linha.size = Vector2(274, 3)
 	linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cartao.add_child(linha)
-	_texto(cartao, "%02d" % (i + 1), Rect2(18, 16, 48, 16), 8, Paleta.CABECALHO, false, true)
-	var marca := _texto(cartao, "", Rect2(118, 14, 140, 22), 16, Paleta.OURO)
-	marca.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_marcas.append(marca)
-	_texto(cartao, str(d.nome).to_upper(), Rect2(18, 38, 240, 44), 37, cor, true)
-	_texto(cartao, str(d.desc), Rect2(18, 86, 240, 44), 16, Paleta.TEXTO_SECUNDARIO, false, false, true)
+	_texto(cartao, str(d.nome).to_upper(), Rect2(18, 22, 240, 44), 37, cor, true)
+	_texto(cartao, str(d.desc), Rect2(18, 78, 240, 40), 16, Paleta.TEXTO_SECUNDARIO, false, false, true)
 	var bonus_almas := roundi((float(d.almas_mult) - 1.0) * 100.0)
 	var bonus_xp := roundi((float(d.xp_mult) - 1.0) * 100.0)
-	_texto(cartao, "ALMAS +%d%%" % bonus_almas, Rect2(18, 148, 116, 24), 16, cor)
-	_texto(cartao, "XP +%d%%" % bonus_xp, Rect2(142, 148, 116, 24), 16, Paleta.TEXTO)
-	var rec := _texto(cartao, "", Rect2(18, 170, 240, 22), 16, Paleta.TEXTO_SECUNDARIO)
+	if bonus_almas == 0 and bonus_xp == 0:  # o Fácil: dois "+0%" seriam só ruído
+		_texto(cartao, "Sem bônus", Rect2(18, 136, 240, 24), 16, Paleta.TEXTO_APAGADO)
+	else:
+		_texto(cartao, "ALMAS +%d%%" % bonus_almas, Rect2(18, 136, 124, 24), 16, cor)
+		_texto(cartao, "XP +%d%%" % bonus_xp, Rect2(150, 136, 108, 24), 16, Paleta.TEXTO)
+	var rec := _texto(cartao, "", Rect2(18, 166, 240, 22), 16, Paleta.TEXTO_SECUNDARIO)
 	rec.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_recordes.append(rec)
 
@@ -202,15 +194,6 @@ func _atualizar() -> void:
 		)
 		_cartoes[i].add_theme_stylebox_override("hover", _caixa(Paleta.CARTAO_SELECIONADO, cor, 2))
 		_cartoes[i].add_theme_stylebox_override("pressed", _caixa(Paleta.PAINEL, cor, 2))
-		_marcas[i].text = "ESCOLHIDA" if ativo else ""
-	var d: Dictionary = _opcoes[selecionado]
-	var cor: Color = CORES[selecionado % CORES.size()]
-	_aviso_caixa.add_theme_stylebox_override("panel", _caixa(Paleta.PAINEL, Paleta.alfa(cor, 0.55), 1))
-	if float(d.golpe_custo) <= 0.0:
-		_aviso.text = "Ataque principal livre de fôlego.\nSem espera para voltar a atacar."
-	else:
-		var segundos := String.num(float(d.golpe_calor), 1).trim_suffix(".0").replace(".", ",")
-		_aviso.text = "O ataque principal gasta fôlego.\nAo zerar, precisa esfriar por %s s antes de atacar outra vez." % segundos
 
 
 func _selecionar(i: int) -> void:
