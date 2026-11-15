@@ -41,6 +41,11 @@ install -m 644 "$aqui/kikiu.appdata.xml" "$appdir/usr/share/metainfo/$cid.appdat
 install -m 644 "$aqui/kikiu.png" "$appdir/kikiu.png"
 install -m 644 "$aqui/kikiu.png" "$appdir/usr/share/icons/hicolor/256x256/apps/kikiu.png"
 ln -s kikiu.png "$appdir/.DirIcon"
+# Textos de licenca de terceiros (Godot, fontes, pixelfx, musica), no lugar padrao da documentacao.
+licencas="$(dirname "$projeto")/licencas"
+test -s "$licencas/LEIA-ME.txt"
+mkdir -p "$appdir/usr/share/doc/kikiu/licencas"
+install -m 644 "$licencas"/*.txt "$appdir/usr/share/doc/kikiu/licencas/"
 
 mkdir -p "$saida"
 arquivo="$saida/$nome_arquivo"

@@ -57,6 +57,13 @@ jobs:
           ~/godot/godot --headless --path . --export-release "Linux" ../build/linux/KIKIU.x86_64
           ~/godot/godot --headless --path . --export-release "Web" ../build/web/index.html
           test -s ../build/linux/KIKIU.x86_64 && test -s ../build/web/index.html
+      - name: Textos de licenca de terceiros ao lado do jogo (licencas/)
+        run: |
+          python3 -I ferramentas/conferir_licencas.py
+          for d in linux web; do
+            cp -r "$PROJETO/licencas" "$PROJETO/../build/$d/licencas"
+            python3 -I ferramentas/conferir_licencas.py --pasta "$PROJETO/../build/$d/licencas"
+          done
       - name: Smoke do executavel Linux exportado (nativo, sem projeto-fonte)
         run: bash ferramentas/instalador/testar_linux.sh "$PROJETO/../build/linux/KIKIU.x86_64" "$RUNNER_TEMP/kikiu-linux-smoke/godot.log"
       - name: Montar o AppImage (appimagetool fixado, sem FUSE no runner)
@@ -148,6 +155,12 @@ jobs:
           $vi = $exe.VersionInfo
           Write-Host "FileVersion=$($vi.FileVersion) ProductVersion=$($vi.ProductVersion) ProductName=$($vi.ProductName)"
           if (-not $vi.FileVersion -or $vi.FileVersion -eq '0.0.0.0') { throw 'o .exe saiu sem VersionInfo (rcedit nao rodou)' }
+      - name: Textos de licenca de terceiros ao lado do .exe (licencas/; o instalador leva a pasta)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Copy-Item -Recurse -Force jogos\hordas\projeto\licencas jogos\hordas\build\win\licencas
+          python -I ferramentas/conferir_licencas.py --pasta jogos/hordas/build/win/licencas
+          if ($LASTEXITCODE -ne 0) { throw 'licencas incompletas no pacote Windows' }
       - name: Compilar instalador Inno Setup (por usuario)
         run: ./ferramentas/instalador/compilar.ps1 -BaixarCompilador
       - name: Testar instalacao, atalhos e desinstalacao preservando save
