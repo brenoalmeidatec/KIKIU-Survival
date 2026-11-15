@@ -1,0 +1,17 @@
+K.I.K.I.U: licenças de terceiros
+
+O jogo é feito por Breno e Alisson. Estes arquivos trazem os avisos e os textos de licença do que veio de fora,
+como as licenças pedem. A tela Créditos do jogo resume a mesma lista.
+
+godot_LICENSE.txt                    Godot Engine (MIT), o motor do jogo
+godot_COPYRIGHT.txt                  bibliotecas de terceiros que vêm dentro do Godot Engine (FreeType, HarfBuzz, etc.)
+fonte_jersey10_OFL.txt               fonte Jersey 10 (SIL Open Font License 1.1)
+fonte_press_start_2p_OFL.txt         fonte Press Start 2P (SIL Open Font License 1.1)
+fonte_atkinson_hyperlegible_OFL.txt  fonte Atkinson Hyperlegible (SIL Open Font License 1.1)
+fonte_spleen_LICENSE.txt             fonte Spleen 8x16 (BSD de 2 cláusulas)
+pixelfx_LICENSE.txt                  efeitos visuais do pixelfx, github.com/patch-gg/pixelfx (MIT)
+musica_kevin_macleod.txt             músicas de Kevin MacLeod (CC BY 4.0)
+sons_kenney.txt                      efeitos sonoros de Kenney (CC0)
+
+Registro completo, com a origem e as mudanças de cada arquivo: docs/LICENCAS_ARTE.md e docs/LICENCAS_AUDIO.md
+no repositório github.com/brenoalmeidatec/KIKIU-Survival.
