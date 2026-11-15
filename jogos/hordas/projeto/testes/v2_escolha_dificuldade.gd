@@ -8,6 +8,7 @@ const Personagens := preload("res://v2/personagens.gd")
 const UiJanela := preload("res://v2/ui_janela.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const Glifos := preload("res://v2/glifos.gd")
+const Herois := preload("res://v2/herois.gd")
 
 var falhas := 0
 var prefixo := ""
@@ -120,7 +121,14 @@ func _testar() -> void:
 	for l in escolha.find_children("*", "Label", true, false):
 		textos.append(l.text)
 	ok(not " ".join(textos).contains("Pesadelo") and not textos.has("ESCOLHIDA"), "sem linha do Pesadelo nem selo ESCOLHIDA")
-	ok(textos.count("SEM RECORDE") == 0, "sem recorde, a linha do recorde fica vazia")
+	# com o mapa (como o salão abre), sem partida nenhuma, as três linhas de recorde ficam vazias; com uma partida no Médio, só ela aparece
+	escolha.abrir("Floresta", "floresta")
+	ok(escolha._recordes.all(func(l): return l.text == ""), "sem recorde, a linha do recorde fica vazia")
+	Meta.registrar_partida(
+		{"almas": 0, "mapa": "floresta", "heroi": Herois.escolhido(), "dificuldade": "medio", "maior_combo": 0, "tempo": 200.0, "abates": 150, "venceu": false}
+	)
+	escolha.abrir("Floresta", "floresta")
+	ok(escolha._recordes[0].text == "" and escolha._recordes[1].text.begins_with("RECORDE") and escolha._recordes[2].text == "", "só o Médio mostra o recorde")
 	EscalaUi.janela_forcada = Vector2i.ZERO
 	tela.queue_free()
 	await get_tree().process_frame

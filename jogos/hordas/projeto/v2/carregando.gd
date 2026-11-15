@@ -39,7 +39,6 @@ func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_fundo.color = Paleta.PAINEL
-	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_fundo)
 	_bloco.size = BLOCO
 	_bloco.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -70,7 +69,22 @@ func _init() -> void:
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)  # cobre a tela em qualquer modo de escala, sem esperar o _process
+	# A troca de cena muda o modo de escala da janela DEPOIS do _process (o salão devolve a escala do projeto ao sair e o mundo põe a
+	# dele no _ready): sem reencaixar antes do desenho, um quadro sai com o bloco do tamanho errado e a partida aparecendo em volta.
+	get_viewport().size_changed.connect(_encaixar)
+	RenderingServer.frame_pre_draw.connect(_antes_de_desenhar)
 	_encaixar()
+
+
+func _exit_tree() -> void:
+	if RenderingServer.frame_pre_draw.is_connected(_antes_de_desenhar):
+		RenderingServer.frame_pre_draw.disconnect(_antes_de_desenhar)
+
+
+func _antes_de_desenhar() -> void:
+	if visible:
+		_encaixar()
 
 
 ## Mostra a tela do zero: `titulo` é o nome do destino (o mapa), a barra volta ao vazio e uma dica nova é sorteada.
@@ -147,8 +161,6 @@ func _encaixar() -> void:
 	if not is_inside_tree():
 		return
 	var visivel := get_viewport().get_visible_rect().size
-	_fundo.position = Vector2.ZERO
-	_fundo.size = visivel
 	var janela := Vector2(get_window().size)
 	if janela.x <= 0.0 or visivel.x <= 0.0:
 		return

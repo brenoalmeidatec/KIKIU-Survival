@@ -153,8 +153,11 @@ func _carregar(arvore: SceneTree, caminho: String, ger: int) -> void:
 			await arvore.process_frame
 			if ger != _ger_carga:
 				return
-		if ResourceLoader.load_threaded_get_status(caminho) == ResourceLoader.THREAD_LOAD_LOADED:
+		var status := ResourceLoader.load_threaded_get_status(caminho)
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
 			cena = ResourceLoader.load_threaded_get(caminho) as PackedScene
+		elif status != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			ResourceLoader.load_threaded_get(caminho)  # recolhe o pedido que falhou: senão o change_scene_to_file abaixo herda a falha
 	_carga.alvo(peso_cena)
 	# 2. os passos de aquecimento do script da cena, um por quadro, e as threads que eles abriram
 	var script: Script = _script_da_cena(caminho)

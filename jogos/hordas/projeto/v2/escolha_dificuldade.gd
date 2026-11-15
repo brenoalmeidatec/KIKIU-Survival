@@ -192,7 +192,8 @@ func _atualizar() -> void:
 		_cartoes[i].add_theme_stylebox_override(
 			"normal", _caixa(Paleta.CARTAO_SELECIONADO if ativo else Paleta.PAINEL, cor if ativo else Paleta.BORDA, 2 if ativo else 1)
 		)
-		_cartoes[i].add_theme_stylebox_override("hover", _caixa(Paleta.CARTAO_SELECIONADO, cor, 2))
+		# hover mais fraco que o escolhido (fundo de cartão e borda de 1 px): sem o selo ESCOLHIDA, é o fundo claro que diz qual vale
+		_cartoes[i].add_theme_stylebox_override("hover", _caixa(Paleta.CARTAO_SELECIONADO, cor, 2) if ativo else _caixa(Paleta.CARTAO, cor, 1))
 		_cartoes[i].add_theme_stylebox_override("pressed", _caixa(Paleta.PAINEL, cor, 2))
 
 

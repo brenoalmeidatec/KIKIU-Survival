@@ -54,7 +54,9 @@ static func aquecer(nome: String) -> void:
 	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 	if not info is Dictionary or not info.has("quadro"):
 		return
-	_tarefas.append(WorkerThreadPool.add_task(_borrar_na_thread.bind(nome, im, int(info.quadro[0]), int(info.quadro[1]))))
+	# alta prioridade: as de baixa só usam ~30% dos núcleos (1 thread no i5-3470) e as folhas sairiam em fila; o quadro principal
+	# não espera por elas (só consulta is_task_completed), então não trava nada
+	_tarefas.append(WorkerThreadPool.add_task(_borrar_na_thread.bind(nome, im, int(info.quadro[0]), int(info.quadro[1])), true))
 
 
 static func _borrar_na_thread(nome: String, im: Image, w: int, h: int) -> void:
