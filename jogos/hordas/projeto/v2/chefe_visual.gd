@@ -422,7 +422,7 @@ func _pluma(ci: CanvasItem, u: float, a: float) -> void:
 func _medir_cabecas(tp: Dictionary) -> void:
 	_cab_tipo = tp
 	_cab = []
-	var im: Image = (tp.alb as Texture2D).get_image()
+	var im: Image = tp.get("img") if tp.get("img") is Image else (tp.alb as Texture2D).get_image()  # a cópia na RAM (Sprites.tipo): sem ler da placa quando o chefe chega
 	var w := int(tp.w)
 	var h := int(tp.h)
 	if im == null or im.is_empty():  # sem imagem na memória (renderizador de teste): o ápice vira o meio do topo do quadro

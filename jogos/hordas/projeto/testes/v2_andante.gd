@@ -13,6 +13,7 @@ const Andante := preload("res://v2/andante.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Golem := preload("res://v2/golem.gd")
 const Colisao := preload("res://v2/colisao.gd")
+const Anim := preload("res://v2/anim_golpes.gd")
 const PASSO := 1.0 / 60.0
 ## Quantas passadas de verdade a folha traz por ciclo de andar (o padrão é 1: o ciclo = a passada); o galope da raposa leva 2 passadas em 8 quadros.
 const PASSADAS_POR_CICLO := {"espirito_raposa": 2}
@@ -498,6 +499,23 @@ func checar_aquecer() -> void:
 	ok(Golem.lida(), "o golem também foi lido")
 	novas.pedir_aquecer("cacada_espiritual")
 	ok(novas.fila_aquecer.is_empty(), "o que já está carregado não volta para a fila")
+	checar_folhas_de_carta()
+
+
+## As folhas animadas de arma de carta (anim_golpes.gd) não entram na carga da partida: a tela de cartas pede (pedir_aquecer) e a fila
+## carrega. Os impactos `fx_*`, que qualquer golpe toca, já vêm carregados.
+func checar_folhas_de_carta() -> void:
+	var novas = w.combate.armas.novas
+	ok(Anim.ids().has("juizo_final") and Anim.ids().has("fx_dano_heroi"), "o índice conhece as armas sem carregar as folhas")
+	ok(not Anim._armas.has("juizo_final"), "a folha de uma arma de carta não carrega na partida")
+	ok(Anim._armas.has("fx_dano_heroi") and Anim._armas.has("raio"), "os impactos fx_* e o raio carregam junto com a partida")
+	novas.pedir_aquecer("juizo_final")
+	ok(novas.fila_aquecer.has("anim:juizo_final"), "a tela de cartas pede a folha da arma: %s" % str(novas.fila_aquecer))
+	for i in 20:
+		novas.aquecer_um()
+	ok(Anim.pronta("juizo_final") and Anim.de("juizo_final").has("queda"), "a fila carrega a folha da arma")
+	novas.pedir_aquecer("juizo_final")
+	ok(not novas.fila_aquecer.has("anim:juizo_final"), "a folha já carregada não volta para a fila")
 
 
 func _ready() -> void:

@@ -24,6 +24,8 @@ const SEED_RNG := 6677
 const FATIAS := 6  # a lista de monstros é varrida inteira em ~6 quadros
 const PASTA := "res://assets/v2/"
 
+static var _folhas_img := {}  # caminho da folha -> Image (lida da placa uma vez por processo; v2/teia_chamas.gd usa a mesma)
+
 var combate
 var no: Node2D = null
 var cfg: Dictionary = {}
@@ -124,6 +126,21 @@ func montar(c) -> void:
 		pai.add_child(no)
 
 
+## Os pixels da folha `arq` (res://...), lidos uma vez por processo: `get_image` de uma textura espera a placa (no PC do Alisson custava
+## ~200 ms no _ready de cada partida). A tela de carregamento chama `aquecer_folha` num passo dela (mundo.passos_de_carga).
+static func imagem_folha(arq: String) -> Image:
+	if not _folhas_img.has(arq):
+		var tex: Texture2D = load(arq) if ResourceLoader.exists(arq) else null
+		_folhas_img[arq] = tex.get_image() if tex != null else null
+	return _folhas_img[arq]
+
+
+## O passo da tela de carregamento: lê a folha das gotas (a mesma dos dados) antes do _ready da partida.
+static func aquecer_folha() -> void:
+	var f: Dictionary = Dados.json("v2_pixelfx").get("status", {}).get("fogo", {}).get("gotas", {}).get("folha", {})
+	imagem_folha(PASTA + str(f.get("arquivo", "efeitos/chama_gotas.png")))
+
+
 ## Carrega a folha e mede, por fila e quadro, os pixels (para os testes) e a caixa (para a sobra de lado e de cima).
 func _carregar_folha() -> void:
 	var f: Dictionary = cfg.get("folha", {})
@@ -144,7 +161,7 @@ func _carregar_folha() -> void:
 	if _tex == null:
 		push_error("chama_gotas: folha ausente " + arq)
 		return
-	_img = _tex.get_image()
+	_img = imagem_folha(arq)
 	for fila in _ntam * 2:
 		for q in _nq:
 			var lista := PackedInt32Array()
@@ -301,8 +318,9 @@ func pontos_do_quadro(m) -> Dictionary:
 	var chave: int = int(m.linha) * 4096 + int(m.coluna)
 	if por.has(chave):
 		return por[chave]
-	if not _imgs.has(id):
-		_imgs[id] = tex.get_image()
+	if not _imgs.has(id):  # a imagem que v2/sprites.gd já tem na memória; ler a textura da placa no meio da luta trava o quadro
+		var na_memoria: Variant = m.tipo.get("img")
+		_imgs[id] = na_memoria if na_memoria is Image and (na_memoria as Image).get_size() == Vector2i(tex.get_size()) else tex.get_image()
 	var im: Image = _imgs[id]
 	var w := int(m.tipo.w)
 	var h := int(m.tipo.h)

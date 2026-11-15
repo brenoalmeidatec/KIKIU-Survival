@@ -831,6 +831,9 @@ func pedir_aquecer(id: String) -> void:
 	var pend: Array = ["golem"] if Golem.eh_golem(id) and not Golem.lida() else Andante.folhas_pendentes(id)
 	if id == Golem.COLOSSO and not Golem.lida_colosso():
 		pend = pend + ["colosso"]  # a folha grande do Colosso (a do golem comum, "golem", vai junto se ainda não foi lida)
+	for f in [id, id + "_queda"]:  # as folhas animadas do golpe (anim_golpes.gd carrega a de arma de carta só quando pedem)
+		if not Anim.pronta(f):
+			pend = pend + ["anim:" + f]
 	for item in pend:
 		if not fila_aquecer.has(item):
 			fila_aquecer.append(item)
@@ -845,6 +848,8 @@ func aquecer_um() -> void:
 		Golem.tex()
 	elif item == "colosso":
 		Golem.tex_colosso()
+	elif item.begins_with("anim:"):
+		Anim.de(item.substr(5))
 	else:
 		Andante.aquecer(item)
 

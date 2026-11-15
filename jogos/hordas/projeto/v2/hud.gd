@@ -257,7 +257,9 @@ func _retrato_do_heroi(sprite := "") -> void:
 	if _retratos.has(base):
 		_mostrar_retrato(_retratos[base][0], _retratos[base][1])
 		return
-	var folha := load(base + "_albedo.png") as Texture2D
+	var folha := _folha_do_mundo(sprite if sprite != "" else Herois.sprite_da_partida(Herois.escolhido()))
+	if folha == null:
+		folha = load(base + "_albedo.png") as Texture2D
 	if folha == null or not FileAccess.file_exists(base + ".json"):
 		return
 	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
@@ -275,6 +277,15 @@ func _retrato_do_heroi(sprite := "") -> void:
 	var escala := maxf(floorf(minf(CAIXA_RETRATO.x / regiao.size.x, CAIXA_RETRATO.y / regiao.size.y)), 1.0)
 	_retratos[base] = [recorte, regiao.size * escala]
 	_mostrar_retrato(recorte, regiao.size * escala)
+
+
+## A folha que a partida já subiu para a placa (mundo.sprites), ou null (HUD de teste sem mundo). Carregar o PNG de novo punha uma segunda
+## cópia da folha inteira na placa só para o retrato: 44 MB com o mecha do LightWolf.
+func _folha_do_mundo(nome: String) -> Texture2D:
+	var sp = mundo.get("sprites") if mundo is Object else null
+	if sp == null or not (sp.get("_tipos") is Dictionary) or not (sp._tipos.get(nome) is Dictionary):
+		return null  # a folha não está na partida (--basico mostra a de outro herói): carregar só o albedo, como antes, e não a folha inteira
+	return sp._tipos[nome].get("alb") as Texture2D
 
 
 func _mostrar_retrato(recorte: AtlasTexture, tamanho: Vector2) -> void:

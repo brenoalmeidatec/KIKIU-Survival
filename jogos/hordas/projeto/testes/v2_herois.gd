@@ -297,7 +297,7 @@ func _t_matheus() -> void:
 		if n.has_node("Raiz/Retrato/Heroi"):
 			retrato = n.get_node("Raiz/Retrato/Heroi")
 	ok(
-		retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas.resource_path == PASTA_SPRITES + "matheus_albedo.png",
+		retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas == tm.alb,  # a folha que a partida já subiu (sem 2ª cópia)
 		"o retrato do HUD na partida do Matthew é o quadro parado da folha dele"
 	)
 	if retrato != null:  # como os outros três: dentro da moldura de 90x108, centrado e em escala inteira

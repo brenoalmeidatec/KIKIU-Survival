@@ -15,6 +15,9 @@ const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
+## Folhas de dados/v2_folhas_fx.json que nenhum golpe da partida pede hoje (só os testes e as fotos): ficam fora da montagem e carregam no
+## primeiro `folha()` (12 MB de placa a menos). Quem passar a usar uma delas na partida tira o nome daqui, para não carregar no meio da luta.
+const FOLHAS_SOB_DEMANDA := ["anel", "espiral"]
 const MAX_FOLHAS := 20  # efeitos de folha (Blender): 0..5 cristal, anel e espiral; 6..13 a centelha de acerto; 14..19 o martelo do Nick (rastro, impacto e onda)
 const PRIM_CENTELHA := 6
 const PRIM_MARTELO := 14  # a partir daqui o pool é só do martelo (dados/v2_martelo.json): não disputa vaga com o cristal nem com a centelha
@@ -29,6 +32,7 @@ const CORTE_DIRECOES := 16  # o corte so gira em 16 direcoes (passos de 22,5 gra
 const PixelRot := preload("res://v2/pixel_rot.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": sem clarão de tela, flash de acerto em tinta fixa
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const CORTE_CRESCE := 0.3  # fração da estocada (o corte de folha tem tamanho fixo) em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
 
 const SHADER_CORTE := """
@@ -251,6 +255,7 @@ var _fx_larg := {}  # nome -> PackedInt32Array
 var _fx_alt := {}  # nome -> PackedInt32Array
 var _fx_quadros := {}  # nome -> int
 var _fx_linhas := {}  # nome -> int
+var tamanhos_fora_da_conta := 0  # pedidos de tamanho que a montagem não carregou (_fx_pronto): os testes esperam 0
 var _fx_tex := {}  # nome -> Array[Texture2D]
 var _fx_quad := {}  # nome -> Array[Texture2D] (branco, do tamanho do quadro: o Sprite2D com escala 1 fica exatamente do tamanho do quadro)
 var _tex_branca: Texture2D  # 64x64 branca: o quad dos desenhos calculados no shader (estocada, eco, explosão), esses sim com escala
@@ -404,8 +409,7 @@ func _montar_cortes() -> void:
 	im.fill(Color.WHITE)
 	_tex_branca = ImageTexture.create_from_image(im)
 	var tex := _tex_branca
-	var sh := Shader.new()
-	sh.code = SHADER_CORTE
+	var sh := Sombreadores.shader(SHADER_CORTE)
 	for i in MAX_CORTES:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -424,11 +428,15 @@ func _montar_cortes() -> void:
 
 
 func _montar_folhas() -> void:
-	var sh := Shader.new()
-	sh.code = SHADER_CORTE
+	var sh := Sombreadores.shader(SHADER_CORTE)
+	var martelo := _heroi_com_martelo()
 	for nome in Dados.json("v2_folhas_fx"):
 		if nome != "corte_ciano" and not str(nome).begins_with("_"):  # o ciano (variante do Rastro de katana) so carrega quando pedido
-			_carregar_fx(nome)
+			if str(nome).begins_with("martelo_") and not martelo:  # as folhas do martelo (46 MB na placa) só com o herói que bate de martelo
+				continue
+			if FOLHAS_SOB_DEMANDA.has(nome):
+				continue
+			_carregar_fx(nome, _tamanhos_corte() if nome == "corte" else null)
 	if variante == "ciano":
 		_carregar_fx("corte_ciano")
 	var tex: Texture2D = _tex_branca
@@ -467,8 +475,7 @@ func _montar_chao(m) -> void:
 
 
 func _montar_explosoes() -> void:
-	var sh := Shader.new()
-	sh.code = SHADER_EXPLOSAO
+	var sh := Sombreadores.shader(SHADER_EXPLOSAO)
 	var tex: Texture2D = _tex_branca
 	for i in MAX_EXPLOSOES:
 		var s := Sprite2D.new()
@@ -483,8 +490,7 @@ func _montar_explosoes() -> void:
 	_ex_dur.resize(MAX_EXPLOSOES)
 	_ex_t.fill(9.0)
 	_ex_dur.fill(1.0)
-	var sh_c := Shader.new()
-	sh_c.code = SHADER_CORTE
+	var sh_c := Sombreadores.shader(SHADER_CORTE)
 	for i in MAX_ECOS:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -528,8 +534,7 @@ func _montar_luzes(sv: Node) -> void:
 
 
 func _montar_flashes() -> void:
-	var sh := Shader.new()
-	sh.code = SHADER_FLASH
+	var sh := Sombreadores.shader(SHADER_FLASH)
 	for i in MAX_FLASH:
 		var s := Sprite2D.new()
 		s.centered = false
@@ -560,32 +565,89 @@ static func _esc_px(e: float) -> float:
 	return maxf(1.0, roundf(e))
 
 
-## Carrega (uma vez) as folhas de `nome` em todos os tamanhos de dados/v2_folhas_fx.json, com o quad branco de cada tamanho.
-func _carregar_fx(nome: String) -> void:
-	if _fx_tex.has(nome):
-		return
-	var def: Dictionary = Dados.json("v2_folhas_fx").get(nome, {})
-	if def.is_empty():
-		push_error("v2_folhas_fx: sem a folha '%s'" % nome)
-		return
-	var larg := PackedInt32Array()
-	var alt := PackedInt32Array()
-	var texs: Array[Texture2D] = []
-	var quads: Array[Texture2D] = []
+## O herói da partida tem passo de martelo ("fx": "martelo" em v2_herois.json, o kanabo do Nick)? Sem mundo ou sem combate (testes): sim,
+## carrega tudo como antes. As folhas do martelo também carregam sozinhas no primeiro uso (`_vaga_martelo`).
+func _heroi_com_martelo() -> bool:
+	var c = mundo.get("combate") if mundo is Object else null
+	if c == null or not (c.get("cfg") is Dictionary) or not c.cfg.has("golpe"):
+		return true
+	for passo in c.cfg.golpe.get("passos", []):
+		if str((passo as Dictionary).get("fx", "")) == "martelo":
+			return true
+	return false
+
+
+## Carrega as folhas de `nome` (dados/v2_folhas_fx.json), com o quad branco de cada tamanho. `so` = os índices de tamanho a carregar agora
+## (null = todos, [] = só registrar as medidas); chamar de novo carrega os que faltam. O tamanho que ninguém pediu fica null até `_fx_pronto`.
+func _carregar_fx(nome: String, so: Variant = null) -> void:
+	if not _fx_tex.has(nome):
+		var def: Dictionary = Dados.json("v2_folhas_fx").get(nome, {})
+		if def.is_empty():
+			push_error("v2_folhas_fx: sem a folha '%s'" % nome)
+			return
+		var larg := PackedInt32Array()
+		var alt := PackedInt32Array()
+		var texs: Array[Texture2D] = []
+		var quads: Array[Texture2D] = []
+		for par in def.tam:
+			larg.append(int(par[0]))
+			alt.append(int(par[1]))
+			texs.append(null)
+			quads.append(null)
+		_fx_larg[nome] = larg
+		_fx_alt[nome] = alt
+		_fx_quadros[nome] = int(def.quadros)
+		_fx_linhas[nome] = int(def.linhas)
+		_fx_tex[nome] = texs
+		_fx_quad[nome] = quads
+	var lista: Array = _fx_tex[nome]
+	for k in lista.size():
+		if lista[k] == null and (so == null or (so as Array).has(k)):
+			_carregar_tam(nome, k)
+
+
+func _carregar_tam(nome: String, k: int) -> void:
 	var modelo: String = str(ARQUIVOS_FX.get(nome, "efeito_%s_e%%d" % nome))
-	for par in def.tam:
-		larg.append(int(par[0]))
-		alt.append(int(par[1]))
-		texs.append(load("res://assets/v2/efeitos/%s.png" % (modelo % int(par[0]))))
-		var im := Image.create(int(par[0]), int(par[1]), false, Image.FORMAT_L8)
-		im.fill(Color.WHITE)
-		quads.append(ImageTexture.create_from_image(im))
-	_fx_larg[nome] = larg
-	_fx_alt[nome] = alt
-	_fx_quadros[nome] = int(def.quadros)
-	_fx_linhas[nome] = int(def.linhas)
-	_fx_tex[nome] = texs
-	_fx_quad[nome] = quads
+	var w: int = _fx_larg[nome][k]
+	_fx_tex[nome][k] = load("res://assets/v2/efeitos/%s.png" % (modelo % w))
+	var im := Image.create(w, int(_fx_alt[nome][k]), false, Image.FORMAT_L8)
+	im.fill(Color.WHITE)
+	_fx_quad[nome][k] = ImageTexture.create_from_image(im)
+
+
+## O tamanho `k` de `nome` pronto para desenhar. Quem cai aqui com o tamanho vazio é um pedido que a conta da montagem (_tamanhos_corte) não
+## previu: carrega (um PNG, no meio da partida) e avisa, para o teste pegar. Conta em `tamanhos_fora_da_conta`.
+func _fx_pronto(nome: String, k: int) -> void:
+	if _fx_tex[nome][k] == null:
+		tamanhos_fora_da_conta += 1
+		push_warning("efeitos: '%s' no tamanho %d px carregou no meio da partida (fora da conta da montagem)" % [nome, _fx_larg[nome][k]])
+		_carregar_tam(nome, k)
+
+
+## Os tamanhos do `corte` que a partida pode pedir. O herói que corta (passo "corte" no combo ou o especial "investida") pede quase todos
+## conforme a área cresce: null = todos, como antes. Quem não corta (o Nicão, o Lucas, o LightWolf e o Lobo) só vê o corte do LEQUE dos
+## chefes (avisos.setor > corte com alcance raio x 0,9): só esses tamanhos (o leque de 120 px usa o de 312). Sem mundo (testes): todos.
+func _tamanhos_corte() -> Variant:
+	var c = mundo.get("combate") if mundo is Object else null
+	if c == null or not (c.get("cfg") is Dictionary) or not c.cfg.has("golpe"):
+		return null
+	for passo in c.cfg.golpe.get("passos", []):
+		var ps: Dictionary = passo
+		if str(ps.get("nome", "")) == "corte" and str(ps.get("fx", "")) != "martelo" and str(ps.get("tipo", "melee")) != "adagas":
+			return null
+	var esp: Dictionary = Dados.json("v2_especial")
+	if str(esp.get("herois", {}).get(str(c.get("heroi_id")), esp.get("padrao", "investida"))) == "investida":
+		return null
+	_carregar_fx("corte", [])  # só as medidas, para a conta do tamanho
+	var ks: Array = []
+	var ataques: Dictionary = Dados.json("v2_cartas").get("chefes", {}).get("ataques", {})
+	for nome_at in ataques:
+		var at = ataques[nome_at]
+		if at is Dictionary and str(at.get("tipo", nome_at)) == "leque" and at.has("raio"):
+			var k := tamanho_perto(_fx_larg["corte"], 2.0 * float(at.raio) * 0.9 * 1.45)  # a mesma conta de corte(): alcance x 1,45, largura 2 r
+			if not ks.has(k):
+				ks.append(k)
+	return ks
 
 
 ## Índice do tamanho de `larguras` mais perto de `pedido` (px de largura do desenho), pela razão: o mais perto vence e o pedido que passa
@@ -624,8 +686,9 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var mat := s.material as ShaderMaterial
 	_cortes_fixo[i] = 1 if folha else 0
 	if folha:  # o quad é do tamanho do quadro da folha escolhida (2 r, o mais perto): escala 1, 1 px de arte = 1 px do jogo
-		_carregar_fx(nome_folha)
+		_carregar_fx(nome_folha, [] if _fx_tex.has(nome_folha) else null)
 		var k := tamanho_perto(_fx_larg[nome_folha], 2.0 * r)
+		_fx_pronto(nome_folha, k)
 		s.texture = _fx_quad[nome_folha][k]
 		s.scale = Vector2.ONE
 		mat.set_shader_parameter("folha", _fx_tex[nome_folha][k])
@@ -675,6 +738,7 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 ## Efeito de folha do Blender no chão ("cristal", "anel", "espiral") ou a centelha de acerto ("estrela", no ar). `raio` = metade da largura
 ## do desenho; usa o tamanho de folha mais perto (o chão já vem achatado em 0,62 no Y na própria folha). Reaproveita o shader do corte e um pool fixo: não cria nó.
 func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> void:
+	_carregar_fx(nome, [] if _fx_tex.has(nome) else null)  # já carregada na montagem (cristal, estrela); as de FOLHAS_SOB_DEMANDA só no primeiro pedido
 	var cristal := nome == "cristal"
 	var estrela := nome == "estrela"
 	if cristal:  # crítico explosivo em horda densa: uma explosão colada na anterior não gasta slot
@@ -689,6 +753,7 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 		i = _fo_i
 		_fo_i = (_fo_i + 1) % PRIM_CENTELHA
 	var k := tamanho_perto(_fx_larg[nome], 2.0 * raio)  # o quad é do tamanho do quadro da folha mais perto (o chão já vem achatado nela): escala 1
+	_fx_pronto(nome, k)
 	var s := _fo[i]
 	s.position = p.round()
 	s.texture = _fx_quad[nome][k]
@@ -713,6 +778,7 @@ func _vaga_martelo(nome: String, p: Vector2, largura: float, cor: Color, dur: fl
 	var i := _mt_i
 	_mt_i = PRIM_MARTELO + (_mt_i - PRIM_MARTELO + 1) % (MAX_FOLHAS - PRIM_MARTELO)
 	var k := tamanho_perto(_fx_larg[nome], largura)
+	_fx_pronto(nome, k)
 	var s := _fo[i]
 	s.position = p.round()
 	s.rotation = 0.0

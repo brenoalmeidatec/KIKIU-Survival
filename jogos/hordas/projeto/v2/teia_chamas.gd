@@ -96,7 +96,7 @@ func montar(t) -> void:
 	if _tex == null:
 		push_error("teia_chamas: folha ausente " + arq)
 	else:
-		_img = _tex.get_image()
+		_img = preload("res://v2/chama_gotas.gd").imagem_folha(arq)  # a mesma Image das gotas, lida uma vez por processo
 	var fq: Dictionary = t._folhas.get("queima", {})
 	if not fq.is_empty():
 		_qw = int(fq.quadro.x)

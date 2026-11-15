@@ -31,8 +31,9 @@ static func preparar(tex: Texture2D, quadro: Vector2i, ancora: Vector2i, n: int 
 	if _cache.has(id):
 		return
 	var copias: Array = [null]
+	var ims := _imagens(tex)  # lê a arte da placa UMA vez (get_image espera a GPU): antes era uma leitura por sub-ângulo
 	for sub in range(1, SUBS):
-		copias.append(_gerar(tex, quadro, ancora, n, sub))
+		copias.append(_gerar(tex, quadro, ancora, n, sub, ims))
 	_cache[id] = {"tex": tex, "var": copias}
 
 
@@ -69,20 +70,26 @@ static func _rgba(img: Image) -> Image:
 	return c
 
 
-static func _gerar(tex: Texture2D, quadro: Vector2i, ancora: Vector2i, n: int, sub: int) -> Dictionary:
-	geradas += 1
+## [difusa, normal ou null] de `tex` em RGBA8 (CanvasTexture: as duas; textura simples: só a difusa).
+static func _imagens(tex: Texture2D) -> Array:
 	var difusa := tex
 	var normal: Texture2D = null
 	if tex is CanvasTexture:
 		difusa = (tex as CanvasTexture).diffuse_texture
 		normal = (tex as CanvasTexture).normal_texture
-	var im := _rgba(difusa.get_image())
+	return [_rgba(difusa.get_image()), _rgba(normal.get_image()) if normal != null else null]
+
+
+static func _gerar(tex: Texture2D, quadro: Vector2i, ancora: Vector2i, n: int, sub: int, ims: Array = []) -> Dictionary:
+	geradas += 1
+	if ims.is_empty():
+		ims = _imagens(tex)
+	var im: Image = ims[0]
 	var src: PackedInt32Array = im.get_data().to_int32_array()
 	var largura := im.get_width()
-	var imn: Image = null
+	var imn: Image = ims[1]
 	var srcn := PackedInt32Array()
-	if normal != null:
-		imn = _rgba(normal.get_image())
+	if imn != null:
 		srcn = imn.get_data().to_int32_array()
 	var th := float(sub) * PI / 8.0
 	var c := cos(th)

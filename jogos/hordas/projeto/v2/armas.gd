@@ -24,6 +24,7 @@ const COR_RAIO := Color(0.72, 0.86, 1.0)
 const ANGULOS_LEQUE := [-0.3, 0.0, 0.3]  # as lanças da Ventania (rad); uma só sem ela
 const RUNA_NO_ALVO := 0.65  # chance de a runa nascer em cima de um monstro perto (senão cai num anel em volta do herói, onde talvez ninguém pise)
 const HALO_FUSAO := preload("res://assets/v2/fusoes/halo.png")  # halo branco 48 x 48 da fusão, tingido pela cor dela (lâminas evoluídas)
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 var combate
 var mundo
@@ -1049,6 +1050,7 @@ void fragment() {
 
 var us_desenho := 0
 var _tex_lamina: Texture2D
+static var _lamina_feita: Texture2D  # a lâmina e as cópias giradas dela valem para o processo inteiro (antes: refeitas e lidas da placa a cada partida)
 var _tex_corvo: Texture2D  # 3 quadros de 22x18: asa para cima, no meio e para baixo
 var _tex_anel: Texture2D  # anel da runa (64x64)
 var _tex_glifo: Texture2D  # triângulo da runa (64x64)
@@ -1056,8 +1058,10 @@ var _aura_sp: Sprite2D
 
 
 func _texturas() -> void:
-	_tex_lamina = _img_lamina()
-	SpriteGiro.preparar(_tex_lamina, Vector2i(26, 11), Vector2i(13, 5))
+	if _lamina_feita == null:
+		_lamina_feita = _img_lamina()
+		SpriteGiro.preparar(_lamina_feita, Vector2i(26, 11), Vector2i(13, 5))
+	_tex_lamina = _lamina_feita
 	_tex_corvo = _img_corvo()
 	_tex_anel = _img_anel()
 	_tex_glifo = _img_glifo()
@@ -1065,8 +1069,7 @@ func _texturas() -> void:
 	im.fill(Color.WHITE)
 	_aura_sp = Sprite2D.new()
 	_aura_sp.texture = ImageTexture.create_from_image(im)
-	var sh := Shader.new()
-	sh.code = SHADER_AURA
+	var sh := Sombreadores.shader(SHADER_AURA)
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
 	_aura_sp.material = mat

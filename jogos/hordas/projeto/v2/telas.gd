@@ -46,8 +46,6 @@ const LIMITE_Y := 118.0  # a barra do limite de tempo (largura das 3 cartas): nu
 const OPCAO_REDUZIR := "reduzir_animacoes"  # a opção de acessibilidade (scripts/hordas/config.gd; chega com o #377): ligada, a roleta não roda
 const ROLETA_PULO_MIN := 0.3  # s REAIS de roleta antes de o clique ou o Enter/A poderem pular (a câmera lenta do nível ainda deixa o jogador atacando)
 const AQUECER_POR_QUADRO := 2  # ícones de carta carregados por quadro enquanto se joga (para a roleta não achar nenhum frio)
-const AUTO_DICA := "Automático: o sistema completa a sua build, mas a carta vem de raridade menor."
-const AUTO_DICA_BAU := "Automático: o sistema fica com a carta mais rara que sobrou."
 const ROLETA_V := 1800.0  # px/s de velocidade alvo de cada rolo (cada um acerta a distância em cartas inteiras para parar alinhado)
 const ROLETA_FREIO := 0.3  # s do freio final de cada rolo (menos nos rolos curtos)
 const ROLETA_ESCURO := Color(0.7, 0.7, 0.78, 1.0)  # as cartas que passam girando ficam um pouco mais escuras que a que vale
@@ -124,8 +122,6 @@ var _titulo: Label
 var _sub: Label
 var _btn_a: Panel
 var _btn_a_txt: Label
-var _auto_dica: Label
-var _build: Label
 var _res: Control
 var _res_titulo: Label
 var _res_linhas: Label
@@ -256,16 +252,8 @@ func _montar_escolha() -> void:
 	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y))
 	_btn_a_txt = _btn_a.get_node("t")
 	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))
-	_auto_dica = _rotulo(AUTO_DICA, TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
-	_auto_dica.position = Vector2(20, 496)
-	_auto_dica.size = Vector2(LARG - 40, 20)
-	_auto_dica.clip_text = true
-	_escolha.add_child(_auto_dica)
-	_build = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
-	_build.position = Vector2(20, 472)
-	_build.size = Vector2(LARG - 40, 20)
-	_build.clip_text = true  # uma linha só: _texto_build já corta em "e mais N" o que não cabe
-	_escolha.add_child(_build)
+	# Tela enxuta (pedido do Alisson, 15/11): sem a linha "Sua build" (o C e a pausa mostram a build) e sem a frase que explicava o
+	# Automático embaixo do botão.
 	_montar_rolos()
 	_montar_conf()
 	_montar_troca()
@@ -477,8 +465,8 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var larg := CARTA_L - 2.0 * MARGEM
 	_campo(p, "tecla", TAM_TEXTO, false, Paleta.TEXTO_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, MARGEM, 8, larg, 20).text = tecla
-	_campo(p, "rar", TAM_TEXTO, false, Paleta.BRANCO, HORIZONTAL_ALIGNMENT_RIGHT, MARGEM, 8, larg, 20)
-	_campo(p, "selo", TAM_TEXTO, false, Paleta.BONUS, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 8, larg, 20)  # UPGRADE ou NOVO, no meio da linha da tecla e da raridade
+	_campo(p, "rar", TAM_TEXTO, false, Paleta.BRANCO, HORIZONTAL_ALIGNMENT_RIGHT, MARGEM, 8, larg, 20)  # vazio: a raridade é a cor
+	_campo(p, "selo", TAM_TEXTO, false, Paleta.BONUS, HORIZONTAL_ALIGNMENT_RIGHT, MARGEM, 8, larg, 20)  # só TROCA e ÁPICE, no canto da raridade
 	var faixa := ColorRect.new()
 	faixa.name = "faixa"
 	faixa.position = Vector2(MARGEM, 32)
@@ -526,8 +514,9 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
 	var selo := p.get_node("selo") as Label  # texto em código até a arte A04 (selos de 48x16) chegar
 	var tipo := str(c.get("tipo", ""))
-	selo.text = "UPGRADE" if tipo == "up" else ("NOVO" if tipo == "nov" else ("TROCA" if tipo == "troca" else ""))
-	selo.add_theme_color_override("font_color", Paleta.BONUS if tipo == "up" else (Paleta.PERIGO if tipo == "troca" else Paleta.OURO))
+	# Só o que é exceção ganha selo (tela enxuta, 15/11): UPGRADE e NOVO já estão no rodapé ("Nível 1 » 2 de 5", "Novo golpe")
+	selo.text = "TROCA" if tipo == "troca" else ""
+	selo.add_theme_color_override("font_color", Paleta.PERIGO)
 	if tipo == "up" and bool(c.get("apice", false)):  # a carta que leva o bônus ao 5/5 (CAR-5): selo dourado ÁPICE no lugar de UPGRADE
 		selo.text = "ÁPICE"
 		selo.add_theme_color_override("font_color", Paleta.OURO)
@@ -536,7 +525,7 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o magenta da fusão
 	evo.add_theme_color_override("font_color", LENDARIA_COR if lendaria else Paleta.OURO)
 	var rl := p.get_node("rar") as Label
-	rl.text = str(c.get("rar_nome", "")).to_upper()
+	rl.text = ""  # a raridade fica na cor (borda, faixa, moldura do ícone e nome); a palavra repetia em toda carta
 	rl.add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.3))
 	(p.get_node("faixa") as ColorRect).color = Color(LENDARIA_COR.r, LENDARIA_COR.g, LENDARIA_COR.b, 0.9) if lendaria else Color(cor.r, cor.g, cor.b, 0.9)
 	(p.get_node("icone") as TextureRect).texture = Dados.icone_carta(str(c.get("id", "")), str(c.get("icone", "")))
@@ -654,7 +643,6 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	_escolha.visible = true
 	var do_bau := _escolha_do_bau()
 	_titulo.text = "BAÚ!" if do_bau else "NÍVEL %d" % nivel
-	_auto_dica.text = AUTO_DICA_BAU if do_bau else AUTO_DICA
 	var maxn := cartas.size()
 	sel = clampi(sel, 0, maxi(maxn - 1, 0))
 	for i in 3:
@@ -680,7 +668,6 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	if not refresh:
 		_iniciar_roleta(cartas, float(ec.get("roleta_s", 0.0)))
 	_quadro_limite()
-	_texto_build()
 	_aquecer_invocacoes(cartas)
 	if not roleta_ativa:  # com a roleta o som da raridade fica para o rolo que para
 		combate.audio.tocar("carta", 1.0 + 0.12 * float(_rar_max(cartas)), 0.0, 0.0)
@@ -743,22 +730,6 @@ func _marcar() -> void:
 func _atualizar_botoes() -> void:
 	_btn_a_txt.text = "Automático"
 	_btn_a.modulate = Paleta.BRANCO if espera_escolha <= 0.0 else Paleta.alfa(Paleta.BRANCO, 0.4)
-
-
-## "Sua build" em UMA linha, sempre (o mesmo tamanho e a mesma altura com 1 golpe ou com 8): o que não cabe na largura vira "e mais N".
-func _texto_build() -> void:
-	var partes: Array = []
-	for r in combate.cartas.resumo():
-		partes.append("%s %s" % [r.nome, ("nv %d" % r.nivel) if int(r.nivel) > 0 else "(evoluído)"])
-	if partes.is_empty():
-		_build.text = "Sua build: só a katana (os golpes automáticos vêm pelas cartas)"
-		return
-	var texto := ""
-	for k in range(partes.size(), 0, -1):
-		texto = "Sua build: " + ", ".join(partes.slice(0, k)) + (" e mais %d" % (partes.size() - k) if k < partes.size() else "")
-		if _fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_TEXTO).x <= _build.size.x:
-			break
-	_build.text = texto
 
 
 func mostrar_resultado() -> void:

@@ -13,6 +13,7 @@ extends Node
 
 const PosVisual := preload("res://v2/pos_visual.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const LARG := 960
 const ALT := 540
 
@@ -98,14 +99,15 @@ func _filtro(t: TextureRect, escala_pura: bool, com_alfa: bool) -> void:
 			t.material = pre
 		return
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	var sh := Shader.new()
-	sh.code = (
-		"shader_type canvas_item;\n"
-		+ ("render_mode blend_premul_alpha;\n" if com_alfa else "")
-		+ "uniform vec2 tam = vec2(960.0, 540.0);\nuniform float escala = 1.0;\n"
-		+ "void fragment(){ vec2 texel = UV * tam; vec2 piso = floor(texel); vec2 d = fract(texel) - 0.5;"
-		+ " vec2 r = 0.5 - 0.5 / max(vec2(escala), vec2(1.0)); vec2 f = (d - clamp(d, -r, r)) * escala + 0.5;"
-		+ (" COLOR = texture(TEXTURE, (piso + f) / tam); }\n" if com_alfa else " COLOR = vec4(texture(TEXTURE, (piso + f) / tam).rgb, 1.0); }\n")
+	var sh := Sombreadores.shader(
+		(
+			"shader_type canvas_item;\n"
+			+ ("render_mode blend_premul_alpha;\n" if com_alfa else "")
+			+ "uniform vec2 tam = vec2(960.0, 540.0);\nuniform float escala = 1.0;\n"
+			+ "void fragment(){ vec2 texel = UV * tam; vec2 piso = floor(texel); vec2 d = fract(texel) - 0.5;"
+			+ " vec2 r = 0.5 - 0.5 / max(vec2(escala), vec2(1.0)); vec2 f = (d - clamp(d, -r, r)) * escala + 0.5;"
+			+ (" COLOR = texture(TEXTURE, (piso + f) / tam); }\n" if com_alfa else " COLOR = vec4(texture(TEXTURE, (piso + f) / tam).rgb, 1.0); }\n")
+		)
 	)
 	var m := ShaderMaterial.new()
 	m.shader = sh

@@ -13,8 +13,10 @@ extends RefCounted
 ## continuam nós (`Monstro.virar_no`): são poucos.
 
 const Sombras := preload("res://v2/sombras.gd")
+const Sprites := preload("res://v2/sprites.gd")
 const Monstro := preload("res://v2/monstro.gd")
 const StatusCorpo := preload("res://v2/status_corpo.gd")
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const MARGEM_TELA := 96.0  # só monstro a até 96 px da tela é desenhado (e tem sombra)
 const CAP_INI := 16  # instâncias de cada MultiMesh no começo (dobra quando falta)
 const DECIMA := 3  # a conta da luz sobre a sombra de cada monstro roda a cada N quadros (o deslize suavizado esconde o degrau)
@@ -200,7 +202,7 @@ func montar(m) -> void:
 	lote_blob.montar(_quad, sombras.textura_blob(), _material(SHADER_BLOB), sombras.raiz_blobs)
 	lote_blob.mmi.light_mask = 0
 	lote_sombra = Lote.new()
-	lote_sombra.montar(_quad, atlas.blur, _material(SHADER_SOMBRA), sombras.raiz_sombras)
+	lote_sombra.montar(_quad, Sprites.blur_de(atlas) if sombras.modo == Sombras.MEDIA else atlas.alb, _material(SHADER_SOMBRA), sombras.raiz_sombras)
 	lote_sombra.mmi.light_mask = 0
 	lote_sombra.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	lote_olhos = Lote.new()
@@ -220,11 +222,52 @@ func _quadrado() -> ArrayMesh:
 
 
 func _material(codigo: String) -> ShaderMaterial:
-	var sh := Shader.new()
-	sh.code = codigo
+	var sh := Sombreadores.shader(codigo)
 	var m := ShaderMaterial.new()
 	m.shader = sh
 	return m
+
+
+## Aquecimento do primeiro desenho (v2/aquecimento.gd, por baixo da tela de carregamento): uma instância de 1 px em `p` em cada lote (as
+## primeiras `n_fatias` fatias de sprites, os olhos, as manchas e as sombras), para a placa compilar e preparar tudo agora, e não quando o primeiro monstro
+## chegar perto da tela (~1 s de travada no PC do Alisson). Chamar depois do `atualizar` do quadro: o próximo `atualizar` esconde tudo.
+func aquecer(p: Vector2, n_fatias := 4, lote := -1) -> void:
+	for i in n_fatias:  # algumas fatias de uma vez: as próximas que a partida pedir já existem (nó novo no meio da luta também custa)
+		var f := _fatia()
+		f.chave = p.y + float(i)
+		_instancia_aquecer(f, p - Vector2(0.0, f.chave), 1.0)
+		f.mmi.position = Vector2(0.0, f.chave)
+		f.x0 = p.x
+		f.x1 = p.x
+		f.y0 = p.y
+		f.y1 = p.y
+		f.enviar(f.chave)
+	var lotes := [lote_olhos, lote_blob, lote_sombra]
+	for l in lotes if lote == -1 else (lotes.slice(lote, lote + 1) if lote >= 0 else []):  # por partes: -2 nenhum, 0 a 2 só um
+		l.n = 0
+		_instancia_aquecer(l, p, 0.004)
+		l.enviar()
+
+
+## Uma instância de 1x1 px (o canto do atlas) em `p`, com alfa `a` (a fatia de sprites usa 1: lá o alfa leva o status do corpo).
+func _instancia_aquecer(l: Lote, p: Vector2, a: float) -> void:
+	if l.cap < 1:
+		l.crescer()
+	var b := l.buf
+	var o := l.n << 4
+	l.n += 1
+	for k in 16:
+		b[o + k] = 0.0
+	b[o] = 1.0
+	b[o + 3] = p.x
+	b[o + 5] = 1.0
+	b[o + 7] = p.y
+	b[o + 8] = 1.0
+	b[o + 9] = 1.0
+	b[o + 10] = 1.0
+	b[o + 11] = a
+	b[o + 14] = 1.0
+	b[o + 15] = 1.0
 
 
 ## Número de série do monstro (para espalhar a conta da luz entre os quadros).
@@ -249,7 +292,7 @@ func n_fatias() -> int:
 
 func _trocar_modo(m: int) -> void:
 	_modo = m
-	lote_sombra.mmi.texture = atlas.blur if m == Sombras.MEDIA else atlas.alb
+	lote_sombra.mmi.texture = Sprites.blur_de(atlas) if m == Sombras.MEDIA else atlas.alb
 	if m == Sombras.NENHUMA:
 		lote_blob.esconder()
 	for mo in mundo.monstros:  # a conta da luz recomeça no modo novo (a alta guarda estado por sombra)

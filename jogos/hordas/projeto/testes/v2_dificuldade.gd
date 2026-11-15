@@ -528,7 +528,10 @@ func _cartoes_dois_numeros() -> void:
 				textos.append(filho.text)
 		var almas := "ALMAS +%d%%" % roundi((float(ALMAS[i]) - 1.0) * 100.0)
 		var xp := "XP +%d%%" % roundi((float(XP[i]) - 1.0) * 100.0)
-		ok(almas in textos and xp in textos, "cartão %s mostra '%s' e '%s' (%s)" % [IDS[i], almas, xp, str(textos)])
+		if almas == "ALMAS +0%" and xp == "XP +0%":  # sem bônus nenhum, o cartão diz só "Sem bônus" (tela enxuta, 15/11)
+			ok("Sem bônus" in textos and not almas in textos, "cartão %s mostra 'Sem bônus' (%s)" % [IDS[i], str(textos)])
+		else:
+			ok(almas in textos and xp in textos, "cartão %s mostra '%s' e '%s' (%s)" % [IDS[i], almas, xp, str(textos)])
 	remove_child(escolha)
 	escolha.free()
 

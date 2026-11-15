@@ -10,6 +10,8 @@ extends Node
 ##   --perfil=baixo|medio|alto (vale o perfil de gráficos inteiro: sombras, partículas e orçamento de luzes; sem gravar) --luzes=N (orçamento de luzes)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
+##   --sem_aquecimento (entrando pela tela de carregamento, não aquece o primeiro desenho: v2/aquecimento.gd; só para medir)
+##   --sem_revelar (entrando pela tela de carregamento, o primeiro desenho vem inteiro no quadro do _ready, sem v2/revelacao.gd; só para medir)
 ##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --dpi=150 (finge a escala de tela do sistema, em %, para o Automático) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
@@ -163,11 +165,18 @@ var _us_total := 0
 var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
+var etapas_carga: Array = []  # [nome, ms] de cada etapa da montagem (impresso com --medir e --picos): onde a entrada na partida pesa
+var _us_etapa := 0
+var _tex_etapa := 0.0  # memória de textura na marca anterior (bytes): quanto cada etapa sobe para a placa
+var aquecimento = null  # v2/aquecimento.gd: só quando a partida entrou pela tela de carregamento (os primeiros quadros, cobertos)
+var revelacao = null  # v2/revelacao.gd: o primeiro desenho por partes, por baixo da tela de carregamento (antes do aquecimento)
 var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 
 func _ready() -> void:
 	var t0 := Time.get_ticks_usec()
+	_us_etapa = t0
+	_tex_etapa = Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED)
 	CursorKikiu.aplicar("mira")
 	args = _argumentos()
 	coop_modo = str(args.get("coop", ""))  # lida e ignorada por enquanto: o solo não muda (docs/ONLINE_V2_PLANO.md, etapa 0)
@@ -204,6 +213,7 @@ func _ready() -> void:
 	add_child(ap)
 	sv = ap.montar(get_window(), args.has("escala_pura"))
 	ui = ap.ui
+	marcar_etapa("apresentacao")
 	if not modo_teste and (_modo == "medir" or args.has("sem_vsync")):
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
@@ -211,11 +221,14 @@ func _ready() -> void:
 	_montar()
 	hud = preload("res://v2/hud.gd").criar(self)
 	ui.add_child(hud)
+	marcar_etapa("hud")
 	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
 	ui.add_child(minimapa)
+	marcar_etapa("minimapa")
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	ui.add_child(pausa)
-	pausa.fechou.connect(func(): _qualidade.interromper())  # a árvore não processa durante a pausa: a retomada começa uma medição nova
+	marcar_etapa("pausa")
+	pausa.fechou.connect(_pausa_fechou)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
 	ui.add_child(status)
 	if _modo == "livre":  # medir e fotografar ficam sem música
@@ -226,6 +239,20 @@ func _ready() -> void:
 		meta_res = ResultadoMeta.new()
 		ui.add_child(meta_res)
 		meta_res.montar(self)
+	marcar_etapa("status_trilha_meta")
+	if Transicoes.carregando() and not modo_teste and not args.has("sem_aquecimento"):  # medição A/B: --sem_aquecimento; a tela de carregamento cobre os primeiros quadros: o primeiro desenho de cada coisa vai ali
+		var cfg_carga: Dictionary = Transicoes.Carregando.cfg()
+		aquecimento = preload("res://v2/aquecimento.gd").new(self, int(cfg_carga.get("quadros_aquecer", 2)))
+		if bool(cfg_carga.get("revelar", true)) and not args.has("sem_revelar"):  # medição A/B: --sem_revelar
+			# o primeiro desenho vem por partes (v2/revelacao.gd): este quadro não desenha o mundo nem a interface, e o aquecimento
+			# começa quando tudo já apareceu (o que ele desenha nasce com a camada que só entra no fim)
+			revelacao = preload("res://v2/revelacao.gd").new([sv, ui], [ap.tela, ap.tela_ui], int(cfg_carga.get("revelar_juntos_baratos", 8)))
+			aquecimento.por_partes = true
+			marcar_etapa("revelacao")
+		else:
+			aquecimento.quadro()
+		marcar_etapa("aquecimento")
+	Sprites.soltar_aquecidos()  # o que a tela de carregamento adiantou já foi usado: nada fica guardado durante a partida
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
 	_qualidade_ligada = DisplayServer.get_name() != "headless" and OS.get_cmdline_user_args().is_empty()
@@ -238,10 +265,90 @@ func _ready() -> void:
 				% [_ms_carga, cenario.ms_carga, sprites.ms_blur, cenario.objetos.size(), cenario.n_decalques, luzes.lista.size()]
 			)
 		)
+	if _modo == "medir" or picos != null:
+		print("CARGA_ETAPAS heroi_id=%s %s" % [str(combate.heroi_id), texto_etapas()])
+		print("CARGA_TEX total=%.0fMB %s" % [Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0, texto_tex_etapas()])
+
+
+## Marca o fim de uma etapa da montagem: guarda quanto ela levou desde a marca anterior (custa um relógio; vale também fora da medição).
+func marcar_etapa(nome: String) -> void:
+	var agora := Time.get_ticks_usec()
+	var tex := Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED)
+	etapas_carga.append([nome, (agora - _us_etapa) / 1000.0, (tex - _tex_etapa) / 1048576.0])
+	_us_etapa = agora
+	_tex_etapa = tex
+
+
+## A textura que cada etapa subiu para a placa, da maior para a menor ("c_fx=140MB cenario=60MB ..."), só as que passam de 1 MB.
+func texto_tex_etapas() -> String:
+	var l := etapas_carga.duplicate()
+	l.sort_custom(func(a, b): return a[2] > b[2])
+	var p := []
+	for e in l:
+		if float(e[2]) >= 1.0:
+			p.append("%s=%.0fMB" % [e[0], e[2]])
+	return " ".join(p)
+
+
+## As etapas da montagem, da mais pesada para a mais leve ("cenario=812 combate=95 ..."), só as que passam de 1 ms.
+func texto_etapas() -> String:
+	var l := etapas_carga.duplicate()
+	l.sort_custom(func(a, b): return a[1] > b[1])
+	var p := []
+	for e in l:
+		if float(e[1]) >= 1.0:
+			p.append("%s=%.0f" % [e[0], e[1]])
+	return " ".join(p)
+
+
+## Tela de carregamento (Transicoes.ir_para_carregando): o que dá para adiantar antes do _ready, um passo por quadro. Hoje são as
+## folhas de sprite que a partida usa (as dos monstros, que entram no atlas da horda, as grandes de elite e chefe, e a do herói): a leitura das imagens roda
+## no passo e a sombra borrada de cada uma roda numa thread (Sprites.aquecer). O que não ficar pronto é feito no _ready, como antes.
+static func passos_de_carga() -> Array:
+	var nomes: Array = [Herois.sprite_da_partida(Herois.escolhido())]
+	nomes.append_array(SPRITES_MONSTRO)
+	var passos: Array = []
+	for nome in nomes:
+		passos.append(Sprites.aquecer.bind(str(nome)))
+	for nome in SPRITES_MONSTRO:  # as folhas grandes das elites e dos chefes (tipo_grande): só as que existem viram trabalho
+		for n in [2, 3, 4]:
+			passos.append(Sprites.aquecer.bind("%s_x%d" % [nome, n]))
+	passos.append(preload("res://v2/chama_gotas.gd").aquecer_folha)  # a folha das gotas de fogo (lida da placa uma vez por processo)
+	return passos
+
+
+## A tela de carregamento ainda deve cobrir a partida: o primeiro desenho está vindo por partes (v2/revelacao.gd) ou o aquecimento
+## ainda desenha por baixo (v2/aquecimento.gd). Transicoes.ir_para_carregando espera isto ficar false antes do fade.
+func revelando() -> bool:
+	return revelacao != null or aquecimento != null
+
+
+## 0 a 1: quanto do primeiro desenho já apareceu (a barra da tela de carregamento anda com isto).
+func progresso_revelacao() -> float:
+	return revelacao.progresso() if revelacao != null else 1.0
+
+
+## A tela de carregamento esperou o teto (`espera_max_quadros`) e vai sair: solta o que ainda estava escondido e para o aquecimento,
+## para a partida nunca aparecer vazia ou por partes nem ficar parada depois do fade (o que faltava compilar compila no próximo quadro).
+func terminar_revelacao() -> void:
+	if revelacao != null:
+		revelacao.encerrar()
+		revelacao = null
+	if aquecimento != null:
+		aquecimento.encerrar()
+		aquecimento = null
+
+
+## Quanto do aquecimento ainda roda em thread (0 = pronto). A tela de carregamento espera chegar a zero antes de trocar a cena.
+static func carga_pendente() -> int:
+	return Sprites.aquecendo()
 
 
 func _exit_tree() -> void:
 	CursorKikiu.aplicar("seta")
+	if revelacao != null:  # saiu no meio da revelação: máscaras e camadas voltam (a janela é de todos)
+		revelacao.encerrar()
+		revelacao = null
 	if picos != null:
 		picos.resumo()
 		picos = null
@@ -304,20 +411,27 @@ func _montar() -> void:
 	glow.layer = 2
 	glow.follow_viewport_enabled = true
 	sv.add_child(glow)
+	marcar_etapa("base")
 	sprites = Sprites.new()
 	sprites.com_normal = not args.has("sem_normal")
 	atm = Atmosfera.new()
 	atm.montar(glow)
+	marcar_etapa("atmosfera")
 	luzes = Luzes.new()
 	luzes.montar(sv, glow, atm, dados.get("luz_tipos", {}))
+	marcar_etapa("luzes")
 	sombras = Sombras.new()
 	sombras.montar(no_mundo)
+	sombras.modo = _modo_sombra()  # já no modo certo antes dos atores: no Alto e no Baixo a silhueta borrada nem vira textura (Sprites.blur_de)
 	sombras.luzes = luzes
 	sombras.definir_ambiente(dados.get("mapa", {}).get("sombra_ambiente", {}))  # sombra base do mapa (laboratório); sem a chave, só as luzes
+	marcar_etapa("sombras")
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
+	marcar_etapa("cenario")
 	copas = Copas.new()
 	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)), cenario)
+	marcar_etapa("copas")
 	dbg_colisao = Depuracao.new()
 	dbg_colisao.mundo = self
 	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
@@ -326,40 +440,59 @@ func _montar() -> void:
 	_rng.seed = int(dados.get("semente", 11))
 	combate = Combate.new()
 	combate.montar(self)
+	marcar_etapa("combate")
 	elenco = Elenco.new()
 	elenco.montar(id_mapa, combate.cfg.diretor, combate.cartas.cfg.elites)
+	if combate.elites != null:
+		combate.elites.precarregar_folhas(elenco.elites_lista)
+	marcar_etapa("elenco")
 	_criar_heroi()
+	marcar_etapa("heroi")
 	oclusao = Oclusao.new().montar(sv, heroi)
+	marcar_etapa("oclusao")
 	combate.iniciar_heroi()
+	marcar_etapa("iniciar_heroi")
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	combate.diretor.zerar()  # os primeiros relógios também usam a dificuldade recém-lida
 	combate.elites.zerar()
+	marcar_etapa("meta_aplicar")
 	horda = Horda.new()
 	horda.montar(self)
+	marcar_etapa("horda")
 	braseiros = Braseiros.new()
 	braseiros.montar(self)
+	marcar_etapa("braseiros")
 	_pre_criar_monstros()
+	marcar_etapa("pool_monstros")
 	_popular_inicial()
+	marcar_etapa("monstros_iniciais")
 	var todos: Array = cenario.objetos.duplicate()
 	todos.append(heroi)
 	todos.append_array(_todos_monstros)
 	sombras.registrar_lote(todos)
 	_sombras_prontas = true
+	if _media_possivel():
+		_criar_silhuetas()
+	marcar_etapa("sombras_lote")
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_luar(m)
 	atm.config = dados.get("atmosfera", {})
 	atm.fator_det = float(_nivel_particulas().get("amb_detritos", 1.0))  # antes do ambiente: no Baixo o emissor de detritos nem nasce
 	atm.ambiente(cam.position)
 	_vinheta()
+	marcar_etapa("luar_ambiente")
 	clima = Clima.new()
 	clima.montar(sv, id_mapa, atm.tex_brilho)
 	olho = OlhoDerrota.new()
 	sv.add_child(olho)
+	marcar_etapa("clima")
 	_ler_graficos()
+	marcar_etapa("graficos")
 	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build") or args.has("playtest"):
 		roteiro = Roteiro.new()
 		roteiro.montar(self, args)
 	avancar(0.0)
+	marcar_etapa("primeiro_passo")
 
 
 func _criar_heroi() -> void:
@@ -374,6 +507,7 @@ func _criar_heroi() -> void:
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
 	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite_da_partida(combate.heroi_id, args.has("basico"))), p)
+	marcar_etapa("heroi_sprite")
 	combate.mecha.precarregar()  # LightWolf: a folha do Lobo entra na memória agora, para a troca no meio da luta não pesar
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
@@ -772,12 +906,68 @@ func _vinheta() -> void:
 	camada.add_child(r)
 
 
+## O modo de sombra da aba Gráficos (opção "sombras"; --sombra= vale por cima).
+func _modo_sombra() -> int:
+	var m := Sombras.NOMES.find(str(args.get("sombra", Config.g("sombras"))))
+	return m if m >= 0 else Sombras.MEDIA
+
+
+## A partida pode chegar à sombra Média sem pausa? Começa nela, ou o Ajuste dinâmico ("qualidade_auto") pode descer do Perfil escolhido
+## até um degrau com sombra média (Alto desce para Médio no meio da luta). Aí a silhueta borrada de toda folha nasce na carga, como antes
+## do corte; no Alto sem ajuste e no Baixo ela só nasce se o jogador trocar no menu de pausa (com o jogo parado).
+func _media_possivel() -> bool:
+	if _modo_sombra() == Sombras.MEDIA:
+		return true
+	return not args.has("sombra") and _perfil_alcancavel_com("sombras", [Sombras.NOMES[Sombras.MEDIA]])
+
+
+## Algum perfil que o Ajuste dinâmico pode pôr no meio da partida (do Perfil escolhido, o teto, até o Baixo) tem `chave` em `valores`? Sem
+## o ajuste (opção desligada, teste, argumentos ou headless, a mesma regra de _qualidade_ligada, que o _ready só liga depois da montagem)
+## o perfil não muda sem pausa e a resposta é false. Personalizado conta como todos os degraus.
+func _perfil_alcancavel_com(chave: String, valores: Array) -> bool:
+	var ajuste := DisplayServer.get_name() != "headless" and OS.get_cmdline_user_args().is_empty() and bool(Config.v("qualidade_auto"))
+	if not ajuste or modo_teste:
+		return false
+	var perfis: Dictionary = Dados.json("graficos").get("perfis", {})
+	var i0 := maxi(QualidadeAuto.DEGRAUS.find(Config.g_perfil_escolhido()), 0)
+	for i in range(i0, QualidadeAuto.DEGRAUS.size()):
+		if valores.has(str(perfis.get(QualidadeAuto.DEGRAUS[i], {}).get(chave, ""))):
+			return true
+	return false
+
+
+## A partida pode ligar os golpes suaves (partículas "medias" ou "muitas", AnimGolpes.suave) sem pausa? Sem isso as folhas decorativas do
+## pixelfx (fx_folha.gd, 52 MB, todas recusadas no perfil Baixo) ficam fora da carga e só carregam se o jogador mudar no menu de pausa.
+func _suave_possivel() -> bool:
+	if str(args.get("particulas", Config.g("particulas_sim"))) in ["medias", "muitas"]:
+		return true
+	return not args.has("particulas") and _perfil_alcancavel_com("particulas_sim", ["medias", "muitas"])
+
+
+## A árvore não processa durante a pausa: a retomada começa uma medição nova do Ajuste dinâmico. E o jogador pode ter ligado o ajuste ou
+## subido o Perfil na pausa (isso não avisa graficos_mudou): se o Médio ficou ao alcance, as silhuetas nascem agora, ainda na tela da pausa.
+func _pausa_fechou() -> void:
+	_qualidade.interromper()
+	if _sombras_prontas and _media_possivel():
+		_criar_silhuetas()
+
+
+## Cria agora a silhueta borrada de toda folha já carregada (herói, Lobo do mecha, monstros, elites, chefes) e a do atlas da horda, para a
+## troca para o Médio no meio da partida não subir dezenas de MB num quadro (o mecha sozinho tem 42 MB).
+func _criar_silhuetas() -> void:
+	for t in sprites._tipos.values():
+		if t is Dictionary and t.has("blur_img"):
+			Sprites.blur_de(t)
+	if horda != null and horda.atlas is Dictionary:
+		Sprites.blur_de(horda.atlas)
+
+
 ## Lê da aba Gráficos o modo de sombra (opção "sombras": baixa, media, alta) e as partículas ("particulas_sim"). --sombra= e --particulas=
 ## valem por cima (medição e fotos).
 func _ler_graficos() -> void:
-	var nome := str(args.get("sombra", Config.g("sombras")))
-	var m := Sombras.NOMES.find(nome)
-	sombras.definir_modo(m if m >= 0 else Sombras.MEDIA)
+	sombras.definir_modo(_modo_sombra())
+	if _sombras_prontas and (sombras.modo == Sombras.MEDIA or _media_possivel()):
+		_criar_silhuetas()  # trocou para o Médio na pausa: o Lobo, as elites e os chefes grandes que ainda não estão em campo também (blur_de pula o que já tem)
 	if horda != null and modo_teste == false:
 		horda.atualizar(t, cam.retangulo(), quadros)  # mudou no menu de pausa: o lote já aparece no modo novo, sem esperar a partida andar
 	# orçamento de luzes pelo perfil ("luz_relevo" da aba Gráficos): cada luz ligada custa GPU em tudo o que ela toca, e a iGPU do i5 é fraca
@@ -789,6 +979,8 @@ func _ler_graficos() -> void:
 	if clima != null:
 		clima.definir_fator(1.0 if nivel == "muitas" else (0.5 if nivel == "medias" else 0.0))  # Baixo desliga o clima; Médio usa metade
 	AnimGolpes.suave = nivel in ["medias", "muitas"]  # golpes suaves custam uma chamada a mais por golpe: o perfil Baixo (poucas) fica sem
+	if AnimGolpes.suave and combate != null and combate.fx_folha != null:
+		combate.fx_folha.carregar_faltantes()  # saiu do Baixo no menu de pausa: as folhas decorativas que a carga deixou de fora sobem agora
 	if combate != null:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
@@ -954,7 +1146,15 @@ func _process(delta: float) -> void:
 	if picos != null:
 		picos.quadro(self)
 	var t0 := Time.get_ticks_usec()
-	avancar(minf(delta, 0.1))
+	if revelacao != null and not revelacao.quadro():
+		revelacao = null
+	if revelacao != null:
+		avancar(0.0)  # a partida ainda não aparece: o tempo dela não anda (ninguém joga às cegas por baixo da tela)
+	else:
+		var coberta: bool = aquecimento != null and aquecimento.por_partes  # o aquecimento por partes também corre com a partida parada
+		avancar(0.0 if coberta else minf(delta, 0.1))
+		if aquecimento != null and not aquecimento.quadro():
+			aquecimento = null
 	if roteiro != null:
 		var r0 := Time.get_ticks_usec()
 		roteiro.atualizar(delta)

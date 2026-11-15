@@ -5,6 +5,7 @@ extends RefCounted
 ## ATIVO (na tela, com margem): `ativar(ator, bool)`. As luzes vêm de `luzes` (luzes.gd: só as que alcançam a tela).
 
 const Ator := preload("res://v2/ator.gd")
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const NENHUMA := 0
 const BAIXA := 1
 const MEDIA := 2
@@ -77,6 +78,12 @@ func montar(mundo: Node2D) -> void:
 ## Sombra do modo médio: só o alfa da folha (rgb preto), borrado UMA vez no carregamento (2 passes de caixa 3x3 separável, sem vazar
 ## entre quadros de w x h). Em tempo de execução é só uma textura a mais, sem custo de shader.
 static func borrar_folha(im: Image, w: int, h: int) -> ImageTexture:
+	return ImageTexture.create_from_image(borrar_imagem(im, w, h))
+
+
+## A conta do borrão, sem tocar no renderizador: só lê `im` e devolve uma Image nova. Pode rodar numa thread (a tela de
+## carregamento adianta as folhas da partida assim, ver Sprites.aquecer).
+static func borrar_imagem(im: Image, w: int, h: int) -> Image:
 	var cp := im.duplicate() as Image
 	cp.convert(Image.FORMAT_RGBA8)
 	var iw := cp.get_width()
@@ -108,7 +115,7 @@ static func borrar_folha(im: Image, w: int, h: int) -> ImageTexture:
 				var destino := ((cy + area.position.y + y) * iw + cx + area.position.x) * 4 + 3
 				for x in largura:
 					saida[destino + x * 4] = a[y * largura + x]
-	return ImageTexture.create_from_image(Image.create_from_data(iw, ih, false, Image.FORMAT_RGBA8, saida))
+	return Image.create_from_data(iw, ih, false, Image.FORMAT_RGBA8, saida)
 
 
 static func _caixa1d(a: PackedByteArray, iw: int, ih: int, w: int, h: int, horiz: bool) -> PackedByteArray:
@@ -150,15 +157,16 @@ static func _caixa1d(a: PackedByteArray, iw: int, ih: int, w: int, h: int, horiz
 
 ## preto, sem luz, esmaecendo ao longo da altura do sprite (ou seja, ao longo do comprimento da sombra)
 func _material_sombra() -> ShaderMaterial:
-	var sh := Shader.new()
-	sh.code = (
+	var sh := Sombreadores.shader(
 		(
-			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
-			+ GLSL_DEGRAUS
-			+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
-			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
+			(
+				"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
+				+ GLSL_DEGRAUS
+				+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
+				+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
+			)
+			% SOMBRA_FADE
 		)
-		% SOMBRA_FADE
 	)
 	var m := ShaderMaterial.new()
 	m.shader = sh

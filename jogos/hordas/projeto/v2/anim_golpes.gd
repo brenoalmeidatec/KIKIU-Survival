@@ -1,7 +1,7 @@
 extends RefCounted
 ## Folhas animadas dos golpes secundários (projéteis, meteoros, anéis e nuvens): tiras horizontais em `assets/v2/armas_anim/`, descritas
 ## pelos `indice_<grupo>.json` da mesma pasta. O contrato da arte (tamanhos, âncora, fps, nomes) está em docs/combate_v2/SPEC_ARTE.md.
-## Tudo é estático e lido uma vez por processo: cada arma aponta para um dicionário {nome da animação -> folha}, e cada folha é
+## Tudo é estático e lido uma vez por processo (as folhas de arma de carta só quando a arma aparece, ver GRUPOS_JA): cada arma aponta para um dicionário {nome da animação -> folha}, e cada folha é
 ## {tex, quadro (Vector2), n, fps, loop, ancora (Vector2), gira}. O desenho escolhe o quadro pelo tempo (`quadro_em`) ou pelo progresso
 ## da fase (`quadro_frac`) e desenha a região da tira (`desenhar`), sem nó nem alocação por quadro.
 ## Arma sem folha devolve {} e o golpe segue com o desenho antigo (armas_novas.gd).
@@ -12,12 +12,21 @@ const PASTA := "res://assets/v2/armas_anim/"
 const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "evo_met_aneis", "evo_nuvens", "magias", "martelo", "perigo", "pixelfx"]  # os índices lidos (lista fixa: listar res:// não serve no jogo exportado)
 
 static var _armas := {}
+static var _specs := {}  # arma -> a entrada do índice ({anims: ...}), ainda sem textura: `de` carrega na primeira vez
+static var _grupo := {}  # arma -> o grupo do índice que ficou valendo
 static var _lidas := false
+## Os grupos que carregam tudo de uma vez em `carregar()`: os pequenos e os que não dependem de carta (perigo dos inimigos, magias, as
+## adagas `_heroi`). As folhas de arma de carta (meteoro, anel, nuvem, evoluções e pixelfx) só carregam quando a arma entra no jogo
+## (armas_novas.preparar_giros, na escolha da carta) ou na fila de aquecimento da tela de cartas (armas_novas.pedir_aquecer): ~41 MB de
+## textura a menos na carga da partida. Os `fx_*` e o `raio` (impactos que qualquer golpe toca) também carregam já.
+const GRUPOS_JA := ["projeteis", "magias", "martelo", "perigo"]
+const IDS_JA := ["raio"]
 ## Quadros intermediários (#golpes-suaves): `desenhar_suave` funde o quadro atual com o próximo pela fração do tempo, e a folha de 6 a
 ## 12 quadros parece ter o dobro. Custa uma chamada de desenho a mais por golpe; a partida desliga com partículas em "nenhuma"/"poucas".
 static var suave := true
 
 
+## Lê os índices. As folhas dos grupos de GRUPOS_JA, dos `fx_*` e de IDS_JA carregam aqui; o resto fica só anotado até `de(id)`.
 static func carregar() -> void:
 	if _lidas:
 		return
@@ -31,39 +40,62 @@ static func carregar() -> void:
 			continue
 		for nome in d.get("folhas", {}):
 			var f: Dictionary = d.folhas[nome]
-			var anims := {}
-			for an in f.get("anims", {}):
-				var s: Dictionary = f.anims[an]
-				var tex := load(PASTA.path_join(str(s.arquivo))) as Texture2D
-				if tex == null:
-					continue
-				var q := Vector2(float(s.quadro[0]), float(s.quadro[1]))
-				var anc: Array = s.get("ancora", [q.x * 0.5, q.y * 0.5])
-				anims[str(an)] = {
-					"tex": tex,
-					"quadro": q,
-					"n": maxi(int(s.n), 1),
-					"fps": maxf(float(s.fps), 1.0),
-					"loop": bool(s.get("loop", false)),
-					"ancora": Vector2(float(anc[0]), float(anc[1])),
-					"gira": bool(s.get("gira", false))
-				}
-			if anims.is_empty():
+			if (f.get("anims", {}) as Dictionary).is_empty():
 				continue
 			for arma in f.get("armas", []):
-				_armas[str(arma)] = anims
+				_specs[str(arma)] = f  # a arma que aparece em dois índices fica com a folha do último (o pixelfx vem por último e vence)
+				_grupo[str(arma)] = g
+	for id in _specs:  # só depois de ler todos: montar no meio do laço prendia a folha antiga de quem o pixelfx sobrescreve
+		if GRUPOS_JA.has(_grupo[id]) or str(id).begins_with("fx_") or IDS_JA.has(id):
+			_montar(id)
 
 
-## As animações da arma `id` ({nome -> folha}), ou {} quando ela não tem folha animada.
+## Carrega as texturas da arma `id` (a partir do índice já lido) e guarda em _armas. A folha que falha fica de fora.
+static func _montar(id: String) -> Dictionary:
+	var f: Dictionary = _specs.get(id, {})
+	var anims := {}
+	for an in f.get("anims", {}):
+		var s: Dictionary = f.anims[an]
+		var tex := load(PASTA.path_join(str(s.arquivo))) as Texture2D
+		if tex == null:
+			continue
+		var q := Vector2(float(s.quadro[0]), float(s.quadro[1]))
+		var anc: Array = s.get("ancora", [q.x * 0.5, q.y * 0.5])
+		anims[str(an)] = {
+			"tex": tex,
+			"quadro": q,
+			"n": maxi(int(s.n), 1),
+			"fps": maxf(float(s.fps), 1.0),
+			"loop": bool(s.get("loop", false)),
+			"ancora": Vector2(float(anc[0]), float(anc[1])),
+			"gira": bool(s.get("gira", false))
+		}
+	_armas[id] = anims
+	return anims
+
+
+## As animações da arma `id` ({nome -> folha}), ou {} quando ela não tem folha animada. A primeira chamada de uma arma de carta carrega
+## as folhas dela (de 0,1 a 2 MB): quem conhece a arma antes do golpe chama aqui na escolha da carta (preparar_giros, pedir_aquecer).
 static func de(id: String) -> Dictionary:
 	carregar()
-	return _armas.get(id, {})
+	var a = _armas.get(id)
+	if a != null:
+		return a
+	if not _specs.has(id):
+		return {}
+	return _montar(id)
 
 
-## Os ids de todas as armas com folha animada (lidos dos índices).
+## true quando as folhas da arma `id` já estão na memória (ou ela não tem folha): a fila de aquecimento pula o que não falta.
+static func pronta(id: String) -> bool:
+	carregar()
+	return _armas.has(id) or not _specs.has(id)
+
+
+## Os ids de todas as armas com folha animada (lidos dos índices, sem carregar textura).
 static func ids() -> Array:
 	carregar()
-	return _armas.keys()
+	return _specs.keys()
 
 
 ## Duração (s) de uma passada da folha.

@@ -11,6 +11,15 @@ extends CanvasLayer
 ## 2. Painel dentro da tela: `entrar(c)` aparece com fade + deslize, `sair(c)` some do mesmo jeito (pausa, ajustes, Códice,
 ##    resultado, créditos). O estado do painel (aberto, fechado, pausa da árvore) muda na hora, só a imagem é suave.
 ##
+## 3. Entrada na partida: `Transicoes.ir_para_carregando(self, caminho, titulo)`. Em vez da foto, abre a tela de carregamento
+##    (v2/carregando.gd, números em dados/v2_carregando.json), carrega a cena numa thread (ResourceLoader.load_threaded_request)
+##    enquanto a barra enche, roda os passos de aquecimento que o script da cena declarar (`static func passos_de_carga() -> Array`
+##    de Callables, um por quadro, e `static func carga_pendente() -> int`, 0 quando as threads dele terminaram) e só então troca.
+##    A montagem da cena (o _ready) ainda roda no quadro principal: nesse trecho a tela fica parada, com a barra quase cheia. Ela
+##    some com um fade curto depois que a cena nova desenhou `quadros_depois` quadros e, se a cena tiver `revelando()`, depois que
+##    ela devolver false (o mundo desenha o primeiro quadro por partes, v2/revelacao.gd, e a barra anda com `progresso_revelacao()`)
+##    (sem fade no perfil Baixo e com "Reduzir animações"). A entrada fica descartada do pedido até a tela sumir, como na foto.
+##
 ## "Reduzir animações" (Config, Acessibilidade): `reduzido()` zera tudo, e `duracao(base)` serve a quem quiser respeitar a opção
 ## (a frente das cartas, #376). A duração é em tempo real (relógio da máquina), então câmera lenta e pausa não mexem nela.
 
@@ -20,6 +29,7 @@ const DUR_SAIR := 0.15  # painel que some (o mais curto: quem fecha quer ver o j
 const DESLIZE_TROCA := 22.0  # px que a foto antiga anda até sumir
 const DESLIZE_PAINEL := Vector2(0.0, 10.0)  # de onde o painel desliza até o lugar
 const OPCAO := "reduzir_animacoes"
+const Carregando := preload("res://v2/carregando.gd")
 const GRUPO_ATIVOS := "ui_transicoes_ativas"
 
 var _foto := TextureRect.new()  # a tela de antes da troca
@@ -30,6 +40,10 @@ var _dir := -1.0  # -1: a tela antiga sai para a esquerda (avançar); +1: para a
 var _pendente := false  # ir_para já pediu e a troca ainda não aconteceu
 var _animando := false
 var _bloqueando := false  # a entrada da janela está desligada (gui_disable_input) durante a foto/véu
+var _carga: Control = null  # a tela de carregamento (v2/carregando.gd), criada no primeiro uso
+var _carregando := false  # a tela de carregamento está aberta (do pedido até sumir)
+var _ger_carga := 0  # cada carga tem um número: _encerrar o aumenta e a carga antiga desiste no próximo quadro
+var cargas := 0  # quantas trocas passaram pela tela de carregamento (teste/medição)
 var trocas := 0  # quantas trocas de cena passaram por aqui (teste/medição)
 var ultimo_caminho := ""
 
@@ -63,7 +77,12 @@ func duracao(base: float) -> float:
 
 ## Uma troca de cena está em andamento (pedida ou com a foto ainda sumindo).
 func ativa() -> bool:
-	return _pendente or _animando
+	return _pendente or _animando or _carregando
+
+
+## A tela de carregamento está na frente agora.
+func carregando() -> bool:
+	return _carregando
 
 
 # ------------------------------------------------------------------ troca de cena
@@ -91,6 +110,137 @@ func ir_para(no: Node, caminho: String, voltando := false) -> bool:
 		_fotografar(arvore)
 	_trocar.call_deferred(arvore, caminho)
 	return true
+
+
+# ------------------------------------------------------------------ troca com tela de carregamento
+
+
+## Troca para a cena `caminho` com a tela de carregamento na frente (a entrada na partida). `titulo` é o nome mostrado (o mapa).
+## Devolve false se já havia uma troca pedida, como o ir_para.
+func ir_para_carregando(no: Node, caminho: String, titulo := "") -> bool:
+	if _pendente:
+		return false
+	var arvore := no.get_tree() if is_instance_valid(no) and no.is_inside_tree() else get_tree()
+	_encerrar()
+	_pendente = true
+	_carregando = true
+	trocas += 1
+	cargas += 1
+	ultimo_caminho = caminho
+	_bloquear(arvore)
+	if _carga == null:
+		_carga = Carregando.new()
+		add_child(_carga)
+	_carga.abrir(titulo)
+	_carregar(arvore, caminho, _ger_carga)
+	return true
+
+
+func _carregar(arvore: SceneTree, caminho: String, ger: int) -> void:
+	var cfg: Dictionary = Carregando.cfg()
+	var peso_cena := float(cfg.get("peso_cena", 0.55))
+	var peso_passos := float(cfg.get("peso_passos", 0.3))
+	var t0 := Time.get_ticks_msec()
+	for i in int(cfg.get("quadros_antes", 2)):  # a tela aparece antes de qualquer trabalho pesado
+		await arvore.process_frame
+		if ger != _ger_carga:
+			return
+	# 1. a cena e tudo o que ela pré-carrega, numa thread
+	var cena: PackedScene = null
+	if ResourceLoader.load_threaded_request(caminho, "PackedScene", true) == OK:
+		var prog: Array = []
+		while ResourceLoader.load_threaded_get_status(caminho, prog) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			_carga.alvo(peso_cena * float(prog[0]))
+			await arvore.process_frame
+			if ger != _ger_carga:
+				return
+		var status := ResourceLoader.load_threaded_get_status(caminho)
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			cena = ResourceLoader.load_threaded_get(caminho) as PackedScene
+		elif status != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			ResourceLoader.load_threaded_get(caminho)  # recolhe o pedido que falhou: senão o change_scene_to_file abaixo herda a falha
+	_carga.alvo(peso_cena)
+	# 2. os passos de aquecimento do script da cena, um por quadro, e as threads que eles abriram
+	var script: Script = _script_da_cena(caminho)
+	if script != null and _tem_estatico(script, "passos_de_carga"):
+		var passos: Array = script.call("passos_de_carga")
+		for i in passos.size():
+			(passos[i] as Callable).call()
+			_carga.alvo(peso_cena + peso_passos * 0.5 * float(i + 1) / passos.size())
+			await arvore.process_frame
+			if ger != _ger_carga:
+				return
+		if _tem_estatico(script, "carga_pendente"):
+			var total := maxi(int(script.call("carga_pendente")), 1)
+			while true:
+				var falta := int(script.call("carga_pendente"))
+				_carga.alvo(peso_cena + peso_passos * (0.5 + 0.5 * (1.0 - float(falta) / total)))
+				if falta <= 0:
+					break
+				await arvore.process_frame
+				if ger != _ger_carga:
+					return
+	_carga.alvo(peso_cena + peso_passos)
+	while Time.get_ticks_msec() - t0 < int(float(cfg.get("min_s", 0.0)) * 1000.0):  # nada de tela que aparece e some num piscar
+		await arvore.process_frame
+		if ger != _ger_carga:
+			return
+	# 3. a troca: o _ready da cena roda no quadro principal, então a barra assenta antes (a tela fica parada nesse trecho)
+	_carga.assentar()
+	await arvore.process_frame
+	if ger != _ger_carga:
+		return
+	_pendente = false
+	if not is_instance_valid(arvore):
+		_encerrar()
+		return
+	if cena != null:
+		arvore.change_scene_to_packed(cena)
+	else:
+		arvore.change_scene_to_file(caminho)  # a thread falhou: o caminho antigo ainda entra na partida
+	for i in maxi(int(cfg.get("quadros_depois", 3)), 1):  # a troca acontece no fim do quadro; os primeiros quadros da cena são os pesados
+		await arvore.process_frame
+		if ger != _ger_carga:
+			return
+	# a cena que desenha o primeiro quadro por partes (mundo.revelando: v2/revelacao.gd e o aquecimento) segura a tela até acabar,
+	# com a barra andando junto; um teto de quadros garante que a tela sai mesmo se a cena nunca disser que acabou
+	var base := peso_cena + peso_passos
+	var teto := int(cfg.get("espera_max_quadros", 90))
+	var nova: Node = arvore.current_scene
+	var n := 0
+	while is_instance_valid(nova) and nova.has_method("revelando") and nova.revelando() and n < teto:
+		if nova.has_method("progresso_revelacao"):
+			_carga.alvo(base + (1.0 - base) * float(nova.progresso_revelacao()))
+		await arvore.process_frame
+		n += 1
+		if ger != _ger_carga:
+			return
+	if is_instance_valid(nova) and nova.has_method("revelando") and nova.revelando() and nova.has_method("terminar_revelacao"):
+		nova.terminar_revelacao()  # passou do teto: nada fica escondido nem parado depois do fade
+	_carga.alvo(1.0)
+	_carga.assentar()
+	var fade := float(cfg.get("fade_s", 0.2))
+	if reduzido() or Config.g_perfil() == "baixo":
+		fade = 0.0
+	sair(_carga, Vector2.ZERO, fade, _fim_carga.bind(ger))
+
+
+func _fim_carga(ger: int) -> void:
+	if ger == _ger_carga:  # outra troca no meio do fade já cuidou de tudo
+		_encerrar()
+
+
+## O script com o mesmo nome da cena (mundo.tscn -> mundo.gd), ou null. Depois da carga na thread ele já está na memória.
+func _script_da_cena(caminho: String) -> Script:
+	var c := caminho.get_basename() + ".gd"
+	return load(c) as Script if ResourceLoader.exists(c) else null
+
+
+func _tem_estatico(script: Script, nome: String) -> bool:
+	for m in script.get_script_method_list():
+		if str(m.name) == nome:
+			return true
+	return false
 
 
 ## Dá para fotografar a tela: há renderizador e o perfil não é o Baixo (get_image espera a GPU terminar o quadro). Senão vai o véu.
@@ -138,6 +288,13 @@ func _trocar(arvore: SceneTree, caminho: String) -> void:
 ## Esconde a foto e o véu, solta a textura da foto (não fica uma tela inteira guardada durante a partida) e devolve a entrada.
 func _encerrar() -> void:
 	_animando = false
+	_ger_carga += 1  # uma carga em andamento desiste
+	if _carregando:
+		_carregando = false
+		_pendente = false
+		if _carga != null:
+			_fixar(_carga, _base(_carga))  # mata o fade, se havia
+			_carga.visible = false
 	_foto.visible = false
 	_foto.texture = null
 	_veu.visible = false

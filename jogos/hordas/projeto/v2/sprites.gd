@@ -8,6 +8,15 @@ const Sombras := preload("res://v2/sombras.gd")
 const PASTA := "res://prototipos/cara_nova/sprites"
 const PAD_ATLAS := 2
 
+## Aquecimento (tela de carregamento, v2/carregando.gd): as imagens das folhas e as sombras borradas que a partida vai pedir, prontas
+## ANTES do _ready do mundo. As imagens são lidas no quadro principal (uma folha por quadro) e o borrão, que é a parte cara, roda no
+## WorkerThreadPool. `tipo()` e `_imagem()` usam o que estiver pronto e fazem a conta na hora para o que faltar: o resultado é o mesmo.
+## O mundo solta tudo no fim do _ready (`soltar_aquecidos`), então nada fica guardado durante a partida.
+static var _quentes := {}  # caminho do PNG -> Image
+static var _borradas := {}  # nome da folha -> Image borrada (escrita pelas threads, sob _trava)
+static var _tarefas: Array = []  # ids do WorkerThreadPool ainda não recolhidos
+static var _trava := Mutex.new()
+
 var com_normal := true
 var ms_blur := 0.0
 var _imgs := {}
@@ -24,13 +33,85 @@ static func png(caminho: String) -> Image:
 	return tex.get_image() if tex != null else null
 
 
+## Adianta a folha `nome` (sem extensão): lê as imagens dela e põe a sombra borrada para rodar numa thread. Chamar no quadro principal.
+## Folha que não existe ou que já foi adiantada não faz nada.
+static func aquecer(nome: String) -> void:
+	var base := PASTA.path_join(nome)
+	if not ResourceLoader.exists(base + "_albedo.png") or not FileAccess.file_exists(base + ".json"):
+		return
+	for sufixo in ["_albedo.png", "_normal.png", "_emissao.png"]:
+		var c: String = base + sufixo
+		if not _quentes.has(c) and ResourceLoader.exists(c):
+			_quentes[c] = png(c)
+	_trava.lock()
+	var ja := _borradas.has(nome)
+	if not ja:
+		_borradas[nome] = null  # reservado: uma segunda chamada não cria outra tarefa
+	_trava.unlock()
+	var im: Image = _quentes[base + "_albedo.png"]
+	if ja or im == null:
+		return
+	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
+	if not info is Dictionary or not info.has("quadro"):
+		return
+	# alta prioridade: as de baixa só usam ~30% dos núcleos (1 thread no i5-3470) e as folhas sairiam em fila; o quadro principal
+	# não espera por elas (só consulta is_task_completed), então não trava nada
+	_tarefas.append(WorkerThreadPool.add_task(_borrar_na_thread.bind(nome, im, int(info.quadro[0]), int(info.quadro[1])), true))
+
+
+static func _borrar_na_thread(nome: String, im: Image, w: int, h: int) -> void:
+	var b := Sombras.borrar_imagem(im, w, h)
+	_trava.lock()
+	_borradas[nome] = b
+	_trava.unlock()
+
+
+## Quantas sombras ainda estão sendo borradas (0 = tudo pronto). Recolhe as tarefas que terminaram.
+static func aquecendo() -> int:
+	var restam: Array = []
+	for id in _tarefas:
+		if WorkerThreadPool.is_task_completed(id):
+			WorkerThreadPool.wait_for_task_completion(id)
+		else:
+			restam.append(id)
+	_tarefas = restam
+	return restam.size()
+
+
+## Espera o que ainda estiver rodando e esvazia o aquecimento.
+static func soltar_aquecidos() -> void:
+	for id in _tarefas:
+		WorkerThreadPool.wait_for_task_completion(id)
+	_tarefas = []
+	_trava.lock()
+	_borradas.clear()
+	_trava.unlock()
+	_quentes.clear()
+
+
+static func _borrada_pronta(nome: String) -> Image:
+	_trava.lock()
+	var b: Variant = _borradas.get(nome)
+	_trava.unlock()
+	return b as Image
+
+
 func _imagem(nome: String) -> Image:
 	if not _imgs.has(nome):
-		var im := png(_caminho(nome))
+		var quente: Variant = _quentes.get(_caminho(nome))
+		var im: Image = quente if quente is Image else png(_caminho(nome))
 		if im == null:
 			push_error("sem imagem: " + _caminho(nome))
 		_imgs[nome] = im
 	return _imgs[nome]
+
+
+## A silhueta borrada da folha `t` (um tipo ou o atlas da horda) como textura, criada na primeira vez que a sombra média pede. No Alto e no
+## Baixo ela não é desenhada: subir as de todas as folhas para a placa no _ready era memória e tempo à toa.
+static func blur_de(t: Dictionary) -> Texture2D:
+	if t.get("blur") == null and t.get("blur_img") is Image:
+		t["blur"] = ImageTexture.create_from_image(t.blur_img)
+	return t.get("blur")
 
 
 func tipo(nome: String) -> Dictionary:
@@ -44,7 +125,10 @@ func tipo(nome: String) -> Dictionary:
 		t.normal_texture = ImageTexture.create_from_image(_imagem(nome + "_normal.png"))
 	var d := {"tex": t, "w": int(info.quadro[0]), "h": int(info.quadro[1]), "info": info, "emissao": null, "alb": alb}
 	var t0 := Time.get_ticks_usec()
-	d["blur"] = Sombras.borrar_folha(_imagem(nome + "_albedo.png"), d.w, d.h)
+	var pronta := _borrada_pronta(nome)
+	var borrada: Image = pronta if pronta != null else Sombras.borrar_imagem(_imagem(nome + "_albedo.png"), d.w, d.h)
+	d["blur_img"] = borrada  # na memória: a textura só nasce quando a sombra média pede (blur_de); o atlas da horda não lê da placa
+	d["img"] = _imagem(nome + "_albedo.png")
 	ms_blur += (Time.get_ticks_usec() - t0) / 1000.0
 	if ResourceLoader.exists(_caminho(nome + "_emissao.png")):
 		d.emissao = ImageTexture.create_from_image(_imagem(nome + "_emissao.png"))
@@ -101,7 +185,7 @@ func atlas(nomes: Array) -> Dictionary:
 			var e := _imagem(nome + "_emissao.png").duplicate() as Image
 			e.convert(Image.FORMAT_RGBA8)
 			emi.blit_rect(e, r, Vector2i(0, y))
-		var b := (t.blur as ImageTexture).get_image()
+		var b := (t.blur_img as Image).duplicate() as Image if t.has("blur_img") else (t.blur as ImageTexture).get_image()
 		b.convert(Image.FORMAT_RGBA8)
 		bor.blit_rect(b, r, Vector2i(0, y))
 		origem[nome] = Vector2(0, y)
@@ -112,11 +196,4 @@ func atlas(nomes: Array) -> Dictionary:
 	ct.diffuse_texture = alb_t
 	if com_normal:
 		ct.normal_texture = ImageTexture.create_from_image(nor)
-	return {
-		"tex": ct,
-		"alb": alb_t,
-		"blur": ImageTexture.create_from_image(bor),
-		"emissao": ImageTexture.create_from_image(emi),
-		"tam": Vector2(largura, altura),
-		"origem": origem
-	}
+	return {"tex": ct, "alb": alb_t, "blur_img": bor, "emissao": ImageTexture.create_from_image(emi), "tam": Vector2(largura, altura), "origem": origem}  # a textura nasce em blur_de, só com a sombra média

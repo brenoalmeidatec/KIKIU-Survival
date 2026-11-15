@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Quantização RGB de 5 bits e Bayer estático na resolução do mundo, antes da vinheta e da UI.
 ## Só o perfil Alto desenha o passe; desligado, o retângulo fica oculto e sem material de screen texture.
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 const SHADER := """shader_type canvas_item;
 render_mode unshaded, blend_disabled;
@@ -34,8 +35,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	var shader := Shader.new()
-	shader.code = SHADER
+	var shader := Sombreadores.shader(SHADER)
 	_material = ShaderMaterial.new()
 	_material.shader = shader
 	_retangulo = ColorRect.new()

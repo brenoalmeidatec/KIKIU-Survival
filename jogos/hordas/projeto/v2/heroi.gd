@@ -50,6 +50,7 @@ const Propulsor := preload("res://v2/propulsor.gd")  # os jatos nas costas do me
 const PixelRot := preload("res://v2/pixel_rot.gd")  # pixel art só gira em passos de 90 graus
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a invencibilidade vira tom fixo
 const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult: a defesa do escudo recarrega sozinha?
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
@@ -1582,8 +1583,7 @@ func y_ordem() -> float:
 func _iniciar_morte() -> void:
 	morte_t = 0.0
 	if _mat_morte == null:
-		var sh := Shader.new()
-		sh.code = SHADER_MORTE
+		var sh := Sombreadores.shader(SHADER_MORTE)
 		_mat_morte = ShaderMaterial.new()
 		_mat_morte.shader = sh
 	_mat_morte.set_shader_parameter("dissolver", 0.0)

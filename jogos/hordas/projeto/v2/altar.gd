@@ -630,7 +630,7 @@ func _trocar_mapa() -> void:
 
 
 func _entrar_floresta() -> void:
-	Transicoes.ir_para(self, FLORESTA)
+	Transicoes.ir_para_carregando(self, FLORESTA, str(Mapas.buscar(Mapas.escolhido()).nome))  # tela de carregamento (v2/carregando.gd)
 
 
 class Marcadores:
