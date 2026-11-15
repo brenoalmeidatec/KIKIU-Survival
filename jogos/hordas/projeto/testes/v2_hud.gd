@@ -43,6 +43,12 @@ class HeroiComRuptura:
 	var contragolpe_max := 1.5
 
 
+class HeroiForma:
+	extends Heroi
+	var forma_lobo := false
+	var chave := "lightwolf"
+
+
 class HeroiComSecundario:
 	extends Heroi
 	var sec_nome := "ESCUDO"
@@ -184,6 +190,29 @@ func _testes() -> void:
 		if id == "matheus":
 			ok((img.texture as AtlasTexture).atlas.resource_path.ends_with("matheus_albedo.png"), "retrato do Matthew: a folha dele, não a do Hazaki")
 		h2.queue_free()
+	# LightWolf: o piloto saiu do mecha (quebra ou autodestruição) -> o retrato vira o do Lobo; o mecha chegou -> volta ao mecha
+	Herois.forcado = "lightwolf"
+	var heroi_antes = falso.heroi
+	var hf := HeroiForma.new()
+	falso.heroi = hf
+	var h3 = Hud.criar(falso)
+	vista.add_child(h3)
+	var img3: TextureRect = h3.get_node("Raiz/Retrato/Heroi")
+	var caixa3: Control = h3.get_node("Raiz/Retrato")
+	h3.avancar(PASSO)
+	var folha_de := func() -> String: return (img3.texture as AtlasTexture).atlas.resource_path.get_file()
+	ok(folha_de.call() == "lightwolf_mecha_albedo.png", "retrato do LightWolf começa no mecha (%s)" % folha_de.call())
+	hf.forma_lobo = true
+	hf.chave = "lightwolf_lobo"
+	h3.avancar(PASSO)
+	ok(folha_de.call() == "lightwolf_lobo_albedo.png", "piloto fora do mecha: o retrato vira o do Lobo (%s)" % folha_de.call())
+	ok(Rect2(Vector2.ZERO, caixa3.size).encloses(Rect2(img3.position, img3.size)), "retrato do Lobo cabe na moldura (%s)" % img3.size)
+	hf.forma_lobo = false
+	hf.chave = "lightwolf"
+	h3.avancar(PASSO)
+	ok(folha_de.call() == "lightwolf_mecha_albedo.png", "o mecha voltou: o retrato volta ao mecha (%s)" % folha_de.call())
+	h3.queue_free()
+	falso.heroi = heroi_antes
 	Herois.forcado = ""
 	DirAccess.remove_absolute(Personagens.caminho_indice)
 	for slot in ["p1", "p2"]:

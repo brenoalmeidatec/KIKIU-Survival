@@ -146,7 +146,7 @@ def estilizar(material, base):
     links.new(rasante.outputs[0], fac.inputs[1])
     mix = nodes.new("ShaderNodeMixRGB")
     mix.blend_type = "MIX"
-    mix.inputs["Color2"].default_value = lin(hexa("#b3e8ff"))
+    mix.inputs["Color2"].default_value = lin(hexa("#8ea9c4"))
     links.new(fac.outputs[0], mix.inputs["Fac"])
     links.new(rampa.outputs["Color"], mix.inputs["Color1"])
     links.new(mix.outputs["Color"], emissao.inputs["Color"])

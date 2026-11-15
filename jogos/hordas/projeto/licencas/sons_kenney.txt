@@ -1,0 +1,6 @@
+Efeitos sonoros do K.I.K.I.U
+
+Os sons de combate e de interface vêm dos pacotes "Impact Sounds", "RPG Audio" e "Interface Sounds" de Kenney (kenney.nl),
+sob a licença Creative Commons Zero 1.0 (CC0, domínio público): https://creativecommons.org/publicdomain/zero/1.0/
+O crédito não é obrigatório; fica aqui por gratidão. Os arquivos foram cortados, convertidos para WAV mono e normalizados.
+Os outros efeitos sonoros são gerados por código, dentro do próprio projeto.

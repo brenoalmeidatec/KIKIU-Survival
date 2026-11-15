@@ -26,7 +26,12 @@ const LINHAS := [
 		"rotulo": "Fontes",
 		"valor": "Licença OFL",
 		"ajuda":
-		"Press Start 2P, de CodeMan38. Jersey 10, de The Soft Type Project (títulos). Pixelify Sans, de The Pixelify Sans Project (textos). Todas sob a SIL Open Font License 1.1.",
+		"Jersey 10, de The Soft Type Project (títulos). Press Start 2P, de CodeMan38 (números). Atkinson Hyperlegible, do Braille Institute of America (HUD). Todas sob a SIL Open Font License 1.1.",
+	},
+	{
+		"rotulo": "Fonte do texto",
+		"valor": "Spleen",
+		"ajuda": "Spleen 8x16, Copyright (c) 2018-2026 Frederic Cambus. Licença BSD de 2 cláusulas. github.com/fcambus/spleen",
 	},
 	{
 		"rotulo": "Música",
@@ -35,9 +40,16 @@ const LINHAS := [
 		"Música: Kevin MacLeod (incompetech.com), licença Creative Commons Atribuição 4.0 (CC BY 4.0). As faixas foram cortadas e ganharam laço para o jogo.",
 	},
 	{
+		"rotulo": "Efeitos visuais",
+		"valor": "pixelfx",
+		"ajuda":
+		"Parte dos efeitos vem do pixelfx (github.com/patch-gg/pixelfx), licença MIT. Copyright (c) 2026 Patch. Copyright (c) 2026 Hugo Duprez. As folhas foram adaptadas à grade e à paleta do jogo.",
+	},
+	{
 		"rotulo": "Efeitos sonoros",
-		"valor": "Feitos no projeto",
-		"ajuda": "Os efeitos sonoros são gerados por código, dentro do próprio projeto.",
+		"valor": "Kenney e próprios",
+		"ajuda":
+		"Sons de combate e de interface: Kenney (kenney.nl), licença CC0 1.0, cortados e normalizados para o jogo. Os outros são gerados por código, dentro do próprio projeto.",
 	},
 ]
 
