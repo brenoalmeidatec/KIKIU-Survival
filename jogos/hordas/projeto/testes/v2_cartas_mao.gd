@@ -257,8 +257,10 @@ func _testes() -> void:
 	w.avancar(PASSO)
 	for i in mao9.size():
 		var tp := str(mao9[i].get("tipo", ""))
-		var esperado := "UPGRADE" if tp == "up" else ("NOVO" if tp == "nov" else "")
+		var esperado := ""  # tela enxuta (15/11): UPGRADE e NOVO saíram do topo, o rodapé já diz; só TROCA e ÁPICE têm selo
 		var p: Control = w.combate.telas._cartas[i]
+		ok((p.get_node("rar") as Label).text == "", "a raridade do cartão %d fica só na cor" % i)
+		ok((p.get_node("nivel") as Label).text != "", "o rodapé do cartão %d diz se é nível ou novo" % i)
 		ok((p.get_node("selo") as Label).text == esperado, "o selo do cartão %d acompanha o tipo '%s' (%s)" % [i, tp, (p.get_node("selo") as Label).text])
 	ok(tipos(mao9).up == 2 and tipos(mao9).nov == 1, "a mão da foto é 2 upgrades + 1 novidade (%s)" % str(tipos(mao9)))
 	var cura_p: Control = w.combate.telas._cartas[0]  # a carta de cura não leva selo
