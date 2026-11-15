@@ -44,6 +44,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 ; O preset embute o PCK no executavel. Nenhum save ou arquivo de user:// e instalado.
 Source: "{#GameDir}\KIKIU.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Textos de licenca de terceiros (Godot, fontes, pixelfx, musica): o release.yml copia jogos/hordas/projeto/licencas para a exportacao.
+Source: "{#GameDir}\licencas\*.txt"; DestDir: "{app}\licencas"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\K.I.K.I.U"; Filename: "{app}\KIKIU.exe"; WorkingDir: "{app}"

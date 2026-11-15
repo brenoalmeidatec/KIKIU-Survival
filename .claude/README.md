@@ -21,6 +21,7 @@ Contexto que todo agente lê: [`docs/kikiu.md`](docs/kikiu.md).
 | `qa-tester` | Sonnet 5.5, médio | Casos de teste, checklist de regressão, relato de bug |
 | `systems-designer` | Sonnet 5.5, médio | Fórmulas e números de sistemas |
 | `game-designer` | Sonnet 5.5, médio | Loop, progressão e regras do jogador |
+| `release-manager` | Sonnet 5.5, médio | Prepara RC e versão final: checklist, conferência da build, notas. Não cria tag nem Release (decisão do Alisson) |
 
 **Skills** (comandos com barra, em `skills/`):
 
@@ -48,7 +49,7 @@ Contexto que todo agente lê: [`docs/kikiu.md`](docs/kikiu.md).
 - **Agentes de Unity, Unreal, C# e GDExtension:** não usamos essas engines.
 - **Mapas, níveis, `level-designer`, `world-builder`:** ficam com o Alisson, conforme o `CLAUDE.md`.
 - **Skills de sprint, estúdio e gate** (`gate-check`, `sprint-plan`, `create-epics`, etc.): dependem de `production/` e `design/`, que o KIKIU não tem. Podem ser adotadas depois, se o time quiser essa estrutura.
-- **Tradução dos agentes para português:** o corpo dos agentes continua em inglês. O bloco "Contexto KIKIU" faz as respostas e documentos saírem em português.
+- **Tradução dos agentes para português:** o corpo dos agentes continua em inglês (a exceção é o `release-manager`, reescrito em português em 15/11 porque quase tudo do original, como certificação de console e página de loja, não vale para o KIKIU). O bloco "Contexto KIKIU" faz as respostas e documentos saírem em português.
 
 ## Como usar
 
