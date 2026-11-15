@@ -10,6 +10,7 @@ extends Node
 ##   --perfil=baixo|medio|alto (vale o perfil de gráficos inteiro: sombras, partículas e orçamento de luzes; sem gravar) --luzes=N (orçamento de luzes)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
+##   --sem_aquecimento (entrando pela tela de carregamento, não aquece o primeiro desenho: v2/aquecimento.gd; só para medir)
 ##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --dpi=150 (finge a escala de tela do sistema, em %, para o Automático) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
@@ -235,7 +236,7 @@ func _ready() -> void:
 		ui.add_child(meta_res)
 		meta_res.montar(self)
 	marcar_etapa("status_trilha_meta")
-	if Transicoes.carregando() and not modo_teste:  # a tela de carregamento cobre os primeiros quadros: o primeiro desenho de cada coisa vai ali
+	if Transicoes.carregando() and not modo_teste and not args.has("sem_aquecimento"):  # medição A/B: --sem_aquecimento; a tela de carregamento cobre os primeiros quadros: o primeiro desenho de cada coisa vai ali
 		aquecimento = preload("res://v2/aquecimento.gd").new(self, int(Transicoes.Carregando.cfg().get("quadros_aquecer", 2)))
 		aquecimento.quadro()
 		marcar_etapa("aquecimento")
