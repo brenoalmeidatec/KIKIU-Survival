@@ -157,6 +157,8 @@ var _chefe_espera := 0.0
 var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desliza até o alvo em _barras); -1 até o primeiro quadro
 
 @onready var _heroi_img: TextureRect = $Raiz/Retrato/Heroi
+var _retrato_lobo := false  # LightWolf: o retrato mostrado é o do piloto (forma Lobo, v2/mecha.gd); avancar troca quando a forma muda
+var _retratos := {}  # folha -> [AtlasTexture, tamanho]: trocar de forma no meio da luta não relê o json nem refaz o recorte
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
 @onready var _vida_txt: Label = $Raiz/Vida/Texto
 @onready var _folego: TextureProgressBar = $Raiz/Folego
@@ -248,9 +250,13 @@ func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
 
 
 ## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
-## Sem a folha ou sem o json, o retrato fica vazio (só moldura e fundo).
-func _retrato_do_heroi() -> void:
-	var base := SPRITES + Herois.sprite_da_partida(Herois.escolhido())
+## Sem a folha ou sem o json, o retrato fica vazio (só moldura e fundo). `sprite` (opcional) troca a folha: o piloto do LightWolf quando o mecha
+## quebra ou se autodestrói (pedido do Alisson, 15/11), e de volta ao mecha quando ele chega (avancar acompanha `forma_lobo` do herói).
+func _retrato_do_heroi(sprite := "") -> void:
+	var base := SPRITES + (sprite if sprite != "" else Herois.sprite_da_partida(Herois.escolhido()))
+	if _retratos.has(base):
+		_mostrar_retrato(_retratos[base][0], _retratos[base][1])
+		return
 	var folha := load(base + "_albedo.png") as Texture2D
 	if folha == null or not FileAccess.file_exists(base + ".json"):
 		return
@@ -265,12 +271,17 @@ func _retrato_do_heroi() -> void:
 	var recorte := AtlasTexture.new()
 	recorte.atlas = folha
 	recorte.region = regiao
-	_heroi_img.texture = recorte
-	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# escala INTEIRA para todo herói (pixel art nítida): a maior que ainda cabe na moldura, e o retrato centrado nela
 	var escala := maxf(floorf(minf(CAIXA_RETRATO.x / regiao.size.x, CAIXA_RETRATO.y / regiao.size.y)), 1.0)
-	_heroi_img.size = regiao.size * escala
-	_heroi_img.position = ((CAIXA_RETRATO - _heroi_img.size) / 2.0).round()
+	_retratos[base] = [recorte, regiao.size * escala]
+	_mostrar_retrato(recorte, regiao.size * escala)
+
+
+func _mostrar_retrato(recorte: AtlasTexture, tamanho: Vector2) -> void:
+	_heroi_img.texture = recorte
+	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_heroi_img.size = tamanho
+	_heroi_img.position = ((CAIXA_RETRATO - tamanho) / 2.0).round()
 
 
 func _exit_tree() -> void:
@@ -293,6 +304,10 @@ func _process(delta: float) -> void:
 ## Um quadro do HUD: lê o mundo e atualiza barras, textos, pulsos, vinheta, chefe e anúncios. Os testes chamam isto direto.
 func avancar(dt: float) -> void:
 	var h = _campo(mundo, "heroi")
+	var lobo: bool = _campo(h, "forma_lobo") == true
+	if lobo != _retrato_lobo:  # o piloto saiu do mecha (ou o mecha voltou): o retrato acompanha a forma
+		_retrato_lobo = lobo
+		_retrato_do_heroi(Herois.sprite(str(_campo(h, "chave"))) if lobo else "")
 	var vida_max := maxf(_num(h, "vida_max", 100.0), 1.0)
 	var vida := clampf(_num(h, "vida", vida_max), 0.0, vida_max)
 	_vida_barra.max_value = vida_max
