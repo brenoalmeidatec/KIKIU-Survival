@@ -36,7 +36,16 @@ var rmax := 1.5
 var offset := Vector2.ZERO
 var regiao := Rect2()
 var tex_n: Texture2D = null  # silhueta nítida (alta)
-var tex_b: Texture2D = null  # silhueta borrada (média)
+var _tex_b: Texture2D = null
+## Silhueta borrada (sombra média). A das folhas animadas só vira textura quando a sombra média pede (Sprites.blur_de): no Alto e no Baixo
+## ela nunca é desenhada, e era um terço da memória de cada folha na placa (o mecha do LightWolf sozinho, 42 MB).
+var tex_b: Texture2D:
+	get:
+		if _tex_b == null and tipo.has("blur_img"):
+			_tex_b = load("res://v2/sprites.gd").blur_de(tipo)
+		return _tex_b
+	set(v):
+		_tex_b = v
 var larg_blob := 24.0
 var blob: Sprite2D = null
 var sh1: Sprite2D = null
@@ -77,7 +86,7 @@ func montar_animado(pai: Node, t: Dictionary, p: Vector2, l: int, c: int, esp: b
 	offset = sprite.offset
 	regiao = sprite.region_rect
 	tex_n = t.alb
-	tex_b = t.blur
+	tex_b = t.get("blur")  # null até a sombra média pedir (o getter cria)
 	larg_blob = t.w * 0.75
 	rmax = 1.5
 	definir_pos(p)
@@ -87,14 +96,14 @@ func montar_animado(pai: Node, t: Dictionary, p: Vector2, l: int, c: int, esp: b
 ## (linha e coluna) continua, preso aos limites da folha nova (uma folha com menos linhas ou colunas não deixa o recorte sair dela); quem anima o
 ## reescreve no quadro seguinte.
 func trocar_tipo(t: Dictionary) -> void:
-	var media: bool = sh1 != null and sh1.texture == tex_b  # a sombra está no modo médio (silhueta borrada) ou no alto (nítida)?
+	var media: bool = sh1 != null and sh1.texture != null and sh1.texture == _tex_b  # a sombra está no modo médio (silhueta borrada) ou no alto (nítida)?
 	tipo = t
 	sprite.texture = t.tex
 	sprite.offset = Vector2(-t.w / 2.0, -t.pe)
 	alt = float(t.pe)
 	offset = sprite.offset
 	tex_n = t.alb
-	tex_b = t.blur
+	tex_b = t.get("blur")  # null até a sombra média pedir (o getter cria)
 	larg_blob = t.w * 0.75
 	linha = clampi(linha, 0, maxi(int(t.alb.get_height()) / int(t.h) - 1, 0))
 	coluna = clampi(coluna, 0, maxi(int(t.alb.get_width()) / int(t.w) - 1, 0))
@@ -122,7 +131,7 @@ func montar_lote(t: Dictionary, p: Vector2, l: int, c: int, esp: bool) -> void:
 	offset = Vector2(-t.w / 2.0, -t.pe)
 	alt = float(t.pe)
 	tex_n = t.alb
-	tex_b = t.blur
+	tex_b = t.get("blur")  # null até a sombra média pedir (o getter cria)
 	larg_blob = t.w * 0.75
 	rmax = 1.5
 	definir_pos(p)

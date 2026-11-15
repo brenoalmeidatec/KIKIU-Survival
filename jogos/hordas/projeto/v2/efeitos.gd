@@ -426,8 +426,11 @@ func _montar_cortes() -> void:
 func _montar_folhas() -> void:
 	var sh := Shader.new()
 	sh.code = SHADER_CORTE
+	var martelo := _heroi_com_martelo()
 	for nome in Dados.json("v2_folhas_fx"):
 		if nome != "corte_ciano" and not str(nome).begins_with("_"):  # o ciano (variante do Rastro de katana) so carrega quando pedido
+			if str(nome).begins_with("martelo_") and not martelo:  # as folhas do martelo (46 MB na placa) só com o herói que bate de martelo
+				continue
 			_carregar_fx(nome)
 	if variante == "ciano":
 		_carregar_fx("corte_ciano")
@@ -558,6 +561,18 @@ func _montar_flashes() -> void:
 ## Escala do ator na grade de 1 px: inteira, no mínimo 1 (igual a Monstro.escala_px).
 static func _esc_px(e: float) -> float:
 	return maxf(1.0, roundf(e))
+
+
+## O herói da partida tem passo de martelo ("fx": "martelo" em v2_herois.json, o kanabo do Nick)? Sem mundo ou sem combate (testes): sim,
+## carrega tudo como antes. As folhas do martelo também carregam sozinhas no primeiro uso (`_vaga_martelo`).
+func _heroi_com_martelo() -> bool:
+	var c = mundo.get("combate") if mundo is Object else null
+	if c == null or not (c.get("cfg") is Dictionary) or not c.cfg.has("golpe"):
+		return true
+	for passo in c.cfg.golpe.get("passos", []):
+		if str((passo as Dictionary).get("fx", "")) == "martelo":
+			return true
+	return false
 
 
 ## Carrega (uma vez) as folhas de `nome` em todos os tamanhos de dados/v2_folhas_fx.json, com o quad branco de cada tamanho.

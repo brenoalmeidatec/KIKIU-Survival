@@ -106,6 +106,14 @@ func _imagem(nome: String) -> Image:
 	return _imgs[nome]
 
 
+## A silhueta borrada da folha `t` (um tipo ou o atlas da horda) como textura, criada na primeira vez que a sombra média pede. No Alto e no
+## Baixo ela não é desenhada: subir as de todas as folhas para a placa no _ready era memória e tempo à toa.
+static func blur_de(t: Dictionary) -> Texture2D:
+	if t.get("blur") == null and t.get("blur_img") is Image:
+		t["blur"] = ImageTexture.create_from_image(t.blur_img)
+	return t.get("blur")
+
+
 func tipo(nome: String) -> Dictionary:
 	if _tipos.has(nome):
 		return _tipos[nome]
@@ -119,8 +127,7 @@ func tipo(nome: String) -> Dictionary:
 	var t0 := Time.get_ticks_usec()
 	var pronta := _borrada_pronta(nome)
 	var borrada: Image = pronta if pronta != null else Sombras.borrar_imagem(_imagem(nome + "_albedo.png"), d.w, d.h)
-	d["blur"] = ImageTexture.create_from_image(borrada)
-	d["blur_img"] = borrada  # a cópia na memória: o atlas da horda e quem precisa dos pixels não leem da placa (get_image espera a GPU)
+	d["blur_img"] = borrada  # na memória: a textura só nasce quando a sombra média pede (blur_de); o atlas da horda não lê da placa
 	d["img"] = _imagem(nome + "_albedo.png")
 	ms_blur += (Time.get_ticks_usec() - t0) / 1000.0
 	if ResourceLoader.exists(_caminho(nome + "_emissao.png")):
@@ -189,11 +196,4 @@ func atlas(nomes: Array) -> Dictionary:
 	ct.diffuse_texture = alb_t
 	if com_normal:
 		ct.normal_texture = ImageTexture.create_from_image(nor)
-	return {
-		"tex": ct,
-		"alb": alb_t,
-		"blur": ImageTexture.create_from_image(bor),
-		"emissao": ImageTexture.create_from_image(emi),
-		"tam": Vector2(largura, altura),
-		"origem": origem
-	}
+	return {"tex": ct, "alb": alb_t, "blur_img": bor, "emissao": ImageTexture.create_from_image(emi), "tam": Vector2(largura, altura), "origem": origem}  # a textura nasce em blur_de, só com a sombra média

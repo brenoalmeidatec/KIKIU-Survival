@@ -13,6 +13,7 @@ extends RefCounted
 ## continuam nós (`Monstro.virar_no`): são poucos.
 
 const Sombras := preload("res://v2/sombras.gd")
+const Sprites := preload("res://v2/sprites.gd")
 const Monstro := preload("res://v2/monstro.gd")
 const StatusCorpo := preload("res://v2/status_corpo.gd")
 const MARGEM_TELA := 96.0  # só monstro a até 96 px da tela é desenhado (e tem sombra)
@@ -200,7 +201,7 @@ func montar(m) -> void:
 	lote_blob.montar(_quad, sombras.textura_blob(), _material(SHADER_BLOB), sombras.raiz_blobs)
 	lote_blob.mmi.light_mask = 0
 	lote_sombra = Lote.new()
-	lote_sombra.montar(_quad, atlas.blur, _material(SHADER_SOMBRA), sombras.raiz_sombras)
+	lote_sombra.montar(_quad, Sprites.blur_de(atlas) if sombras.modo == Sombras.MEDIA else atlas.alb, _material(SHADER_SOMBRA), sombras.raiz_sombras)
 	lote_sombra.mmi.light_mask = 0
 	lote_sombra.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	lote_olhos = Lote.new()
@@ -290,7 +291,7 @@ func n_fatias() -> int:
 
 func _trocar_modo(m: int) -> void:
 	_modo = m
-	lote_sombra.mmi.texture = atlas.blur if m == Sombras.MEDIA else atlas.alb
+	lote_sombra.mmi.texture = Sprites.blur_de(atlas) if m == Sombras.MEDIA else atlas.alb
 	if m == Sombras.NENHUMA:
 		lote_blob.esconder()
 	for mo in mundo.monstros:  # a conta da luz recomeça no modo novo (a alta guarda estado por sombra)

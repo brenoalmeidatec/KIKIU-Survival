@@ -166,6 +166,7 @@ var perfil := {}  # medição (--medir): microssegundos acumulados por parte do 
 var _ms_carga := 0.0
 var etapas_carga: Array = []  # [nome, ms] de cada etapa da montagem (impresso com --medir e --picos): onde a entrada na partida pesa
 var _us_etapa := 0
+var _tex_etapa := 0.0  # memória de textura na marca anterior (bytes): quanto cada etapa sobe para a placa
 var aquecimento = null  # v2/aquecimento.gd: só quando a partida entrou pela tela de carregamento (os primeiros quadros, cobertos)
 var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
@@ -173,6 +174,7 @@ var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 func _ready() -> void:
 	var t0 := Time.get_ticks_usec()
 	_us_etapa = t0
+	_tex_etapa = Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED)
 	CursorKikiu.aplicar("mira")
 	args = _argumentos()
 	coop_modo = str(args.get("coop", ""))  # lida e ignorada por enquanto: o solo não muda (docs/ONLINE_V2_PLANO.md, etapa 0)
@@ -255,13 +257,27 @@ func _ready() -> void:
 		)
 	if _modo == "medir" or picos != null:
 		print("CARGA_ETAPAS heroi_id=%s %s" % [str(combate.heroi_id), texto_etapas()])
+		print("CARGA_TEX total=%.0fMB %s" % [Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0, texto_tex_etapas()])
 
 
 ## Marca o fim de uma etapa da montagem: guarda quanto ela levou desde a marca anterior (custa um relógio; vale também fora da medição).
 func marcar_etapa(nome: String) -> void:
 	var agora := Time.get_ticks_usec()
-	etapas_carga.append([nome, (agora - _us_etapa) / 1000.0])
+	var tex := Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED)
+	etapas_carga.append([nome, (agora - _us_etapa) / 1000.0, (tex - _tex_etapa) / 1048576.0])
 	_us_etapa = agora
+	_tex_etapa = tex
+
+
+## A textura que cada etapa subiu para a placa, da maior para a menor ("c_fx=140MB cenario=60MB ..."), só as que passam de 1 MB.
+func texto_tex_etapas() -> String:
+	var l := etapas_carga.duplicate()
+	l.sort_custom(func(a, b): return a[2] > b[2])
+	var p := []
+	for e in l:
+		if float(e[2]) >= 1.0:
+			p.append("%s=%.0fMB" % [e[0], e[2]])
+	return " ".join(p)
 
 
 ## As etapas da montagem, da mais pesada para a mais leve ("cenario=812 combate=95 ..."), só as que passam de 1 ms.
@@ -371,6 +387,7 @@ func _montar() -> void:
 	marcar_etapa("luzes")
 	sombras = Sombras.new()
 	sombras.montar(no_mundo)
+	sombras.modo = _modo_sombra()  # já no modo certo antes dos atores: no Alto e no Baixo a silhueta borrada nem vira textura (Sprites.blur_de)
 	sombras.luzes = luzes
 	sombras.definir_ambiente(dados.get("mapa", {}).get("sombra_ambiente", {}))  # sombra base do mapa (laboratório); sem a chave, só as luzes
 	marcar_etapa("sombras")
@@ -391,6 +408,8 @@ func _montar() -> void:
 	marcar_etapa("combate")
 	elenco = Elenco.new()
 	elenco.montar(id_mapa, combate.cfg.diretor, combate.cartas.cfg.elites)
+	if combate.elites != null:
+		combate.elites.precarregar_folhas(elenco.elites_lista)
 	marcar_etapa("elenco")
 	_criar_heroi()
 	marcar_etapa("heroi")
@@ -850,12 +869,16 @@ func _vinheta() -> void:
 	camada.add_child(r)
 
 
+## O modo de sombra da aba Gráficos (opção "sombras"; --sombra= vale por cima).
+func _modo_sombra() -> int:
+	var m := Sombras.NOMES.find(str(args.get("sombra", Config.g("sombras"))))
+	return m if m >= 0 else Sombras.MEDIA
+
+
 ## Lê da aba Gráficos o modo de sombra (opção "sombras": baixa, media, alta) e as partículas ("particulas_sim"). --sombra= e --particulas=
 ## valem por cima (medição e fotos).
 func _ler_graficos() -> void:
-	var nome := str(args.get("sombra", Config.g("sombras")))
-	var m := Sombras.NOMES.find(nome)
-	sombras.definir_modo(m if m >= 0 else Sombras.MEDIA)
+	sombras.definir_modo(_modo_sombra())
 	if horda != null and modo_teste == false:
 		horda.atualizar(t, cam.retangulo(), quadros)  # mudou no menu de pausa: o lote já aparece no modo novo, sem esperar a partida andar
 	# orçamento de luzes pelo perfil ("luz_relevo" da aba Gráficos): cada luz ligada custa GPU em tudo o que ela toca, e a iGPU do i5 é fraca

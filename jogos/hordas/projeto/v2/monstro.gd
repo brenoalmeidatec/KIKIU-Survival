@@ -692,7 +692,7 @@ func _trocar_folha(t: Dictionary) -> void:
 	tipo = t
 	_ler_colunas(t.info)
 	tex_n = t.alb
-	tex_b = t.blur
+	tex_b = t.get("blur")  # null até a sombra média pedir (Ator.tex_b cria)
 	offset = Vector2(-t.w / 2.0, -t.pe)
 	regiao = Rect2(coluna * t.w, linha * t.h, t.w, t.h)
 	if sprite == null:
