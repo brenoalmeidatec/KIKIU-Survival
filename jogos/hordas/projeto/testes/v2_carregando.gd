@@ -128,6 +128,8 @@ func _carga_real(perfil: String) -> void:
 	var viu_barra := false
 	var sempre_bloqueada := true
 	var viu_fade := false
+	var viu_aquecimento := false
+	var aquecimento_no_fade := false
 	_quadros_ruins = 0
 	_quadros_vistos = 0
 	RenderingServer.frame_pre_draw.connect(_conferir_quadro)  # liga depois da tela: roda depois do reencaixe dela
@@ -138,6 +140,10 @@ func _carga_real(perfil: String) -> void:
 			sempre_bloqueada = sempre_bloqueada and Transicoes.entrada_bloqueada() and get_tree().root.gui_disable_input
 		var a: float = Transicoes._carga.modulate.a
 		viu_fade = viu_fade or (Transicoes._carga.visible and a > 0.01 and a < 0.99)
+		var cs = get_tree().current_scene
+		if cs != null and "aquecimento" in cs and cs.aquecimento != null:
+			viu_aquecimento = true
+			aquecimento_no_fade = aquecimento_no_fade or a < 0.999 or not Transicoes._carga.visible
 		await get_tree().process_frame
 	RenderingServer.frame_pre_draw.disconnect(_conferir_quadro)
 	ok(sempre_bloqueada, "a entrada fica bloqueada a carga inteira, até a troca (%s)" % perfil)
@@ -157,7 +163,18 @@ func _carga_real(perfil: String) -> void:
 	ok(not Transicoes._carga.visible and not Transicoes.entrada_bloqueada(), "a tela some e a entrada volta")
 	ok(Transicoes.cargas == cargas0 + 1, "uma carga só")
 	ok(Sprites._quentes.is_empty() and Sprites._borradas.is_empty() and Sprites.aquecendo() == 0, "o aquecimento das folhas foi solto")
+	ok(viu_aquecimento, "o primeiro desenho da horda e do dano foi aquecido por baixo da tela (%s)" % perfil)
+	ok(not aquecimento_no_fade, "o aquecimento acaba antes de a tela começar a sumir (%s)" % perfil)
 	if cena != null:
+		ok(cena.aquecimento == null, "o aquecimento terminou e saiu da partida")
+		ok(cena.horda.fatias.size() >= 4, "as primeiras fatias da horda já existem (%d)" % cena.horda.fatias.size())
+		var fx = cena.combate.fx
+		ok(fx.n_ativos == 0 and fx.usados.numeros == 0 and fx.usados.flashes == 0, "nada do aquecimento ficou na tela (números e flash)")
+		var vivos_fx := 0
+		for i in cena.combate.armas.novas.x_dur.size():
+			if cena.combate.armas.novas.x_t[i] < cena.combate.armas.novas.x_dur[i]:
+				vivos_fx += 1
+		ok(vivos_fx == 0, "nenhum impacto do aquecimento ficou tocando (%d)" % vivos_fx)
 		ok(cena.sprites.ms_blur < 100.0, "as sombras borradas vieram prontas da thread (%.0f ms no _ready)" % cena.sprites.ms_blur)
 		cena.queue_free()
 	await get_tree().process_frame

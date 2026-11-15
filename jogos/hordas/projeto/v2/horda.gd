@@ -227,6 +227,47 @@ func _material(codigo: String) -> ShaderMaterial:
 	return m
 
 
+## Aquecimento do primeiro desenho (v2/aquecimento.gd, por baixo da tela de carregamento): uma instância de 1 px em `p` em cada lote (as
+## primeiras `n_fatias` fatias de sprites, os olhos, as manchas e as sombras), para a placa compilar e preparar tudo agora, e não quando o primeiro monstro
+## chegar perto da tela (~1 s de travada no PC do Alisson). Chamar depois do `atualizar` do quadro: o próximo `atualizar` esconde tudo.
+func aquecer(p: Vector2, n_fatias := 4) -> void:
+	for i in n_fatias:  # algumas fatias de uma vez: as próximas que a partida pedir já existem (nó novo no meio da luta também custa)
+		var f := _fatia()
+		f.chave = p.y + float(i)
+		_instancia_aquecer(f, p - Vector2(0.0, f.chave), 1.0)
+		f.mmi.position = Vector2(0.0, f.chave)
+		f.x0 = p.x
+		f.x1 = p.x
+		f.y0 = p.y
+		f.y1 = p.y
+		f.enviar(f.chave)
+	for l in [lote_olhos, lote_blob, lote_sombra]:
+		l.n = 0
+		_instancia_aquecer(l, p, 0.004)
+		l.enviar()
+
+
+## Uma instância de 1x1 px (o canto do atlas) em `p`, com alfa `a` (a fatia de sprites usa 1: lá o alfa leva o status do corpo).
+func _instancia_aquecer(l: Lote, p: Vector2, a: float) -> void:
+	if l.cap < 1:
+		l.crescer()
+	var b := l.buf
+	var o := l.n << 4
+	l.n += 1
+	for k in 16:
+		b[o + k] = 0.0
+	b[o] = 1.0
+	b[o + 3] = p.x
+	b[o + 5] = 1.0
+	b[o + 7] = p.y
+	b[o + 8] = 1.0
+	b[o + 9] = 1.0
+	b[o + 10] = 1.0
+	b[o + 11] = a
+	b[o + 14] = 1.0
+	b[o + 15] = 1.0
+
+
 ## Número de série do monstro (para espalhar a conta da luz entre os quadros).
 func novo_id() -> int:
 	_ids += 1

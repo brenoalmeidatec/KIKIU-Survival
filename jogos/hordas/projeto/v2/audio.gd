@@ -10,7 +10,7 @@ const INV_VOZES := 3  # orçamento separado: aliados nunca ocupam as vozes do he
 const INV_INTERVALO := 0.06
 const INV_INTERVALOS := {"nascer": 0.16, "atacar": 0.12, "sumir": 0.16}
 const INV_ATAQUES := {"garras": "corte2", "arco": "corte1", "fogo": "fogo", "pancada": "impacto", "nevoa": "corvo", "bote": "estocada", "golem": "impacto"}
-const INV_STREAMS := ["runa_poe", "bau_cai", "esquiva", "morte", "corte2", "corte1", "fogo", "impacto", "corvo", "estocada"]
+const INV_STREAMS := ["runa_poe", "bau_cai", "esquiva", "morte", "corte2", "corte1", "fogo", "impacto", "corvo", "estocada", "dano_heroi"]
 
 ## Sons que não podem se perder no meio da horda: se as 10 vozes estiverem ocupadas, eles tomam a voz de um som comum (golpe, morte, orbe).
 ## Antes a voz ocupada descartava o som em silêncio, e o aviso e o estouro da Maré de Sangue sumiam justo quando 20 monstros morriam de uma vez.

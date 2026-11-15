@@ -1049,6 +1049,7 @@ void fragment() {
 
 var us_desenho := 0
 var _tex_lamina: Texture2D
+static var _lamina_feita: Texture2D  # a lâmina e as cópias giradas dela valem para o processo inteiro (antes: refeitas e lidas da placa a cada partida)
 var _tex_corvo: Texture2D  # 3 quadros de 22x18: asa para cima, no meio e para baixo
 var _tex_anel: Texture2D  # anel da runa (64x64)
 var _tex_glifo: Texture2D  # triângulo da runa (64x64)
@@ -1056,8 +1057,10 @@ var _aura_sp: Sprite2D
 
 
 func _texturas() -> void:
-	_tex_lamina = _img_lamina()
-	SpriteGiro.preparar(_tex_lamina, Vector2i(26, 11), Vector2i(13, 5))
+	if _lamina_feita == null:
+		_lamina_feita = _img_lamina()
+		SpriteGiro.preparar(_lamina_feita, Vector2i(26, 11), Vector2i(13, 5))
+	_tex_lamina = _lamina_feita
 	_tex_corvo = _img_corvo()
 	_tex_anel = _img_anel()
 	_tex_glifo = _img_glifo()

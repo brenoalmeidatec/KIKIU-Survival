@@ -165,6 +165,7 @@ var perfil := {}  # medição (--medir): microssegundos acumulados por parte do 
 var _ms_carga := 0.0
 var etapas_carga: Array = []  # [nome, ms] de cada etapa da montagem (impresso com --medir e --picos): onde a entrada na partida pesa
 var _us_etapa := 0
+var aquecimento = null  # v2/aquecimento.gd: só quando a partida entrou pela tela de carregamento (os primeiros quadros, cobertos)
 var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 
@@ -234,6 +235,10 @@ func _ready() -> void:
 		ui.add_child(meta_res)
 		meta_res.montar(self)
 	marcar_etapa("status_trilha_meta")
+	if Transicoes.carregando() and not modo_teste:  # a tela de carregamento cobre os primeiros quadros: o primeiro desenho de cada coisa vai ali
+		aquecimento = preload("res://v2/aquecimento.gd").new(self, int(Transicoes.Carregando.cfg().get("quadros_aquecer", 2)))
+		aquecimento.quadro()
+		marcar_etapa("aquecimento")
 	Sprites.soltar_aquecidos()  # o que a tela de carregamento adiantou já foi usado: nada fica guardado durante a partida
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
@@ -248,7 +253,7 @@ func _ready() -> void:
 			)
 		)
 	if _modo == "medir" or picos != null:
-		print("CARGA_ETAPAS " + texto_etapas())
+		print("CARGA_ETAPAS heroi_id=%s %s" % [str(combate.heroi_id), texto_etapas()])
 
 
 ## Marca o fim de uma etapa da montagem: guarda quanto ela levou desde a marca anterior (custa um relógio; vale também fora da medição).
@@ -281,6 +286,7 @@ static func passos_de_carga() -> Array:
 	for nome in SPRITES_MONSTRO:  # as folhas grandes das elites e dos chefes (tipo_grande): só as que existem viram trabalho
 		for n in [2, 3, 4]:
 			passos.append(Sprites.aquecer.bind("%s_x%d" % [nome, n]))
+	passos.append(preload("res://v2/chama_gotas.gd").aquecer_folha)  # a folha das gotas de fogo (lida da placa uma vez por processo)
 	return passos
 
 
@@ -384,14 +390,17 @@ func _montar() -> void:
 	marcar_etapa("combate")
 	elenco = Elenco.new()
 	elenco.montar(id_mapa, combate.cfg.diretor, combate.cartas.cfg.elites)
+	marcar_etapa("elenco")
 	_criar_heroi()
 	marcar_etapa("heroi")
 	oclusao = Oclusao.new().montar(sv, heroi)
+	marcar_etapa("oclusao")
 	combate.iniciar_heroi()
+	marcar_etapa("iniciar_heroi")
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	combate.diretor.zerar()  # os primeiros relógios também usam a dificuldade recém-lida
 	combate.elites.zerar()
-	marcar_etapa("oclusao_meta")
+	marcar_etapa("meta_aplicar")
 	horda = Horda.new()
 	horda.montar(self)
 	marcar_etapa("horda")
@@ -441,6 +450,7 @@ func _criar_heroi() -> void:
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
 	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite_da_partida(combate.heroi_id, args.has("basico"))), p)
+	marcar_etapa("heroi_sprite")
 	combate.mecha.precarregar()  # LightWolf: a folha do Lobo entra na memória agora, para a troca no meio da luta não pesar
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
@@ -1022,6 +1032,8 @@ func _process(delta: float) -> void:
 		picos.quadro(self)
 	var t0 := Time.get_ticks_usec()
 	avancar(minf(delta, 0.1))
+	if aquecimento != null and not aquecimento.quadro():
+		aquecimento = null
 	if roteiro != null:
 		var r0 := Time.get_ticks_usec()
 		roteiro.atualizar(delta)

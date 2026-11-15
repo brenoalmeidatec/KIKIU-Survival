@@ -118,7 +118,10 @@ func tipo(nome: String) -> Dictionary:
 	var d := {"tex": t, "w": int(info.quadro[0]), "h": int(info.quadro[1]), "info": info, "emissao": null, "alb": alb}
 	var t0 := Time.get_ticks_usec()
 	var pronta := _borrada_pronta(nome)
-	d["blur"] = ImageTexture.create_from_image(pronta) if pronta != null else Sombras.borrar_folha(_imagem(nome + "_albedo.png"), d.w, d.h)
+	var borrada: Image = pronta if pronta != null else Sombras.borrar_imagem(_imagem(nome + "_albedo.png"), d.w, d.h)
+	d["blur"] = ImageTexture.create_from_image(borrada)
+	d["blur_img"] = borrada  # a cópia na memória: o atlas da horda e quem precisa dos pixels não leem da placa (get_image espera a GPU)
+	d["img"] = _imagem(nome + "_albedo.png")
 	ms_blur += (Time.get_ticks_usec() - t0) / 1000.0
 	if ResourceLoader.exists(_caminho(nome + "_emissao.png")):
 		d.emissao = ImageTexture.create_from_image(_imagem(nome + "_emissao.png"))
@@ -175,7 +178,7 @@ func atlas(nomes: Array) -> Dictionary:
 			var e := _imagem(nome + "_emissao.png").duplicate() as Image
 			e.convert(Image.FORMAT_RGBA8)
 			emi.blit_rect(e, r, Vector2i(0, y))
-		var b := (t.blur as ImageTexture).get_image()
+		var b := (t.blur_img as Image).duplicate() as Image if t.has("blur_img") else (t.blur as ImageTexture).get_image()
 		b.convert(Image.FORMAT_RGBA8)
 		bor.blit_rect(b, r, Vector2i(0, y))
 		origem[nome] = Vector2(0, y)
