@@ -32,6 +32,7 @@ const CORTE_DIRECOES := 16  # o corte so gira em 16 direcoes (passos de 22,5 gra
 const PixelRot := preload("res://v2/pixel_rot.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": sem clarão de tela, flash de acerto em tinta fixa
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const CORTE_CRESCE := 0.3  # fração da estocada (o corte de folha tem tamanho fixo) em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
 
 const SHADER_CORTE := """
@@ -408,8 +409,7 @@ func _montar_cortes() -> void:
 	im.fill(Color.WHITE)
 	_tex_branca = ImageTexture.create_from_image(im)
 	var tex := _tex_branca
-	var sh := Shader.new()
-	sh.code = SHADER_CORTE
+	var sh := Sombreadores.shader(SHADER_CORTE)
 	for i in MAX_CORTES:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -428,8 +428,7 @@ func _montar_cortes() -> void:
 
 
 func _montar_folhas() -> void:
-	var sh := Shader.new()
-	sh.code = SHADER_CORTE
+	var sh := Sombreadores.shader(SHADER_CORTE)
 	var martelo := _heroi_com_martelo()
 	for nome in Dados.json("v2_folhas_fx"):
 		if nome != "corte_ciano" and not str(nome).begins_with("_"):  # o ciano (variante do Rastro de katana) so carrega quando pedido
@@ -476,8 +475,7 @@ func _montar_chao(m) -> void:
 
 
 func _montar_explosoes() -> void:
-	var sh := Shader.new()
-	sh.code = SHADER_EXPLOSAO
+	var sh := Sombreadores.shader(SHADER_EXPLOSAO)
 	var tex: Texture2D = _tex_branca
 	for i in MAX_EXPLOSOES:
 		var s := Sprite2D.new()
@@ -492,8 +490,7 @@ func _montar_explosoes() -> void:
 	_ex_dur.resize(MAX_EXPLOSOES)
 	_ex_t.fill(9.0)
 	_ex_dur.fill(1.0)
-	var sh_c := Shader.new()
-	sh_c.code = SHADER_CORTE
+	var sh_c := Sombreadores.shader(SHADER_CORTE)
 	for i in MAX_ECOS:
 		var s := Sprite2D.new()
 		s.texture = tex
@@ -537,8 +534,7 @@ func _montar_luzes(sv: Node) -> void:
 
 
 func _montar_flashes() -> void:
-	var sh := Shader.new()
-	sh.code = SHADER_FLASH
+	var sh := Sombreadores.shader(SHADER_FLASH)
 	for i in MAX_FLASH:
 		var s := Sprite2D.new()
 		s.centered = false

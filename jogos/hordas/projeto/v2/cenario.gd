@@ -8,6 +8,7 @@ const Ator := preload("res://v2/ator.gd")
 const Sombras := preload("res://v2/sombras.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const Sprites := preload("res://v2/sprites.gd")
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const OBJ_DIR := "res://prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540 (a floresta; "pastas" do mapa troca)
 const DEC_DIR := "res://prototipos/decalques"  # decalques de chão: albedo + normal
 const PISO_DIR := "res://prototipos/piso"
@@ -88,12 +89,13 @@ func _chao(c: Dictionary) -> void:
 		ct.normal_texture = ImageTexture.create_from_image(Sprites.png(nn))
 	piso.texture = ct
 	# sob a luz laranja o musgo ia a amarelo saturado: tira um pouco do verde e dessatura o chão antes da luz
-	var sh := Shader.new()
-	sh.code = (
-		"shader_type canvas_item;\nuniform float verde = 0.8;\nuniform float dessat = 0.3;\nuniform float ganho = 1.0;\n"
-		+ "void fragment(){ vec4 c = texture(TEXTURE, UV); float l = dot(c.rgb, vec3(0.3, 0.5, 0.2));"
-		+ " vec3 b = mix(c.rgb, vec3(l) * vec3(1.05, 0.95, 0.9), dessat); b.g *= verde;"
-		+ " COLOR = vec4(min(b * ganho, vec3(1.0)), c.a); }\n"
+	var sh := Sombreadores.shader(
+		(
+			"shader_type canvas_item;\nuniform float verde = 0.8;\nuniform float dessat = 0.3;\nuniform float ganho = 1.0;\n"
+			+ "void fragment(){ vec4 c = texture(TEXTURE, UV); float l = dot(c.rgb, vec3(0.3, 0.5, 0.2));"
+			+ " vec3 b = mix(c.rgb, vec3(l) * vec3(1.05, 0.95, 0.9), dessat); b.g *= verde;"
+			+ " COLOR = vec4(min(b * ganho, vec3(1.0)), c.a); }\n"
+		)
 	)
 	var mat := ShaderMaterial.new()
 	mat.shader = sh

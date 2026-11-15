@@ -9,6 +9,7 @@ extends RefCounted
 ## INTEIRO desce a ALFA_CAIXA com a mesma transição, enquanto o herói está atrás e o corpo dele cai no retângulo do desenho. Poste, placa e
 ## árvore (formas "elipse") continuam com o buraco circular. Mesma busca (objetos dos blocos visíveis) e mesmo custo: nada novo por quadro.
 ## mundo.gd chama `montar` uma vez e `atualizar` a cada passo, com os objetos dos blocos visíveis (cenario.ativos).
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 const ALTURA_MIN := 60  # px do sprite: abaixo disto não encobre o herói
 const RAIO := 40.0  # px: o buraco inteiro, com o alfa mínimo
@@ -55,10 +56,8 @@ var _n := 0
 ## altura_min: sprite de pelo menos esta altura (px) encobre o herói; o mapa pode baixá-la (`mapa.copas_altura_min`: no laboratório, bancadas e armários também cobrem).
 ## cenario: quem diz se o item tem forma "caixa" (`tem_caixa(nome)`); sem ele (testes soltos) todo objeto alto ganha o buraco circular.
 func montar(objetos: Array, altura_min := float(ALTURA_MIN), cenario = null) -> void:
-	var sh := Shader.new()
-	sh.code = SHADER
-	var sh_caixa := Shader.new()
-	sh_caixa.code = SHADER_CAIXA
+	var sh := Sombreadores.shader(SHADER)
+	var sh_caixa := Sombreadores.shader(SHADER_CAIXA)
 	for a in objetos:
 		if a.sprite == null or a.sprite.texture == null or float(a.sprite.texture.get_height()) < altura_min:
 			continue

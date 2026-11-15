@@ -11,6 +11,7 @@ extends Node
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --sem_aquecimento (entrando pela tela de carregamento, não aquece o primeiro desenho: v2/aquecimento.gd; só para medir)
+##   --sem_revelar (entrando pela tela de carregamento, o primeiro desenho vem inteiro no quadro do _ready, sem v2/revelacao.gd; só para medir)
 ##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --dpi=150 (finge a escala de tela do sistema, em %, para o Automático) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
@@ -168,6 +169,7 @@ var etapas_carga: Array = []  # [nome, ms] de cada etapa da montagem (impresso c
 var _us_etapa := 0
 var _tex_etapa := 0.0  # memória de textura na marca anterior (bytes): quanto cada etapa sobe para a placa
 var aquecimento = null  # v2/aquecimento.gd: só quando a partida entrou pela tela de carregamento (os primeiros quadros, cobertos)
+var revelacao = null  # v2/revelacao.gd: o primeiro desenho por partes, por baixo da tela de carregamento (antes do aquecimento)
 var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 
@@ -239,8 +241,16 @@ func _ready() -> void:
 		meta_res.montar(self)
 	marcar_etapa("status_trilha_meta")
 	if Transicoes.carregando() and not modo_teste and not args.has("sem_aquecimento"):  # medição A/B: --sem_aquecimento; a tela de carregamento cobre os primeiros quadros: o primeiro desenho de cada coisa vai ali
-		aquecimento = preload("res://v2/aquecimento.gd").new(self, int(Transicoes.Carregando.cfg().get("quadros_aquecer", 2)))
-		aquecimento.quadro()
+		var cfg_carga: Dictionary = Transicoes.Carregando.cfg()
+		aquecimento = preload("res://v2/aquecimento.gd").new(self, int(cfg_carga.get("quadros_aquecer", 2)))
+		if bool(cfg_carga.get("revelar", true)) and not args.has("sem_revelar"):  # medição A/B: --sem_revelar
+			# o primeiro desenho vem por partes (v2/revelacao.gd): este quadro não desenha o mundo nem a interface, e o aquecimento
+			# começa quando tudo já apareceu (o que ele desenha nasce com a camada que só entra no fim)
+			revelacao = preload("res://v2/revelacao.gd").new([sv, ui], [ap.tela, ap.tela_ui], int(cfg_carga.get("revelar_juntos_baratos", 8)))
+			aquecimento.por_partes = true
+			marcar_etapa("revelacao")
+		else:
+			aquecimento.quadro()
 		marcar_etapa("aquecimento")
 	Sprites.soltar_aquecidos()  # o que a tela de carregamento adiantou já foi usado: nada fica guardado durante a partida
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
@@ -307,6 +317,28 @@ static func passos_de_carga() -> Array:
 	return passos
 
 
+## A tela de carregamento ainda deve cobrir a partida: o primeiro desenho está vindo por partes (v2/revelacao.gd) ou o aquecimento
+## ainda desenha por baixo (v2/aquecimento.gd). Transicoes.ir_para_carregando espera isto ficar false antes do fade.
+func revelando() -> bool:
+	return revelacao != null or aquecimento != null
+
+
+## 0 a 1: quanto do primeiro desenho já apareceu (a barra da tela de carregamento anda com isto).
+func progresso_revelacao() -> float:
+	return revelacao.progresso() if revelacao != null else 1.0
+
+
+## A tela de carregamento esperou o teto (`espera_max_quadros`) e vai sair: solta o que ainda estava escondido e para o aquecimento,
+## para a partida nunca aparecer vazia ou por partes nem ficar parada depois do fade (o que faltava compilar compila no próximo quadro).
+func terminar_revelacao() -> void:
+	if revelacao != null:
+		revelacao.encerrar()
+		revelacao = null
+	if aquecimento != null:
+		aquecimento.encerrar()
+		aquecimento = null
+
+
 ## Quanto do aquecimento ainda roda em thread (0 = pronto). A tela de carregamento espera chegar a zero antes de trocar a cena.
 static func carga_pendente() -> int:
 	return Sprites.aquecendo()
@@ -314,6 +346,9 @@ static func carga_pendente() -> int:
 
 func _exit_tree() -> void:
 	CursorKikiu.aplicar("seta")
+	if revelacao != null:  # saiu no meio da revelação: máscaras e camadas voltam (a janela é de todos)
+		revelacao.encerrar()
+		revelacao = null
 	if picos != null:
 		picos.resumo()
 		picos = null
@@ -1111,9 +1146,15 @@ func _process(delta: float) -> void:
 	if picos != null:
 		picos.quadro(self)
 	var t0 := Time.get_ticks_usec()
-	avancar(minf(delta, 0.1))
-	if aquecimento != null and not aquecimento.quadro():
-		aquecimento = null
+	if revelacao != null and not revelacao.quadro():
+		revelacao = null
+	if revelacao != null:
+		avancar(0.0)  # a partida ainda não aparece: o tempo dela não anda (ninguém joga às cegas por baixo da tela)
+	else:
+		var coberta: bool = aquecimento != null and aquecimento.por_partes  # o aquecimento por partes também corre com a partida parada
+		avancar(0.0 if coberta else minf(delta, 0.1))
+		if aquecimento != null and not aquecimento.quadro():
+			aquecimento = null
 	if roteiro != null:
 		var r0 := Time.get_ticks_usec()
 		roteiro.atualizar(delta)

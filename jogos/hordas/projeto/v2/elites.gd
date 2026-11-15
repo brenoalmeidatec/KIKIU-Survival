@@ -3,6 +3,7 @@ extends RefCounted
 ## Nasce fora da tela de tempos em tempos (dados/v2_cartas.json > "elites"), vale muito mais XP e, ao morrer, solta um BAÚ (v2/bau.gd). O
 ## contorno é um sprite aditivo na camada glow, com um shader que desenha só a borda de fora da silhueta (e não vaza para o quadro vizinho
 ## da folha: a leitura é presa à região do quadro). Os chefes (v2/chefe.gd) usam o mesmo contorno.
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 const SHADER_CONTORNO := """
 shader_type canvas_item;
@@ -39,8 +40,7 @@ func montar(c) -> void:
 	combate = c
 	mundo = c.mundo
 	cfg = c.cartas.cfg.elites
-	_shader = Shader.new()
-	_shader.code = SHADER_CONTORNO
+	_shader = Sombreadores.shader(SHADER_CONTORNO)
 	zerar()
 
 

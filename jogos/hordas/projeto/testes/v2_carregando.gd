@@ -5,7 +5,8 @@ extends Node
 # "Reduzir animações" e no perfil Baixo; a carga de verdade até a partida (thread + aquecimento) termina na cena da partida, com a
 # entrada bloqueada durante TODA a carga, um segundo pedido descartado, a tela escondida no fim e o aquecimento das folhas solto;
 # em todo quadro desenhado com a tela aberta (inclusive o da troca, quando o modo de escala da janela muda) o fundo cobre a tela e o
-# bloco fica no centro; com fade no perfil Alto e sem quadro de fade no Baixo; e a tela de dificuldade com o hover mais fraco.
+# bloco fica no centro; o primeiro desenho vem por partes (v2/revelacao.gd) com a partida parada e acaba antes do fade, sem deixar
+# máscara nem camada mexida (também quando a tela sai pelo teto de espera no meio dela); com fade no perfil Alto e sem quadro de fade no Baixo; e a tela de dificuldade com o hover mais fraco.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_carregando.tscn  (imprime "v2_carregando falhas=0"). A conferência
 # de cada quadro desenhado só vale com janela (sem --headless), porque sem renderizador não há quadro: rode também com janela.
 const Carregando := preload("res://v2/carregando.gd")
@@ -38,6 +39,7 @@ func _ready() -> void:
 	await _hover_dificuldade()
 	await _carga_real("alto")
 	await _carga_real("baixo")
+	await _carga_real("alto", 2)  # a tela sai pelo teto de espera no meio da revelação
 	Transicoes._encerrar()
 	Ambiente.finalizar()
 	print("v2_carregando falhas=%d" % falhas)
@@ -109,8 +111,12 @@ func _hover_dificuldade() -> void:
 	await get_tree().process_frame
 
 
-func _carga_real(perfil: String) -> void:
+func _carga_real(perfil: String, teto := -1) -> void:
 	Config.g_perfil_temporario(perfil)
+	var cfg_carga: Dictionary = Transicoes.Carregando.cfg()
+	var teto_antes = cfg_carga.get("espera_max_quadros", 90)
+	if teto >= 0:
+		cfg_carga["espera_max_quadros"] = teto
 	# o teste sobrevive à troca de cena: sai da cena atual e fica na raiz. A cena de partida é como o salão: tela na escala da UI
 	var vazio := Control.new()
 	vazio.add_child(preload("res://v2/ui_janela.gd").new().montar(vazio))
@@ -130,6 +136,12 @@ func _carga_real(perfil: String) -> void:
 	var viu_fade := false
 	var viu_aquecimento := false
 	var aquecimento_no_fade := false
+	var viu_revelacao := false
+	var revelacao_ok := true  # durante a revelação o tempo da partida não anda e o aquecimento ainda não desenhou
+	var revelacao_no_fade := false
+	var lotes := 0
+	var max_atual := 0  # o lote mais alto que chegou a entrar (pelo teto, a revelação acaba antes do último)
+	var mascaras_janela := 0  # a máscara da janela nunca esconde o bit 0 (a tela de carregamento)
 	_quadros_ruins = 0
 	_quadros_vistos = 0
 	RenderingServer.frame_pre_draw.connect(_conferir_quadro)  # liga depois da tela: roda depois do reencaixe dela
@@ -144,8 +156,22 @@ func _carga_real(perfil: String) -> void:
 		if cs != null and "aquecimento" in cs and cs.aquecimento != null:
 			viu_aquecimento = true
 			aquecimento_no_fade = aquecimento_no_fade or a < 0.999 or not Transicoes._carga.visible
+		if cs != null and "revelacao" in cs and cs.revelacao != null:
+			viu_revelacao = true
+			lotes = maxi(lotes, cs.revelacao.lotes)
+			max_atual = maxi(max_atual, cs.revelacao.atual)
+			revelacao_ok = revelacao_ok and cs.tempo_partida == 0.0 and cs.aquecimento._parte == 0
+			revelacao_no_fade = revelacao_no_fade or a < 0.999 or not Transicoes._carga.visible
+		if cs != null and "aquecimento" in cs and cs.aquecimento != null and cs.aquecimento.por_partes:
+			revelacao_ok = revelacao_ok and cs.tempo_partida == 0.0  # o aquecimento por partes também corre com a partida parada
+		if (get_tree().root.canvas_cull_mask & 1) == 0:
+			mascaras_janela += 1
 		await get_tree().process_frame
 	RenderingServer.frame_pre_draw.disconnect(_conferir_quadro)
+	cfg_carga["espera_max_quadros"] = teto_antes
+	if teto >= 0:
+		perfil += ", teto %d" % teto
+		ok(max_atual < lotes, "pelo teto a tela sai antes do último lote (%d de %d): o caso foi exercitado" % [max_atual, lotes])
 	ok(sempre_bloqueada, "a entrada fica bloqueada a carga inteira, até a troca (%s)" % perfil)
 	if DisplayServer.get_name() != "headless":  # sem renderizador não há quadro desenhado (frame_pre_draw não dispara): só com janela
 		ok(
@@ -165,9 +191,24 @@ func _carga_real(perfil: String) -> void:
 	ok(Sprites._quentes.is_empty() and Sprites._borradas.is_empty() and Sprites.aquecendo() == 0, "o aquecimento das folhas foi solto")
 	ok(viu_aquecimento, "o primeiro desenho da horda e do dano foi aquecido por baixo da tela (%s)" % perfil)
 	ok(not aquecimento_no_fade, "o aquecimento acaba antes de a tela começar a sumir (%s)" % perfil)
+	ok(viu_revelacao and lotes >= 4, "o primeiro desenho veio por partes por baixo da tela (%d lotes, %s)" % [lotes, perfil])
+	ok(revelacao_ok, "durante a revelação e o aquecimento a partida não anda, e o aquecimento espera a revelação (%s)" % perfil)
+	ok(not revelacao_no_fade, "a revelação acaba antes de a tela começar a sumir (%s)" % perfil)
+	ok(mascaras_janela == 0, "a janela nunca escondeu a tela de carregamento (%d quadros)" % mascaras_janela)
 	if cena != null:
+		ok(cena.revelacao == null, "a revelação terminou e saiu da partida")
+		var tudo := 0xFFFFFFFF
+		ok(cena.sv.canvas_cull_mask == tudo and cena.ui.canvas_cull_mask == tudo and get_tree().root.canvas_cull_mask == tudo, "as máscaras voltaram ao normal")
+		var camadas := [0]
+		for v in [cena.sv, cena.ui]:
+			_contar_camadas(v, camadas)
+		for t in [cena.ap.tela, cena.ap.tela_ui]:
+			if t.visibility_layer != 1:
+				camadas[0] += 1
+		ok(camadas[0] == 0, "nenhum item ficou com a camada da revelação (%d)" % camadas[0])
 		ok(cena.aquecimento == null, "o aquecimento terminou e saiu da partida")
-		ok(cena.horda.fatias.size() >= 4, "as primeiras fatias da horda já existem (%d)" % cena.horda.fatias.size())
+		# pelo teto o aquecimento para antes das fatias (o caso de exceção)
+		ok(teto >= 0 or cena.horda.fatias.size() >= 4, "as primeiras fatias da horda já existem (%d)" % cena.horda.fatias.size())
 		var fx = cena.combate.fx
 		ok(fx.n_ativos == 0 and fx.usados.numeros == 0 and fx.usados.flashes == 0, "nada do aquecimento ficou na tela (números e flash)")
 		var vivos_fx := 0
@@ -179,6 +220,14 @@ func _carga_real(perfil: String) -> void:
 		cena.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
+
+
+func _contar_camadas(n: Node, conta: Array) -> void:
+	if n is CanvasItem and (n as CanvasItem).visibility_layer != 1:
+		conta[0] += 1
+	for c in n.get_children():
+		if not (c is Viewport):
+			_contar_camadas(c, conta)
 
 
 ## Antes de cada quadro desenhado com a tela de carregamento aberta: o fundo cobre a área visível e o bloco está no centro dela.

@@ -3,6 +3,7 @@ extends RefCounted
 ## quadro atual. Por isso seguem a silhueta em toda direção e em todo quadro, sem nó nem folha por monstro. O fogo tinge o corpo (escurece, aquece e põe a borda de brasa por dentro) e o resto é de v2/chama_gotas.gd; o gelo recolore e solta pontas; o veneno borbulha; o choque estala; o sangue escorre. Tudo em pixel inteiro, a 12 quadros por segundo.
 ## O lote da horda recebe o estado no alfa da instância (v2/horda.gd). Elite e chefe usam `material_no`.
 ## Perfil Baixo: estado 0 (fica a tinta do monstro.gd). Guia: docs/visual_2_5d/estilo_pixelfx.md.
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 const NADA := 0
 const FOGO := 1
@@ -134,8 +135,7 @@ static var _shader_no: Shader
 ## O material do sprite de uma elite ou chefe (um por monstro: a região muda a cada quadro).
 static func material_no(semente: float) -> ShaderMaterial:
 	if _shader_no == null:
-		_shader_no = Shader.new()
-		_shader_no.code = SHADER_NO
+		_shader_no = Sombreadores.shader(SHADER_NO)
 	var m := ShaderMaterial.new()
 	m.shader = _shader_no
 	m.set_shader_parameter("semente", semente)

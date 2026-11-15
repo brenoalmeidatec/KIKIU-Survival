@@ -5,6 +5,7 @@ extends RefCounted
 ## ATIVO (na tela, com margem): `ativar(ator, bool)`. As luzes vêm de `luzes` (luzes.gd: só as que alcançam a tela).
 
 const Ator := preload("res://v2/ator.gd")
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 const NENHUMA := 0
 const BAIXA := 1
 const MEDIA := 2
@@ -156,15 +157,16 @@ static func _caixa1d(a: PackedByteArray, iw: int, ih: int, w: int, h: int, horiz
 
 ## preto, sem luz, esmaecendo ao longo da altura do sprite (ou seja, ao longo do comprimento da sombra)
 func _material_sombra() -> ShaderMaterial:
-	var sh := Shader.new()
-	sh.code = (
+	var sh := Sombreadores.shader(
 		(
-			"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
-			+ GLSL_DEGRAUS
-			+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
-			+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
+			(
+				"shader_type canvas_item;\nrender_mode unshaded;\nuniform float fade_len = %.1f;\nvarying float up;\nvarying float luz;\n"
+				+ GLSL_DEGRAUS
+				+ "void vertex(){ up = -VERTEX.y; luz = COLOR.a; }\n"  # COLOR do vertex já leva o modulate (a luz), contínuo; a silhueta vem só da textura
+				+ "void fragment(){ COLOR = vec4(0.0, 0.0, 0.0, cobertura(texture(TEXTURE, UV).a) * luz * banda(1.0 - up / fade_len)); }\n"
+			)
+			% SOMBRA_FADE
 		)
-		% SOMBRA_FADE
 	)
 	var m := ShaderMaterial.new()
 	m.shader = sh

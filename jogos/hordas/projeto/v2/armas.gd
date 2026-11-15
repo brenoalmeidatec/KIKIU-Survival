@@ -24,6 +24,7 @@ const COR_RAIO := Color(0.72, 0.86, 1.0)
 const ANGULOS_LEQUE := [-0.3, 0.0, 0.3]  # as lanças da Ventania (rad); uma só sem ela
 const RUNA_NO_ALVO := 0.65  # chance de a runa nascer em cima de um monstro perto (senão cai num anel em volta do herói, onde talvez ninguém pise)
 const HALO_FUSAO := preload("res://assets/v2/fusoes/halo.png")  # halo branco 48 x 48 da fusão, tingido pela cor dela (lâminas evoluídas)
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 var combate
 var mundo
@@ -1068,8 +1069,7 @@ func _texturas() -> void:
 	im.fill(Color.WHITE)
 	_aura_sp = Sprite2D.new()
 	_aura_sp.texture = ImageTexture.create_from_image(im)
-	var sh := Shader.new()
-	sh.code = SHADER_AURA
+	var sh := Sombreadores.shader(SHADER_AURA)
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
 	_aura_sp.material = mat

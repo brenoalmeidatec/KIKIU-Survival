@@ -7,6 +7,7 @@ extends CanvasLayer
 ## Uma só curva para as duas versões (UI-4, D12): fecha de 0 a 1 em DURACAO s, suave e sem piscada (antes a completa fechava em 0,72 s,
 ## com duas piscadas). Versão completa (perfil Alto): desfoque crescente e borda macia. Versão simples (perfis Médio e Baixo, ou
 ## "Tremor e clarões" em 0%): só as pálpebras e o escurecimento, sem desfoque e sem mipmap da tela (o mipmap pesa no Iris Xe).
+const Sombreadores := preload("res://v2/sombreadores.gd")  # um Shader por código: código igual compila uma vez
 
 const DURACAO := 1.2  # s do efeito (a câmera lenta da morte dura pelo menos 1,3 s)
 const SHADER := """shader_type canvas_item;
@@ -58,8 +59,7 @@ func iniciar(hud: Node = null, minimapa: CanvasLayer = null) -> void:
 	_mini_visivel = minimapa.visible if minimapa != null else true
 	if _ret != null:
 		_ret.queue_free()
-	var sh := Shader.new()
-	sh.code = SHADER.replace("FILTRO", "filter_nearest" if simples else "filter_linear_mipmap")
+	var sh := Sombreadores.shader(SHADER.replace("FILTRO", "filter_nearest" if simples else "filter_linear_mipmap"))
 	_mat = ShaderMaterial.new()
 	_mat.shader = sh
 	_ret = ColorRect.new()

@@ -16,8 +16,9 @@ extends CanvasLayer
 ##    enquanto a barra enche, roda os passos de aquecimento que o script da cena declarar (`static func passos_de_carga() -> Array`
 ##    de Callables, um por quadro, e `static func carga_pendente() -> int`, 0 quando as threads dele terminaram) e só então troca.
 ##    A montagem da cena (o _ready) ainda roda no quadro principal: nesse trecho a tela fica parada, com a barra quase cheia. Ela
-##    some com um fade curto depois que a cena nova desenhou `quadros_depois` quadros (sem fade no perfil Baixo e com "Reduzir
-##    animações"). A entrada fica descartada do pedido até a tela sumir, como na foto.
+##    some com um fade curto depois que a cena nova desenhou `quadros_depois` quadros e, se a cena tiver `revelando()`, depois que
+##    ela devolver false (o mundo desenha o primeiro quadro por partes, v2/revelacao.gd, e a barra anda com `progresso_revelacao()`)
+##    (sem fade no perfil Baixo e com "Reduzir animações"). A entrada fica descartada do pedido até a tela sumir, como na foto.
 ##
 ## "Reduzir animações" (Config, Acessibilidade): `reduzido()` zera tudo, e `duracao(base)` serve a quem quiser respeitar a opção
 ## (a frente das cartas, #376). A duração é em tempo real (relógio da máquina), então câmera lenta e pausa não mexem nela.
@@ -201,6 +202,21 @@ func _carregar(arvore: SceneTree, caminho: String, ger: int) -> void:
 		await arvore.process_frame
 		if ger != _ger_carga:
 			return
+	# a cena que desenha o primeiro quadro por partes (mundo.revelando: v2/revelacao.gd e o aquecimento) segura a tela até acabar,
+	# com a barra andando junto; um teto de quadros garante que a tela sai mesmo se a cena nunca disser que acabou
+	var base := peso_cena + peso_passos
+	var teto := int(cfg.get("espera_max_quadros", 90))
+	var nova: Node = arvore.current_scene
+	var n := 0
+	while is_instance_valid(nova) and nova.has_method("revelando") and nova.revelando() and n < teto:
+		if nova.has_method("progresso_revelacao"):
+			_carga.alvo(base + (1.0 - base) * float(nova.progresso_revelacao()))
+		await arvore.process_frame
+		n += 1
+		if ger != _ger_carga:
+			return
+	if is_instance_valid(nova) and nova.has_method("revelando") and nova.revelando() and nova.has_method("terminar_revelacao"):
+		nova.terminar_revelacao()  # passou do teto: nada fica escondido nem parado depois do fade
 	_carga.alvo(1.0)
 	_carga.assentar()
 	var fade := float(cfg.get("fade_s", 0.2))

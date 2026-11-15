@@ -6,13 +6,15 @@ extends "res://testes/isolamento_v2.gd"
 #  (3) folhas do martelo só com o Nicão;
 #  (4) pixelfx decorativo fora no perfil Baixo, e carregado quando o perfil sobe (menu de pausa);
 #  (5) folhas grandes das elites do mapa já carregadas;
-#  (6) retrato do HUD é a folha que a partida já subiu.
+#  (6) retrato do HUD é a folha que a partida já subiu;
+#  (7) um Shader por código (v2/sombreadores.gd): o corte e o eco usam o mesmo, e a partida seguinte reusa o da anterior (já compilado).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_textura_carga.tscn  (imprime "v2_textura_carga falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Sombras := preload("res://v2/sombras.gd")
 var falhas := 0
 var w
+var _sh_corte: Shader = null  # (7) o shader do corte na primeira partida
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -78,6 +80,9 @@ func _alto_lightwolf() -> void:
 		if no.has_node("Raiz/Retrato/Heroi"):
 			retrato = no.get_node("Raiz/Retrato/Heroi")
 	ok(retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas == w.heroi.tipo.alb, "(6) o retrato usa a folha do herói já na placa")
+	var fx = w.combate.fx
+	_sh_corte = fx._cortes[0].material.shader
+	ok(_sh_corte == fx._eco[0].material.shader, "(7) o corte e o eco usam o mesmo Shader")
 	ok(w.combate.fx_folha.adiar_deco == false and w.combate.fx_folha._defs.all(func(d): return d.tex != null), "(4) no Alto o pixelfx carrega todo")
 	# a troca para o Médio (menu de pausa): a silhueta nasce e vai para a sombra do herói e do lote
 	Config.g_perfil_temporario("medio")  # o menu de pausa: graficos_mudou > _ler_graficos
@@ -99,6 +104,7 @@ func _alto_lightwolf() -> void:
 func _baixo_hazaki() -> void:
 	await novo("hazaki", "baixo")
 	ok(w.sombras.modo == Sombras.BAIXA, "perfil Baixo: sombra baixa")
+	ok(w.combate.fx._cortes[0].material.shader == _sh_corte, "(7) a partida seguinte reusa o Shader do corte da anterior")
 	var ff = w.combate.fx_folha
 	ok(ff.adiar_deco, "(4) no Baixo sem ajuste o pixelfx decorativo fica adiado")
 	var vazias: int = ff._defs.filter(func(d): return d.tex == null).size()
