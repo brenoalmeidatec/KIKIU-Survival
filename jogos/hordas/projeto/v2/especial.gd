@@ -1141,10 +1141,13 @@ func _contorno(t: Dictionary, regiao: Rect2) -> Texture2D:
 	var chave := "%s|%s" % [str(t.alb.resource_path if t.alb.resource_path != "" else t.alb.get_rid()), str(regiao)]
 	if _contornos.has(chave):
 		return _contornos[chave]
-	var src: Image = t.alb.get_image()
+	var src: Image = t.get("img") if t.get("img") is Image else null  # a cópia na RAM que Sprites.tipo guarda: get_image() lê da placa (síncrono, ~23 ms no mecha) no meio da luta
+	if src == null:
+		src = t.alb.get_image()
 	if src == null:
 		return null
 	if src.is_compressed():
+		src = src.duplicate()
 		src.decompress()
 	var q := src.get_region(Rect2i(regiao))
 	q.convert(Image.FORMAT_RGBA8)

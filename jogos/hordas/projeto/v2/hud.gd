@@ -283,9 +283,9 @@ func _retrato_do_heroi(sprite := "") -> void:
 ## cópia da folha inteira na placa só para o retrato: 44 MB com o mecha do LightWolf.
 func _folha_do_mundo(nome: String) -> Texture2D:
 	var sp = mundo.get("sprites") if mundo is Object else null
-	if sp == null or not sp.has_method("tipo") or not FileAccess.file_exists(SPRITES + nome + ".json"):
-		return null
-	return sp.tipo(nome).get("alb") as Texture2D
+	if sp == null or not (sp.get("_tipos") is Dictionary) or not (sp._tipos.get(nome) is Dictionary):
+		return null  # a folha não está na partida (--basico mostra a de outro herói): carregar só o albedo, como antes, e não a folha inteira
+	return sp._tipos[nome].get("alb") as Texture2D
 
 
 func _mostrar_retrato(recorte: AtlasTexture, tamanho: Vector2) -> void:

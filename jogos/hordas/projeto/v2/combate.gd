@@ -196,6 +196,7 @@ func montar(m) -> void:
 	fx.montar(m, m.glow, m.sv, m.atm.tex_brilho)
 	m.marcar_etapa("c_fx")
 	fx_folha = FxFolha.new()
+	fx_folha.adiar_deco = m.has_method("_suave_possivel") and not m._suave_possivel()  # perfil Baixo: o enfeite nunca nasce, a folha fica no disco
 	fx_folha.montar(m.glow)
 	m.marcar_etapa("c_fx_folha")
 	fx_status = FxStatus.new()

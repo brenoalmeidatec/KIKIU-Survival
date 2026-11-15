@@ -37,6 +37,9 @@ var _lz := PackedByteArray()  # em qual nó de desenho o slot aparece
 var _alvo: Array = []
 var _agora := 0.0
 var _sujo := false  # sobrou desenho velho para apagar
+## true = a folha de efeito `decorativo` não carrega na montagem (a partida não pode sair do perfil Baixo sem pausa, e no Baixo o enfeite não
+## nasce): fica só o caminho, e `carregar_faltantes()` sobe as folhas quando o jogador troca o perfil no menu de pausa. O mundo decide.
+var adiar_deco := false
 
 
 ## `camada`: onde os efeitos de camada "glow" aparecem (acima do escurecimento do cenário). `camada_mundo`: opcional, para os de camada
@@ -71,6 +74,17 @@ func montar(camada: Node, camada_mundo: Node = null) -> void:
 		registrar(str(id), efeitos[id])
 
 
+## Carrega as folhas que a montagem adiou (adiar_deco). O mundo chama quando o perfil sai do Baixo, o que só acontece no menu de pausa.
+## Devolve quantas carregou.
+func carregar_faltantes() -> int:
+	var n := 0
+	for d in _defs:
+		if d.tex == null:
+			d.tex = load(str(d.arquivo)) as Texture2D
+			n += 1
+	return n
+
+
 ## Pixel art: um tamanho de pixel só. A folha só se desenha em escala INTEIRA (1, 2...): fração mistura pixels de tamanhos diferentes. Quem
 ## precisa de outro tamanho gera uma folha nova já nesse tamanho (fonte_arte/pixelfx/gerar_folhas.py) e a registra com outro id.
 func _escala_inteira(id: String, e: float) -> float:
@@ -87,8 +101,12 @@ func registrar(id: String, e: Dictionary) -> bool:
 		if not e.has(k):
 			push_error("pixelfx '%s': falta o campo '%s'" % [id, k])
 			return false
-	var tex = load(PASTA + str(e.arquivo)) if ResourceLoader.exists(PASTA + str(e.arquivo)) else null
-	if not (tex is Texture2D):
+	if not ResourceLoader.exists(PASTA + str(e.arquivo)):
+		push_error("pixelfx '%s': folha não encontrada (%s)" % [id, PASTA + str(e.arquivo)])
+		return false
+	var deco := bool(e.get("decorativo", true))
+	var tex = null if (deco and adiar_deco) else load(PASTA + str(e.arquivo))
+	if not (tex is Texture2D) and not (deco and adiar_deco):
 		push_error("pixelfx '%s': folha não encontrada (%s)" % [id, PASTA + str(e.arquivo)])
 		return false
 	var quadro := Vector2(float(e.quadro[0]), float(e.quadro[1]))
@@ -96,7 +114,8 @@ func registrar(id: String, e: Dictionary) -> bool:
 	var quadros := maxi(int(e.quadros), 1)
 	var camada_mundo: bool = str(e.get("camada", "glow")) == "mundo" and _nos.size() > 2 and _nos[2] != null
 	var d := {
-		"tex": tex,
+		"tex": tex,  # null enquanto adiada (adiar_deco): _alocar recusa e carregar_faltantes() lê de `arquivo`
+		"arquivo": PASTA + str(e.arquivo),
 		"quadro": quadro,
 		"colunas": maxi(int(e.colunas), 1),
 		"quadros": quadros,
@@ -109,7 +128,7 @@ func registrar(id: String, e: Dictionary) -> bool:
 		"ticks": ceili(float(quadros) / float(passo)),  # quadros mostrados numa volta
 		"limite": maxi(int(e.get("limite", LIMITE_PADRAO)), 1),
 		"intervalo": maxf(float(e.get("intervalo", 0.0)), 0.0),
-		"deco": bool(e.get("decorativo", true)),
+		"deco": deco,
 		"clarao": bool(e.get("clarao", false)),
 		"lz": (2 if camada_mundo else 0) + (1 if bool(e.get("aditivo", false)) else 0),
 	}
@@ -189,8 +208,8 @@ func _alocar(id: String, modo: int, opcoes: Dictionary) -> int:
 		return -1
 	var idx: int = _ids[id]
 	var d: Dictionary = _defs[idx]
-	if d.deco and not Anim.suave:
-		return -1  # perfil Baixo: enfeite não nasce (não conta como recusa por falta de pool)
+	if (d.deco and not Anim.suave) or d.tex == null:
+		return -1  # perfil Baixo: enfeite não nasce (não conta como recusa por falta de pool); sem folha carregada, idem
 	if modo == UNICO and d.intervalo > 0.0 and _agora - _ultimo[idx] < d.intervalo:
 		return -1
 	var cor: Color = opcoes.get("cor", d.cor)

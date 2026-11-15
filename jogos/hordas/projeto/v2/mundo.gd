@@ -436,6 +436,8 @@ func _montar() -> void:
 	todos.append_array(_todos_monstros)
 	sombras.registrar_lote(todos)
 	_sombras_prontas = true
+	if _media_possivel():
+		_criar_silhuetas()
 	marcar_etapa("sombras_lote")
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_luar(m)
@@ -875,6 +877,48 @@ func _modo_sombra() -> int:
 	return m if m >= 0 else Sombras.MEDIA
 
 
+## A partida pode chegar à sombra Média sem pausa? Começa nela, ou o Ajuste dinâmico ("qualidade_auto") pode descer do Perfil escolhido
+## até um degrau com sombra média (Alto desce para Médio no meio da luta). Aí a silhueta borrada de toda folha nasce na carga, como antes
+## do corte; no Alto sem ajuste e no Baixo ela só nasce se o jogador trocar no menu de pausa (com o jogo parado).
+func _media_possivel() -> bool:
+	if _modo_sombra() == Sombras.MEDIA:
+		return true
+	return not args.has("sombra") and _perfil_alcancavel_com("sombras", [Sombras.NOMES[Sombras.MEDIA]])
+
+
+## Algum perfil que o Ajuste dinâmico pode pôr no meio da partida (do Perfil escolhido, o teto, até o Baixo) tem `chave` em `valores`? Sem
+## o ajuste (opção desligada, teste, argumentos ou headless, a mesma regra de _qualidade_ligada, que o _ready só liga depois da montagem)
+## o perfil não muda sem pausa e a resposta é false. Personalizado conta como todos os degraus.
+func _perfil_alcancavel_com(chave: String, valores: Array) -> bool:
+	var ajuste := DisplayServer.get_name() != "headless" and OS.get_cmdline_user_args().is_empty() and bool(Config.v("qualidade_auto"))
+	if not ajuste or modo_teste:
+		return false
+	var perfis: Dictionary = Dados.json("graficos").get("perfis", {})
+	var i0 := maxi(QualidadeAuto.DEGRAUS.find(Config.g_perfil_escolhido()), 0)
+	for i in range(i0, QualidadeAuto.DEGRAUS.size()):
+		if valores.has(str(perfis.get(QualidadeAuto.DEGRAUS[i], {}).get(chave, ""))):
+			return true
+	return false
+
+
+## A partida pode ligar os golpes suaves (partículas "medias" ou "muitas", AnimGolpes.suave) sem pausa? Sem isso as folhas decorativas do
+## pixelfx (fx_folha.gd, 52 MB, todas recusadas no perfil Baixo) ficam fora da carga e só carregam se o jogador mudar no menu de pausa.
+func _suave_possivel() -> bool:
+	if str(args.get("particulas", Config.g("particulas_sim"))) in ["medias", "muitas"]:
+		return true
+	return not args.has("particulas") and _perfil_alcancavel_com("particulas_sim", ["medias", "muitas"])
+
+
+## Cria agora a silhueta borrada de toda folha já carregada (herói, Lobo do mecha, monstros, elites, chefes) e a do atlas da horda, para a
+## troca para o Médio no meio da partida não subir dezenas de MB num quadro (o mecha sozinho tem 42 MB).
+func _criar_silhuetas() -> void:
+	for t in sprites._tipos.values():
+		if t is Dictionary and t.has("blur_img"):
+			Sprites.blur_de(t)
+	if horda != null and horda.atlas is Dictionary:
+		Sprites.blur_de(horda.atlas)
+
+
 ## Lê da aba Gráficos o modo de sombra (opção "sombras": baixa, media, alta) e as partículas ("particulas_sim"). --sombra= e --particulas=
 ## valem por cima (medição e fotos).
 func _ler_graficos() -> void:
@@ -890,6 +934,8 @@ func _ler_graficos() -> void:
 	if clima != null:
 		clima.definir_fator(1.0 if nivel == "muitas" else (0.5 if nivel == "medias" else 0.0))  # Baixo desliga o clima; Médio usa metade
 	AnimGolpes.suave = nivel in ["medias", "muitas"]  # golpes suaves custam uma chamada a mais por golpe: o perfil Baixo (poucas) fica sem
+	if AnimGolpes.suave and combate != null and combate.fx_folha != null:
+		combate.fx_folha.carregar_faltantes()  # saiu do Baixo no menu de pausa: as folhas decorativas que a carga deixou de fora sobem agora
 	if combate != null:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 

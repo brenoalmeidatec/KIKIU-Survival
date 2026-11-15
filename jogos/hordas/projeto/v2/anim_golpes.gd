@@ -13,6 +13,7 @@ const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "e
 
 static var _armas := {}
 static var _specs := {}  # arma -> a entrada do índice ({anims: ...}), ainda sem textura: `de` carrega na primeira vez
+static var _grupo := {}  # arma -> o grupo do índice que ficou valendo
 static var _lidas := false
 ## Os grupos que carregam tudo de uma vez em `carregar()`: os pequenos e os que não dependem de carta (perigo dos inimigos, magias, as
 ## adagas `_heroi`). As folhas de arma de carta (meteoro, anel, nuvem, evoluções e pixelfx) só carregam quando a arma entra no jogo
@@ -42,10 +43,11 @@ static func carregar() -> void:
 			if (f.get("anims", {}) as Dictionary).is_empty():
 				continue
 			for arma in f.get("armas", []):
-				var id := str(arma)
-				_specs[id] = f
-				if GRUPOS_JA.has(g) or id.begins_with("fx_") or IDS_JA.has(id):
-					_montar(id)
+				_specs[str(arma)] = f  # a arma que aparece em dois índices fica com a folha do último (o pixelfx vem por último e vence)
+				_grupo[str(arma)] = g
+	for id in _specs:  # só depois de ler todos: montar no meio do laço prendia a folha antiga de quem o pixelfx sobrescreve
+		if GRUPOS_JA.has(_grupo[id]) or str(id).begins_with("fx_") or IDS_JA.has(id):
+			_montar(id)
 
 
 ## Carrega as texturas da arma `id` (a partir do índice já lido) e guarda em _armas. A folha que falha fica de fora.

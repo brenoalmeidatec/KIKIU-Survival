@@ -28,6 +28,12 @@ func _ready() -> void:
 				continue
 			novas += 1
 			ok(fa.has(an), "%s: %s carregou" % [nome, an])
+			for arma in fo.armas:  # a arma que também está num índice anterior fica com a folha do pixelfx, não com a antiga
+				var fx_a: Dictionary = Anim.de(str(arma)).get(an, {})
+				ok(
+					not fx_a.is_empty() and (fx_a.tex as Texture2D).resource_path.get_file() == str(fo.anims[an].arquivo).get_file(),
+					"%s/%s usa a folha do pixelfx (%s)" % [arma, an, (fx_a.get("tex") as Texture2D).resource_path if not fx_a.is_empty() else "nada"]
+				)
 			if fa.has(an):
 				_folha(str(nome) + "/" + str(an), fa[an], an == "impacto" or an == "explosao")
 	ok(novas >= 80, "folhas novas lidas (%d)" % novas)
