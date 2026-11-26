@@ -1,5 +1,5 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste automático do LAYOUT do HUD da partida no estilo Overwatch (v2/hud.tscn, hud.gd, hud_habilidades.gd, hud_ultimate.gd): vida e fôlego no canto de baixo
+# Teste automático do LAYOUT do HUD da partida (v2/hud.tscn, hud.gd, hud_habilidades.gd, hud_ultimate.gd): vida e fôlego no canto de baixo
 # à esquerda, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita. Confere que NENHUM bloco do HUD cobre outro (retrato e barras,
 # faixa de golpes, tempo, abates, nível do mapa, combo, barra do chefe, anúncio, XP, Q, E/secundário, minimapa) em 960x540 e nas telas maiores (16:9 e 21:9, em todos
 # os tamanhos de interface), que as barras no comprimento máximo continuam antes do Q, que as colunas do card SUA BUILD não cobrem o herói nem o E/secundário e
@@ -95,7 +95,7 @@ func _testes() -> void:
 		_nao_se_cobrem(hud, tela[0], tela[1])
 	_barras_no_teto(hud, falso)
 	_colunas_do_card(hud)
-	_circulo_do_q(hud, falso)
+	_slot_do_q(hud, falso)
 	_anuncio_longo(hud)  # por último: a faixa fica com o tamanho do texto longo
 	vista.queue_free()
 
@@ -107,7 +107,7 @@ func _retangulos(hud, canvas: Vector2, d: Vector2) -> Dictionary:
 	var r := {}
 	for nome in BLOCOS:
 		var no: Control = hud.get_node("Raiz/" + nome)
-		r[nome] = Rect2(no.position + d, no.size * no.scale)  # o Q, o E/secundário e os golpes são escalados (1,5x) pelo nó
+		r[nome] = Rect2(no.position + d, no.size * no.scale)
 	r["Minimapa"] = Rect2(canvas.x - MARGEM_MINIMAPA - MINIMAPA.x, 0.0, MINIMAPA.x, MINIMAPA.y)
 	return r
 
@@ -131,18 +131,17 @@ func _nao_se_cobrem(hud, janela: Vector2, opcao: String) -> void:
 	for nome in nomes:
 		if nome != "Xp":
 			ok(not r_selo.intersects(rects[nome]), "%s: o selo do nível cobre %s" % [rotulo, nome])
-	# as âncoras (com 1 px de folga: num canvas de medida ímpar o deslocamento do bloco arredonda para baixo): o herói cola no canto de baixo à esquerda do canvas, o E e o secundário no de baixo à direita, o Q e o XP no centro de baixo
+	# O retrato segue o canto do canvas. A faixa de habilidades e XP acompanha o centro horizontal e a borda de baixo.
 	var ret: Rect2 = rects.Retrato
 	ok(ret.position.x == 6.0 and absf(ret.end.y - (canvas.y - 6.0)) <= 1.0, "%s: o retrato cola no canto de baixo à esquerda (%s)" % [rotulo, ret])
 	var hab: Rect2 = rects.Habilidades
-	ok(
-		absf(hab.end.x - (canvas.x - 6.0)) <= 1.0 and absf(hab.end.y - (canvas.y - 6.0)) <= 1.0,
-		"%s: o E e o secundário colam no canto de baixo à direita (%s)" % [rotulo, hab]
-	)
 	var ult: Rect2 = rects.Ultimate
 	var xp: Rect2 = rects.Xp
-	ok(absf(ult.get_center().x - canvas.x * 0.5) <= 0.5 and absf(xp.get_center().x - canvas.x * 0.5) <= 0.5, "%s: o Q e o XP no centro (%s)" % [rotulo, ult])
-	ok(absf(xp.end.y - (canvas.y - 6.0)) <= 1.0 and ult.end.y < xp.position.y, "%s: o Q fica acima do XP, que cola embaixo" % rotulo)
+	ok(hab.position.x - d.x == 392.0 and xp.position.x - d.x == 380.0, "%s: habilidades e XP seguem o bloco horizontalmente" % rotulo)
+	ok(hab.position.y == ult.position.y and hab.end.y == ult.end.y, "%s: a faixa mantém os slots alinhados" % rotulo)
+	ok(ult.position.x - hab.end.x == 7.0, "%s: o Q mantém a folga de 7 px após os outros slots" % rotulo)
+	ok(absf(xp.end.y - (canvas.y - 6.0)) <= 1.0 and xp.position.y - ult.end.y == 4.0, "%s: a faixa fica 4 px acima do XP" % rotulo)
+	ok(xp.position.x <= hab.position.x and ult.end.x <= xp.end.x, "%s: a barra de XP cobre a largura da faixa de habilidades" % rotulo)
 
 
 ## Faixa de anúncio com o texto mais longo (quebra em linhas e cresce para baixo, #443): em cada tela e tamanho de interface ela continua
@@ -182,7 +181,7 @@ func _barras_no_teto(hud, falso: MundoFalso) -> void:
 	for nome in ["Xp", "Selo", "Ultimate", "Habilidades"]:
 		var no: Control = hud.get_node("Raiz/" + nome)
 		ok(not r.intersects(Rect2(no.position, no.size * no.scale)), "no teto, a moldura das barras %s não cobre %s" % [r, nome])
-	ok(hud.get_node("Raiz/Ultimate").position.x - r.end.x >= 8.0, "no teto, ainda sobra espaço entre as barras e o círculo do Q")
+	ok(hud.get_node("Raiz/Habilidades").position.x - r.end.x >= 8.0, "no teto, ainda sobra espaço entre as barras e os slots")
 	ok(hud.get_node("Raiz/Selo").position.x - r.end.x >= 4.0, "no teto, a moldura das barras não toca o selo de nível")
 	for tela in TELAS:
 		_nao_se_cobrem(hud, tela[0], tela[1])  # as mesmas garantias com as barras já no teto, em cada tela e tamanho de interface
@@ -209,8 +208,8 @@ func _colunas_do_card(hud) -> void:
 			ok(not col.intersects(Rect2(no.position, no.size * no.scale)), "a coluna %d do card %s cobre %s" % [c, col, nome])
 
 
-## O Q: a 99,6% ainda não está pronto; a 100% fica pronto (anel completo, ícone aceso e pulso) e o estado do círculo muda. Cada herói tem o ícone dele.
-func _circulo_do_q(hud, falso: MundoFalso) -> void:
+## O estado do Q muda quando chega a 100%. Cada herói tem o próprio ícone.
+func _slot_do_q(hud, falso: MundoFalso) -> void:
 	var slots = hud.get_node("Raiz/Habilidades")
 	var h: Heroi = falso.heroi
 	h.esp_carga = 99.6
@@ -219,8 +218,8 @@ func _circulo_do_q(hud, falso: MundoFalso) -> void:
 	ok(not slots.q_pronta and slots.q_carga_pct == 99, "a 99,6% o Q ainda não está pronto e mostra 99%")
 	h.esp_carga = 100.0
 	slots.sincronizar(h)
-	ok(slots.q_pronta and slots.q_carga_pct == 100 and slots.q_chave() != chave_99, "a 100% o Q está pronto e o estado do círculo muda")
-	ok(slots.q_heroi == "hazaki", "o círculo recebe a chave do herói para achar o ícone dele")
+	ok(slots.q_pronta and slots.q_carga_pct == 100 and slots.q_chave() != chave_99, "a 100% o Q está pronto e o estado do slot muda")
+	ok(slots.q_heroi == "hazaki", "o slot recebe a chave do herói para achar o ícone dele")
 	for id in HEROIS:
 		ok(ResourceLoader.exists("res://assets/v2/especial_q/%s.png" % id), "o herói %s tem o ícone do Q próprio" % id)
 	h.esp_carga = 0.0

@@ -12,7 +12,7 @@ extends RefCounted
 ## sozinho pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa "Escolhida automaticamente".
 ## ESC (ou Start) na escolha NÃO pausa direto: a pausa.gd chama intercepta_pausa() e abre "Pausar agora? Você perde estas cartas" (Não é o padrão); com
 ## ela aberta o tempo (trava e limite) fica parado. Sim descarta a rodada (nenhuma carta, sem reembolso) e abre a pausa; Não volta com o tempo que restava.
-## ROLETA (#376): ao abrir a escolha de NÍVEL as cartas descem em rolos de caça-níquel e param uma a uma, da esquerda para a direita, em no máximo
+## ROLETA (#376): ao abrir a escolha de NÍVEL as cartas descem em rolos de caça-níquel e param uma a uma, de cima para baixo, em no máximo
 ## `escolha.roleta_s` (1,2 s) de tempo real. Depois de 0,3 s, só o Enter, o A do controle e o clique SOBRE as cartas pulam para o fim (Espaço, E e o
 ## clique fora são esquiva, habilidade e ataque do jogo e não pulam). A trava corre junto com a roleta e o limite de 8 s só
 ## começa quando TODAS pararam; ESC durante a roleta abre o "Pausar agora?" (o tempo dela fica parado). O baú tem a sua
@@ -31,8 +31,14 @@ const CARTA_A := 288.0
 const CARTA_Y := 146.0
 const LENDARIA_COR := Paleta.FUSAO  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
-const BTN_Y := 440.0
-const BTN_L := 200.0  # largura do botão Automático da escolha
+const LINHA_X := 76.0
+const LINHA_Y := 146.0
+const LINHA_L := 432.0
+const LINHA_A := 96.0
+const LINHA_VAO := 12.0
+const FICHA := Rect2(532, LINHA_Y, 352, 3 * LINHA_A + 2 * LINHA_VAO)
+const BTN_Y := 474.0
+const BTN_L := 200.0
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
 const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
@@ -42,7 +48,7 @@ const TAM_CONTAGEM := Paleta.TITULO_PEQUENO  # a contagem da trava usa a Jersey 
 const COR_TRAVA := Paleta.CARTA_APAGADA  # cartas apagadas na trava
 const PULSO_T := 0.2  # s da pulsada da contagem quando um clique ou tecla cai na trava
 const ACENDER_T := 0.35  # s do brilho quando as cartas liberam
-const LIMITE_Y := 118.0  # a barra do limite de tempo (largura das 3 cartas): num vão de 5 px entre o título e a legenda
+const LIMITE_Y := 126.0
 const OPCAO_REDUZIR := "reduzir_animacoes"  # a opção de acessibilidade (scripts/hordas/config.gd; chega com o #377): ligada, a roleta não roda
 const ROLETA_PULO_MIN := 0.3  # s REAIS de roleta antes de o clique ou o Enter/A poderem pular (a câmera lenta do nível ainda deixa o jogador atacando)
 const AQUECER_POR_QUADRO := 2  # ícones de carta carregados por quadro enquanto se joga (para a roleta não achar nenhum frio)
@@ -116,12 +122,14 @@ var _pulso := 0.0  # s que faltam da pulsada da contagem
 
 var _fundo: ColorRect
 var _escolha: Control
+var _opcoes: Array = []
 var _cartas: Array[Control] = []
 var _estilos: Array[StyleBoxFlat] = []
 var _titulo: Label
 var _sub: Label
+var _detalhe: Panel
 var _btn_a: Panel
-var _btn_a_txt: Label
+var _btn_confirma: Panel
 var _res: Control
 var _res_titulo: Label
 var _res_linhas: Label
@@ -210,18 +218,13 @@ func _montar_escolha() -> void:
 	_escolha.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_escolha.visible = false
 	camada.add_child(_escolha)
-	_titulo = _rotulo("", TAM_TITULO, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
-	_titulo.position = Vector2(0, 60)
-	_titulo.size = Vector2(LARG, 64)
-	_escolha.add_child(_titulo)
-	_sub = _rotulo("Escolha uma carta", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
-	_sub.position = Vector2(0, 122)
-	_sub.size = Vector2(LARG, 20)
-	_escolha.add_child(_sub)
-	var x0 := (LARG - (3.0 * CARTA_L + 2.0 * FOLGA)) * 0.5
+	_titulo = _campo(_escolha, "origem", TAM_NOME, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_LEFT, LINHA_X, 42, LINHA_L, 24)
+	var titulo := _campo(_escolha, "titulo", Paleta.TITULO_MEDIO, true, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_LEFT, LINHA_X, 66, LINHA_L, 54)
+	titulo.text = "Poderes da partida"
+	_sub = _campo(_escolha, "status", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_RIGHT, 440, 96, FICHA.end.x - 440.0, 20)
 	_limite_fundo = ColorRect.new()  # a barra do limite: um trilho escuro e o ouro que esvazia da direita para a esquerda
-	_limite_fundo.position = Vector2(x0, LIMITE_Y)
-	_limite_fundo.size = Vector2(3.0 * CARTA_L + 2.0 * FOLGA, 3.0)
+	_limite_fundo.position = Vector2(LINHA_X, LIMITE_Y)
+	_limite_fundo.size = Vector2(FICHA.end.x - LINHA_X, 3.0)
 	_limite_fundo.color = Paleta.alfa(Paleta.PRETO, 0.6)
 	_limite_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_limite_fundo.visible = false
@@ -233,14 +236,15 @@ func _montar_escolha() -> void:
 	_limite_fundo.add_child(_limite_barra)
 	for i in 3:
 		var p := Panel.new()
-		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), CARTA_Y)
-		var st := _estilo(false)
+		p.position = Vector2(LINHA_X, LINHA_Y + i * (LINHA_A + LINHA_VAO))
+		var st := StyleBoxFlat.new()
 		p.add_theme_stylebox_override("panel", st)
 		_estilos.append(st)
-		_montar_cartao(p, "[%d]" % (i + 1))
+		_montar_linha_poder(p)
+		(p.get_node("tecla") as Label).text = "[%d]" % (i + 1)
 		var barra := ColorRect.new()  # a trava: enche de 0 à largura da carta (só aparece na trava)
 		barra.name = "espera"
-		barra.position = Vector2(MARGEM, CARTA_A - 6.0)
+		barra.position = Vector2(MARGEM, LINHA_A - 6.0)
 		barra.size = Vector2(0.0, 3.0)
 		barra.color = Paleta.OURO
 		barra.visible = false
@@ -248,15 +252,58 @@ func _montar_escolha() -> void:
 		p.add_child(barra)
 		_escolha.add_child(p)
 		_cartas.append(p)
-	# AUTOMÁTICO: um botão de 200 px exatamente no meio da tela, com a borda de ouro (é o atalho)
-	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y))
-	_btn_a_txt = _btn_a.get_node("t")
-	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))
-	# Tela enxuta (pedido do Alisson, 15/11): sem a linha "Sua build" (o C e a pausa mostram a build) e sem a frase que explicava o
-	# Automático embaixo do botão.
+	_montar_detalhe()
+	var dica := Glifos.dica(_gerador_escolha, HORIZONTAL_ALIGNMENT_LEFT, Paleta.TEXTO_SECUNDARIO)
+	dica.position = Vector2(LINHA_X, BTN_Y + 5.0)
+	dica.size = Vector2(280, 22)
+	_escolha.add_child(dica)
+	_btn_a = _botao(Vector2((LARG - BTN_L) * 0.5, BTN_Y), "automatico", "Automático")
+	_btn_confirma = _botao(Vector2(FICHA.end.x - BTN_L, BTN_Y), "confirmar", "Confirmar poder")
+	_btn_confirma.add_theme_stylebox_override("panel", _estilo(true, Paleta.OURO))
 	_montar_rolos()
 	_montar_conf()
 	_montar_troca()
+
+
+func _montar_linha_poder(p: Panel) -> void:
+	p.size = Vector2(LINHA_L, LINHA_A)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_campo(p, "tecla", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, 12, 35, 36, 24)
+	_montar_icone(p, Vector2(60, 32), ICONE)
+	var x := 114.0
+	var largura := LINHA_L - x - MARGEM
+	_campo(p, "nome", TAM_NOME, true, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_LEFT, x, 11, largura, 23)
+	var ganho := _campo(p, "proximo", TAM_TEXTO, false, Paleta.FOCO, HORIZONTAL_ALIGNMENT_LEFT, x, 39, largura, 20)
+	ganho.text_overrun_behavior = TextServer.OVERRUN_TRIM_WORD_ELLIPSIS
+	_campo(p, "nivel", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_LEFT, x, 65, largura, 18)
+
+
+func _montar_detalhe() -> void:
+	_detalhe = Panel.new()
+	_detalhe.position = FICHA.position
+	_detalhe.size = FICHA.size
+	_detalhe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Paleta.CARTAO.lerp(Paleta.BONUS, 0.055)
+	estilo.border_color = Paleta.BORDA.lerp(Paleta.BONUS, 0.2)
+	estilo.set_border_width_all(1)
+	_detalhe.add_theme_stylebox_override("panel", estilo)
+	_escolha.add_child(_detalhe)
+	var largura := FICHA.size.x - 2.0 * MARGEM
+	_campo(_detalhe, "rar", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_LEFT, MARGEM, 14, largura, 20)
+	_campo(_detalhe, "selo", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_RIGHT, MARGEM, 14, largura, 20)
+	_montar_icone(_detalhe, Vector2((FICHA.size.x - 2.0 * ICONE) * 0.5, 37), 2.0 * ICONE)
+	_campo(_detalhe, "nome", Paleta.TITULO_MEDIO, true, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 109, largura, 42)
+	_campo(_detalhe, "proximo", TAM_TEXTO, false, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 158, largura, 42, true)
+	_campo(_detalhe, "desc", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 203, largura, 54, true)
+	var sep := ColorRect.new()
+	sep.position = Vector2(MARGEM, 263)
+	sep.size = Vector2(largura, 1)
+	sep.color = Paleta.alfa(Paleta.BRANCO, 0.2)
+	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_detalhe.add_child(sep)
+	_campo(_detalhe, "nivel", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 270, largura, 18)
+	_campo(_detalhe, "evolui", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 292, largura, 18)
 
 
 ## O quadro "Pausar agora? Você perde estas cartas" (Sim / Não): por cima das cartas, desenhado e testado por retângulo como o resto da tela.
@@ -457,7 +504,7 @@ func _campo(
 	return l
 
 
-## Monta o cartão vazio (a escolha e o baú usam o mesmo). Ordem fixa, de cima para baixo: tecla e raridade; faixa da cor da raridade;
+## Monta o cartão da revelação do baú. Ordem fixa, de cima para baixo: tecla e raridade; faixa da cor da raridade;
 ## ícone numa moldura da cor da raridade; nome; descrição; o que o golpe ganha no próximo nível; no rodapé, nível e evolução.
 ## Todas as linhas são centradas (a tecla e a raridade ficam nas pontas do topo), com a mesma margem dos dois lados.
 func _montar_cartao(p: Panel, tecla: String) -> void:
@@ -473,21 +520,7 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	faixa.size = Vector2(larg, 3)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(faixa)
-	var moldura := Panel.new()
-	moldura.name = "moldura"
-	moldura.position = Vector2((CARTA_L - ICONE) * 0.5 - 6.0, 40)
-	moldura.size = Vector2(ICONE + 12.0, ICONE + 12.0)
-	moldura.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(moldura)
-	var icone := TextureRect.new()
-	icone.name = "icone"
-	icone.position = Vector2((CARTA_L - ICONE) * 0.5, 46)
-	icone.size = Vector2(ICONE, ICONE)
-	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(icone)
+	_montar_icone(p, Vector2((CARTA_L - ICONE) * 0.5, 46), ICONE)
 	var nome := _campo(p, "nome", TAM_NOME, true, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
 	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER  # centrado entre o ícone e a descrição
 	_campo(p, "desc", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 128, larg, 54, true)
@@ -503,12 +536,54 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	_campo(p, "evolui", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 262, larg, 20)
 
 
-## Põe os dados de uma carta (escolha, ou baú já revelado) no cartão `p`.
-func _preencher(p: Panel, c: Dictionary) -> void:
-	var cor: Color = Paleta.RARIDADES[clampi(int(c.get("rar", 0)), 0, Paleta.RARIDADES.size() - 1)]
+func _montar_icone(p: Panel, pos: Vector2, tam: float) -> void:
+	var moldura := Panel.new()
+	moldura.name = "moldura"
+	moldura.position = pos - Vector2(6, 6)
+	moldura.size = Vector2.ONE * (tam + 12.0)
+	moldura.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(moldura)
+	var icone := TextureRect.new()
+	icone.name = "icone"
+	icone.position = pos
+	icone.size = Vector2.ONE * tam
+	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(icone)
+
+
+func _cor_poder(c: Dictionary) -> Color:
+	return Paleta.RARIDADES[clampi(int(c.get("rar", 0)), 0, Paleta.RARIDADES.size() - 1)]
+
+
+func _preencher_identidade(p: Panel, c: Dictionary, cor: Color) -> void:
 	var nome := p.get_node("nome") as Label
 	nome.text = str(c.nome)
 	nome.add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.55))
+	(p.get_node("icone") as TextureRect).texture = Dados.icone_carta(str(c.get("id", "")), str(c.get("icone", "")))
+	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
+
+
+func _preencher_linha(p: Panel, c: Dictionary) -> void:
+	var cor := _cor_poder(c)
+	_preencher_identidade(p, c, cor)
+	var proximo := str(c.get("proximo", ""))
+	var ganho := p.get_node("proximo") as Label
+	ganho.text = proximo.trim_prefix("Próximo: ") if not proximo.is_empty() else str(c.desc)
+	ganho.add_theme_color_override("font_color", cor.lerp(Paleta.TEXTO, 0.52))
+	var estado := p.get_node("nivel") as Label
+	estado.text = str(c.get("nivel_txt", ""))
+	if str(c.get("tipo", "")) == "troca":
+		estado.text = "TROCA · " + estado.text
+	estado.add_theme_color_override("font_color", Paleta.OURO if bool(c.get("apice", false)) else Paleta.TEXTO_SECUNDARIO)
+
+
+## Ficha do poder em foco ou cartão revelado do baú.
+func _preencher(p: Panel, c: Dictionary) -> void:
+	var cor := _cor_poder(c)
+	_preencher_identidade(p, c, cor)
 	(p.get_node("desc") as Label).text = str(c.desc)
 	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
@@ -525,11 +600,10 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o magenta da fusão
 	evo.add_theme_color_override("font_color", LENDARIA_COR if lendaria else Paleta.OURO)
 	var rl := p.get_node("rar") as Label
-	rl.text = ""  # a raridade fica na cor (borda, faixa, moldura do ícone e nome); a palavra repetia em toda carta
+	rl.text = str(c.get("rar_nome", "")) if p == _detalhe else ""
 	rl.add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.3))
-	(p.get_node("faixa") as ColorRect).color = Color(LENDARIA_COR.r, LENDARIA_COR.g, LENDARIA_COR.b, 0.9) if lendaria else Color(cor.r, cor.g, cor.b, 0.9)
-	(p.get_node("icone") as TextureRect).texture = Dados.icone_carta(str(c.get("id", "")), str(c.get("icone", "")))
-	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
+	if p != _detalhe:
+		(p.get_node("faixa") as ColorRect).color = Paleta.alfa(LENDARIA_COR if lendaria else cor, 0.9)
 
 
 ## Moldura do ícone: fundo quase preto e borda da cor da raridade.
@@ -547,6 +621,10 @@ func _gerador_continuar() -> Array:
 	return [["confirmar", "para continuar" if Glifos.eh_controle() else "ou clique para continuar"]]
 
 
+func _gerador_escolha() -> Array:
+	return [["navegar", "Navegar"]]
+
+
 func _gerador_conf() -> Array:
 	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Não"]]
 
@@ -559,18 +637,18 @@ func _gerador_jogar_de_novo() -> Array:
 	return [["confirmar", "para jogar de novo" if Glifos.eh_controle() else "ou clique para jogar de novo"]]
 
 
-func _botao(pos: Vector2) -> Panel:
+func _botao(pos: Vector2, acao: String, texto: String) -> Panel:
 	var p := Panel.new()
 	p.position = pos
 	p.size = Vector2(BTN_L, 28)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_theme_stylebox_override("panel", _estilo(false, Paleta.BORDA))
-	var t := _rotulo("", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
+	var t := _rotulo(texto, TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
 	t.name = "t"
 	t.position = Vector2(40, 5)  # reserva uma coluna para o glifo, inclusive LB/L1 (24 px)
 	t.size = Vector2(BTN_L - 46.0, 18)
 	p.add_child(t)
-	var g := Glifos.glifo("automatico", HORIZONTAL_ALIGNMENT_CENTER)
+	var g := Glifos.glifo(acao, HORIZONTAL_ALIGNMENT_CENTER)
 	g.name = "glifo"
 	g.position = Vector2(6, 6)
 	g.size = Vector2(28, 16)
@@ -635,11 +713,13 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	if mundo.heroi != null and mundo.heroi.has_method("cancelar_habilidade_pedida"):
 		mundo.heroi.cancelar_habilidade_pedida()
 	escolha_aberta = true
+	_opcoes = cartas
 	if not refresh:
 		sel = 0
 	else:
 		_encerrar_roleta()  # mesmo menu de novo (baú): sem roleta, os rolos que sobraram somem
 	_fundo.visible = true
+	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.8)
 	_escolha.visible = true
 	var do_bau := _escolha_do_bau()
 	_titulo.text = "BAÚ!" if do_bau else "NÍVEL %d" % nivel
@@ -651,9 +731,8 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 		if i >= maxn:
 			continue
 		var c: Dictionary = cartas[i]
-		_preencher(p, c)
-		var rar := int(c.get("rar", 0))
-		_estilos[i].shadow_size = 0 if rar == 0 else 4 + 3 * rar
+		_preencher_linha(p, c)
+		p.modulate = Paleta.BRANCO
 	var ec: Dictionary = combate.cartas.cfg.escolha
 	_espera_total = float(ec.proxima_espera_s) if refresh else float(ec.espera_s)
 	espera_escolha = _espera_total
@@ -661,6 +740,7 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	limite_t = _limite_total  # só começa a correr quando a trava acaba
 	_fechar_conf()
 	_acender = 0.0
+	_sub.text = _texto_escolha()
 	_marcar()
 	_atualizar_botoes()
 	if espera_escolha > 0.0:
@@ -709,27 +789,33 @@ func _rar_max(cartas: Array) -> int:
 	return m
 
 
-## A carta marcada (sel) só aparece fora da trava: na trava não há realce de seleção.
+## A moldura indica o foco sem mudar a posição das linhas.
 func _marcar() -> void:
-	var cartas: Array = combate.progresso.cartas
-	var sem_trava := espera_escolha <= 0.0
-	for i in 3:
-		var c: Dictionary = cartas[i] if i < cartas.size() else {}
-		var cor: Color = c.get("cor", Paleta.BORDA)
-		var rar := int(c.get("rar", 0))
+	var sem_trava := espera_escolha <= 0.0 and not roleta_ativa
+	for i in mini(_opcoes.size(), 3):
+		var c: Dictionary = _opcoes[i]
+		var cor := LENDARIA_COR if bool(c.get("lendaria", false)) else _cor_poder(c)
 		var marcada := sem_trava and i == sel
-		var novo := _estilo(marcada, cor, rar)
-		_estilos[i].bg_color = novo.bg_color
-		_estilos[i].border_color = novo.border_color
-		_estilos[i].shadow_color = novo.shadow_color
-		_estilos[i].shadow_size = novo.shadow_size
-		_estilos[i].set_border_width_all(2 + (1 if rar >= 2 else 0) + (1 if marcada else 0))
-		_cartas[i].position.y = CARTA_Y - (8.0 if marcada else 0.0)
+		_estilo_linha(_estilos[i], cor, marcada)
+	_detalhe.visible = not roleta_ativa and sel < _opcoes.size()
+	if _detalhe.visible:
+		_preencher(_detalhe, _opcoes[sel])
+		_detalhe.modulate = Paleta.BRANCO if sem_trava else COR_TRAVA
+
+
+func _estilo_linha(estilo: StyleBoxFlat, cor: Color, marcada: bool) -> void:
+	estilo.bg_color = Paleta.CARTAO.lerp(Paleta.BONUS, 0.14 if marcada else 0.055)
+	estilo.border_color = Paleta.OURO if marcada else cor.lerp(Paleta.CARTAO, 0.5)
+	estilo.set_border_width_all(2 if marcada else 1)
+	estilo.border_width_left = 4 if marcada else 3
+	estilo.shadow_color = Paleta.alfa(Paleta.OURO if marcada else cor, 0.19)
+	estilo.shadow_size = 4 if marcada else 0
 
 
 func _atualizar_botoes() -> void:
-	_btn_a_txt.text = "Automático"
-	_btn_a.modulate = Paleta.BRANCO if espera_escolha <= 0.0 else Paleta.alfa(Paleta.BRANCO, 0.4)
+	var liberada := espera_escolha <= 0.0 and not roleta_ativa
+	_btn_a.modulate = Paleta.BRANCO if liberada else Paleta.alfa(Paleta.BRANCO, 0.4)
+	_btn_confirma.modulate = Paleta.BRANCO if liberada and not _opcoes.is_empty() else Paleta.alfa(Paleta.BRANCO, 0.4)
 
 
 func mostrar_resultado() -> void:
@@ -754,6 +840,7 @@ func esconder() -> void:
 		mundo.heroi.exigir_soltar_ataque()  # o clique que fechou a escolha ou o baú não vira golpe no quadro seguinte
 	_encerrar_roleta()
 	escolha_aberta = false
+	_opcoes = []
 	resultado_aberto = false
 	bau_aberto = false
 	espera_escolha = 0.0
@@ -950,12 +1037,10 @@ func atualizar(dt: float) -> void:
 
 ## O brilho das cartas raras respira (épico e lendário mais forte).
 func _pulsar_cartas() -> void:
-	var cartas: Array = combate.progresso.cartas
-	for i in mini(3, cartas.size()):
-		var rar := int(cartas[i].get("rar", 0))
-		if rar > 0:
-			var base := 4 + 3 * rar
-			_estilos[i].shadow_size = base + roundi((2.0 + 2.0 * rar) * (0.5 + 0.5 * sin(_t_ui * (3.0 + rar) + float(i))))
+	for i in mini(3, _opcoes.size()):
+		var rar := int(_opcoes[i].get("rar", 0))
+		if i != sel and rar > 0:
+			_estilos[i].shadow_size = rar + roundi(0.5 + 0.5 * sin(_t_ui * (3.0 + rar) + float(i)))
 
 
 ## Posição do mouse no bloco 960x540 da UI (mouse_fn é o gancho dos testes; sem ele, o mouse de verdade).
@@ -1281,7 +1366,7 @@ func _quadro_trava() -> void:
 func _quadro_trava_barras() -> void:
 	var feito := clampf(1.0 - espera_escolha / maxf(_espera_total, 0.001), 0.0, 1.0)
 	for p in _cartas:
-		(p.get_node("espera") as ColorRect).size.x = (CARTA_L - 2.0 * MARGEM) * feito
+		(p.get_node("espera") as ColorRect).size.x = (LINHA_L - 2.0 * MARGEM) * feito
 
 
 ## Fim da trava: as cartas acendem, a legenda volta ao normal, a marcação aparece e um som curto avisa.
@@ -1306,11 +1391,10 @@ func _liberar_cartas() -> void:
 
 ## Um rolo por carta: uma janela recortada do tamanho da carta com duas faces (a que sai por baixo e a que entra por cima).
 func _montar_rolos() -> void:
-	var x0 := (LARG - (3.0 * CARTA_L + 2.0 * FOLGA)) * 0.5
 	for i in 3:
 		var rolo := Control.new()
-		rolo.position = Vector2(x0 + i * (CARTA_L + FOLGA), CARTA_Y)
-		rolo.size = Vector2(CARTA_L, CARTA_A)
+		rolo.position = _cartas[i].position
+		rolo.size = _cartas[i].size
 		rolo.clip_contents = true
 		rolo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rolo.visible = false
@@ -1318,9 +1402,9 @@ func _montar_rolos() -> void:
 		var estilos: Array = []
 		for k in 2:
 			var p := Panel.new()
-			var st := _estilo(false)
+			var st := StyleBoxFlat.new()
 			p.add_theme_stylebox_override("panel", st)
-			_montar_cartao(p, "")
+			_montar_linha_poder(p)
 			rolo.add_child(p)
 			faces.append(p)
 			estilos.append(st)
@@ -1366,26 +1450,21 @@ func _aquecer_icones() -> void:
 
 func _pintar_face(i: int, k: int, c: Dictionary, falsa: bool) -> void:
 	var p: Panel = _rolo_faces[i][k]
-	_preencher(p, c)
+	_preencher_linha(p, c)
 	(p.get_node("tecla") as Label).text = "" if falsa else "[%d]" % (i + 1)
-	var rar := int(c.get("rar", 0))
-	var novo := _estilo(false, Paleta.RARIDADES[clampi(rar, 0, Paleta.RARIDADES.size() - 1)], rar)
-	var st: StyleBoxFlat = _rolo_estilos[i][k]
-	st.bg_color = novo.bg_color
-	st.border_color = novo.border_color
-	st.shadow_color = novo.shadow_color
-	st.shadow_size = novo.shadow_size
-	st.set_border_width_all(2 + (1 if rar >= 2 else 0))
+	_estilo_linha(_rolo_estilos[i][k], _cor_poder(c), false)
 	p.modulate = ROLETA_ESCURO if falsa else Paleta.BRANCO
 
 
-## Começa a roleta: cada rolo gira e para no s `total * (i + 1) / n` (esquerda para a direita, o último em `total`). `total` 0 desliga.
+## Começa a roleta: cada rolo gira e para no s `total * (i + 1) / n` (de cima para baixo, o último em `total`). `total` 0 desliga.
 func _iniciar_roleta(cartas: Array, total: float) -> void:
 	var n := mini(cartas.size(), 3)
 	if not roleta_ligada or animacao_reduzida() or total <= 0.0 or n <= 0:
 		return
 	_montar_faces_roleta()
 	roleta_ativa = true
+	_marcar()
+	_atualizar_botoes()
 	roleta_t = 0.0
 	roleta_total = total
 	_roleta_tique = 0.0
@@ -1395,11 +1474,11 @@ func _iniciar_roleta(cartas: Array, total: float) -> void:
 			continue
 		var t_fim := total * float(i + 1) / float(n)
 		var freio := minf(ROLETA_FREIO, t_fim * 0.6)
-		var k := maxi(2, roundi(ROLETA_V * (t_fim - freio * 0.5) / CARTA_A))  # cartas inteiras: o rolo para alinhado, sem salto
+		var k := maxi(2, roundi(ROLETA_V * (t_fim - freio * 0.5) / LINHA_A))  # linhas inteiras: o rolo para alinhado, sem salto
 		_rolo_parada[i] = t_fim
 		_rolo_freio[i] = freio
 		_rolo_k[i] = k
-		_rolo_v[i] = float(k) * CARTA_A / (t_fim - freio * 0.5)
+		_rolo_v[i] = float(k) * LINHA_A / (t_fim - freio * 0.5)
 		_rolo_m[i] = -1
 		var seq: Array = []
 		for m in k:
@@ -1429,16 +1508,16 @@ func _rolo_distancia(i: int, t: float) -> float:
 func _posicionar_rolo(i: int, dist: float) -> void:
 	var k := _rolo_k[i]
 	var seq: Array = _rolo_seq[i]
-	var m := mini(floori(dist / CARTA_A), k)
+	var m := mini(floori(dist / LINHA_A), k)
 	if m != _rolo_m[i]:
 		_rolo_m[i] = m
 		_pintar_face(i, 0, seq[m], m < k)
 		if m < k:
 			_pintar_face(i, 1, seq[m + 1], m + 1 < k)
-	var y := roundf(dist - float(m) * CARTA_A)
+	var y := roundf(dist - float(m) * LINHA_A)
 	var faces: Array = _rolo_faces[i]
 	(faces[0] as Panel).position.y = y
-	(faces[1] as Panel).position.y = y - CARTA_A
+	(faces[1] as Panel).position.y = y - LINHA_A
 	(faces[1] as Panel).visible = m < k
 
 
@@ -1489,6 +1568,7 @@ func _roleta_fim() -> void:
 	if espera_escolha <= 0.0:
 		_liberar_cartas()
 	else:
+		_marcar()
 		_quadro_trava()
 
 
@@ -1537,7 +1617,7 @@ func _entrada_roleta(e: InputEvent) -> bool:
 	return false
 
 
-## O rolo (a carta) sob o mouse, ou -1. Usa a janela do rolo, que fica parada (a carta marcada sobe 8 px).
+## O rolo sob o mouse, ou -1. Usa a janela fixa, alinhada à linha da carta.
 func _rolo_sob_mouse() -> int:
 	var m := _mouse()
 	for i in mini(combate.progresso.cartas.size(), 3):
@@ -1574,6 +1654,8 @@ func _botao_sob_mouse() -> String:
 	var m := _mouse()
 	if Rect2(_btn_a.position, _btn_a.size).has_point(m):
 		return "a"
+	if Rect2(_btn_confirma.position, _btn_confirma.size).has_point(m):
+		return "confirma"
 	return ""
 
 
@@ -1603,6 +1685,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			if b == "a":
 				_automatico()
 				return true
+			if b == "confirma" and sel < n:
+				combate.progresso.escolher(sel)
+				return true
 			var j := _carta_sob_mouse()
 			if j >= 0:
 				combate.progresso.escolher(j)
@@ -1623,9 +1708,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 				var i: int = e.keycode - KEY_1
 				if i < n:
 					combate.progresso.escolher(i)
-			KEY_LEFT, KEY_A:
+			KEY_LEFT, KEY_UP, KEY_A:
 				_mover(-1, n)
-			KEY_RIGHT, KEY_D:
+			KEY_RIGHT, KEY_DOWN, KEY_D:
 				_mover(1, n)
 			KEY_Q:
 				_automatico()
@@ -1639,12 +1724,14 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			return true
 	if e is InputEventJoypadMotion:
 		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
-	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
+	var anterior := e.is_action_pressed("ui_up") or e.is_action_pressed("ui_left")
+	var proxima := e.is_action_pressed("ui_down") or e.is_action_pressed("ui_right")
+	if anterior or proxima or e.is_action_pressed("ui_accept"):
 		if travada:
 			_pulso = PULSO_T
-		elif e.is_action_pressed("ui_left"):
+		elif anterior:
 			_mover(-1, n)
-		elif e.is_action_pressed("ui_right"):
+		elif proxima:
 			_mover(1, n)
 		else:
 			combate.progresso.escolher(sel)

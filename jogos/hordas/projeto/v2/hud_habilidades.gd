@@ -14,18 +14,17 @@ extends Control
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": os quadros que pulsam ficam num tom fixo
-const TAM_CARD := Vector2(130.0, 112.0)  # decisão do Alisson (#368): o HUD da partida é 1,5x. O desenho é em pixel nativo (sem `scale`): 130x112 por card (112 = 22 de margem da moldura + 15 x 6 do miolo da arte, todo inteiro), 261x112 os dois
-const ESPACO_CARD := 1.0
-const TAM_IMP := Vector2(106.0, 112.0)  # o card do impulso (era 70x74 a 1,5x = 105x111): mais estreito, para o nó (x 586 a 954 na tela) não encostar na barra de XP (que acaba em x 580); 106 = 68 do quadro + 2 x 19
+const TAM_CARD := Vector2(90.0, 78.0)
+const ESPACO_CARD := 7.0
+const TAM_IMP := Vector2(80.0, 78.0)
 const X_E := TAM_IMP.x + ESPACO_CARD  # onde começa o card E (o do impulso fica antes dele)
 const COR_IMP := Color(0.75, 0.95, 1.0)  # o azul claro do mecha (o mesmo de v2/mecha.gd)
 const TEXTO_RECARGA_IMP := Paleta.TEXTO_APAGADO  # o "x.x S" da recarga do impulso: o cinza do DESATIVADO dava ~2,5:1 no fundo do card; este passa de 4,5:1
 const PASTA_ICONE_IMP := "res://assets/v2/habilidade_shift/"  # <chave do herói>.png: o ícone do impulso (arte própria em pixel, docs/LICENCAS_ARTE.md)
-const TAM_ICON := Vector2(68.0, 68.0)  # o quadro do ícone: o ícone de 32 px a 2x (64) com 2 px de folga
-const ESCALA_ICONE := 2  # os ícones (32x32, 1 px de arte) são desenhados em 2x inteiro: o pixel do ícone é do tamanho dos outros
-const TOPO_ICONE := 6.0  # a borda de pedra (4 px) mais 2 de folga
-const BASE_ROTULO := 86.0  # a linha de base do rótulo (Press Start 2P de 8 px): entre o quadro do ícone e o selo da tecla
-const BORDA_QUADRO := 2.0  # a espessura do quadro do ícone, que leva a cor do estado
+const TAM_ICON := Vector2(36.0, 36.0)
+const ESCALA_ICONE := 1
+const TOPO_ICONE := 3.0
+const BASE_ROTULO := 49.0
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
 const COR_ESCUDO := Color(0.45, 0.82, 1.0)  # o azul do escudo (o mesmo do desenho dele no mundo, v2/escudo.gd)
 const PASTA_ICONE_S := "res://assets/v2/secundario_s/"  # <chave do herói>.png: o ícone próprio do slot S (opcional; senão vale o de carta)
@@ -36,11 +35,9 @@ const ICONES_E := {
 }
 const BORDA := Paleta.HABILIDADE_BORDA
 const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
-const FUNDO := Color(Paleta.CARTAO, 0.92)
+const BORDA_QUADRO := 2.0
 const FUNDO_CARD := Color(Paleta.PAINEL, 0.88)
-const MOLDURA := preload("res://v2/hud/moldura_habilidade.png")  # 9-slice da arte do Codex (#290), margem 11 (v2/hud/molduras_codex.json)
-const MOLDURA_MARGEM := Vector2(11.0, 11.0)
-const MOLDURA_APAGADA := Color(1.0, 1.0, 1.0, 0.75)  # slot desabilitado: a mesma moldura a 0,75 de alfa (DESIGN.md, botões)
+const FILETE := Color(0.53, 0.36, 0.22, 0.7)
 
 var estado_e := "indisponivel"  # indisponivel | ruptura | habilidade
 var e_icone := "ruptura"  # o id do ícone da E (assets/v2/icones_cartas)
@@ -260,15 +257,13 @@ func _draw() -> void:
 func _desenhar_impulso(fonte: Font) -> void:
 	var card := Rect2(Vector2.ZERO, TAM_IMP)
 	draw_rect(card, FUNDO_CARD)
-	_moldura_pedra(card, true)
 	var icon_pos := Vector2((TAM_IMP.x - TAM_ICON.x) * 0.5, TOPO_ICONE)
 	var cor := DESATIVADO
 	if imp_pronta:
 		cor = COR_IMP.lerp(Paleta.BRANCO, 0.45) if imp_ativo and _pulsa() else COR_IMP
 	if imp_negada:
 		cor = Paleta.PERIGO
-	draw_rect(Rect2(icon_pos, TAM_ICON), FUNDO)
-	_moldura(Rect2(icon_pos, TAM_ICON), cor)
+	_filete(card, cor)
 	var arte := arte_imp()
 	if arte != null:  # o ícone de 32 px a 2x inteiro no centro do quadro, como nos outros cards
 		var lado := arte.get_size() * float(ESCALA_ICONE)
@@ -298,12 +293,9 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var e := tecla == "E"
 	var card := Rect2(origem, TAM_CARD)
 	draw_rect(card, FUNDO_CARD)
-	_moldura_pedra(card, e_disponivel if e else s_disponivel)
 	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, TOPO_ICONE)
-	var icone := Rect2(icon_pos, TAM_ICON)
 	var cor := _cor_do_card(e, _pulsa())
-	draw_rect(icone, FUNDO)
-	_moldura(icone, cor)
+	_filete(card, cor)
 	var arte: Texture2D = arte_e() if e else arte_s()
 	if arte != null:
 		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) a 2x inteiro no centro do quadro; apagado quando não está disponível
@@ -312,22 +304,8 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		draw_texture_rect(arte, Rect2((icon_pos + (TAM_ICON - lado) * 0.5).round(), lado), false, tinta)
 	elif e:
 		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura (reserva, se o ícone faltar).
-		var p := (icon_pos + (TAM_ICON - Vector2(48.0, 48.0)) * 0.5).round()  # o desenho de reserva foi feito num quadro de 48: fica centrado no atual
-		var esquerda := PackedVector2Array([Vector2(6, 14), Vector2(18, 8), Vector2(21, 16), Vector2(17, 23), Vector2(21, 30), Vector2(17, 38), Vector2(6, 32)])
-		var direita := PackedVector2Array(
-			[Vector2(27, 8), Vector2(41, 14), Vector2(41, 32), Vector2(25, 39), Vector2(29, 29), Vector2(25, 23), Vector2(29, 16)]
-		)
-		for placa in [esquerda, direita]:
-			for i in placa.size():
-				placa[i] += p
-			draw_colored_polygon(placa, Color(cor, 0.24))
-			var contorno: PackedVector2Array = placa.duplicate()
-			contorno.append(placa[0])
-			draw_polyline(contorno, cor, 2.0)
-		var fenda := PackedVector2Array([p + Vector2(24, 8), p + Vector2(26, 16), p + Vector2(21, 23), p + Vector2(26, 30), p + Vector2(22, 39)])
-		draw_polyline(fenda, Paleta.CARGA_PERFEITA if perfeita else cor, 3.0)
-		draw_polyline(PackedVector2Array([p + Vector2(21, 23), p + Vector2(15, 20), p + Vector2(11, 22)]), cor, 2.0)
-		draw_polyline(PackedVector2Array([p + Vector2(26, 30), p + Vector2(33, 26), p + Vector2(37, 27)]), cor, 2.0)
+		var p := icon_pos + Vector2(8, 4)
+		draw_polyline(PackedVector2Array([p + Vector2(10, 0), p + Vector2(5, 12), p + Vector2(15, 12), p + Vector2(9, 26)]), cor, 2.0)
 	if e and e_disponivel:
 		var f := clampf(float(carga_px) / 20.0, 0.0, 1.0)
 		_cortina(icon_pos, recarga_px)
@@ -341,10 +319,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		_cortina(icon_pos, s_recarga_px)
 		if s_ativo:  # erguido: o quadro pulsa
 			var pulso := Piscadas.pulso(float(Time.get_ticks_msec()) / 1000.0, 2.0)
-			draw_rect(
-				Rect2(icon_pos + Vector2(BORDA_QUADRO, BORDA_QUADRO), TAM_ICON - Vector2(BORDA_QUADRO, BORDA_QUADRO) * 2.0),
-				Color(COR_ESCUDO, 0.10 + 0.22 * pulso)
-			)
+			draw_rect(Rect2(icon_pos + Vector2(2, 2), TAM_ICON - Vector2(4, 4)), Color(COR_ESCUDO, 0.10 + 0.22 * pulso))
 	var rotulo := _rotulo_e() if e else _rotulo_s()
 	var texto_aceso := e_disponivel if e else s_pronta
 	var cor_texto := cor if texto_aceso else DESATIVADO
@@ -440,28 +415,10 @@ func _rotulo_e() -> String:
 	return e_texto
 
 
-## A moldura de pedra do slot (9-slice, centro transparente). O estado (pronto, recarga, negado) continua no quadro do ícone (2 px).
-func _moldura_pedra(retangulo: Rect2, ativa: bool) -> void:
-	RenderingServer.canvas_item_add_nine_patch(
-		get_canvas_item(),
-		retangulo,
-		Rect2(Vector2.ZERO, MOLDURA.get_size()),
-		MOLDURA.get_rid(),
-		MOLDURA_MARGEM,
-		MOLDURA_MARGEM,
-		RenderingServer.NINE_PATCH_STRETCH,
-		RenderingServer.NINE_PATCH_STRETCH,
-		false,
-		Color.WHITE if ativa else MOLDURA_APAGADA
-	)
-
-
-func _moldura(retangulo: Rect2, cor: Color) -> void:
-	var b := BORDA_QUADRO
-	draw_rect(Rect2(retangulo.position.x, retangulo.position.y, retangulo.size.x, b), cor)
-	draw_rect(Rect2(retangulo.position.x, retangulo.end.y - b, retangulo.size.x, b), cor)
-	draw_rect(Rect2(retangulo.position.x, retangulo.position.y + b, b, retangulo.size.y - b * 2.0), cor)
-	draw_rect(Rect2(retangulo.end.x - b, retangulo.position.y + b, b, retangulo.size.y - b * 2.0), cor)
+## Um filete aceso sinaliza o estado sem disputar espaço com o ícone.
+func _filete(retangulo: Rect2, cor: Color) -> void:
+	draw_rect(retangulo, FILETE, false, 1.0)
+	draw_rect(Rect2(retangulo.position.x + 1.0, retangulo.end.y - 2.0, retangulo.size.x - 2.0, 2.0), cor)
 
 
 func _tem_propriedade(obj, nome: String) -> bool:

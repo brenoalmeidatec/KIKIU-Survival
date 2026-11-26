@@ -91,8 +91,8 @@ const ANCORAS := {
 	"Xp": Vector2(0, 1),
 	"Selo": Vector2(0, 1),
 	"Anel": Vector2(0, 1),
-	"Ultimate": Vector2(0, 1),  # o Q em círculo, no centro e logo acima da barra de XP
-	"Habilidades": Vector2(1, 1),  # o E e o secundário: canto inferior direito do canvas
+	"Ultimate": Vector2(0, 1),  # Q ao lado do E e do secundário
+	"Habilidades": Vector2(0, 1),  # o grupo cola embaixo e mantém o mesmo espaço interno em qualquer canvas
 	"Golpes": Vector2(-1, 1),  # faixa de golpes: canto inferior esquerdo do canvas, não do bloco (senão flutua sobre o campo)
 	"Conquista": Vector2(-1, -1),  # a conquista em andamento: canto superior esquerdo do canvas (UI-5)
 }

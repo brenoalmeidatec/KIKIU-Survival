@@ -221,7 +221,7 @@ func _testes() -> void:
 	Personagens.caminho_indice = pers_antes[1]
 	Personagens.caminho_antigo = pers_antes[2]
 	Meta.caminho_save = pers_antes[3]
-	# estilo Overwatch: a vida e o fôlego à direita e centralizados na altura do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
+	# Vida e fôlego junto ao retrato. Impulso, E, secundário e Q ficam na mesma linha acima do XP.
 	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
 	var folego_q: Control = hud.get_node("Raiz/Folego")
 	ok(
@@ -238,20 +238,16 @@ func _testes() -> void:
 	ok(folego_q.position.y + folego_q.size.y <= barras_q.position.y + barras_q.size.y, "o fôlego fica dentro da moldura das barras")
 	var xp_q: Control = hud.get_node("Raiz/Xp")
 	var ult_q: Control = hud.get_node("Raiz/Ultimate")
-	var ult_tam: Vector2 = ult_q.size * ult_q.scale  # o nó é escalado 1,5x: 96 px na tela
-	ok(ult_tam == Vector2(96, 96), "o círculo do Q mede 96 px na base 960x540 (%s)" % ult_tam)
-	ok(ult_q.position.x + ult_tam.x * 0.5 == xp_q.position.x + xp_q.size.x * 0.5, "o círculo do Q é centrado na faixa de XP")
-	ok(
-		xp_q.position.y - (ult_q.position.y + ult_tam.y) >= 2.0 and xp_q.position.y - (ult_q.position.y + ult_tam.y) <= 8.0,
-		"o Q fica logo acima da faixa de XP, sem encostar"
-	)
 	var hab_q: Control = hud.get_node("Raiz/Habilidades")
-	var hab_tam: Vector2 = hab_q.size * hab_q.scale
+	var ult := Rect2(ult_q.position, ult_q.size)
+	var hab := Rect2(hab_q.position, hab_q.size)
+	ok(ult.size == Vector2(90, 78), "o slot de Q mede 90x78 px (%s)" % ult.size)
+	ok(hab.position.y == ult.position.y and hab.end.y == ult.end.y, "os slots alinham pelo topo e pela base")
+	ok(ult.position.x - hab.end.x == 7.0, "o Q fica 7 px à direita do secundário")
 	ok(
-		hab_q.position.x + hab_tam.x == 960 - 6 and hab_q.position.y + hab_tam.y == 540 - 6,
-		"o E e o secundário colam no canto de baixo à direita (margem de 6 px)"
+		xp_q.position.y - ult.end.y == 4.0 and xp_q.position.x <= hab.position.x and ult.end.x <= xp_q.position.x + xp_q.size.x,
+		"a barra de XP passa 4 px abaixo de todos os slots"
 	)
-	ok(hab_q.position.x > xp_q.position.x + xp_q.size.x, "o E e o secundário ficam à direita da faixa de XP")
 	falso.combate = null
 
 	# 1. sem combate: vida cheia, XP 0, nível 1, tempo zero, combo escondido
@@ -483,9 +479,8 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 		"recarga acabou: o secundário volta pronto, sem cortina, com o nome do aparo"
 	)
 	var area := Rect2(slots.position, slots.size * slots.scale)
-	# o nó ganhou à esquerda o card do Shift (o impulso do mecha do LightWolf, 106 px + 1 de vão): E e secundário ficam onde sempre estiveram (x 693 a 954)
-	ok(area.position == Vector2(586, 422) and area.size == Vector2(368, 112), "E, secundário e o card do impulso ocupam o canto de baixo à direita (%s)" % area)
-	ok(area.position.x + slots.X_E * slots.scale.x == 693.0 and area.end.x == 954.0, "o E e o secundário continuam em x 693 a 954 (261 px)")
+	ok(area == Rect2(392, 434, 274, 78), "impulso, E e secundário ocupam o primeiro trecho da faixa de habilidades (%s)" % area)
+	ok(slots.X_E == 87.0, "o E começa depois do slot de 80 px do impulso e de 7 px de espaço")
 	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")
 	ok(not area.intersects(ZONA_MINIMAPA), "E e secundário não cobrem o minimapa")
 	var xp = hud.get_node("Raiz/Xp")
@@ -497,7 +492,7 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 		"o retrato não cobre a coluna esquerda do status"
 	)
 	var ult := Rect2(hud.get_node("Raiz/Ultimate").position, hud.get_node("Raiz/Ultimate").size * hud.get_node("Raiz/Ultimate").scale)
-	ok(not ult.intersects(zona_xp) and not ult.intersects(area), "o círculo do Q não cobre o XP nem o E e o secundário")
+	ok(not ult.intersects(zona_xp) and not ult.intersects(area), "o slot de Q não cobre o XP nem o E e o secundário")
 
 
 ## Leva de interface: o texto de depuração (fps e atores) começa DESLIGADO na partida normal e a tecla F3 liga e desliga;

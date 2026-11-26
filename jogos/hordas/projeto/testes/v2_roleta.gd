@@ -200,7 +200,7 @@ func _testes() -> void:
 		_toque(k)
 	ok(c.progresso.escolhidas == esc0 and c.jogo == "escolha" and t.roleta_ativa, "teclas de escolha e automático não fazem nada na roleta")
 
-	# 3. termina em até 1,2 s, esquerda -> direita, o limite parado até o fim
+	# 3. termina em até 1,2 s, de cima para baixo, o limite parado até o fim
 	zerar()
 	subir_nivel()
 	var quadro_parou := [-1, -1, -1]
@@ -219,7 +219,7 @@ func _testes() -> void:
 	ok(fim >= int(roleta_s * 60.0) - 3, "e usa o tempo todo, sem acabar antes sozinha (%d quadros)" % fim)
 	ok(
 		quadro_parou[0] > 0 and quadro_parou[0] < quadro_parou[1] and quadro_parou[1] < quadro_parou[2],
-		"os rolos param um a um, esquerda -> direita (%s)" % str(quadro_parou)
+		"os rolos param um a um, de cima para baixo (%s)" % str(quadro_parou)
 	)
 	ok(quadro_parou[2] >= fim - 1 and quadro_parou[2] <= fim + 1, "o último para quando a roleta acaba")
 	ok(not lim_correu, "o limite não correu durante a roleta")
@@ -227,7 +227,7 @@ func _testes() -> void:
 		ok(not t._rolos[i].visible and t._cartas[i].visible, "rolo %d some e a carta de verdade fica" % i)
 	ok(t._rolo_seq[0].back() == c.progresso.cartas[0], "o rolo para na carta de verdade")
 	for i in 3:
-		var alvo: float = t._rolo_k[i] * t.CARTA_A
+		var alvo: float = t._rolo_k[i] * t.LINHA_A
 		var dist: float = t._rolo_distancia(i, t._rolo_parada[i])
 		ok(absf(dist - alvo) < 0.01, "o rolo %d chega alinhado numa carta inteira, sem salto (%.2f de %.2f)" % [i, dist, alvo])
 		var antes: float = t._rolo_distancia(i, t._rolo_parada[i] - 0.016)
@@ -257,7 +257,7 @@ func _testes() -> void:
 		esc0 = c.progresso.escolhidas
 		match modo:
 			"clique":
-				_clique(Vector2(480, 300))
+				_clique((t._rolos[1] as Control).get_rect().get_center())
 			"enter":
 				_toque(KEY_ENTER)
 			"kp_enter":
@@ -298,7 +298,7 @@ func _testes() -> void:
 			"enter_cedo":
 				_toque(KEY_ENTER)
 			"clique_cedo":
-				_clique(Vector2(480, 300))
+				_clique((t._rolos[1] as Control).get_rect().get_center())
 			"joy_a_cedo":
 				_botao_joy(JOY_BUTTON_A)
 		ok(t.roleta_ativa and c.jogo == "escolha", "(%s) não pula a roleta" % modo)

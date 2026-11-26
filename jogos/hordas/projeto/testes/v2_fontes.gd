@@ -146,9 +146,7 @@ func _cartoes() -> void:
 	menu._montar()  # só montagem: não muda janela, música nem foco da partida de teste
 	_rotulos_na_grade(menu)
 	menu.free()
-	var painel: Panel = tl._cartas[0]
 	var f: Font = Dados.fonte_texto
-	var larg := Telas.CARTA_L - 2.0 * Telas.MARGEM
 	var n := 0
 	var maior := {"desc": 0.0, "proximo": 0.0, "evolui": 0.0, "nivel": 0.0}
 	for d in cs.disponiveis():
@@ -156,28 +154,32 @@ func _cartoes() -> void:
 		for nivel in int(d.max):
 			for rar in 4:
 				var carta: Dictionary = cs.montar_carta(d, rar)
-				tl._preencher(painel, carta)
-				_rotulos_na_grade(painel)
 				n += 1
-				for campo in ["desc", "proximo", "nivel", "evolui"]:
-					var l := painel.get_node(campo) as Label
-					var h := _altura(f, l.text, l.size.x, Telas.TAM_TEXTO)
-					maior[campo] = maxf(float(maior[campo]), h)
-					if l.text != "":
-						ok(h <= l.size.y, "carta %s (raridade %d, nível %d): %s cabe na caixa (%d de %d px de altura)" % [d.id, rar, nivel, campo, h, l.size.y])
-				for campo in ["nivel", "evolui"]:
-					var l := painel.get_node(campo) as Label
+				for painel: Panel in [tl._detalhe, tl._bau_slots[0]]:
+					tl._preencher(painel, carta)
+					_rotulos_na_grade(painel)
+					for campo in ["desc", "proximo", "nivel", "evolui"]:
+						var l := painel.get_node(campo) as Label
+						var h := _altura(f, l.text, l.size.x, Telas.TAM_TEXTO)
+						maior[campo] = maxf(float(maior[campo]), h)
+						if l.text != "":
+							ok(
+								h <= l.size.y,
+								"carta %s (raridade %d, nível %d): %s cabe na caixa (%d de %d px de altura)" % [d.id, rar, nivel, campo, h, l.size.y]
+							)
+					for campo in ["nivel", "evolui"]:
+						var l := painel.get_node(campo) as Label
+						ok(
+							f.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Telas.TAM_TEXTO).x <= l.size.x,
+							"carta %s: %s numa linha só (%s)" % [d.id, campo, l.text]
+						)
+					var nome := painel.get_node("nome") as Label
+					var tam_nome: int = nome.get_theme_font_size("font_size")
+					ok(tam_nome in [19, 37, 56], "o nome da carta permanece na grade")
 					ok(
-						f.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Telas.TAM_TEXTO).x <= larg,
-						"carta %s: %s numa linha só (%s)" % [d.id, campo, l.text]
+						Dados.fonte_titulo.get_string_size(nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome).x <= nome.size.x,
+						"carta %s: o nome cabe (%s)" % [d.id, nome.text]
 					)
-				var nome := painel.get_node("nome") as Label
-				var tam_nome: int = nome.get_theme_font_size("font_size")
-				ok(tam_nome in [19, 37, 56], "nome adaptado da carta permanece na grade")
-				ok(
-					Dados.fonte_titulo.get_string_size(nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome).x <= larg,
-					"carta %s: o nome cabe (%s)" % [d.id, nome.text]
-				)
 			cs.aplicar(cs.montar_carta(d, 0))
 	ok(n > 60, "mediu o conjunto todo das cartas (%d)" % n)
 	print("v2_fontes: %d cartões medidos; maiores alturas (px): %s" % [n, str(maior)])
