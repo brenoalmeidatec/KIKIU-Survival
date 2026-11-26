@@ -2,12 +2,13 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('Instalar', 'Jogar', 'Diagnostico')]
     [string]$Acao,
-    [string]$Base = $PSScriptRoot,
+    [string]$Base,
     [string]$Estado
 )
 
 $ErrorActionPreference = 'Stop'
 $Repositorio = 'brenoalmeidatec/KIKIU-Survival'
+if (-not $Base) { $Base = $PSScriptRoot }
 $Base = [IO.Path]::GetFullPath($Base)
 $Dados = Join-Path $Base 'releases-github'
 $Ativa = Join-Path $Dados 'ativa.json'
