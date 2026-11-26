@@ -72,7 +72,7 @@ Para instalar ou atualizar, abra o mesmo arquivo com internet. O assistente conf
 
 Na instalação, a opção **Criar atalho de diagnóstico local** começa desmarcada. O atalho pede consentimento a cada sessão. Ao fechar o jogo, é possível salvar um JSON com a tag, duração, pico de memória amostrado, tempo de CPU e código de saída. Compartilhe manualmente só se desejar. Abrir o atalho normal deixa o diagnóstico desligado.
 
-Compile com Inno Setup 6.3 ou superior.
+Compile o assistente online com Inno Setup 6.7 ou superior. A ilustração de abertura vem de `arte/capa-rc1.png`, com o título e o emblema aplicados na compilação.
 
 ```powershell
 .\ferramentas\instalador\compilar-rc1-online.ps1 -ISCC 'C:\caminho\ISCC.exe' -Saida 'C:\caminho\saida'

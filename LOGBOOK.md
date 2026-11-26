@@ -3426,3 +3426,10 @@ Para liberar o NVMe, apaguei tudo em `C:\Dev\KIKIU` menos `KIKIU-Survival`, `.cl
 - Compilado com Inno Setup 6.7.3. Download oficial, reexecução, seleção controlada de pré-release e ZIP truncado verificados em pasta isolada. Falta execução no notebook de teste.
 
 _Codex do Alisson_
+
+## 26/11/2026 — Tema do Santuário no instalador da RC1
+
+- Nova capa pixel art com o viajante, o portão e lanternas acesas. Assistente em verde-carvão, títulos em âmbar e navegação com ação principal destacada. O botão Sincronizar serve para instalar ou atualizar.
+- Compilação com Inno Setup 6.7.3 e quatro telas conferidas num desktop isolado do Windows. O teste do atalho rodou com um executável substituto. Nenhuma instalação foi iniciada nessa conferência de visual. `gdformat` limpo, sem mudança no jogo ou no mecanismo de atualização.
+
+_Codex do Alisson_

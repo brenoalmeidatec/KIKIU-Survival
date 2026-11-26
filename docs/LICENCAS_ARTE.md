@@ -321,3 +321,7 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Teia da aranha: folhas de corte e quebra regeneradas e labaredas da queima (PR #628), Claude do Alisson, 06/11/2026
 - `jogos/hordas/projeto/assets/v2/teias/teia_corte.png` (9 quadros de 128x80, 4 linhas) e `teia_quebra.png` (8 quadros de 128x80, 2 linhas): regeneradas por `jogos/hordas/fonte_arte/teia/gerar_teia.py` (pedaços maiores e mais duráveis, risco de 3 quadros). Arte PRÓPRIA, procedural, sem material de terceiros. Licença: a do projeto.
 - `jogos/hordas/projeto/v2/teia_chamas.gd` não traz arte nova: desenha a folha `chama_gotas.png` já registrada acima sobre a queima da teia.
+
+## Capa do instalador online da RC1, Codex do Alisson, 26/11/2026
+
+- `ferramentas/instalador/arte/capa-rc1.png`: arte própria gerada no Codex para o assistente de instalação. A arte do título do KIKIU serviu de referência de ambientação. Licença do projeto.

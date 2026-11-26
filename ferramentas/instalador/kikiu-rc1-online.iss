@@ -1,5 +1,5 @@
-#if Ver < 0x06030000
-  #error Inno Setup 6.3 ou mais recente e necessario.
+#if Ver < 0x06070000
+  #error Inno Setup 6.7 ou mais recente e necessario.
 #endif
 
 [Setup]
@@ -20,7 +20,10 @@ UsePreviousTasks=no
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-WizardStyle=modern
+WizardStyle=modern dark polar includetitlebar hidebevels
+WizardBackColor=#161D1B
+WizardImageBackColor=#0B1519
+WizardSmallImageBackColor=#161D1B
 WizardImageFile={#WizardBanner}
 WizardSmallImageFile={#WizardIcon}
 SetupIconFile={#IconPath}
@@ -36,7 +39,20 @@ RestartApplications=no
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
-brazilianportuguese.WelcomeLabel2=Instale a publicação mais recente do KIKIU no GitHub para participar dos testes da RC1.%n%nA versão instalada aparece no final. Você pode abrir este instalador de novo para atualizar.
+brazilianportuguese.WelcomeLabel1=KIKIU • Teste da RC1
+brazilianportuguese.WelcomeLabel2=Este assistente busca a publicação oficial mais recente do KIKIU no GitHub.%n%nJá tem o jogo? Abra este mesmo instalador para atualizar. A versão instalada aparece no final.
+brazilianportuguese.ClickNext=Clique em Avançar para começar.
+brazilianportuguese.ButtonNext=&Avançar
+brazilianportuguese.ButtonBack=&Voltar
+brazilianportuguese.ButtonInstall=&Sincronizar
+brazilianportuguese.WizardSelectTasks=Opções da RC1
+brazilianportuguese.SelectTasksDesc=Escolha os atalhos nesta instalação.
+brazilianportuguese.SelectTasksLabel2=O atalho principal aparece no menu Iniciar. As opções abaixo são extras.
+brazilianportuguese.WizardReady=Instalação e atualização
+brazilianportuguese.ReadyLabel1=Tudo pronto para instalar ou atualizar o KIKIU.
+brazilianportuguese.ReadyLabel2a=Clique em Sincronizar para buscar a publicação mais recente ou em Voltar para revisar suas escolhas.
+brazilianportuguese.ReadyLabel2b=Clique em Sincronizar para buscar a publicação mais recente.
+brazilianportuguese.FinishedHeadingLabel=KIKIU pronto para jogar
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -68,6 +84,17 @@ var
 
 procedure InitializeWizard;
 begin
+  WizardForm.NextButton.Font.Style := [fsBold];
+  WizardForm.BackButton.Left := WizardForm.BackButton.Left - ScaleX(6);
+  if IsDarkInstallMode and not HighContrastActive then
+  begin
+    WizardForm.WelcomeLabel1.StyleElements := WizardForm.WelcomeLabel1.StyleElements - [seFont];
+    WizardForm.WelcomeLabel1.Font.Color := $0085B9DD;
+    WizardForm.PageNameLabel.StyleElements := WizardForm.PageNameLabel.StyleElements - [seFont];
+    WizardForm.PageNameLabel.Font.Color := $0085B9DD;
+    WizardForm.FinishedHeadingLabel.StyleElements := WizardForm.FinishedHeadingLabel.StyleElements - [seFont];
+    WizardForm.FinishedHeadingLabel.Font.Color := $0085B9DD;
+  end;
   Progresso := CreateOutputMarqueeProgressPage('Buscando a publicação mais recente',
     'Consultando o GitHub e verificando o pacote do Windows.');
 end;
