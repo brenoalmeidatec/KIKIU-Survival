@@ -258,7 +258,7 @@ func _montar_escolha() -> void:
 	dica.size = Vector2(280, 22)
 	_escolha.add_child(dica)
 	_btn_a = _botao(Vector2((LARG - BTN_L) * 0.5, BTN_Y), "automatico", "Automático")
-	_btn_confirma = _botao(Vector2(FICHA.end.x - BTN_L, BTN_Y), "confirmar", "Confirmar poder")
+	_btn_confirma = _botao(Vector2(FICHA.end.x - BTN_L, BTN_Y), "confirmar", "Confirmar")
 	_btn_confirma.add_theme_stylebox_override("panel", _estilo(true, Paleta.OURO))
 	_montar_rolos()
 	_montar_conf()
@@ -645,13 +645,15 @@ func _botao(pos: Vector2, acao: String, texto: String) -> Panel:
 	p.add_theme_stylebox_override("panel", _estilo(false, Paleta.BORDA))
 	var t := _rotulo(texto, TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
 	t.name = "t"
-	t.position = Vector2(40, 5)  # reserva uma coluna para o glifo, inclusive LB/L1 (24 px)
-	t.size = Vector2(BTN_L - 46.0, 18)
+	var coluna_glifo := 78.0 if acao == "confirmar" else 40.0  # confirmar mostra duas teclas (E e Enter) no teclado
+	t.position = Vector2(coluna_glifo, 5)
+	t.size = Vector2(BTN_L - coluna_glifo - 6.0, 18)
+	t.clip_text = true
 	p.add_child(t)
 	var g := Glifos.glifo(acao, HORIZONTAL_ALIGNMENT_CENTER)
 	g.name = "glifo"
 	g.position = Vector2(6, 6)
-	g.size = Vector2(28, 16)
+	g.size = Vector2(coluna_glifo - 12.0, 16)
 	p.add_child(g)
 	_escolha.add_child(p)
 	return p
