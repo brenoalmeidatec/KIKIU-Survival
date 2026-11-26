@@ -63,3 +63,17 @@ Referências primárias:
   [verificação do download](https://jrsoftware.org/isdl-verify.php).
 - [Software do runner Windows 2025](https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md)
   e [opções de linha de comando do Godot 4.4](https://docs.godotengine.org/en/4.4/tutorials/editor/command_line_tutorial.html).
+
+## Instalador online para os testes da RC1
+
+`KIKIU-RC1-Setup-Online.exe` consulta o repositório oficial do GitHub sempre que é executado. Seleciona a publicação pela data mais recente entre releases regulares e a pré-release `v2.0-rc1` quando publicada. O assistente mostra a tag instalada no final. A prévia local é distribuída à parte.
+
+Para instalar ou atualizar, abra o mesmo arquivo com internet. O assistente confere o tamanho e o SHA-256 divulgados pelo GitHub, valida o executável Windows x64 e só então troca o apontador para a nova versão. Se a consulta, o download ou a verificação falhar, o jogo que já estava instalado continua disponível. Os saves permanecem em `%APPDATA%\kikiu`.
+
+Na instalação, a opção **Criar atalho de diagnóstico local** começa desmarcada. O atalho pede consentimento a cada sessão. Ao fechar o jogo, é possível salvar um JSON com a tag, duração, pico de memória amostrado, tempo de CPU e código de saída. Compartilhe manualmente só se desejar. Abrir o atalho normal deixa o diagnóstico desligado.
+
+Compile com Inno Setup 6.3 ou superior.
+
+```powershell
+.\ferramentas\instalador\compilar-rc1-online.ps1 -ISCC 'C:\caminho\ISCC.exe' -Saida 'C:\caminho\saida'
+```
