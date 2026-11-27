@@ -3437,3 +3437,10 @@ Para liberar o NVMe, apaguei tudo em `C:\Dev\KIKIU` menos `KIKIU-Survival`, `.cl
 - Base local da prévia: `805a2036` do #637. Testes e capturas no Godot 4.4.1. APPDATA separada para a prévia; Windows Sandbox indisponível neste host. Nenhuma publicação ou merge da RC1.
 
 _Codex do Alisson_
+
+## 27/11/2026 — Arte viva do menu Códice (#639)
+
+- Alisson aprovou a ilustração nova e o Brasas na faixa inferior do HUD. O menu usa a arte original do vale e do Santuário, com nuvens sobre a lua, vento no estandarte e nas folhas, vaga-lumes e insetos ao redor da lanterna. A opção Reduzir piscadas mantém a luminosidade e as asas estáveis.
+- Captura real de 960 × 540 em janela oculta. Godot 4.4.1, `v2_menu`, `v2_fontes`, `v2_escala_ui` e `v2_pixel_filtros` com `falhas=0`. O teste local usou APPDATA isolada, pois a Área Restrita do Windows estava indisponível neste host.
+
+_Codex do Alisson_

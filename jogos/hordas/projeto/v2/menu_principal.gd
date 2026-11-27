@@ -13,7 +13,7 @@ const CursorKikiu := preload("res://v2/cursor_kikiu.gd")  # seta em pixel art no
 const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
 const Atualizador := preload("res://v2/atualizador.gd")
-const TituloVivo := preload("res://v2/titulo_vivo.gd")  # a arte de título com lua, névoa, brasas, espíritos, corvos e relâmpago
+const TituloCodice := preload("res://v2/titulo_codice.gd")
 const SHADER_LOGO := preload("res://v2/titulo_logo.gdshader")
 const SHADER_VEU := preload("res://v2/menu_principal_codice.gdshader")
 const ESCOLHA := "res://v2/personagens.tscn"  # JOGAR leva à escolha de personagem; dela, ao salão (v2/salao.tscn)
@@ -97,8 +97,7 @@ func _ajustar_janela() -> void:
 
 
 func _montar() -> void:
-	_arte = TituloVivo.new()
-	_arte.scale.x = -1.0  # o santuário e o cavaleiro passam para a direita, com os efeitos no mesmo lugar da arte
+	_arte = TituloCodice.new()
 	add_child(_arte)
 	var veu := ColorRect.new()
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -235,7 +234,6 @@ func _itens_dica() -> Array:
 func ui_reencaixar(canvas: Vector2, desloc: Vector2) -> void:
 	if _dica == null:
 		return
-	_arte.pivot_offset.x = canvas.x / 2.0
 	_veu.set_shader_parameter("canvas_largura", canvas.x)
 	_veu.set_shader_parameter("margem_esquerda", desloc.x)
 	var y := ALT + desloc.y - 32.0
