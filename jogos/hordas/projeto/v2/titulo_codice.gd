@@ -53,26 +53,30 @@ func _encaixar() -> void:
 	_particulas.scale = Vector2.ONE * escala
 
 
+static func _retangulo_pixel(ponto: Vector2, tamanho: Vector2i) -> Rect2:
+	return Rect2(ponto.round(), Vector2(tamanho))
+
+
 func _desenhar_particulas() -> void:
 	# Folhas atravessam apenas a área ilustrada. A trilha é contínua, com entrada e saída graduais.
 	for i in 14:
 		var fase := fposmod(_tempo * (0.062 + 0.008 * float(i % 4)) + float(i) * 0.177, 1.0)
 		var ponto := Vector2(940 - 480 * fase, 14 + 102 * float(i % 5) + 65 * fase + 9 * sin(fase * 17 + i))
 		var alfa := sin(PI * fase) * 0.65
-		var altura := 1.0 if int(fase * 22 + i) % 2 == 0 else 2.0
-		_particulas.draw_rect(Rect2(ponto.round(), Vector2(3, altura)), Color(0.63, 0.29, 0.12, alfa))
+		var altura := 1 if int(fase * 22 + i) % 2 == 0 else 2
+		_particulas.draw_rect(_retangulo_pixel(ponto, Vector2i(3, altura)), Color(0.63, 0.29, 0.12, alfa))
 	# Vaga-lumes próximos do chão, com brilho lento e fora da coluna dos botões.
 	for i in 10:
 		var t := _tempo * (0.53 + 0.06 * float(i % 4)) + float(i) * 2.4
 		var centro := Vector2(494 + float(i) * 37, 383 + 21 * float(i % 5))
-		var ponto := (centro + Vector2(15 * sin(t), 11 * cos(t * 0.67))).round()
+		var ponto := centro + Vector2(15 * sin(t), 11 * cos(t * 0.67))
 		var alfa := 0.62 if _luz_suave else 0.39 + 0.27 * sin(t + float(i))
-		_particulas.draw_rect(Rect2(ponto - Vector2.ONE, Vector2(4, 4)), Color(0.73, 0.82, 0.34, alfa * 0.20))
-		_particulas.draw_rect(Rect2(ponto, Vector2(2, 2)), Color(0.87, 0.92, 0.55, alfa))
+		_particulas.draw_rect(_retangulo_pixel(ponto - Vector2.ONE, Vector2i(4, 4)), Color(0.73, 0.82, 0.34, alfa * 0.20))
+		_particulas.draw_rect(_retangulo_pixel(ponto, Vector2i(2, 2)), Color(0.87, 0.92, 0.55, alfa))
 	# Insetos fazem órbitas curtas, com asas desenhadas em pixels junto à lanterna.
 	for i in 5:
 		var t := _tempo * (1.48 + 0.17 * float(i)) + float(i) * 1.9
 		var ponto := LANTERNA + Vector2(cos(t) * (14 + 4 * i), sin(t * 1.14) * (11 + 2 * i) - 12)
 		var asa := 1 if _luz_suave or int(_tempo * 8.0 + i) % 2 == 0 else 2
-		_particulas.draw_rect(Rect2(ponto.round() - Vector2(asa, 0), Vector2(1 + asa * 2, 1)), Color(0.78, 0.62, 0.41, 0.54))
-		_particulas.draw_rect(Rect2(ponto.round() + Vector2(0, -1), Vector2(1, 3)), Color(0.82, 0.65, 0.49, 0.73))
+		_particulas.draw_rect(_retangulo_pixel(ponto - Vector2(asa, 0), Vector2i(1 + asa * 2, 1)), Color(0.78, 0.62, 0.41, 0.54))
+		_particulas.draw_rect(_retangulo_pixel(ponto + Vector2(0, -1), Vector2i(1, 3)), Color(0.82, 0.65, 0.49, 0.73))

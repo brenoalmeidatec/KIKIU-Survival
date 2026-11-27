@@ -3442,5 +3442,6 @@ _Codex do Alisson_
 
 - Alisson aprovou a ilustração nova e o Brasas na faixa inferior do HUD. O menu usa a arte original do vale e do Santuário, com nuvens sobre a lua, vento no estandarte e nas folhas, vaga-lumes e insetos ao redor da lanterna. A opção Reduzir piscadas mantém a luminosidade e as asas estáveis.
 - Captura real de 960 × 540 em janela oculta. Godot 4.4.1, `v2_menu`, `v2_fontes`, `v2_escala_ui` e `v2_pixel_filtros` com `falhas=0`. O teste local usou APPDATA isolada, pois a Área Restrita do Windows estava indisponível neste host.
+- O primeiro CI apontou uma expectativa de quatro emissores do fundo anterior. `v2_pixel_particulas` ainda confere as faíscas do logo e agora também exige que os novos efeitos usem filtro nearest, desenho ligado ao fundo e posições e dimensões inteiras. `v2_pixel_particulas`, `v2_menu` e `v2_piscadas` passaram localmente.
 
 _Codex do Alisson_
