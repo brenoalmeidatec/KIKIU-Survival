@@ -2,7 +2,7 @@
 
 ## Prévia da RC1 · Códice e Brasas
 
-- **Título Códice:** lista à esquerda, foco dourado sem depender de brilho, logo e dica de teclas na mesma coluna. A ilustração inédita fica à direita, com nuvens sobre a lua, vento no tecido e nas folhas, vaga-lumes junto ao chão e insetos perto da lanterna. A opção Reduzir piscadas mantém estáveis o brilho e as asas.
+- **Título Códice:** lista à esquerda, foco dourado sem depender de brilho, logo e dica de teclas na mesma coluna. O loop silencioso do Flow fica atrás da interface. Reduzir piscadas usa a arte de reserva com brilho e asas estáveis.
 - **Poderes Códice:** três opções em linhas fixas e ficha à direita. Ganho e nível aparecem na linha; a ficha mantém descrição, raridade e o caminho de fusão quando existe. A confirmação explícita complementa as teclas 1–3 e o Automático. A revelação do baú preserva os cartões e a roleta.
 - **HUD Brasas:** Impulso (quando disponível), E, defesa e Q compartilham uma faixa abaixo do campo de batalha. O Q usa porcentagem e um filete preenchido, com indicação estática de pronta. A barra de XP se estende abaixo da faixa, e o retrato e as barras de vida, fôlego e defesa permanecem à esquerda. Ícones são desenhados sem escala fracionária.
 - **Retratos:** eixo e linha dos pés fixos. O quadro da folha usa o maior fator inteiro que cabe na ficha, até 3×. Mudanças no sprite e no porte em combate dependem de revisão de arte à parte.

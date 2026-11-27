@@ -1,16 +1,20 @@
 extends Control
-## Fundo do Códice. As posições seguem a grade de 960 × 540 da ilustração.
+## Fundo do Códice. A animação em vídeo e a arte de reserva cobrem a janela na mesma proporção.
 
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const Piscadas := preload("res://v2/piscadas.gd")
 const ARTE := preload("res://assets/titulo/codice.png")
 const SHADER := preload("res://v2/titulo_codice.gdshader")
+const VIDEO := preload("res://assets/titulo/codice_loop.ogv")
 const TAM := Vector2(960, 540)
 const LANTERNA := Vector2(735, 404)
 
 var _fundo: TextureRect
 var _mat: ShaderMaterial
 var _particulas: Node2D
+var _video: VideoStreamPlayer
+var _tem_tela := false
+var _usar_video := false
 var _tempo := 0.0
 var _luz_suave := false
 
@@ -32,13 +36,37 @@ func _ready() -> void:
 	_particulas = Node2D.new()
 	_particulas.draw.connect(_desenhar_particulas)
 	add_child(_particulas)
+	_video = VideoStreamPlayer.new()
+	_video.stream = VIDEO
+	_video.expand = true
+	_video.loop = true
+	_video.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_video.focus_mode = Control.FOCUS_NONE
+	_video.hide()
+	add_child(_video)
+	_tem_tela = DisplayServer.get_name() != "headless"
 	resized.connect(_encaixar)
 	_encaixar()
 
 
 func _process(delta: float) -> void:
-	_tempo += delta
 	_luz_suave = Piscadas.ligado()
+	# A arte de reserva cobre o tempo até o primeiro quadro e preserva a opção Reduzir piscadas.
+	var usar_video := _tem_tela and is_visible_in_tree() and not _luz_suave
+	if usar_video != _usar_video:
+		_usar_video = usar_video
+		if _usar_video:
+			_video.play()
+		else:
+			_video.stop()
+	var quadro_pronto := _video.is_playing() and (_video.visible or _video.stream_position > 0.0)
+	if quadro_pronto != _video.visible:
+		_video.visible = quadro_pronto
+		_fundo.visible = not quadro_pronto
+		_particulas.visible = not quadro_pronto
+	if quadro_pronto:
+		return
+	_tempo += delta
 	_mat.set_shader_parameter("instante", _tempo)
 	var luz := 0.69 if _luz_suave else 0.69 + 0.08 * sin(_tempo * 3.1) + 0.04 * sin(_tempo * 5.4)
 	_mat.set_shader_parameter("luz", luz)
@@ -51,6 +79,8 @@ func _encaixar() -> void:
 	_fundo.position = ((size - _fundo.size) * 0.5).round()
 	_particulas.position = _fundo.position
 	_particulas.scale = Vector2.ONE * escala
+	_video.position = _fundo.position
+	_video.size = _fundo.size
 
 
 static func _retangulo_pixel(ponto: Vector2, tamanho: Vector2i) -> Rect2:

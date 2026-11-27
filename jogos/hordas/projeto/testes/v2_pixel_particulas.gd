@@ -54,6 +54,12 @@ func _ready() -> void:
 	_checar("título", lista)
 	var fundo := menu._arte as Codice
 	ok(fundo != null and fundo.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Códice: filtro nearest no fundo")
+	if fundo != null:
+		var video := fundo._video
+		ok(video.stream is VideoStreamTheora and video.loop and video.expand, "Códice: vídeo Theora em loop com cobertura da tela")
+		ok(video.mouse_filter == Control.MOUSE_FILTER_IGNORE and video.focus_mode == Control.FOCUS_NONE, "Códice: vídeo não intercepta a navegação")
+		if DisplayServer.get_name() == "headless":
+			ok(fundo._fundo.visible and not video.is_playing(), "Códice: arte de reserva disponível em headless")
 	ok(fundo != null and fundo._particulas.draw.is_connected(fundo._desenhar_particulas), "Códice: efeitos desenhados junto ao fundo")
 	ok(Codice._retangulo_pixel(Vector2(21.26, 56.78), Vector2i(3, 2)) == Rect2(21, 57, 3, 2), "Códice: posições e dimensões em pixels inteiros")
 	# a escala GLOBAL da faísca do logo (que fica sob o _logo ampliado) tem de ser 1

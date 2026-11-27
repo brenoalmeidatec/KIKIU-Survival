@@ -325,3 +325,5 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## Fundo do menu Códice, Codex do Alisson, 27/11/2026
 
 - `jogos/hordas/projeto/assets/titulo/codice.png`: arte própria gerada no Codex e aprovada pelo Alisson. A capa do instalador e o menu do jogo serviram de referência de paleta e enquadramento. Licença do projeto. O movimento do tecido, das nuvens e dos insetos é desenhado em código.
+
+- jogos/hordas/projeto/assets/titulo/codice_loop.ogv: vídeo criado no Google Flow a partir da ilustração original do Códice, com a mesma arte no primeiro e no último quadro. Aprovado por Alisson. A emenda foi suavizada e o áudio foi retirado. O recurso é usado como fundo local do menu.
