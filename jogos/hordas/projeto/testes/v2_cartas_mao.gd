@@ -244,7 +244,7 @@ func _testes() -> void:
 	var pc: Array = w.combate.progresso.cartas
 	ok(pc.size() == 2 and str(pc[0].id) == "dano" and str(pc[1].id) == "cura", "com 1 carta sobrando a mão é ela mais a cura (%s)" % str(ids(pc)))
 
-	# 9. o cartão mostra o selo UPGRADE ou NOVO (e nada na carta de cura)
+	# 9. cada linha mostra o ganho e o estado, e a ficha acompanha a escolha
 	zerar()
 	dar("dano", 1)
 	dar("vida", 1)
@@ -256,16 +256,18 @@ func _testes() -> void:
 	w.combate.telas.mostrar_escolha(mao9, 8)
 	w.avancar(PASSO)
 	for i in mao9.size():
-		var tp := str(mao9[i].get("tipo", ""))
-		var esperado := ""  # tela enxuta (15/11): UPGRADE e NOVO saíram do topo, o rodapé já diz; só TROCA e ÁPICE têm selo
+		var carta: Dictionary = mao9[i]
 		var p: Control = w.combate.telas._cartas[i]
-		ok((p.get_node("rar") as Label).text == "", "a raridade do cartão %d fica só na cor" % i)
-		ok((p.get_node("nivel") as Label).text != "", "o rodapé do cartão %d diz se é nível ou novo" % i)
-		ok((p.get_node("selo") as Label).text == esperado, "o selo do cartão %d acompanha o tipo '%s' (%s)" % [i, tp, (p.get_node("selo") as Label).text])
+		var ganho := str(carta.get("proximo", "")).trim_prefix("Próximo: ")
+		ok((p.get_node("tecla") as Label).text == "[%d]" % (i + 1), "a tecla acompanha a posição da linha %d" % i)
+		ok((p.get_node("proximo") as Label).text == (ganho if not ganho.is_empty() else carta.desc), "a linha %d mostra o ganho da carta" % i)
+		ok((p.get_node("nivel") as Label).text == carta.nivel_txt, "a linha %d diz se é nível ou novo" % i)
 	ok(tipos(mao9).up == 2 and tipos(mao9).nov == 1, "a mão da foto é 2 upgrades + 1 novidade (%s)" % str(tipos(mao9)))
-	var cura_p: Control = w.combate.telas._cartas[0]  # a carta de cura não leva selo
+	var cura_p: Panel = w.combate.telas._detalhe  # a carta de cura não leva selo
+	ok((cura_p.get_node("rar") as Label).text == mao9[0].rar_nome, "a ficha detalha a raridade da linha em foco")
+	ok((cura_p.get_node("desc") as Label).text == mao9[0].desc, "a ficha detalha a descrição da linha em foco")
 	w.combate.telas._preencher(cura_p, w.combate.progresso._carta_cura())
-	ok((cura_p.get_node("selo") as Label).text == "", "a carta de cura não leva selo")
+	ok((cura_p.get_node("selo") as Label).text == "" and (cura_p.get_node("nivel") as Label).text == "", "a ficha da cura não leva selo nem nível")
 
 	# 10. o baú com escolha usa a mesma mão (2 upgrades + 1 novidade), com o piso de raridade, e guarda a rodada
 	zerar()

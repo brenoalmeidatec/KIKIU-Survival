@@ -1,13 +1,13 @@
 extends "res://testes/isolamento_v2.gd"
 # Partículas de menu e escalas soltas na grade de 1 px (pixel art: um tamanho de pixel só, frente PARTÍCULAS do PIXEL-2). Prova que:
-#  (1) a tela de título (menu_principal.tscn: faíscas do logo, brasas, espíritos e folhas do fundo vivo) usa escala inteira FIXA por emissor
-#      e nenhuma rotação livre (angle, angular_velocity);
+#  (1) as faíscas do logo usam escala inteira fixa, sem rotação livre. O fundo Códice desenha folhas, vaga-lumes e insetos na grade inteira;
 #  (2) o emissor do salão vivo (salao_vivo.gd) também;
 #  (3) o código do especial (mecha), das armas novas (queda, balestra, cabaça), dos avisos (pedra) e do chefe visual (corvos) não desenha mais
 #      com escala fracionária nem com ângulo livre (confere o texto do desenho: o desenho em si só se vê em janela).
 # Falha no código antigo (scale_amount 0,5..1 / 1..2 / 2..3; angular_velocity +-120; escalas 0,85, 1,1, 1,18, 1,2, 1,5, 0,85 e 1,4).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pixel_particulas.tscn  (imprime "v2_pixel_particulas falhas=0")
 const Menu := preload("res://v2/menu_principal.tscn")
+const Codice := preload("res://v2/titulo_codice.gd")
 const Vivo := preload("res://v2/salao_vivo.gd")
 var falhas := 0
 
@@ -50,8 +50,18 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var lista: Array = []
 	_emissores(menu, lista)
-	ok(lista.size() >= 4, "título: faíscas, brasas, espíritos e folhas (%d emissores)" % lista.size())
+	ok(lista.size() == 1 and lista[0].get_parent() == menu._logo, "título: emissor das faíscas do logo")
 	_checar("título", lista)
+	var fundo := menu._arte as Codice
+	ok(fundo != null and fundo.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Códice: filtro nearest no fundo")
+	if fundo != null:
+		var video := fundo._video
+		ok(video.stream is VideoStreamTheora and video.loop and video.expand, "Códice: vídeo Theora em loop com cobertura da tela")
+		ok(video.mouse_filter == Control.MOUSE_FILTER_IGNORE and video.focus_mode == Control.FOCUS_NONE, "Códice: vídeo não intercepta a navegação")
+		if DisplayServer.get_name() == "headless":
+			ok(fundo._fundo.visible and not video.is_playing(), "Códice: arte de reserva disponível em headless")
+	ok(fundo != null and fundo._particulas.draw.is_connected(fundo._desenhar_particulas), "Códice: efeitos desenhados junto ao fundo")
+	ok(Codice._retangulo_pixel(Vector2(21.26, 56.78), Vector2i(3, 2)) == Rect2(21, 57, 3, 2), "Códice: posições e dimensões em pixels inteiros")
 	# a escala GLOBAL da faísca do logo (que fica sob o _logo ampliado) tem de ser 1
 	for p in lista:
 		var pp := p as CPUParticles2D

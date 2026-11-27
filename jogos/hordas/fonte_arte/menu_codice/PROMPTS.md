@@ -1,0 +1,11 @@
+# Ilustração do menu Códice
+
+A capa do instalador serviu de referência de paleta. A captura do Códice serviu de referência para a coluna de navegação. A arte própria, aprovada por Alisson, está em `projeto/assets/titulo/codice.png`.
+
+```
+Create a genuinely NEW 16:9 background illustration for the main menu of the indie dark fantasy survival game K.I.K.I.U. Original pixel art, landscape 16:9 composed for a 960x540 viewport, full bleed. Input 1 is the current game screenshot: use it only as reference for where the existing UI and logo will sit on top of your new art, and the type of pixel clusters. Do not draw the actual UI, logo, text or buttons. Input 2 is an original installer illustration: use its restrained amber lanterns, green-charcoal and blue moonlit shadows as palette reference only, never reuse its centered composition or foreground stairway. Entire LEFT 43% of your composition must remain quiet, mostly very dark charcoal-green with subtle shadow detail, as the actual cream/gold menu labels must be readable over it. Place the main visual story on the RIGHT: through a ruined outer gate overlooking a mist-filled ravine, a weathered sanctuary is visible by moonlight between leaning trees. In the lower-right third, a small original black-haired samurai with a worn dark red jacket and sheathed katana stands in profile facing the ravine, silhouetted by a single low lantern. Main skyline and details stay inside the crop. A few amber embers and cool green fog link the sides without bright busy detail behind controls. Grounded dark fantasy, visible square pixel clusters, disciplined restricted dark palette, crisp edges, no fine smooth painting, no photorealism, no excessive bloom. Atmospheric contrast and simple masses at menu scale. No lettering, no logos, no interface, no border, no frame, no watermarks. This must read as a different viewpoint and different artwork than either reference.
+```
+
+## Vídeo do fundo
+
+Google Flow no modo Frames, com a ilustração do Códice como primeiro e último quadro. Pedido: câmera fixa, a névoa atravessa o vale, uma rajada move o estandarte e as folhas e a lanterna oscila e reflete nas pedras. A metade esquerda fica escura para a interface. O clipe de oito segundos teve a emenda suavizada e foi convertido para Ogg Theora em 960 × 540 a 24 FPS, em silêncio.

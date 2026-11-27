@@ -9,8 +9,8 @@ extends "res://testes/isolamento_v2.gd"
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_espera.tscn  (imprime "v2_cartas_espera falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
+const Paleta := preload("res://v2/paleta.gd")
 const PASSO := 1.0 / 60.0
-const CARTA_Y := 146.0
 var falhas := 0
 var w
 var mouse_pos := Vector2(480, 270)
@@ -76,9 +76,9 @@ func _movimento(pos: Vector2) -> InputEventMouseMotion:
 	return e
 
 
-## Centro da carta i na tela 960x540 (a escolha põe as três cartas em x = 76, 352, 628; 256x288 px).
 func _centro_carta(i: int) -> Vector2:
-	return Vector2(204.0 + 276.0 * i, 290.0)
+	var linha: Control = w.combate.telas._cartas[i]
+	return linha.get_rect().get_center()
 
 
 func zerar() -> void:
@@ -159,7 +159,8 @@ func _run() -> void:
 	ok(absf(trava() - 1.0) < 0.05, "a trava começa em 1 s (%.3f)" % trava())
 	ok(t._sub.text == "Escolha em 1", "a legenda mostra a contagem 'Escolha em 1' (%s)" % t._sub.text)
 	ok(t._cartas[0].modulate.r < 0.5, "as cartas aparecem apagadas na trava")
-	ok(t._cartas[0].position.y == CARTA_Y, "sem seleção (sem realce) na trava")
+	var posicao_inicial: Vector2 = t._cartas[0].position
+	ok(t._estilos[0].border_color != Paleta.OURO, "sem realce de seleção na trava")
 	ok((t._cartas[0].get_node("espera") as ColorRect).visible, "a barra de espera aparece em cada carta")
 
 	# 2. nada escolhe antes de 1,0 s: clique, teclas, Enter, Espaço, E, direcional, ui_accept, R, B, botões
@@ -174,7 +175,8 @@ func _run() -> void:
 	ok(not t.entrada(_tecla(KEY_ESCAPE)), "ESC passa pela escolha (é da pausa), não é consumido")
 	passos(24)  # 0,5 s de trava
 	ok(t._sub.text == "Escolha em 1", "aos 0,5 s a contagem marca 'Escolha em 1' (%s)" % t._sub.text)
-	ok(absf((t._cartas[0].get_node("espera") as ColorRect).size.x - 232.0 * (1.0 - trava())) < 0.1, "a barra acompanha a fração real da espera")
+	var largura_interna: float = t.LINHA_L - 2.0 * t.MARGEM
+	ok(absf((t._cartas[0].get_node("espera") as ColorRect).size.x - largura_interna * (1.0 - trava())) < 0.1, "a barra acompanha a fração real da espera")
 	antes = estado()
 	rajada()
 	ok(estado() == antes, "aos 0,5 s ainda nada escolhe (trava de 1 s)")
@@ -189,7 +191,7 @@ func _run() -> void:
 	ok(trava() <= 0.0 and t._sub.text.begins_with("Escolha uma carta"), "a trava acaba e a legenda volta ao normal (%s)" % t._sub.text)
 	passos(1)
 	ok(t._cartas[1].modulate.r > 1.2, "as cartas acendem ao liberar (%.2f)" % t._cartas[1].modulate.r)
-	ok(t._cartas[0].position.y == CARTA_Y - 8.0, "a carta marcada aparece depois da trava")
+	ok(t._estilos[0].border_color == Paleta.OURO and t._cartas[0].position == posicao_inicial, "a linha marcada ganha borda e fica no lugar")
 	passos(30)
 	ok(absf(t._cartas[0].modulate.r - 1.0) < 0.01, "o brilho se apaga em 0,35 s")
 	var carta_2: Dictionary = w.combate.progresso.cartas[1]
@@ -431,6 +433,18 @@ func _run() -> void:
 	pad.pressed = true
 	tt.entrada(pad)
 	ok(tt.sel == posmod(sel0 + 1, n_cartas), "o direcional do controle (D-pad) move a seleção uma carta (%d -> %d)" % [sel0, tt.sel])
+	pad.button_index = JOY_BUTTON_DPAD_DOWN
+	tt.entrada(pad)
+	ok(tt.sel == posmod(sel0 + 2, n_cartas), "o direcional para baixo também navega a lista")
+	tt.entrada(_tecla(KEY_UP))
+	ok(tt.sel == posmod(sel0 + 1, n_cartas), "a seta para cima volta uma linha")
+	mouse_pos = _centro_carta(2)
+	tt.entrada(_movimento(mouse_pos))
+	ok(tt.sel == 2 and (tt._detalhe.get_node("nome") as Label).text == w.combate.progresso.cartas[2].nome, "o mouse atualiza o foco e a ficha")
+	var escolhidas: int = w.combate.progresso.escolhidas
+	mouse_pos = (tt._btn_confirma as Control).get_rect().get_center()
+	tt.entrada(_clique(mouse_pos))
+	ok(w.combate.progresso.escolhidas == escolhidas + 1 and not tt.escolha_aberta, "clicar em Confirmar poder aplica a linha em foco")
 	zerar()
 
 	print("v2_cartas_espera falhas=%d" % falhas)

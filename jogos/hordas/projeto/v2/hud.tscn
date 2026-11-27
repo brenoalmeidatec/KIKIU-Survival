@@ -42,7 +42,7 @@ offset_left = 6.0
 offset_top = 426.0
 offset_right = 96.0
 offset_bottom = 534.0
-color = Color(0.003921569, 0.011764706, 0.043137256, 1)
+color = Color(0.055, 0.043, 0.04, 0.92)
 
 [node name="Heroi" type="TextureRect" parent="Raiz/Retrato"]
 layout_mode = 0
@@ -60,6 +60,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+modulate = Color(0.83, 0.65, 0.41, 0.70)
 texture = ExtResource("13_retrato")
 patch_margin_left = 17
 patch_margin_top = 17
@@ -124,6 +125,7 @@ offset_left = 104.0
 offset_top = 447.0
 offset_right = 320.0
 offset_bottom = 513.0
+modulate = Color(0.85, 0.68, 0.49, 0.70)
 texture = ExtResource("14_barra")
 patch_margin_left = 11
 patch_margin_top = 11
@@ -238,8 +240,8 @@ text = "x0"
 [node name="Xp" type="NinePatchRect" parent="Raiz"]
 layout_mode = 0
 offset_left = 380.0
-offset_top = 512.0
-offset_right = 580.0
+offset_top = 516.0
+offset_right = 949.0
 offset_bottom = 534.0
 texture = ExtResource("2_moldura")
 patch_margin_left = 5
@@ -253,8 +255,8 @@ axis_stretch_vertical = 1
 layout_mode = 0
 offset_left = 5.0
 offset_top = 5.0
-offset_right = 195.0
-offset_bottom = 17.0
+offset_right = 564.0
+offset_bottom = 13.0
 value = 0.0
 texture_under = ExtResource("3_fundo")
 texture_progress = ExtResource("6_xp")
@@ -423,18 +425,18 @@ text = ""
 
 [node name="Ultimate" type="Control" parent="Raiz"]
 layout_mode = 0
-offset_left = 432.0
-offset_top = 412.0
-offset_right = 528.0
-offset_bottom = 508.0
+offset_left = 673.0
+offset_top = 434.0
+offset_right = 763.0
+offset_bottom = 512.0
 script = ExtResource("16_ultimate")
 
 [node name="Habilidades" type="Control" parent="Raiz"]
 layout_mode = 0
-offset_left = 586.0
-offset_top = 422.0
-offset_right = 954.0
-offset_bottom = 534.0
+offset_left = 392.0
+offset_top = 434.0
+offset_right = 666.0
+offset_bottom = 512.0
 script = ExtResource("12_habilidades")
 
 [node name="Golpes" type="Control" parent="Raiz"]

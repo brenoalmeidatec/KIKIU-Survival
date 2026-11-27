@@ -279,8 +279,8 @@ func _heroi_e_arma(heroi_id: String) -> String:
 
 ## O retrato (PER-1b): o CORPO inteiro do personagem, o quadro parado de frente da folha dele (a própria, ou a do herói que ele joga).
 ## A foto rosto.png não aparece mais aqui. Todos usam o mesmo enquadramento: a mesma escala inteira (RETRATO_ESC), a mesma caixa
-## (RETRATO_L x RETRATO_ALT), o corpo centrado no eixo da ficha e os pés na mesma linha. O quadro é recortado no corpo (a área
-## opaca) e ganha uma margem (AtlasTexture.margin) até o tamanho da caixa, então o TextureRect é igual para todos os heróis.
+## (RETRATO_L x RETRATO_ALT), o corpo centrado no eixo e os pés na mesma linha. Um quadro maior usa o próximo fator inteiro
+## que cabe na caixa, evitando esticar a figura. A margem do AtlasTexture completa a caixa.
 ## Com `imagem` (o retrato pronto do nome, Personagens.retrato_do_nome), ela entra no lugar do quadro, em 1x (já vem em pixel nativo), recortada
 ## no corpo e apoiada embaixo na mesma caixa.
 func _definir_retrato(visivel := true, folha_nome := "", imagem := "") -> void:
@@ -311,7 +311,9 @@ func _corpo_parado(folha: Texture2D, quadro: Rect2) -> AtlasTexture:
 		var usado := img.get_region(Rect2i(quadro)).get_used_rect()
 		if usado.size.x > 0 and usado.size.y > 0:
 			corpo = Rect2(quadro.position + Vector2(usado.position), Vector2(usado.size))
-	var caixa := Vector2(RETRATO_L, RETRATO_ALT) / RETRATO_ESC
+	var quadro_ui := Vector2(RETRATO_L, RETRATO_ALT)
+	var escala := clampi(floori(minf(quadro_ui.x / corpo.size.x, quadro_ui.y / corpo.size.y)), 1, RETRATO_ESC)
+	var caixa := quadro_ui / escala
 	var tex := _quadro_de(folha, corpo)
 	var sobra := (caixa - corpo.size).max(Vector2.ZERO)
 	tex.margin = Rect2(floorf(sobra.x / 2.0), sobra.y, sobra.x, sobra.y)  # centrado em x, apoiado embaixo (os pés na mesma linha)
