@@ -91,7 +91,7 @@ function Obter-PublicacaoMaisRecente($Http) {
     $publicacoes = for ($pagina = 1; ; $pagina++) {
         $lote = Invoke-RestMethod @Http -Uri "https://api.github.com/repos/$Repositorio/releases?per_page=100&page=$pagina" -TimeoutSec 40
         $lote | Where-Object {
-            -not $_.draft -and $_.published_at -and (-not $_.prerelease -or $_.tag_name -ieq 'v2.0-rc1')
+            -not $_.draft -and $_.published_at -and (-not $_.prerelease -or $_.tag_name -in @('pre-rc1', 'v2.0-rc1'))
         }
         if (@($lote).Count -lt 100) { break }
     }

@@ -3433,3 +3433,10 @@ _Codex do Alisson_
 - Compilação com Inno Setup 6.7.3 e quatro telas conferidas num desktop isolado do Windows. O teste do atalho rodou com um executável substituto. Nenhuma instalação foi iniciada nessa conferência de visual. `gdformat` limpo, sem mudança no jogo ou no mecanismo de atualização.
 
 _Codex do Alisson_
+
+## 27/11/2026 — Canal público Pré-RC1 para Windows
+
+- O instalador online aceita a tag `pre-rc1` entre as publicações elegíveis. A primeira versão do instalador precisa ser baixada de novo para reconhecer o canal. A build de teste do jogo vem do commit `418ff27e` do PR #639, com Códice no menu e nas cartas e Brasas no HUD.
+- Novo assistente compilado com Inno Setup 6.7.3. Teste de seleção conferiu Pré-RC1, RC1 oficial, publicações regulares e rejeição de outros rascunhos e prévias. O caso de ZIP truncado preservou a instalação ativa. Quatro telas do assistente capturadas no Windows em desktop isolado.
+
+_Codex do Alisson_

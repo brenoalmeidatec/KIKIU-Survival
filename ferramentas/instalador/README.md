@@ -66,7 +66,7 @@ Referências primárias:
 
 ## Instalador online para os testes da RC1
 
-`KIKIU-RC1-Setup-Online.exe` consulta o repositório oficial do GitHub sempre que é executado. Seleciona a publicação pela data mais recente entre releases regulares e a pré-release `v2.0-rc1` quando publicada. O assistente mostra a tag instalada no final. A prévia local é distribuída à parte.
+`KIKIU-RC1-Setup-Online.exe` consulta o repositório oficial do GitHub sempre que é executado. Seleciona a publicação pela data mais recente entre releases regulares e as pré-releases `pre-rc1` e `v2.0-rc1`. O assistente mostra a tag instalada no final.
 
 Para instalar ou atualizar, abra o mesmo arquivo com internet. O assistente confere o tamanho e o SHA-256 divulgados pelo GitHub, valida o executável Windows x64 e só então troca o apontador para a nova versão. Se a consulta, o download ou a verificação falhar, o jogo que já estava instalado continua disponível. Os saves permanecem em `%APPDATA%\kikiu`.
 
